@@ -1,0 +1,60 @@
+{# Urgency selector — colour-coded buttons for need creation forms. #}
+{# Expects a hidden input with name="urgency" in the parent form. #}
+<fieldset>
+  <legend class="text-sm font-medium text-gray-700 mb-2">Urgency</legend>
+  <div x-data="{ urgency: '{{ form.urgency.value|default:'medium' }}' }"
+       class="flex flex-wrap gap-2"
+       role="radiogroup" aria-label="Select urgency level">
+
+    {% with levels="low:Low:bg-green-100:text-green-800:border-green-300,medium:Medium:bg-amber-100:text-amber-800:border-amber-300,high:High:bg-orange-100:text-orange-800:border-orange-300,critical:Critical:bg-red-100:text-red-800:border-red-300" %}
+    {% for level in levels|make_list %}{% endfor %}{# Fallback: manual buttons #}
+
+    <label
+      :class="urgency === 'low' ? 'ring-2 ring-green-500 bg-green-100 border-green-300' : 'border-gray-200 hover:border-green-300'"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all min-h-[44px]"
+      @click="urgency = 'low'; $refs.urgInput.value = 'low'"
+    >
+      <input type="radio" name="urgency_radio" value="low" class="sr-only" :checked="urgency === 'low'">
+      <span class="w-2.5 h-2.5 rounded-full bg-green-500" aria-hidden="true"></span>
+      <span class="text-sm font-medium text-green-800">Low</span>
+    </label>
+
+    <label
+      :class="urgency === 'medium' ? 'ring-2 ring-amber-500 bg-amber-100 border-amber-300' : 'border-gray-200 hover:border-amber-300'"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all min-h-[44px]"
+      @click="urgency = 'medium'; $refs.urgInput.value = 'medium'"
+    >
+      <input type="radio" name="urgency_radio" value="medium" class="sr-only" :checked="urgency === 'medium'">
+      <span class="w-2.5 h-2.5 rounded-full bg-amber-500" aria-hidden="true"></span>
+      <span class="text-sm font-medium text-amber-800">Medium</span>
+    </label>
+
+    <label
+      :class="urgency === 'high' ? 'ring-2 ring-orange-500 bg-orange-100 border-orange-300' : 'border-gray-200 hover:border-orange-300'"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all min-h-[44px]"
+      @click="urgency = 'high'; $refs.urgInput.value = 'high'"
+    >
+      <input type="radio" name="urgency_radio" value="high" class="sr-only" :checked="urgency === 'high'">
+      <span class="w-2.5 h-2.5 rounded-full bg-orange-500" aria-hidden="true"></span>
+      <span class="text-sm font-medium text-orange-800">High</span>
+    </label>
+
+    <label
+      :class="urgency === 'critical' ? 'ring-2 ring-red-500 bg-red-100 border-red-300' : 'border-gray-200 hover:border-red-300'"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all min-h-[44px]"
+      @click="urgency = 'critical'; $refs.urgInput.value = 'critical'"
+    >
+      <input type="radio" name="urgency_radio" value="critical" class="sr-only" :checked="urgency === 'critical'">
+      <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
+      <span class="text-sm font-medium text-red-800">Critical</span>
+    </label>
+
+    {% endwith %}
+
+    <input type="hidden" name="urgency" x-ref="urgInput" :value="urgency"
+           value="{{ form.urgency.value|default:'medium' }}">
+  </div>
+  {% if form.urgency.errors %}
+  <p class="text-red-600 text-sm mt-1">{{ form.urgency.errors.0 }}</p>
+  {% endif %}
+</fieldset>

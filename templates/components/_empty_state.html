@@ -1,0 +1,18 @@
+{# Empty state: centered illustration + message + optional CTA #}
+<div class="max-w-sm mx-auto py-12 text-center">
+  {% if illustration %}
+  <div class="w-28 h-28 mx-auto mb-4 text-gray-300">
+    {# SVG placeholder — replace with actual illustrations #}
+    <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="40" cy="60" r="20"/><circle cx="80" cy="60" r="20"/>
+      <path d="M60 60 L60 40" stroke-dasharray="4 4"/>
+    </svg>
+  </div>
+  {% endif %}
+  <p class="text-lg text-gray-600">{{ message }}</p>
+  {% if cta_url %}
+  <a href="{{ cta_url }}" class="mt-4 inline-block bg-[var(--umi-primary)] text-white font-medium px-6 py-3 rounded-lg min-h-[48px]">
+    {{ cta_text }}
+  </a>
+  {% endif %}
+</div>

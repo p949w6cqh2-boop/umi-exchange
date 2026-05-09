@@ -1,0 +1,50 @@
+# Replace {$DOMAIN} with your actual domain, or set DOMAIN env var.
+# For initial setup without a domain, use :80 instead.
+{$DOMAIN:localhost} {
+    # Reverse proxy to Django
+    reverse_proxy app:8000
+
+    # Compression
+    encode gzip zstd
+
+    # Security headers (supplements Django's own headers)
+    header {
+        # Remove server identification
+        -Server
+        # Additional security headers
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+        # CSP is set by Django; Caddy does not override it
+    }
+
+    # Static files (served directly by Caddy, bypassing Django)
+    handle_path /static/* {
+        root * /srv/static
+        file_server
+        header Cache-Control "public, max-age=31536000, immutable"
+    }
+
+    # Health check (no auth required)
+    handle /health/* {
+        reverse_proxy app:8000
+    }
+
+    # Security.txt
+    handle /.well-known/security.txt {
+        respond "Contact: mailto:security@umi-exchange.org
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://{$DOMAIN}/.well-known/security.txt
+"
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Account Settings{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-8">
+  <h1 class="text-xl font-semibold text-gray-900">Account Settings</h1>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900">Account</h2>
+    <p class="text-sm text-gray-600 mt-2">Username: {{ user.username }}</p>
+    <p class="text-sm text-gray-600">Email: {{ user.email|default:"Not set" }}</p>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900">Household</h2>
+    {% if memberships.0.household %}
+    <p class="text-sm text-gray-600 mt-2">{{ memberships.0.household }} (Code: {{ memberships.0.household.join_code }})</p>
+    {% else %}
+    <p class="text-sm text-gray-600 mt-2">Not in a household.</p>
+    <div class="flex gap-3 mt-3">
+      <a href="{% url 'household-create' %}" class="text-sm text-blue-600 hover:text-blue-800">Create household</a>
+      <a href="{% url 'household-join' %}" class="text-sm text-blue-600 hover:text-blue-800">Join household</a>
+    </div>
+    {% endif %}
+  </div>
+
+  {# 2FA Section — only shown when django-two-factor-auth is available #}
+  {% if two_factor_available %}
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">Two-Factor Authentication</h2>
+      {% if two_factor_enabled %}
+      <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        Enabled
+      </span>
+      {% else %}
+      <span class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+        Disabled
+      </span>
+      {% endif %}
+    </div>
+    <p class="text-sm text-gray-600 mt-2">
+      Add an extra layer of security to your account using a TOTP authenticator app (e.g., Google Authenticator, Authy).
+    </p>
+    {% if two_factor_enabled %}
+    <div class="mt-3 flex gap-3">
+      <a href="{% url 'two_factor:profile' %}" class="text-sm text-blue-600 hover:text-blue-800">Manage 2FA devices</a>
+      <a href="{% url 'two_factor:disable' %}" class="text-sm text-red-600 hover:text-red-800">Disable 2FA</a>
+    </div>
+    {% else %}
+    <div class="mt-3">
+      <a href="{% url 'two_factor:setup' %}" class="inline-flex items-center gap-2 bg-[var(--umi-primary)] text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px] hover:bg-[#16213E]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        Enable 2FA
+      </a>
+    </div>
+    {% if require_2fa_for_coordinators and is_coordinator %}
+    <p class="text-xs text-amber-700 mt-2 bg-amber-50 rounded p-2">
+      ⚠ This community requires coordinators to enable 2FA. Please set up two-factor authentication.
+    </p>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900">My Communities</h2>
+    {% for m in memberships %}
+    <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+      <a href="{% url 'community-feed' m.community.slug %}" class="text-sm text-blue-600 hover:text-blue-800">{{ m.community.name }}</a>
+      <span class="text-xs text-gray-400">{{ m.get_role_display }}</span>
+    </div>
+    {% empty %}
+    <p class="text-sm text-gray-500 mt-2"><a href="{% url 'community-join' %}" class="text-blue-600">Join a community</a></p>
+    {% endfor %}
+  </div>
+
+  <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+    <h2 class="text-sm font-semibold text-gray-700">About This App</h2>
+    <p class="text-sm text-gray-500 mt-2">Protocol: UMI v0.1 &middot; Conformance: {{ umi_conformance|title }} &middot; License: AGPL-3.0</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+# /etc/logrotate.d/umi — install via: sudo cp docker/logrotate-umi /etc/logrotate.d/umi
+/opt/umi-exchange/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+    su umi umi
+}

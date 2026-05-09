@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Match — {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto">
+  <a href="{% url 'community-feed' community.slug %}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to feed</a>
+
+  {# Match header #}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mt-4">
+    <p class="text-sm text-gray-600">Need: <a href="{% url 'need-detail' community.slug match.need.id %}" class="text-blue-600 hover:text-blue-800 font-medium">{{ match.need.title }}</a></p>
+    {% if match.offer %}
+    <p class="text-sm text-gray-600 mt-1">Offer: <a href="{% url 'offer-detail' community.slug match.offer.id %}" class="text-blue-600 hover:text-blue-800 font-medium">{{ match.offer.title }}</a></p>
+    {% endif %}
+  </div>
+
+  {# Timeline #}
+  {% include "components/_match_timeline.html" %}
+
+  {# Contact info box #}
+  {% include "components/_contact_info_box.html" %}
+
+  {# Action buttons (state-dependent) #}
+  {% if match.status == "proposed" and is_participant %}
+  <div class="flex gap-3 mt-6">
+    <form method="post" action="{% url 'match-update' community.slug match.id %}"
+          x-data="{ confirm: false }">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="accepted">
+      <button type="button" @click="confirm = true" class="bg-[var(--umi-primary)] hover:bg-[#16213E] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px]">Accept Match</button>
+      {# Confirmation dialog #}
+      <div x-show="confirm" x-cloak class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.away="confirm = false">
+          <h3 class="text-lg font-semibold text-gray-900">Accept this match?</h3>
+          <p class="text-base text-gray-600 mt-2">Your contact info will be shared with the other party.</p>
+          <div class="flex gap-3 mt-6 justify-end">
+            <button type="button" @click="confirm = false" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 min-h-[44px]">Cancel</button>
+            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg px-4 py-2 min-h-[44px]">Yes, Accept</button>
+          </div>
+        </div>
+      </div>
+    </form>
+    <form method="post" action="{% url 'match-update' community.slug match.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="cancelled">
+      <button type="submit" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 min-h-[44px]">Decline</button>
+    </form>
+  </div>
+  {% elif match.status == "accepted" and is_participant %}
+  <div class="flex gap-3 mt-6">
+    <form method="post" action="{% url 'match-update' community.slug match.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="fulfilled">
+      <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-lg min-h-[48px]">Mark Fulfilled</button>
+    </form>
+    <form method="post" action="{% url 'match-update' community.slug match.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="cancelled">
+      <button type="submit" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 min-h-[44px]">Cancel</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

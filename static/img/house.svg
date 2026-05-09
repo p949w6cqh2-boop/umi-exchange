@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <title>House</title>
+  <!-- Simple house outline -->
+  <path d="M100 40L40 90v70h50v-40h20v40h50V90L100 40z" stroke="#1A1A2E" stroke-width="3" stroke-linejoin="round" fill="none"/>
+  <!-- Door -->
+  <rect x="88" y="120" width="24" height="40" rx="2" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+  <circle cx="106" cy="142" r="2" fill="#1A1A2E"/>
+  <!-- Chimney -->
+  <rect x="125" y="55" width="14" height="30" rx="1" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+  <!-- Heart in the house -->
+  <path d="M100 95c-3-8-12-10-16-5s-2 12 16 22c18-10 20-17 16-22s-13-3-16 5z" fill="#FBBF24" opacity="0.6"/>
+</svg>

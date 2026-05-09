@@ -1,7 +1,0 @@
-2026/05/02-02:43:20.956 23 Reusing MANIFEST /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_drive.proton.me_0.indexeddb.leveldb/MANIFEST-000001
-2026/05/02-02:43:20.958 23 Recovering log #3
-2026/05/02-02:43:20.961 23 Reusing old log /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_drive.proton.me_0.indexeddb.leveldb/000003.log 
-2026/05/02-03:47:05.407 24 Level-0 table #5: started
-2026/05/02-03:47:05.412 24 Level-0 table #5: 214235 bytes OK
-2026/05/02-03:47:05.416 24 Delete type=0 #3
-2026/05/02-03:47:05.416 24 Manual compaction at level-0 from (begin) .. (end); will stop at (end)

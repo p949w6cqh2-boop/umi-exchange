@@ -1,0 +1,13 @@
+{# UMI Protocol conformance badge — displayed in footer and settings. #}
+{# Shows the current conformance level (core/extended). #}
+<a href="https://umi-protocol.org/spec/v0.1" target="_blank" rel="noopener noreferrer"
+   class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors
+   {% if umi_conformance == 'extended' %}border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100
+   {% else %}border-gray-300 bg-gray-50 text-gray-600 hover:bg-gray-100{% endif %}"
+   title="This instance conforms to UMI Protocol v0.1 at {{ umi_conformance|default:'core'|title }} level">
+  <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <span>UMI v0.1 {{ umi_conformance|default:"core"|title }}</span>
+</a>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <title>Lock — Privacy</title>
+  <!-- Lock body -->
+  <rect x="60" y="95" width="80" height="60" rx="8" stroke="#1A1A2E" stroke-width="3" fill="none"/>
+  <!-- Lock shackle -->
+  <path d="M75 95V75a25 25 0 0150 0v20" stroke="#1A1A2E" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- Keyhole -->
+  <circle cx="100" cy="120" r="8" fill="#1A1A2E"/>
+  <rect x="97" y="125" width="6" height="15" rx="2" fill="#1A1A2E"/>
+  <!-- Shield glow -->
+  <circle cx="100" cy="115" r="45" stroke="#3B82F6" stroke-width="1" fill="none" opacity="0.15"/>
+</svg>

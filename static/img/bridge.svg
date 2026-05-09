@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <title>Bridge</title>
+  <!-- Bridge arch -->
+  <path d="M20 140 Q100 60 180 140" stroke="#1A1A2E" stroke-width="3" fill="none"/>
+  <!-- Bridge deck -->
+  <line x1="20" y1="140" x2="180" y2="140" stroke="#1A1A2E" stroke-width="3" stroke-linecap="round"/>
+  <!-- Support pillars -->
+  <line x1="60" y1="118" x2="60" y2="140" stroke="#1A1A2E" stroke-width="2"/>
+  <line x1="100" y1="100" x2="100" y2="140" stroke="#1A1A2E" stroke-width="2"/>
+  <line x1="140" y1="118" x2="140" y2="140" stroke="#1A1A2E" stroke-width="2"/>
+  <!-- People on each side -->
+  <circle cx="35" cy="125" r="5" fill="#3B82F6"/>
+  <circle cx="165" cy="125" r="5" fill="#FBBF24"/>
+</svg>

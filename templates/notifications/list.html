@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="flex items-center justify-between py-4">
+    <h1 class="text-xl font-semibold text-gray-900">Notifications</h1>
+    <form method="post" action="{% url 'notifications-mark-read' %}">
+      {% csrf_token %}
+      <button type="submit" class="text-sm text-blue-600 hover:text-blue-800 min-h-[44px]">Mark all read</button>
+    </form>
+  </div>
+  <div class="space-y-3">
+    {% for n in notifications %}
+    <div class="bg-white rounded-lg border border-gray-200 p-4 {% if not n.is_read %}border-l-4 border-l-blue-400{% endif %}">
+      <p class="text-base text-gray-900 font-medium">{{ n.title }}</p>
+      <p class="text-sm text-gray-600 mt-1">{{ n.body }}</p>
+      <div class="flex items-center justify-between mt-2">
+        <span class="text-xs text-gray-400">{{ n.created_at|timesince }} ago</span>
+        {% if n.link %}<a href="{{ n.link }}" class="text-xs text-blue-600 hover:text-blue-800">View &rarr;</a>{% endif %}
+      </div>
+    </div>
+    {% empty %}
+    {% include "components/_empty_state.html" with message="No notifications yet." %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

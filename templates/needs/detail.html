@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ need.title }} — {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <a href="{% url 'community-feed' community.slug %}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to feed</a>
+
+  {# Need header #}
+  <div class="bg-amber-50 rounded-xl p-6 mt-4">
+    <div class="flex items-start justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">{{ need.category.icon }}</span>
+        <span class="text-sm text-gray-500">{{ need.category.name }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-medium px-2 py-0.5 rounded-full {% if need.urgency == 'critical' %}bg-red-100 text-red-800{% elif need.urgency == 'high' %}bg-orange-100 text-orange-800{% elif need.urgency == 'medium' %}bg-amber-100 text-amber-800{% else %}bg-green-100 text-green-800{% endif %}">{{ need.get_urgency_display }}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full {% if need.status == 'open' %}bg-green-100 text-green-800{% elif need.status == 'fulfilled' %}bg-blue-100 text-blue-800{% else %}bg-gray-200 text-gray-700{% endif %}">{{ need.get_status_display }}</span>
+      </div>
+    </div>
+    <h1 class="text-xl font-semibold text-gray-900 mt-2">{{ need.title }}</h1>
+    <div class="text-sm text-gray-500 mt-2">
+      Posted by {{ need.requester.display_name }}
+      {% if need.neighborhood %}&middot; {{ need.neighborhood }}
+        <span class="relative group inline-block">
+          <svg class="w-3.5 h-3.5 text-gray-300 cursor-help inline" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 w-56 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            This area is visible to all community members. It helps volunteers locate you but is not your exact address.
+          </span>
+        </span>
+      {% endif %}
+      &middot; {{ need.created_at|timesince }} ago
+    </div>
+    {% if need.description %}
+    <p class="text-base text-gray-700 mt-4">{{ need.description }}</p>
+    {% endif %}
+  </div>
+
+  {# Contact info box: locked state (protocol Section 8.2) #}
+  {% include "components/_contact_info_box.html" with show_contact=False %}
+
+  {# Suggested offers #}
+  {% if need.status == "open" %}
+  <div class="mt-8">
+    <h2 class="text-lg font-semibold text-gray-900">Suggested Offers</h2>
+    <div class="mt-4 space-y-3">
+      {% for offer in suggested_offers %}
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-medium text-gray-900">{{ offer.title }}</h3>
+          <p class="text-sm text-gray-500">{{ offer.offerer.display_name }}</p>
+        </div>
+        {% if not is_own_need %}
+        <form method="post" action="{% url 'match-propose' community.slug %}">
+          {% csrf_token %}
+          <input type="hidden" name="need_id" value="{{ need.id }}">
+          <input type="hidden" name="offer_id" value="{{ offer.id }}">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px]">Propose Match</button>
+        </form>
+        {% else %}
+        <span class="text-sm text-gray-400">This is your need</span>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p class="text-sm text-gray-500">No offers in this category yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# Existing matches #}
+  {% if matches %}
+  <div class="mt-8">
+    <h2 class="text-lg font-semibold text-gray-900">Matches</h2>
+    {% for m in matches %}
+    <a href="{% url 'match-detail' community.slug m.id %}" class="block mt-3 bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-medium text-gray-900">{{ m.proposed_by.display_name }} &rarr; {{ need.title }}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full {% if m.status == 'proposed' %}bg-amber-100 text-amber-800{% elif m.status == 'accepted' %}bg-blue-100 text-blue-800{% elif m.status == 'fulfilled' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-600{% endif %}">{{ m.get_status_display }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

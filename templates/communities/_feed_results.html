@@ -1,0 +1,10 @@
+{% load static %}
+{% for item in items %}
+  {% if item.item_type == "need" %}
+    {% include "components/_need_card.html" with need=item %}
+  {% else %}
+    {% include "components/_offer_card.html" with offer=item %}
+  {% endif %}
+{% empty %}
+  {% include "components/_empty_state.html" with message="No needs or offers yet. Start by posting what you need or can offer." illustration=True %}
+{% endfor %}

@@ -1,0 +1,28 @@
+{# Need card: warm amber accent. No contact info ever shown (Protocol Section 8.2). #}
+<a href="{% url 'need-detail' community.slug need.id %}"
+   class="block bg-amber-50 border-l-4 {% if need.urgency == 'critical' %}border-red-500{% else %}border-amber-400{% endif %} rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+   aria-label="Need: {{ need.title }}">
+  <div class="flex items-start justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">{{ need.category.icon }}</span>
+      <span class="text-sm text-gray-500">{{ need.category.name }}</span>
+    </div>
+    <span class="text-xs font-medium px-2 py-0.5 rounded-full
+      {% if need.urgency == 'low' %}bg-green-100 text-green-800
+      {% elif need.urgency == 'medium' %}bg-amber-100 text-amber-800
+      {% elif need.urgency == 'high' %}bg-orange-100 text-orange-800
+      {% else %}bg-red-100 text-red-800{% if need.urgency == 'critical' %} animate-pulse{% endif %}{% endif %}">
+      {{ need.get_urgency_display }}
+    </span>
+  </div>
+  <h3 class="text-lg font-semibold text-gray-900 mt-2 line-clamp-1">{{ need.title }}</h3>
+  {% if need.description %}
+  <p class="text-base text-gray-600 mt-1 line-clamp-2">{{ need.description }}</p>
+  {% endif %}
+  <div class="flex items-center gap-2 mt-3 text-sm text-gray-500">
+    <span>{{ need.requester.display_name }}</span>
+    {% if need.neighborhood %}<span>&middot;</span><span>{{ need.neighborhood }}</span>{% endif %}
+    <span>&middot;</span>
+    <span>{{ need.created_at|timesince }} ago</span>
+  </div>
+</a>

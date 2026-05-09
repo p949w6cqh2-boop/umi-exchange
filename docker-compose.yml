@@ -1,0 +1,79 @@
+# UMI Exchange — Development Docker Compose
+# Usage: docker compose up -d
+# Then:  docker compose exec app python manage.py migrate
+#        docker compose exec app python manage.py createsuperuser
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: umi_exchange
+      POSTGRES_USER: umi
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-umi}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umi"]
+      interval: 5s
+      retries: 5
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+    networks:
+      - backend
+
+  app:
+    build: .
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --reload
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DATABASE_URL=postgres://umi:${DB_PASSWORD:-umi}@db:5432/umi_exchange
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - static_files:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - static_files:/srv/static:ro
+    depends_on:
+      - app
+    networks:
+      - backend
+      - frontend
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_files:
+
+networks:
+  backend:
+    internal: true
+  frontend:

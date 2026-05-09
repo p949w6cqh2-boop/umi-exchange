@@ -1,0 +1,28 @@
+{# Category selection grid — used in need/offer creation forms. #}
+{# Expects `categories` queryset and a hidden input with name="category" in the parent form. #}
+{# Uses Alpine.js for selection state; falls back to radio buttons without JS. #}
+<fieldset>
+  <legend class="text-sm font-medium text-gray-700 mb-2">Category</legend>
+  <div x-data="{ selected: '{{ form.category.value|default:'' }}' }"
+       class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2"
+       role="radiogroup" aria-label="Select a category">
+    {% for cat in categories %}
+    <label
+      :class="selected === '{{ cat.id }}' ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
+      class="flex flex-col items-center gap-1 p-3 rounded-xl border cursor-pointer transition-all min-h-[44px]"
+      @click="selected = '{{ cat.id }}'; $refs.catInput.value = '{{ cat.id }}'"
+    >
+      <input type="radio" name="category_radio" value="{{ cat.id }}"
+             class="sr-only" :checked="selected === '{{ cat.id }}'">
+      <span class="text-2xl" aria-hidden="true">{{ cat.icon }}</span>
+      <span class="text-xs text-gray-700 text-center leading-tight">{{ cat.name }}</span>
+    </label>
+    {% endfor %}
+    {# Hidden input that the form actually reads #}
+    <input type="hidden" name="category" x-ref="catInput" :value="selected"
+           value="{{ form.category.value|default:'' }}">
+  </div>
+  {% if form.category.errors %}
+  <p class="text-red-600 text-sm mt-1">{{ form.category.errors.0 }}</p>
+  {% endif %}
+</fieldset>

@@ -1,6 +1,0 @@
-2026-05-08 18:21:08.467 [info] Experiment 'pythonSurveyNotificationcf' is active
-2026-05-08 18:21:08.467 [warning] Dir "/home/umi/umi-exchange/.pixi/envs" is not watchable (directory does not exist)
-2026-05-08 18:21:08.467 [info] Python interpreter path: /bin/python3
-2026-05-08 18:21:08.816 [info] > pyenv which python
-2026-05-08 18:21:08.816 [info] cwd: .
-2026-05-08 18:21:09.009 [info] Editor support is inactive since language server is set to None.

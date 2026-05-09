@@ -1,0 +1,60 @@
+{# Match timeline: visual state machine. Protocol Section 4.3. #}
+<div class="relative border-l-2 border-gray-300 ml-3 pl-6 space-y-6 mt-4" role="list" aria-label="Match timeline">
+  {# Step 1: Proposed #}
+  <div class="relative" role="listitem">
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
+      {% if match.status != 'proposed' %}bg-emerald-500 text-white{% else %}bg-blue-100 ring-2 ring-blue-500{% endif %}"
+      {% if match.status == 'proposed' %}aria-current="step"{% endif %}>
+      {% if match.status != 'proposed' %}&#10003;{% endif %}
+    </div>
+    <p class="text-sm font-medium text-gray-900">Proposed</p>
+    <p class="text-sm text-gray-500">{{ match.proposed_by.display_name }} &middot; {{ match.proposed_at|date:"M j, Y g:i A" }}</p>
+  </div>
+
+  {# Step 2: Accepted #}
+  {% if match.status in 'accepted,fulfilled' %}
+  <div class="relative" role="listitem">
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
+      {% if match.status == 'fulfilled' %}bg-emerald-500 text-white{% else %}bg-blue-100 ring-2 ring-blue-500{% endif %}"
+      {% if match.status == 'accepted' %}aria-current="step"{% endif %}>
+      {% if match.status == 'fulfilled' %}&#10003;{% endif %}
+    </div>
+    <p class="text-sm font-medium text-gray-900">Accepted</p>
+    {% if match.accepted_at %}<p class="text-sm text-gray-500">{{ match.accepted_at|date:"M j, Y g:i A" }}</p>{% endif %}
+  </div>
+  {% elif match.status == 'proposed' %}
+  <div class="relative" role="listitem">
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-gray-200"></div>
+    <p class="text-sm text-gray-400">Accepted (pending)</p>
+  </div>
+  {% endif %}
+
+  {# Step 3: Fulfilled #}
+  {% if match.status == 'fulfilled' %}
+  <div class="relative" role="listitem">
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">&#10003;</div>
+    <p class="text-sm font-medium text-gray-900">Fulfilled</p>
+    {% if match.fulfilled_at %}<p class="text-sm text-gray-500">{{ match.fulfilled_at|date:"M j, Y g:i A" }}</p>{% endif %}
+    {% if match.notes %}<p class="text-sm text-gray-600 mt-1">{{ match.notes|linebreaksbr }}</p>{% endif %}
+  </div>
+  {% elif match.status in 'accepted,proposed' %}
+  <div class="relative" role="listitem">
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-gray-200"></div>
+    <p class="text-sm text-gray-400">Fulfilled (pending)</p>
+  </div>
+  {% endif %}
+
+  {# Terminal: Cancelled / Expired #}
+  {% if match.status == 'cancelled' %}
+  <div class="relative" role="listitem">
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">&#10007;</div>
+    <p class="text-sm font-medium text-red-700">Cancelled</p>
+    <p class="text-sm text-gray-500">{{ match.cancelled_at|date:"M j, Y g:i A" }}</p>
+  </div>
+  {% elif match.status == 'expired' %}
+  <div class="relative" role="listitem">
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center text-xs">&#8856;</div>
+    <p class="text-sm text-gray-500">Expired</p>
+  </div>
+  {% endif %}
+</div>

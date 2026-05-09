@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ offer.title }} — {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <a href="{% url 'community-feed' community.slug %}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to feed</a>
+  <div class="bg-blue-50 rounded-xl p-6 mt-4">
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">{{ offer.category.icon }}</span>
+        <span class="text-sm text-gray-500">{{ offer.category.name }}</span>
+      </div>
+      <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">{{ offer.get_status_display }}</span>
+    </div>
+    <h1 class="text-xl font-semibold text-gray-900 mt-2">{{ offer.title }}</h1>
+    <p class="text-sm text-gray-500 mt-2">{{ offer.offerer.display_name }} &middot; {{ offer.created_at|timesince }} ago</p>
+    {% if offer.description %}<p class="text-base text-gray-700 mt-4">{{ offer.description }}</p>{% endif %}
+  </div>
+
+  {% if offer.status == "active" %}
+  <div class="mt-8">
+    <h2 class="text-lg font-semibold text-gray-900">Matching Needs</h2>
+    <div class="mt-4 space-y-3">
+      {% for need in matching_needs %}
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-medium text-gray-900">{{ need.title }}</h3>
+          <p class="text-sm text-gray-500">{{ need.requester.display_name }} &middot; {{ need.get_urgency_display }}</p>
+        </div>
+        {% if not is_own_offer %}
+        <form method="post" action="{% url 'match-propose' community.slug %}">
+          {% csrf_token %}
+          <input type="hidden" name="need_id" value="{{ need.id }}">
+          <input type="hidden" name="offer_id" value="{{ offer.id }}">
+          <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px]">Propose Match</button>
+        </form>
+        {% else %}
+        <span class="text-sm text-gray-400">This is your offer</span>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p class="text-sm text-gray-500">No open needs in this category yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

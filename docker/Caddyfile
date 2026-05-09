@@ -1,0 +1,9 @@
+# Replace with your domain
+:80 {
+    reverse_proxy app:8000
+}
+
+# For HTTPS with a real domain, use:
+# yourdomain.org {
+#     reverse_proxy app:8000
+# }

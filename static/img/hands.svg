@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <title>Helping Hands</title>
+  <!-- Two hands reaching toward each other -->
+  <path d="M40 130c10-20 30-40 50-50 5-3 10-2 12 3l8 20c2 5 0 10-5 12-15 8-25 20-30 35" stroke="#1A1A2E" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M160 130c-10-20-30-40-50-50-5-3-10-2-12 3l-8 20c-2 5 0 10 5 12 15 8 25 20 30 35" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- Connection point -->
+  <circle cx="100" cy="80" r="4" fill="#FBBF24"/>
+  <circle cx="100" cy="80" r="12" stroke="#FBBF24" stroke-width="1.5" fill="none" opacity="0.4"/>
+  <circle cx="100" cy="80" r="20" stroke="#FBBF24" stroke-width="1" fill="none" opacity="0.2"/>
+</svg>

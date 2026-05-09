@@ -1,0 +1,79 @@
+# Production deployment: docker compose -f docker/docker-compose.prod.yml up -d
+services:
+  app:
+    image: ghcr.io/your-org/umi-exchange:latest  # Update after first CI build
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - DATABASE_URL=postgres://umi:${DB_PASSWORD}@db:5432/umi_exchange
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - app_logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: umi
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: umi_exchange
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - pgbackups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umi"]
+      interval: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - app
+
+  # Optional: Uptime monitoring
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime_data:/app/data
+    profiles: ["monitoring"]  # Only starts with: docker compose --profile monitoring up
+
+volumes:
+  pgdata:
+  pgbackups:
+  redisdata:
+  caddydata:
+  caddyconfig:
+  app_logs:
+  uptime_data:

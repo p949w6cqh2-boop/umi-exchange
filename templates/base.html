@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ community.name|default:"UMI Exchange" }}{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <style>
+    :root {
+      --umi-primary: {{ umi_primary|default:"#1A1A2E" }};
+      --umi-accent: {{ umi_accent|default:"#3B82F6" }};
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+  <script src="https://unpkg.com/htmx.org@1.9.11" defer></script>
+  <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-50 font-sans text-base text-gray-900 min-h-screen flex flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to content</a>
+
+  {% block header %}
+  <header class="sticky top-0 z-10 bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        {% if community %}
+          <a href="{% url 'community-feed' community.slug %}" class="text-lg font-semibold text-gray-900 hover:text-gray-700">
+            {{ community.name }}
+          </a>
+        {% else %}
+          <a href="{% url 'landing' %}" class="text-lg font-semibold text-gray-900">UMI Exchange</a>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-4">
+        {% if user.is_authenticated %}
+          {% include "components/_notification_badge.html" %}
+          <a href="{% url 'account-settings' %}" class="text-sm text-gray-600 hover:text-gray-900 min-h-[44px] flex items-center" aria-label="Account settings">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="text-sm text-gray-600 hover:text-gray-900 min-h-[44px] flex items-center">Sign In</a>
+          <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[#16213E] text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px] flex items-center">Join</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  {% endblock %}
+
+  <main id="main" class="flex-grow max-w-7xl mx-auto px-4 md:px-8 py-4 w-full">
+    {% if messages %}
+    <div class="mb-4 space-y-2">
+      {% for msg in messages %}
+      <div class="rounded-lg p-3 text-sm {% if msg.tags == 'success' %}bg-emerald-50 border border-emerald-200 text-emerald-800{% elif msg.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}">
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-gray-200 py-6 mt-8">
+    <div class="max-w-7xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span class="text-xs text-gray-400">&copy; 2026 UMI Exchange</span>
+      <a href="https://umi-protocol.org/spec/v0.1" class="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        &#9889; Built on UMI Protocol v0.1 &mdash; Build your own
+      </a>
+    </div>
+  </footer>
+</body>
+</html>

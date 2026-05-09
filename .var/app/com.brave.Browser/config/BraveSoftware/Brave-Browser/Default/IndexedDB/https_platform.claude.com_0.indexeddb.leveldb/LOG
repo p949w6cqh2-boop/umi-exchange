@@ -1,6 +1,0 @@
-2026/05/03-00:07:36.145 23 Creating DB /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_platform.claude.com_0.indexeddb.leveldb since it was missing.
-2026/05/03-00:07:36.152 23 Reusing MANIFEST /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_platform.claude.com_0.indexeddb.leveldb/MANIFEST-000001
-2026/05/03-00:07:38.429 25 Level-0 table #5: started
-2026/05/03-00:07:38.431 25 Level-0 table #5: 841 bytes OK
-2026/05/03-00:07:38.433 25 Delete type=0 #3
-2026/05/03-00:07:38.434 25 Manual compaction at level-0 from (begin) .. (end); will stop at (end)

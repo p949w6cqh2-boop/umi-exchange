@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Join a Community{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-8 md:mt-16">
+  <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8 text-center">
+    <h1 class="text-xl font-semibold text-gray-900 mb-6">Join a Community</h1>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="{{ form.join_code.id_for_label }}" class="text-sm font-medium text-gray-700 mb-1 block">Enter your join code:</label>
+        {{ form.join_code }}
+        {% if form.join_code.errors %}<p class="text-sm text-red-600 mt-1">{{ form.join_code.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="{{ form.display_name.id_for_label }}" class="text-sm font-medium text-gray-700 mb-1 block">Choose a display name:</label>
+        {{ form.display_name }}
+      </div>
+      <button type="submit" class="w-full bg-[var(--umi-primary)] hover:bg-[#16213E] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] mt-6">
+        Join Community
+      </button>
+    </form>
+    <p class="text-sm text-gray-500 mt-6">Or <a href="{% url 'community-create' %}" class="text-blue-600 hover:text-blue-800">create a new community</a></p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* UMI Custom Properties — override via community settings */
+:root {
+  --umi-primary: #1A1A2E;
+  --umi-primary-hover: #16213E;
+  --umi-accent: #3B82F6;
+  --umi-need-accent: #FBBF24;
+  --umi-offer-accent: #60A5FA;
+}
+
+/* Focus indicators — WCAG 2.1 AA compliant */
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+  }
+}
+
+/* Alpine.js x-cloak: hide elements until Alpine initializes */
+[x-cloak] { display: none !important; }

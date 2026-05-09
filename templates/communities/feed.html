@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  {# Filter Bar #}
+  <div class="flex flex-wrap items-center gap-3 p-3 bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+    <select name="category" hx-get="{% url 'community-feed' community.slug %}"
+            hx-target="#feed-results" hx-swap="innerHTML" hx-include="[name='urgency'],[name='q']"
+            class="border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px]">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+      <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="urgency" hx-get="{% url 'community-feed' community.slug %}"
+            hx-target="#feed-results" hx-swap="innerHTML" hx-include="[name='category'],[name='q']"
+            class="border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px]">
+      <option value="">Any Urgency</option>
+      <option value="low">Low</option><option value="medium">Medium</option>
+      <option value="high">High</option><option value="critical">Critical</option>
+    </select>
+    <input type="text" name="q" placeholder="Search..."
+           hx-get="{% url 'community-feed' community.slug %}" hx-target="#feed-results"
+           hx-trigger="keyup changed delay:300ms" hx-include="[name='category'],[name='urgency']"
+           class="border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px] flex-grow">
+  </div>
+
+  {# Feed Results #}
+  <div id="feed-results" class="flex flex-col gap-4">
+    {% include "communities/_feed_results.html" %}
+  </div>
+
+  {# Mobile FAB #}
+  <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-20 sm:hidden">
+    <div x-show="open" x-cloak class="flex flex-col gap-3 items-end mb-3">
+      <a href="{% url 'need-create' community.slug %}" class="bg-amber-500 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg min-h-[44px] flex items-center">Post Need</a>
+      <a href="{% url 'offer-create' community.slug %}" class="bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg min-h-[44px] flex items-center">Post Offer</a>
+    </div>
+    <button @click="open = !open" class="w-14 h-14 rounded-full bg-[var(--umi-primary)] text-white shadow-lg flex items-center justify-center text-2xl" aria-label="Post need or offer">
+      <span x-text="open ? '&times;' : '+'"></span>
+    </button>
+  </div>
+
+  {# Desktop inline buttons #}
+  <div class="hidden sm:flex gap-3 mt-6">
+    <a href="{% url 'need-create' community.slug %}" class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-lg min-h-[48px] flex items-center">Post a Need</a>
+    <a href="{% url 'offer-create' community.slug %}" class="bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-lg min-h-[48px] flex items-center">Post an Offer</a>
+  </div>
+</div>
+{% endblock %}

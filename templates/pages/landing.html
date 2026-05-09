@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block header %}
+<header class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+    <span class="text-xl font-bold text-gray-900">UMI Exchange</span>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'login' %}" class="text-sm font-medium text-gray-700 hover:text-gray-900 min-h-[44px] flex items-center">Sign In</a>
+      <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[#16213E] text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px] flex items-center">Join a Community</a>
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="text-center py-12 md:py-20">
+  <h1 class="text-2xl md:text-4xl font-bold text-gray-900">Connect people who need help<br>with people who can help.</h1>
+  <p class="text-lg text-gray-600 mt-4 max-w-2xl mx-auto">A simple, private tool for coordinating mutual aid in your community.</p>
+  <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+    <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[#16213E] text-white font-semibold px-8 py-3 rounded-lg min-h-[48px]">Join a Community</a>
+    <a href="{% url 'technology' %}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-3 rounded-lg min-h-[48px]">Learn More</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-12 max-w-4xl mx-auto">
+  <div class="text-center"><span class="text-4xl">&#129309;</span><h3 class="text-lg font-semibold mt-4">Match</h3><p class="text-base text-gray-600 mt-2">Needs meet offers. A coordinator connects them.</p></div>
+  <div class="text-center"><span class="text-4xl">&#128274;</span><h3 class="text-lg font-semibold mt-4">Private</h3><p class="text-base text-gray-600 mt-2">Contact info shared only after mutual agreement.</p></div>
+  <div class="text-center"><span class="text-4xl">&#127760;</span><h3 class="text-lg font-semibold mt-4">Open Standard</h3><p class="text-base text-gray-600 mt-2">Built on UMI Protocol v0.1. Self-hostable. Interoperable.</p></div>
+</div>
+
+<div class="bg-gray-50 py-12 px-4 border-t border-gray-200 -mx-4 md:-mx-8">
+  <div class="max-w-3xl mx-auto text-center">
+    <h2 class="text-xl font-semibold text-gray-900">For dioceses, networks, and agencies</h2>
+    <p class="text-base text-gray-600 mt-4">Deploy across multiple communities with centralised oversight. Integrate with existing systems via the UMI Protocol API.</p>
+    <a href="mailto:hello@umi-exchange.org" class="mt-6 inline-block bg-[var(--umi-primary)] text-white font-medium px-6 py-3 rounded-lg min-h-[48px]">Contact us about network deployment</a>
+  </div>
+</div>
+{% endblock %}
