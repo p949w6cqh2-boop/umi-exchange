@@ -1,0 +1,15 @@
+2026-05-08 18:21:04.817 [info] Extension host with pid 17226 started
+2026-05-08 18:21:04.817 [info] Skipping acquiring lock for /home/umi/.config/Antigravity/User/workspaceStorage/1cc6514b7623837b5f0c5893c9492296.
+2026-05-08 18:21:05.477 [info] ExtensionService#_doActivateExtension vscode.emmet, startup: false, activationEvent: 'onLanguage'
+2026-05-08 18:21:05.689 [info] ExtensionService#_doActivateExtension vscode.git-base, startup: true, activationEvent: '*', root cause: google.antigravity
+2026-05-08 18:21:05.700 [info] ExtensionService#_doActivateExtension ms-python.python, startup: true, activationEvent: 'workspaceContains:pyproject.toml'
+2026-05-08 18:21:06.593 [info] ExtensionService#_doActivateExtension vscode.git, startup: true, activationEvent: '*', root cause: google.antigravity
+2026-05-08 18:21:06.793 [info] ExtensionService#_doActivateExtension vscode.github, startup: true, activationEvent: '*'
+2026-05-08 18:21:07.100 [info] ExtensionService#_doActivateExtension google.antigravity, startup: true, activationEvent: '*'
+2026-05-08 18:21:12.003 [info] ExtensionService#_doActivateExtension vscode.terminal-suggest, startup: false, activationEvent: 'onTerminalShellIntegration:*'
+2026-05-08 18:21:15.641 [info] Eager extensions activated
+2026-05-08 18:21:15.670 [info] ExtensionService#_doActivateExtension google.antigravity-dev-containers, startup: false, activationEvent: 'onStartupFinished'
+2026-05-08 18:21:15.687 [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch, startup: false, activationEvent: 'onStartupFinished'
+2026-05-08 18:21:15.694 [info] ExtensionService#_doActivateExtension vscode.merge-conflict, startup: false, activationEvent: 'onStartupFinished'
+2026-05-08 18:25:54.978 [info] Extension host terminating: renderer closed the MessagePort
+2026-05-08 18:25:55.173 [info] Extension host with pid 17226 exiting with code 0

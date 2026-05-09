@@ -1,0 +1,173 @@
+# TASK
+
+Generate a complete, production‑ready Django project for the UMI Protocol v0.1 reference implementation at Core conformance level, including all optional refinements (QR join, households, VPS hardening script, optional 2FA, metadata privacy mitigations). The output must be a self‑contained project that can be deployed locally or on a server using Docker. Provide every file as a code block with its path from the project root.
+
+
+
+## MENTAL MODEL
+
+You are a senior full‑stack developer who has built many Django applications that scale from a single parish to a diocese. You write clean, secure, accessible code using the “boring technology” stack: Django, PostgreSQL, Redis, HTMX, Alpine.js, Tailwind CSS, Docker. You follow Django best practices: custom user model, environment‑based settings, class‑based views, and HTMX for dynamic interactions. You include comprehensive docstrings, comments, and error handling. You never compromise on privacy or accessibility.
+
+
+
+## SOURCE MATERIAL
+
+- The UMI Protocol v0.1 specification (entities: Need, Offer, Match, Consent, Referral, Attestation; state machines; security rules).
+
+- The high‑fidelity visual specification (for UI hints – focus on functionality, not exact pixel perfection).
+
+- The Core Exchange implementation plan (10‑week schedule, but we need the code now).
+
+- The refinements: QR join, households, VPS hardening script, optional 2FA, metadata privacy (neighbourhood warnings, tooltips, community‑level config).
+
+- The production hardening layer: health check, Sentry integration, security headers, structured logging, CI/CD pipelines (as `.github/workflows`), multi‑stage Dockerfile, production Docker Compose, backup/restore scripts, staging settings, scaling docs.
+
+
+
+## DELIVERABLES
+
+Generate the entire project as a set of files with paths and content. Include at minimum:
+
+
+
+### 1. Configuration and Root Files
+
+- `manage.py`
+
+- `.env.example` (all environment variables: SECRET_KEY, DATABASE_URL, REDIS_URL, SENTRY_DSN, ENCRYPTION_KEY, etc.)
+
+- `requirements.txt` (all dependencies: Django, DRF, psycopg, django‑redis, django‑htmx, django‑allauth, django‑guardian, django‑ratelimit, cryptography, django‑two‑factor‑auth, qrcode, sentry‑sdk, etc.)
+
+- `pyproject.toml` (ruff configuration)
+
+- `tailwind.config.js` (Tailwind setup)
+
+- `docker-compose.yml` (development: PostgreSQL, Redis, app)
+
+- `docker-compose.prod.yml` (production: app, db, redis, caddy, uptime‑kuma)
+
+- `Dockerfile` (multi‑stage, non‑root user, healthcheck)
+
+- `Caddyfile` (production reverse proxy with security headers)
+
+- `LICENSE` (AGPL‑3.0)
+
+- `README.md` (setup instructions, environment variables, deployment overview)
+
+
+
+### 2. Django Project Configuration
+
+- `config/settings/base.py`, `development.py`, `production.py`, `staging.py`
+
+- `config/urls.py`, `wsgi.py`, `asgi.py`
+
+
+
+### 3. Apps (complete with models, views, forms, templates, URLs)
+
+- **accounts**: Custom User model (email optional, username login), registration/login (rate‑limited), profile settings (2FA toggle, household management).
+
+- **households**: Household model, create/join views, registration integration.
+
+- **communities**: Community, Member, Category models; join‑via‑code; community settings (QR code generation, neighbourhood mode).
+
+- **needs**: Need model (with `on_behalf_of` encryption), create/detail views, soft validation for neighbourhood privacy.
+
+- **offers**: Offer model (availability JSON, radius), create/detail views.
+
+- **matches**: Match model with state machine, proposal/accept/fulfill/cancel views, contact revelation logic, race condition handling (SELECT FOR UPDATE).
+
+- **notifications**: Notification model, adapter (in‑app and email), header badge.
+
+- **dashboard**: Coordinator dashboard (metrics, stale needs, category chart, export CSV).
+
+- **audit**: AuditLog model, middleware, management command to set DB permissions (INSERT only).
+
+- **health**: Health check endpoint (db, cache).
+
+- **consent**: Consent model (stub for Core, full UI for Extended).
+
+
+
+### 4. Templates
+
+- `base.html` (HTMX/Alpine includes, CSS variables, protocol badge, toast container)
+
+- Components: `_need_card.html`, `_offer_card.html`, `_category_grid.html`, `_urgency_selector.html`, `_match_timeline.html`, `_contact_info_box.html`, `_metric_card.html`, `_filter_bar.html`, `_notification_badge.html`, `_primary_button.html`, `_protocol_badge.html`, `_trust_badge.html`, `_empty_state.html`
+
+- Page templates: `landing.html`, `login.html`, `register.html`, `join.html`, `feed.html`, `need_create.html`, `need_detail.html`, `offer_create.html`, `offer_detail.html`, `match_detail.html`, `dashboard.html`, `settings.html`, `household_create.html`, `household_join.html`, `technology.html`
+
+
+
+### 5. Static Assets
+
+- `static/css/input.css` (Tailwind directives)
+
+- `static/js/alpine.js` (placeholder, use CDN in prod)
+
+- `static/img/` (SVG illustrations – provide simple placeholders: hands.svg, ripple.svg, house.svg, bridge.svg, lock.svg, seedling.svg, network.svg, gear.svg)
+
+
+
+### 6. Scripts (executable)
+
+- `scripts/harden.sh` (VPS hardening: unattended‑upgrades, ufw, fail2ban, ssh hardening, logwatch)
+
+- `scripts/backup.sh` (pg_dump to compressed file, optionally upload to Backblaze B2)
+
+- `scripts/restore.sh` (restore from backup, stops app, runs migrations)
+
+- `scripts/deploy.sh` (backup, pull new image, restart, health check, rollback on failure)
+
+
+
+### 7. CI/CD
+
+- `.github/workflows/ci.yml` (lint, security scan, tests, coverage, Docker test build)
+
+- `.github/workflows/deploy.yml` (build, push to GHCR, deploy via SSH)
+
+
+
+### 8. Documentation
+
+- `docs/deployment-checklist.md` (pre‑deployment, deployment, post‑deployment, rollback, maintenance)
+
+- `docs/scaling.md` (connection pooling, worker scaling, horizontal scaling, S3 for media)
+
+
+
+## CONSTRAINTS
+
+- All code must be production‑ready (error handling, logging, security).
+
+- Use Django’s built‑in auth (session‑based, not JWT).
+
+- HTMX for all dynamic updates; Alpine.js only for client‑side state (mobile menu, confirmation dialogs).
+
+- All templates must work without JavaScript (progressive enhancement).
+
+- Tailwind CSS must be compiled via the CLI (include instructions in `README.md`).
+
+- The project must pass `manage.py check --deploy` after configuration.
+
+- The Docker setup must be minimal and self‑hostable by a technical volunteer.
+
+
+
+## OUTPUT FORMAT
+
+Produce a single response containing a list of files, each preceded by `### FILE: path/to/file` and the file content in a code block. Use relative paths from the project root (e.g., `config/settings/base.py`). For executable scripts, include the shebang and make them executable via `chmod +x` in the README.
+
+
+
+## SUCCESS CRITERIA
+
+- A developer can clone the generated project, set environment variables, run `docker-compose up -d db redis`, then `python manage.py migrate && python manage.py runserver`, and see the app at `http://localhost:8000`.
+
+- The app implements the Core conformance level of UMI Protocol v0.1: needs, offers, matches, notifications, dashboard, audit log.
+
+- All refinements are present: QR code generation, households, VPS hardening script, optional 2FA (via django‑two‑factor‑auth), neighbourhood privacy warnings.
+
+- The production hardening layer (health check, Sentry, security headers, CI/CD, backup scripts) is included and documented.

@@ -1,0 +1,68 @@
+2026-05-07 21:15:48.843 [info] Python-envs extension version: 1.20.1
+2026-05-07 21:15:48.843 [info] 
+=== Python Envs Configuration Levels ===
+2026-05-07 21:15:48.843 [info] {
+  "section": "Python Envs Configuration Levels",
+  "defaultEnvManager": {
+    "workspaceFolderValue": "undefined",
+    "workspaceValue": "undefined",
+    "globalValue": "undefined",
+    "defaultValue": "ms-python.python:venv"
+  },
+  "defaultPackageManager": {
+    "workspaceFolderValue": "undefined",
+    "workspaceValue": "undefined",
+    "globalValue": "undefined",
+    "defaultValue": "ms-python.python:pip"
+  }
+}
+2026-05-07 21:15:48.843 [info] [pet] Starting Python Locator /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet server
+2026-05-07 21:15:48.843 [error] [pet] Process error: A system error occurred (spawn /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet ENOENT)
+2026-05-07 21:15:48.921 [warning] [pet] Restarting Python Environment Tools (attempt 1/3, waiting 1000ms)
+2026-05-07 21:15:49.928 [info] [pet] Starting Python Locator /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet server
+2026-05-07 21:15:49.928 [info] [pet] Python Environment Tools restarted successfully
+2026-05-07 21:15:49.931 [info] [pet] configure: Sending configuration update: {"workspaceDirectories":["/home/umi/umi-exchange"],"environmentDirectories":["/home/umi/umi-exchange/**/.venv"],"pipenvExecutable":"pipenv","poetryExecutable":"poetry","cacheDirectory":"/home/umi/.config/Antigravity/User/globalStorage/ms-python.vscode-python-envs/pythonLocator"}
+2026-05-07 21:15:49.931 [error] [pet] Process error: A system error occurred (spawn /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet ENOENT)
+2026-05-07 21:16:19.932 [warning] [pet] Configure request timed out, killing hung process for restart
+2026-05-07 21:16:19.933 [error] [pet] configure: Configuration error Request 'configure' timed out after 30000ms
+2026-05-07 21:16:19.933 [warning] [pet] Request timed out, killing hung process for restart
+2026-05-07 21:16:19.933 [error] [pet] Error refreshing Request 'configure' timed out after 30000ms
+2026-05-07 21:16:19.934 [warning] [pet] Restarting Python Environment Tools (attempt 2/3, waiting 2000ms)
+2026-05-07 21:16:19.937 [info] Conda not found, turning off conda features. [Error: Request 'configure' timed out after 30000ms
+	at Timeout.<anonymous> (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:534062)
+	at listOnTimeout (node:internal/timers:588:17)
+	at process.processTimers (node:internal/timers:523:7)]
+2026-05-07 21:16:21.954 [info] [pet] Starting Python Locator /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet server
+2026-05-07 21:16:21.955 [info] [pet] Python Environment Tools restarted successfully
+2026-05-07 21:16:21.958 [info] [pet] configure: Sending configuration update: {"workspaceDirectories":["/home/umi/umi-exchange"],"environmentDirectories":["/home/umi/umi-exchange/**/.venv"],"pipenvExecutable":"pipenv","poetryExecutable":"poetry","cacheDirectory":"/home/umi/.config/Antigravity/User/globalStorage/ms-python.vscode-python-envs/pythonLocator"}
+2026-05-07 21:16:21.960 [error] [pet] Process error: A system error occurred (spawn /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet ENOENT)
+2026-05-07 21:16:51.959 [warning] [pet] Configure request timed out, killing hung process for restart
+2026-05-07 21:16:51.959 [error] [pet] configure: Configuration error Request 'configure' timed out after 30000ms
+2026-05-07 21:16:51.960 [warning] [pet] Request timed out, killing hung process for restart
+2026-05-07 21:16:51.960 [error] [pet] Error refreshing Request 'configure' timed out after 30000ms
+2026-05-07 21:16:51.961 [warning] [pet] Restarting Python Environment Tools (attempt 3/3, waiting 4000ms)
+2026-05-07 21:16:51.962 [info] Pipenv not found, turning off pipenv features. If you have pipenv installed in a non-standard location, set the "python.pipenvPath" setting. [Error: Request 'configure' timed out after 30000ms
+	at Timeout.<anonymous> (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:534062)
+	at listOnTimeout (node:internal/timers:588:17)
+	at process.processTimers (node:internal/timers:523:7)]
+2026-05-07 21:16:55.982 [info] [pet] Starting Python Locator /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet server
+2026-05-07 21:16:55.982 [info] [pet] Python Environment Tools restarted successfully
+2026-05-07 21:16:55.984 [info] [pet] configure: Sending configuration update: {"workspaceDirectories":["/home/umi/umi-exchange"],"environmentDirectories":["/home/umi/umi-exchange/**/.venv"],"pipenvExecutable":"pipenv","poetryExecutable":"poetry","cacheDirectory":"/home/umi/.config/Antigravity/User/globalStorage/ms-python.vscode-python-envs/pythonLocator"}
+2026-05-07 21:16:55.985 [error] [pet] Process error: A system error occurred (spawn /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python-env-tools/bin/pet ENOENT)
+2026-05-07 21:17:25.985 [warning] [pet] Configure request timed out, killing hung process for restart
+2026-05-07 21:17:25.986 [error] [pet] configure: Configuration error Request 'configure' timed out after 30000ms
+2026-05-07 21:17:25.986 [warning] [pet] Request timed out, killing hung process for restart
+2026-05-07 21:17:25.986 [error] [pet] Error refreshing Request 'configure' timed out after 30000ms
+2026-05-07 21:17:25.986 [info] Pyenv not found, turning off pyenv features. [Error: Request 'configure' timed out after 30000ms
+	at Timeout.<anonymous> (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:534062)
+	at listOnTimeout (node:internal/timers:588:17)
+	at process.processTimers (node:internal/timers:523:7)]
+2026-05-07 21:17:25.987 [info] Poetry not found, turning off poetry features. [Error: Python Environment Tools (PET) failed after 3 restart attempts. Please reload the window or check the output channel for details. To debug, run "Python Environments: Run Python Environment Tool (PET) in Terminal" from the Command Palette.
+	at S.ensureProcessRunning (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:535872)
+	at S.doRefresh (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:540575)
+	at c.workerFunc (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:535168)
+	at o.workFunc (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:287619)
+	at o.start (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:286434)]
+2026-05-07 21:17:25.990 [info] [interpreterSelection] Applying initial environment selection for 1 workspace folder(s)
+2026-05-07 21:17:25.998 [error] [interpreterSelection] Failed to set environment for /home/umi/umi-exchange: Error: Python Environment Tools (PET) failed after 3 restart attempts. Please reload the window or check the output channel for details. To debug, run "Python Environments: Run Python Environment Tool (PET) in Terminal" from the Command Palette.
+2026-05-07 21:17:26.006 [info] [interpreterSelection] global: none (source: autoDiscovery)

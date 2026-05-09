@@ -1,0 +1,34 @@
+2026-05-08 22:43:39.337 [info] [main] Log level: Info
+2026-05-08 22:43:39.337 [info] [main] Validating found git in: "git"
+2026-05-08 22:43:39.337 [info] [main] Using git "2.43.0" from "git"
+2026-05-08 22:43:39.337 [info] [Model][doInitialScan] Initial repository scan started
+2026-05-08 22:43:39.337 [info] > git rev-parse --show-toplevel [11ms]
+2026-05-08 22:43:39.337 [info] > git rev-parse --git-dir --git-common-dir --show-superproject-working-tree [788ms]
+2026-05-08 22:43:39.337 [info] [Model][openRepository] Opened repository (path): /home/umi/umi-exchange
+2026-05-08 22:43:39.337 [info] [Model][openRepository] Opened repository (real path): /home/umi/umi-exchange
+2026-05-08 22:43:39.337 [info] [Model][openRepository] Opened repository (kind): repository
+2026-05-08 22:43:39.337 [info] > git rev-parse --show-toplevel [127ms]
+2026-05-08 22:43:39.337 [info] > git config --get commit.template [138ms]
+2026-05-08 22:43:39.361 [info] [Git][getRemotes] No remotes found in the git config file
+2026-05-08 22:43:39.369 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) refs/heads/master refs/remotes/master [10ms]
+2026-05-08 22:43:39.394 [info] > git rev-parse --show-toplevel [46ms]
+2026-05-08 22:43:39.425 [info] > git status -z -uall [44ms]
+2026-05-08 22:43:39.444 [info] > git rev-parse --show-toplevel [22ms]
+2026-05-08 22:43:39.463 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [70ms]
+2026-05-08 22:43:39.520 [info] > git check-ignore -v -z --stdin [81ms]
+2026-05-08 22:43:39.522 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) refs/heads/master refs/remotes/master [40ms]
+2026-05-08 22:43:39.561 [info] > git config --get --local branch.master.vscode-merge-base [25ms]
+2026-05-08 22:43:39.562 [warning] [Git][config] git config failed: Failed to execute git
+2026-05-08 22:43:39.575 [info] > git config --get commit.template [69ms]
+2026-05-08 22:43:39.575 [info] > git rev-parse --show-toplevel [78ms]
+2026-05-08 22:43:39.613 [info] [Git][getRemotes] No remotes found in the git config file
+2026-05-08 22:43:39.654 [info] > git rev-parse --show-toplevel [53ms]
+2026-05-08 22:43:39.655 [info] > git reflog master --grep-reflog=branch: Created from *. [81ms]
+2026-05-08 22:43:39.691 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) refs/heads/master refs/remotes/master [78ms]
+2026-05-08 22:43:39.731 [info] > git status -z -uall [19ms]
+2026-05-08 22:43:39.733 [info] > git rev-parse --show-toplevel [44ms]
+2026-05-08 22:43:39.736 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [6ms]
+2026-05-08 22:43:39.802 [info] > git rev-parse --show-toplevel [6ms]
+2026-05-08 22:43:39.820 [info] > git rev-parse --show-toplevel [6ms]
+2026-05-08 22:43:39.836 [info] > git rev-parse --show-toplevel [2ms]
+2026-05-08 22:43:39.839 [info] [Model][doInitialScan] Initial repository scan completed - repositories (1), closed repositories (0), parent repositories (0), unsafe repositories (0)

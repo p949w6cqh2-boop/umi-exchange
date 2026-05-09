@@ -1,0 +1,25 @@
+2026/05/06-22:39:48.840 23 Reusing MANIFEST /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_mail.proton.me_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/06-22:39:48.840 23 Recovering log #19
+2026/05/06-22:39:48.840 23 Reusing old log /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_mail.proton.me_0.indexeddb.leveldb/000019.log 
+2026/05/06-22:39:48.840 23 Delete type=2 #18
+2026/05/06-22:39:51.189 24 Level-0 table #24: started
+2026/05/06-22:39:51.191 24 Level-0 table #24: 1261 bytes OK
+2026/05/06-22:39:51.194 24 Delete type=0 #19
+2026/05/06-22:39:51.194 24 Manual compaction at level-0 from '\x00\x09\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x0a\x00\x00\x00' @ 0 : 0; will stop at '\x00\x09\x00\x00\x05' @ 358 : 1
+2026/05/06-22:39:51.194 24 Compacting 1@0 + 1@1 files
+2026/05/06-22:39:51.196 24 Generated table #25@0: 78 keys, 1360 bytes
+2026/05/06-22:39:51.196 24 Compacted 1@0 + 1@1 files => 1360 bytes
+2026/05/06-22:39:51.198 24 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/06-22:39:51.198 24 Delete type=2 #24
+2026/05/06-22:39:51.199 24 Manual compaction at level-0 from '\x00\x09\x00\x00\x05' @ 358 : 1 .. '\x00\x0a\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/05/06-22:39:52.770 24 Level-0 table #27: started
+2026/05/06-22:39:52.772 24 Level-0 table #27: 498 bytes OK
+2026/05/06-22:39:52.774 24 Delete type=0 #23
+2026/05/06-22:39:52.774 24 Delete type=2 #21
+2026/05/06-22:39:52.775 24 Manual compaction at level-0 from '\x00\x0a\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x0b\x00\x00\x00' @ 0 : 0; will stop at '\x00\x0a\x00\x00\x05' @ 377 : 1
+2026/05/06-22:39:52.775 24 Compacting 1@0 + 1@1 files
+2026/05/06-22:39:52.780 24 Generated table #28@0: 79 keys, 1361 bytes
+2026/05/06-22:39:52.780 24 Compacted 1@0 + 1@1 files => 1361 bytes
+2026/05/06-22:39:52.782 24 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/06-22:39:52.783 24 Delete type=2 #27
+2026/05/06-22:39:52.783 24 Manual compaction at level-0 from '\x00\x0a\x00\x00\x05' @ 377 : 1 .. '\x00\x0b\x00\x00\x00' @ 0 : 0; will stop at (end)

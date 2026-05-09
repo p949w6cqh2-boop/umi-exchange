@@ -1,0 +1,97 @@
+2026-05-07 20:37:56.739 [info] Experiment 'pythonSurveyNotificationcf' is active
+2026-05-07 20:37:56.757 [warning] Dir "/home/umi/umi-exchange/.pixi/envs" is not watchable (directory does not exist)
+2026-05-07 20:37:56.928 [info] Starting Environment refresh
+2026-05-07 20:37:56.928 [info] Searching for interpreters in posix paths locator
+2026-05-07 20:37:56.941 [info] Searching for pyenv environments
+2026-05-07 20:37:56.941 [info] Searching for conda environments
+2026-05-07 20:37:56.942 [info] Searching for global virtual environments
+2026-05-07 20:37:56.942 [info] Searching for custom virtual environments
+2026-05-07 20:37:56.955 [info] pyenv is not installed
+2026-05-07 20:37:56.955 [info] Finished searching for pyenv environments: 26 milliseconds
+2026-05-07 20:37:56.955 [info] Finished searching for custom virtual envs: 24 milliseconds
+2026-05-07 20:37:56.966 [info] > conda info --json
+2026-05-07 20:37:56.977 [info] > hatch env show --json
+2026-05-07 20:37:56.977 [info] cwd: .
+2026-05-07 20:37:57.000 [info] > pyenv which python
+2026-05-07 20:37:57.000 [info] cwd: .
+2026-05-07 20:37:57.000 [info] Finished searching for global virtual envs: 69 milliseconds
+2026-05-07 20:37:57.019 [info] Found: /bin/python3 --> /bin/python3.12
+2026-05-07 20:37:57.020 [info] Found: /bin/python3.12 --> /bin/python3.12
+2026-05-07 20:37:57.048 [info] Found: /usr/bin/python3 --> /usr/bin/python3.12
+2026-05-07 20:37:57.048 [info] Found: /usr/bin/python3.12 --> /usr/bin/python3.12
+2026-05-07 20:37:57.083 [info] Finished searching for interpreters in posix paths locator: 151 milliseconds
+2026-05-07 20:37:57.083 [info] > /bin/python3 -I ~/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/get_output_via_markers.py ~/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/interpreterInfo.py
+2026-05-07 20:37:57.095 [info] > /usr/bin/python3 -I ~/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/get_output_via_markers.py ~/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/interpreterInfo.py
+2026-05-07 20:37:57.095 [info] Environments refresh paths discovered (event): 171 milliseconds
+2026-05-07 20:37:57.095 [info] Environments refresh paths discovered: 171 milliseconds
+2026-05-07 20:37:57.162 [info] Environments refresh finished (event): 237 milliseconds
+2026-05-07 20:37:57.171 [info] Environment refresh took 247 milliseconds
+2026-05-07 20:37:57.183 [info] Python interpreter path: /bin/python3
+2026-05-07 20:37:57.185 [info] Editor support is inactive since language server is set to None.
+2026-05-07 21:15:49.095 [error] Unable to find workspace for given file
+2026-05-07 21:16:17.711 [info] Running installed packages checker:  {
+  id: '/bin/python3',
+  sysPrefix: '/usr',
+  envType: 'Global',
+  envName: '',
+  envPath: '',
+  path: '/bin/python3',
+  architecture: 3,
+  sysVersion: '3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]',
+  version: {
+    raw: '3.12.3',
+    major: 3,
+    minor: 12,
+    patch: 3,
+    build: [],
+    prerelease: [ 'final', '0' ]
+  },
+  displayName: 'Python 3.12.3 64-bit',
+  detailedDisplayName: 'Python 3.12.3 64-bit',
+  type: undefined
+} /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/installed_check.py /home/umi/umi-exchange/requirements.txt
+2026-05-07 21:16:17.711 [info] > /bin/python3 ~/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/installed_check.py ./requirements.txt
+2026-05-07 21:16:32.487 [info] Running installed packages checker:  {
+  id: '/bin/python3',
+  sysPrefix: '/usr',
+  envType: 'Global',
+  envName: '',
+  envPath: '',
+  path: '/bin/python3',
+  architecture: 3,
+  sysVersion: '3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]',
+  version: {
+    raw: '3.12.3',
+    major: 3,
+    minor: 12,
+    patch: 3,
+    build: [],
+    prerelease: [ 'final', '0' ]
+  },
+  displayName: 'Python 3.12.3 64-bit',
+  detailedDisplayName: 'Python 3.12.3 64-bit',
+  type: undefined
+} /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/installed_check.py /29
+2026-05-07 21:16:32.487 [info] > /bin/python3 ~/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/installed_check.py /29
+2026-05-07 21:16:32.818 [info] Running installed packages checker:  {
+  id: '/bin/python3',
+  sysPrefix: '/usr',
+  envType: 'Global',
+  envName: '',
+  envPath: '',
+  path: '/bin/python3',
+  architecture: 3,
+  sysVersion: '3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]',
+  version: {
+    raw: '3.12.3',
+    major: 3,
+    minor: 12,
+    patch: 3,
+    build: [],
+    prerelease: [ 'final', '0' ]
+  },
+  displayName: 'Python 3.12.3 64-bit',
+  detailedDisplayName: 'Python 3.12.3 64-bit',
+  type: undefined
+} /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/installed_check.py /30
+2026-05-07 21:16:32.818 [info] > /bin/python3 ~/.antigravity/extensions/ms-python.python-2026.4.0-universal/python_files/installed_check.py /30

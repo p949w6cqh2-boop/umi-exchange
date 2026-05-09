@@ -1,0 +1,88 @@
+{
+    "telemetry.sqmId": "",
+    "telemetry.machineId": "68505f20f5e073d783756ea9267994479817be81eeb9c192f6fb1fe85f917f25",
+    "telemetry.devDeviceId": "bc71741f-1988-4b57-a128-e84fb35fcf69",
+    "backupWorkspaces": {
+        "workspaces": [],
+        "folders": [
+            {
+                "folderUri": "file:///home/umi/umi-exchange"
+            }
+        ],
+        "emptyWindows": []
+    },
+    "windowControlHeight": 35,
+    "profileAssociations": {
+        "workspaces": {
+            "file:///home/umi/umi-exchange": "__default__profile__"
+        },
+        "emptyWindows": {}
+    },
+    "antigravityUnifiedStateSync.oauthToken.hasLegacyMigrated": true,
+    "unifiedStateSync.hasTrajectorySummariesMigrated": true,
+    "overrideStore.migratedSecureMode": true,
+    "antigravityUnifiedStateSync.browserPreferences.hasBrowserAllowlistMigrated": true,
+    "antigravityUnifiedStateSync.browserPreferences.hasAddedLocalhostToAllowlist": true,
+    "unifiedStateSync.hasWindowPreferencesMigrated": true,
+    "unifiedStateSync.hasUserStatusMigrated": true,
+    "sidebarWorkspaces.migratedFromInitState": true,
+    "sidebarWorkspaces.cleanedUpEmptyScratchWorkspaces": true,
+    "antigravityUnifiedStateSync.seenNuxOneTimeMigration": true,
+    "artifactReviewState.migratedFromInitState": true,
+    "theme": "vs-dark",
+    "themeBackground": "#1f1f1f",
+    "windowSplash": {
+        "zoomLevel": 0,
+        "baseTheme": "vs-dark",
+        "colorInfo": {
+            "foreground": "#cccccc",
+            "background": "#1f1f1f",
+            "editorBackground": "#1f1f1f",
+            "titleBarBackground": "#181818",
+            "titleBarBorder": "#2b2b2b",
+            "activityBarBackground": "#181818",
+            "activityBarBorder": "#2b2b2b",
+            "sideBarBackground": "#181818",
+            "sideBarBorder": "#2b2b2b",
+            "statusBarBackground": "#181818",
+            "statusBarBorder": "#2b2b2b",
+            "statusBarNoFolderBackground": "#1f1f1f"
+        },
+        "layoutInfo": {
+            "sideBarSide": "left",
+            "editorPartMinWidth": 220,
+            "titleBarHeight": 35,
+            "activityBarWidth": 42,
+            "sideBarWidth": 198,
+            "auxiliaryBarWidth": 300,
+            "statusBarHeight": 22,
+            "windowBorder": false
+        }
+    },
+    "windowsState": {
+        "lastActiveWindow": {
+            "folder": "file:///home/umi/umi-exchange",
+            "backupPath": "/home/umi/.config/Antigravity/Backups/dd5d61b579f5581c6191a71ec76b3a6e",
+            "uiState": {
+                "mode": 0,
+                "x": 360,
+                "y": 140,
+                "width": 1200,
+                "height": 800
+            }
+        },
+        "openedWindows": []
+    },
+    "windowSplashWorkspaceOverride": {
+        "layoutInfo": {
+            "sideBarWidth": 198,
+            "auxiliaryBarWidth": 300,
+            "workspaces": {
+                "1cc6514b7623837b5f0c5893c9492296": {
+                    "sideBarVisible": true,
+                    "auxiliaryBarVisible": true
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,60 @@
+2026-05-08 18:21:00.082 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-vscode.vscode-selfhost-test-provider' wants API proposal 'attributableCoverage' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.083 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-vsliveshare.vsliveshare' wants API proposal 'notebookCellExecutionState' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.084 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-python.python' wants API proposal 'contribIssueReporter' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.084 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'github.vscode-pull-request-github' wants API proposal 'fileComments' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.085 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'github.copilot-chat' wants API proposal 'chatVariableResolver' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.085 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'github.copilot-chat' wants API proposal 'lmTools' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.086 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-python.gather' wants API proposal 'notebookCellExecutionState' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.086 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-python.vscode-pylance' wants API proposal 'notebookCellExecutionState' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.087 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-python.debugpy' wants API proposal 'contribIssueReporter' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.087 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-toolsai.jupyter' wants API proposal 'notebookCellExecutionState' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.087 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'dbaeumer.vscode-eslint' wants API proposal 'notebookCellExecutionState' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.088 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-azuretools.vscode-azure-github-copilot' wants API proposal 'lmTools' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.088 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'ms-vscode.cpptools' wants API proposal 'lmTools' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.088 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'redhat.java' wants API proposal 'documentPaste' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:00.089 [warning] Via 'product.json#extensionEnabledApiProposals' extension 'vscjava.vscode-java-pack' wants API proposal 'lmTools' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.
+2026-05-08 18:21:02.204 [info] Started local extension host with pid 17226.
+2026-05-08 18:21:03.668 [error] Extension 'ms-python.python' appears in product.json but enables LESS API proposals than the extension wants.
+package.json (LOSES): contribEditorContentMenu, quickPickSortByLabel, testObserver, quickPickItemTooltip, terminalDataWriteEvent, terminalExecuteCommandEvent, codeActionAI, notebookReplDocument, notebookVariableProvider
+product.json (WINS): contribEditorContentMenu, quickPickSortByLabel, portsAttributes, testObserver, quickPickItemTooltip, terminalDataWriteEvent, terminalExecuteCommandEvent, notebookReplDocument
+2026-05-08 18:21:03.668 [error] Extension 'ms-python.vscode-python-envs CANNOT USE these API proposals 'terminalShellEnv, terminalDataWriteEvent'. You MUST start in extension development mode or use the --enable-proposed-api command line flag
+2026-05-08 18:21:03.741 [error] [vscode.git]: property `title` is mandatory and must be of type `string` or `object`
+2026-05-08 18:21:03.742 [error] [vscode.git]: property `title` is mandatory and must be of type `string` or `object`
+2026-05-08 18:21:03.755 [error] [google.antigravity]: Menu item references a command `antigravity.importAntigravitySettings` which is not defined in the 'commands' section.
+2026-05-08 18:21:03.755 [error] [google.antigravity]: Menu item references a command `antigravity.importAntigravityExtensions` which is not defined in the 'commands' section.
+2026-05-08 18:21:03.756 [error] [google.antigravity]: Menu item references a command `antigravity.prioritized.chat.open` which is not defined in the 'commands' section.
+2026-05-08 18:21:07.287 [warning] Failed to fetch chat participant registry Offline
+2026-05-08 18:21:15.619 [error] [Extension Host] [Auth] Error identifying user ConnectError: [unknown] Post "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist": Post "https://oauth2.googleapis.com/token": dial tcp: lookup oauth2.googleapis.com on 127.0.0.53:53: server misbehaving
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.registerGdmUser (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:2132925
+	at async XI (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:2132786)
+	at async QS.n (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:117:14144)
+	at async QS.m (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:117:14107)
+	at async QS.l (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:117:13563)
+2026-05-08 18:25:11.024 [error] [Extension Host] Failed to get status: LR: Language server has not been started!
+	at get client (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1989124)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1992352
+	at fS (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1992657)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:2128838
+	at async sp.h (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:117:44675)
+2026-05-08 18:25:11.028 [error] [Extension Host] Failed to get status: LR: Language server has not been started!
+	at get client (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1989124)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1992352
+	at fS (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1992657)
+	at async Hf.value (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:2128913)
+2026-05-08 18:25:18.553 [error] [Extension Host] FetchError: Unleash Repository error: request to http://localhost:34759/proxy/unleash/client/features failed, reason: connect ECONNREFUSED 127.0.0.1:34759
+	at ClientRequest.<anonymous> (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:812944)
+	at ClientRequest.emit (node:events:519:28)
+	at emitErrorEvent (node:_http_client:107:11)
+	at Socket.socketErrorListener (node:_http_client:574:5)
+	at Socket.emit (node:events:519:28)
+	at emitErrorNT (node:internal/streams/destroy:170:8)
+	at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+	at process.processTicksAndRejections (node:internal/process/task_queues:90:21)

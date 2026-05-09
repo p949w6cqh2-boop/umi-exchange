@@ -1,0 +1,36 @@
+2026-05-08 18:20:57.600 [error] Failed to set Cloud Code URL on Language Server: Language server client has not been initialized!
+2026-05-08 18:20:58.350 [error] Failed to make POST request: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:20:58.350 [error] Failed to make POST request: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:20:58.350 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:00.731 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:03.754 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:06.744 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:09.742 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:12.735 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:15.734 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:18.733 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:21.736 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:24.752 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:27.735 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:30.736 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:33.738 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:36.739 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:39.738 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:42.743 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:45.741 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:48.742 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:51.745 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:54.746 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:21:57.747 [error] Failed to fetch NUXes: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+2026-05-08 18:24:39.099 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: fa8611dbb82b4e36
+2026-05-08 18:24:39.591 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: b23dd5f3435416
+2026-05-08 18:24:40.220 [info] [CloudCode] POST v1internal:onboardUser traceId: 87f01f1771c1d527
+2026-05-08 18:24:40.556 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: a22f31636076d718
+2026-05-08 18:24:40.961 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: 713070ce5ad55635
+2026-05-08 18:24:41.327 [info] [CloudCode] POST v1internal:fetchAvailableModels traceId: 8bd745568f74e979
+2026-05-08 18:25:08.958 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: 4750e8753d351295
+2026-05-08 18:25:09.424 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: 448ea7740d247964
+2026-05-08 18:25:09.882 [info] [CloudCode] POST v1internal:onboardUser traceId: 43d7c16defa00e6e
+2026-05-08 18:25:10.197 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: 82860fc2a766f35c
+2026-05-08 18:25:10.435 [info] [CloudCode] POST v1internal:loadCodeAssist traceId: 7650297e00cd1f0b
+2026-05-08 18:25:10.649 [info] [CloudCode] POST v1internal:fetchAvailableModels traceId: 9e994af88ba2d159

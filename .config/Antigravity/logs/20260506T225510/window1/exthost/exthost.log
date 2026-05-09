@@ -1,0 +1,216 @@
+2026-05-06 22:55:16.772 [info] Extension host with pid 5951 started
+2026-05-06 22:55:16.803 [info] ExtensionService#_doActivateExtension vscode.git-base, startup: false, activationEvent: 'onCommand:antigravity.importVSCodeRecentWorkspaces', root cause: google.antigravity
+2026-05-06 22:55:16.816 [info] ExtensionService#_doActivateExtension vscode.git, startup: false, activationEvent: 'onCommand:antigravity.importVSCodeRecentWorkspaces', root cause: google.antigravity
+2026-05-06 22:55:16.900 [info] ExtensionService#_doActivateExtension vscode.github, startup: false, activationEvent: '*'
+2026-05-06 22:55:17.000 [info] ExtensionService#_doActivateExtension google.antigravity, startup: false, activationEvent: 'onCommand:antigravity.importVSCodeRecentWorkspaces'
+2026-05-06 22:55:18.868 [info] ExtensionService#_doActivateExtension vscode.terminal-suggest, startup: false, activationEvent: 'onTerminalShellIntegration:*'
+2026-05-06 22:55:19.961 [info] Eager extensions activated
+2026-05-06 22:55:19.969 [info] ExtensionService#_doActivateExtension google.antigravity-dev-containers, startup: false, activationEvent: 'onStartupFinished'
+2026-05-06 22:55:19.978 [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch, startup: false, activationEvent: 'onStartupFinished'
+2026-05-06 22:55:19.982 [info] ExtensionService#_doActivateExtension vscode.merge-conflict, startup: false, activationEvent: 'onStartupFinished'
+2026-05-07 20:37:41.504 [info] Extension host terminating: renderer closed the MessagePort
+2026-05-07 20:37:41.545 [info] Extension host with pid 5951 exiting with code 0
+2026-05-07 20:37:47.882 [info] Extension host with pid 10389 started
+2026-05-07 20:37:47.882 [info] Skipping acquiring lock for /home/umi/.config/Antigravity/User/workspaceStorage/1cc6514b7623837b5f0c5893c9492296.
+2026-05-07 20:37:47.922 [info] ExtensionService#_doActivateExtension vscode.git-base, startup: true, activationEvent: '*', root cause: google.antigravity
+2026-05-07 20:37:47.953 [info] ExtensionService#_doActivateExtension vscode.git, startup: true, activationEvent: '*', root cause: google.antigravity
+2026-05-07 20:37:48.037 [info] ExtensionService#_doActivateExtension vscode.github, startup: true, activationEvent: '*'
+2026-05-07 20:37:48.154 [info] ExtensionService#_doActivateExtension google.antigravity, startup: true, activationEvent: '*'
+2026-05-07 20:37:52.269 [info] ExtensionService#_doActivateExtension ms-python.python, startup: false, activationEvent: 'workspaceContains:pyproject.toml'
+2026-05-07 20:37:52.510 [info] Extension host terminating: renderer closed the MessagePort
+2026-05-07 20:37:52.518 [info] Extension host with pid 10389 exiting with code 0
+2026-05-07 20:37:55.395 [info] Extension host with pid 10479 started
+2026-05-07 20:37:55.395 [info] Skipping acquiring lock for /home/umi/.config/Antigravity/User/workspaceStorage/1cc6514b7623837b5f0c5893c9492296.
+2026-05-07 20:37:55.415 [info] ExtensionService#_doActivateExtension vscode.git-base, startup: true, activationEvent: '*', root cause: google.antigravity
+2026-05-07 20:37:55.422 [info] ExtensionService#_doActivateExtension ms-python.python, startup: true, activationEvent: 'workspaceContains:pyproject.toml'
+2026-05-07 20:37:55.688 [info] ExtensionService#_doActivateExtension vscode.git, startup: true, activationEvent: '*', root cause: google.antigravity
+2026-05-07 20:37:55.754 [info] ExtensionService#_doActivateExtension vscode.github, startup: true, activationEvent: '*'
+2026-05-07 20:37:55.851 [info] ExtensionService#_doActivateExtension google.antigravity, startup: true, activationEvent: '*'
+2026-05-07 20:37:57.421 [info] ExtensionService#_doActivateExtension vscode.terminal-suggest, startup: false, activationEvent: 'onTerminalShellIntegration:*'
+2026-05-07 20:37:58.419 [info] Eager extensions activated
+2026-05-07 20:37:58.421 [info] ExtensionService#_doActivateExtension google.antigravity-dev-containers, startup: false, activationEvent: 'onStartupFinished'
+2026-05-07 20:37:58.428 [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch, startup: false, activationEvent: 'onStartupFinished'
+2026-05-07 20:37:58.432 [info] ExtensionService#_doActivateExtension vscode.merge-conflict, startup: false, activationEvent: 'onStartupFinished'
+2026-05-07 20:42:36.154 [info] ExtensionService#_doActivateExtension vscode.extension-editing, startup: false, activationEvent: 'onLanguage:markdown'
+2026-05-07 20:42:36.174 [info] ExtensionService#_doActivateExtension vscode.markdown-language-features, startup: false, activationEvent: 'onLanguage:markdown'
+2026-05-07 20:42:36.362 [info] ExtensionService#_doActivateExtension vscode.emmet, startup: false, activationEvent: 'onLanguage'
+2026-05-07 20:46:07.906 [info] ExtensionService#_doActivateExtension vscode.github-authentication, startup: false, activationEvent: 'onAuthenticationRequest:github'
+2026-05-07 20:55:47.342 [error] TypeError: Cannot set properties of undefined (setting 'items')
+	at Object.query (/usr/share/antigravity/resources/app/extensions/git-base/dist/extension.js:1:5263)
+2026-05-07 21:13:26.245 [info] ExtensionService#_doActivateExtension vscode.html-language-features, startup: false, activationEvent: 'onLanguage:html'
+2026-05-07 21:15:39.711 [info] ExtensionService#_doActivateExtension vscode.markdown-math, startup: false, activationEvent: 'api', root cause: vscode.markdown-language-features
+2026-05-07 21:15:39.755 [info] ExtensionService#_doActivateExtension ms-azuretools.vscode-containers, startup: false, activationEvent: 'onLanguage:dockerfile'
+2026-05-07 21:15:48.135 [info] ExtensionService#_doActivateExtension meta.pyrefly, startup: false, activationEvent: 'onLanguage:python'
+2026-05-07 21:15:48.189 [info] ExtensionService#_doActivateExtension ms-python.debugpy, startup: false, activationEvent: 'onLanguage:python'
+2026-05-07 21:15:48.279 [info] ExtensionService#_doActivateExtension ms-python.vscode-python-envs, startup: false, activationEvent: 'onLanguage:python'
+2026-05-07 21:15:48.481 [info] ExtensionService#_doActivateExtension vscode.configuration-editing, startup: false, activationEvent: 'onLanguage:jsonc'
+2026-05-07 21:15:48.497 [info] ExtensionService#_doActivateExtension vscode.json-language-features, startup: false, activationEvent: 'onLanguage:jsonc'
+2026-05-07 21:15:48.569 [info] ExtensionService#_doActivateExtension vscode.typescript-language-features, startup: false, activationEvent: 'onLanguage:jsonc'
+2026-05-07 21:16:51.812 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:16:54.225 [warning] meta.pyrefly - Code actions of kind 'quickfix' requested but returned code action is of kind 'refactor.delete'. Code action will be dropped. Please check 'CodeActionContext.only' to only return requested code actions.
+2026-05-07 21:16:54.363 [warning] meta.pyrefly - Code actions of kind 'quickfix' requested but returned code action is of kind 'refactor.delete'. Code action will be dropped. Please check 'CodeActionContext.only' to only return requested code actions.
+2026-05-07 21:16:57.020 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:16:58.511 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:01.671 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:03.926 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:09.142 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:13.598 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:17.291 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:20.604 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:24.882 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:26.673 [info] ExtensionService#_doActivateExtension vscode.media-preview, startup: false, activationEvent: 'onCustomEditor:imagePreview.previewEditor'
+2026-05-07 21:17:27.001 [error] Error: Python Environment Tools (PET) failed after 3 restart attempts. Please reload the window or check the output channel for details. To debug, run "Python Environments: Run Python Environment Tool (PET) in Terminal" from the Command Palette.
+	at S.ensureProcessRunning (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:535872)
+	at S.doRefresh (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:540575)
+	at c.workerFunc (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:535168)
+	at o.workFunc (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:287619)
+	at o.start (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:286434)
+2026-05-07 21:17:57.503 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:17:59.441 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:18:07.061 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:18:57.508 [warning] meta.pyrefly - Code actions of kind 'quickfix' requested but returned code action is of kind 'refactor.delete'. Code action will be dropped. Please check 'CodeActionContext.only' to only return requested code actions.
+2026-05-07 21:18:59.772 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:19:05.588 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-07 21:19:26.382 [error] ConnectError: [unknown] run state not found
+	at Tg (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1875100)
+	at /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891866
+	at next (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1891876)
+	at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908491
+	at async /usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1908350
+	at async Object.unary (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1889570)
+	at async Object.acknowledgeCodeActionStep (/usr/share/antigravity/resources/app/extensions/antigravity/dist/extension.js:2:1909714)
+2026-05-08 18:20:43.131 [info] Extension host terminating: renderer closed the MessagePort
+2026-05-08 18:20:43.259 [error] TypeError: Cannot read properties of undefined (reading 'subscriptions')
+	at Object.Z [as deactivate] (/home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal/dist/extension.js:2:706516)
+	at lIe.eb (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:122:13096)
+	at file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:122:11244
+	at Array.map (<anonymous>)
+	at lIe.$ (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:122:11232)
+	at lIe.terminate (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:122:11475)
+	at A6.terminate (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:124:921)
+	at mr (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:407:11402)
+	at MessagePortMain.<anonymous> (file:///usr/share/antigravity/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:407:7613)
+	at MessagePortMain.emit (node:events:519:28)
+	at MessagePortMain._internalPort.emit (node:electron/js2c/utility_init:2:2949)
+2026-05-08 18:20:43.286 [info] Extension host with pid 10479 exiting with code 0

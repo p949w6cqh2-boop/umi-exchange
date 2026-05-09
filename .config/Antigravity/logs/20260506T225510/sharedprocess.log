@@ -1,0 +1,92 @@
+2026-05-07 20:28:46.017 [info] Getting Manifest... golang.go
+2026-05-07 20:28:46.324 [info] Installing extension: golang.go {"context":{"skipPublisherTrust":true},"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"}}
+2026-05-07 20:28:46.711 [info] Extracted extension to file:///home/umi/.antigravity/extensions/golang.go-0.52.2-universal: golang.go
+2026-05-07 20:28:46.730 [info] Renamed to /home/umi/.antigravity/extensions/golang.go-0.52.2-universal
+2026-05-07 20:28:46.766 [info] Extension installed successfully: golang.go vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 20:28:46.766 [error] [uncaught exception in sharedProcess]: Cannot read properties of undefined (reading 'fireEvent'): TypeError: Cannot read properties of undefined (reading 'fireEvent')
+    at _a.value (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:62766)
+    at U.C (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2328)
+    at U.D (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2398)
+    at U.fire (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2615)
+    at gf.L (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:10866)
+    at async gf.installGalleryExtensions (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:2621)
+    at async gf.installFromGallery (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:1870)
+2026-05-07 20:28:47.058 [info] Getting Manifest... llvm-vs-code-extensions.vscode-clangd
+2026-05-07 20:28:47.137 [info] Installing extension: llvm-vs-code-extensions.vscode-clangd {"context":{"skipPublisherTrust":true},"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"}}
+2026-05-07 20:28:47.521 [info] Extracted extension to file:///home/umi/.antigravity/extensions/llvm-vs-code-extensions.vscode-clangd-0.4.0-universal: llvm-vs-code-extensions.vscode-clangd
+2026-05-07 20:28:47.526 [info] Renamed to /home/umi/.antigravity/extensions/llvm-vs-code-extensions.vscode-clangd-0.4.0-universal
+2026-05-07 20:28:47.546 [info] Extension installed successfully: llvm-vs-code-extensions.vscode-clangd vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 20:28:47.546 [error] [uncaught exception in sharedProcess]: Cannot read properties of undefined (reading 'fireEvent'): TypeError: Cannot read properties of undefined (reading 'fireEvent')
+    at _a.value (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:62766)
+    at U.C (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2328)
+    at U.D (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2398)
+    at U.fire (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2615)
+    at gf.L (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:10866)
+    at async gf.installGalleryExtensions (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:2621)
+    at async gf.installFromGallery (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:1870)
+2026-05-07 20:28:47.927 [info] Getting Manifest... ms-python.python
+2026-05-07 20:28:48.026 [info] Installing extension: ms-python.python {"context":{"skipPublisherTrust":true},"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"}}
+2026-05-07 20:28:49.428 [info] Getting Manifest... ms-python.vscode-python-envs
+2026-05-07 20:28:49.614 [info] Getting Manifest... ms-python.debugpy
+2026-05-07 20:28:49.702 [info] Installing extension: ms-python.vscode-python-envs {"context":{"skipPublisherTrust":true,"dependecyOrPackExtensionInstall":true},"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"},"pinned":false,"installGivenVersion":false}
+2026-05-07 20:28:49.702 [info] Installing extension: ms-python.debugpy {"context":{"skipPublisherTrust":true,"dependecyOrPackExtensionInstall":true},"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"},"pinned":false,"installGivenVersion":false}
+2026-05-07 20:28:50.250 [info] Extracted extension to file:///home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal: ms-python.vscode-python-envs
+2026-05-07 20:28:50.265 [info] Renamed to /home/umi/.antigravity/extensions/ms-python.vscode-python-envs-1.20.1-universal
+2026-05-07 20:28:51.788 [info] Extracted extension to file:///home/umi/.antigravity/extensions/ms-python.debugpy-2026.6.0-linux-x64: ms-python.debugpy
+2026-05-07 20:28:51.820 [info] Renamed to /home/umi/.antigravity/extensions/ms-python.debugpy-2026.6.0-linux-x64
+2026-05-07 20:28:52.931 [info] Extracted extension to file:///home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal: ms-python.python
+2026-05-07 20:28:53.048 [info] Renamed to /home/umi/.antigravity/extensions/ms-python.python-2026.4.0-universal
+2026-05-07 20:28:53.084 [info] Extension installed successfully: ms-python.vscode-python-envs vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 20:28:53.084 [info] Extension installed successfully: ms-python.debugpy vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 20:28:53.084 [info] Extension installed successfully: ms-python.python vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 20:28:53.084 [error] [uncaught exception in sharedProcess]: Cannot read properties of undefined (reading 'fireEvent'): TypeError: Cannot read properties of undefined (reading 'fireEvent')
+    at _a.value (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:62766)
+    at U.C (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2328)
+    at U.D (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2398)
+    at U.fire (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2615)
+    at gf.L (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:10866)
+    at async gf.installGalleryExtensions (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:2621)
+    at async gf.installFromGallery (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:1870)
+2026-05-07 20:28:53.480 [info] Getting Manifest... meta.pyrefly
+2026-05-07 20:28:53.648 [info] Installing extension: meta.pyrefly {"context":{"skipPublisherTrust":true},"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"}}
+2026-05-07 20:29:01.574 [info] Extracted extension to file:///home/umi/.antigravity/extensions/meta.pyrefly-0.64.0-linux-x64: meta.pyrefly
+2026-05-07 20:29:01.580 [info] Renamed to /home/umi/.antigravity/extensions/meta.pyrefly-0.64.0-linux-x64
+2026-05-07 20:29:01.608 [info] Extension installed successfully: meta.pyrefly vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 20:29:01.608 [error] [uncaught exception in sharedProcess]: Cannot read properties of undefined (reading 'fireEvent'): TypeError: Cannot read properties of undefined (reading 'fireEvent')
+    at _a.value (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:62766)
+    at U.C (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2328)
+    at U.D (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2398)
+    at U.fire (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2615)
+    at gf.L (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:10866)
+    at async gf.installGalleryExtensions (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:2621)
+    at async gf.installFromGallery (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:1870)
+2026-05-07 20:29:02.055 [info] Getting Manifest... shopify.ruby-lsp
+2026-05-07 20:29:02.145 [info] Installing extension: shopify.ruby-lsp {"context":{"skipPublisherTrust":true},"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"}}
+2026-05-07 20:29:02.478 [info] Extracted extension to file:///home/umi/.antigravity/extensions/shopify.ruby-lsp-0.10.3-universal: shopify.ruby-lsp
+2026-05-07 20:29:02.495 [info] Renamed to /home/umi/.antigravity/extensions/shopify.ruby-lsp-0.10.3-universal
+2026-05-07 20:29:02.578 [info] Extension installed successfully: shopify.ruby-lsp vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 20:29:02.579 [error] [uncaught exception in sharedProcess]: Cannot read properties of undefined (reading 'fireEvent'): TypeError: Cannot read properties of undefined (reading 'fireEvent')
+    at _a.value (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:62766)
+    at U.C (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2328)
+    at U.D (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2398)
+    at U.fire (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2615)
+    at gf.L (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:10866)
+    at async gf.installGalleryExtensions (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:2621)
+    at async gf.installFromGallery (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:1870)
+2026-05-07 21:15:38.238 [info] Getting Manifest... ms-azuretools.vscode-docker
+2026-05-07 21:15:38.478 [info] Installing extension: ms-azuretools.vscode-docker {"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"}}
+2026-05-07 21:15:38.639 [info] Getting Manifest... ms-azuretools.vscode-containers
+2026-05-07 21:15:38.830 [info] Installing extension: ms-azuretools.vscode-containers {"isMachineScoped":false,"profileLocation":{"$mid":1,"external":"vscode-userdata:/home/umi/.antigravity/extensions/extensions.json","path":"/home/umi/.antigravity/extensions/extensions.json","scheme":"vscode-userdata"},"isApplicationScoped":false,"productVersion":{"version":"1.107.0","date":"2026-04-16T08:28:19.366Z"},"pinned":false,"installGivenVersion":false,"context":{"dependecyOrPackExtensionInstall":true}}
+2026-05-07 21:15:39.126 [info] Extracted extension to file:///home/umi/.antigravity/extensions/ms-azuretools.vscode-docker-2.0.0-universal: ms-azuretools.vscode-docker
+2026-05-07 21:15:39.135 [info] Renamed to /home/umi/.antigravity/extensions/ms-azuretools.vscode-docker-2.0.0-universal
+2026-05-07 21:15:39.417 [info] Extracted extension to file:///home/umi/.antigravity/extensions/ms-azuretools.vscode-containers-2.4.4-universal: ms-azuretools.vscode-containers
+2026-05-07 21:15:39.430 [info] Renamed to /home/umi/.antigravity/extensions/ms-azuretools.vscode-containers-2.4.4-universal
+2026-05-07 21:15:39.464 [info] Extension installed successfully: ms-azuretools.vscode-docker vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 21:15:39.464 [info] Extension installed successfully: ms-azuretools.vscode-containers vscode-userdata:/home/umi/.antigravity/extensions/extensions.json
+2026-05-07 21:15:39.464 [error] [uncaught exception in sharedProcess]: Cannot read properties of undefined (reading 'fireEvent'): TypeError: Cannot read properties of undefined (reading 'fireEvent')
+    at _a.value (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:62766)
+    at U.C (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2328)
+    at U.D (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2398)
+    at U.fire (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:28:2615)
+    at gf.L (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:10866)
+    at async gf.installGalleryExtensions (file:///usr/share/antigravity/resources/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js:74:2621)

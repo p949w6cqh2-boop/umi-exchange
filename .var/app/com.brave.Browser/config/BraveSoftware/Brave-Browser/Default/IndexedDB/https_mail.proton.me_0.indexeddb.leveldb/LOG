@@ -1,0 +1,23 @@
+2026/05/08-18:22:45.885 23 Reusing MANIFEST /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_mail.proton.me_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/08-18:22:45.886 23 Recovering log #26
+2026/05/08-18:22:45.887 23 Reusing old log /home/umi/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_mail.proton.me_0.indexeddb.leveldb/000026.log 
+2026/05/08-18:22:45.887 23 Delete type=2 #25
+2026/05/08-18:22:48.338 24 Level-0 table #31: started
+2026/05/08-18:22:48.340 24 Level-0 table #31: 595 bytes OK
+2026/05/08-18:22:48.343 24 Delete type=0 #26
+2026/05/08-18:22:48.343 24 Manual compaction at level-0 from (begin) .. (end); will stop at '\x00\x08\x01\x02\x01 \x00h\x00f\x00y\x00x\x00j\x00j\x00y\x00x\x00m\x00u\x00y\x00x\x00t\x00f\x00b\x005\x00p\x00u\x00w\x00l\x00u\x006\x006\x00e\x00g\x00v\x00z\x00u\x00k\x005\x00p\x00h' @ 398 : 1
+2026/05/08-18:22:48.343 24 Compacting 1@0 + 1@1 files
+2026/05/08-18:22:48.345 24 Generated table #32@0: 81 keys, 1386 bytes
+2026/05/08-18:22:48.346 24 Compacted 1@0 + 1@1 files => 1386 bytes
+2026/05/08-18:22:48.348 24 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/08-18:22:48.348 24 Delete type=2 #31
+2026/05/08-18:22:48.348 24 Delete type=2 #28
+2026/05/08-18:22:48.349 24 Manual compaction at level-0 from '\x00\x08\x01\x02\x01 \x00h\x00f\x00y\x00x\x00j\x00j\x00y\x00x\x00m\x00u\x00y\x00x\x00t\x00f\x00b\x005\x00p\x00u\x00w\x00l\x00u\x006\x006\x00e\x00g\x00v\x00z\x00u\x00k\x005\x00p\x00h' @ 398 : 1 .. (end); will stop at (end)
+2026/05/08-18:22:48.349 24 Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x08\x00\x00\xc8\x07\x00m\x00u\x00t\x00e\x00x\x00e\x00s' @ 317 : 1
+2026/05/08-18:22:48.349 24 Compacting 1@1 + 1@2 files
+2026/05/08-18:22:48.351 24 Generated table #33@1: 36 keys, 988 bytes
+2026/05/08-18:22:48.351 24 Compacted 1@1 + 1@2 files => 988 bytes
+2026/05/08-18:22:48.354 24 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/05/08-18:22:48.354 24 Delete type=2 #32
+2026/05/08-18:22:48.354 24 Delete type=2 #5
+2026/05/08-18:22:48.355 24 Manual compaction at level-1 from '\x00\x08\x00\x00\xc8\x07\x00m\x00u\x00t\x00e\x00x\x00e\x00s' @ 317 : 1 .. (end); will stop at (end)

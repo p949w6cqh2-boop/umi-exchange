@@ -1,0 +1,6 @@
+2026-05-08 18:21:05.912 [error] #1: https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream - error POST net::ERR_INTERNET_DISCONNECTED
+2026-05-08 18:21:07.972 [error] #2: https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream - error POST net::ERR_INTERNET_DISCONNECTED
+2026-05-08 18:21:09.131 [error] #3: https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream - error POST net::ERR_INTERNET_DISCONNECTED
+2026-05-08 18:21:11.465 [error] #4: https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream - error POST net::ERR_INTERNET_DISCONNECTED
+2026-05-08 18:21:24.939 [error] #5: https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream - error POST net::ERR_INTERNET_DISCONNECTED
+2026-05-08 18:21:28.553 [error] #6: https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream - error POST net::ERR_INTERNET_DISCONNECTED
