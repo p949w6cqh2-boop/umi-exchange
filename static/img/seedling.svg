@@ -1,16 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-  <title>Seedling — Growth</title>
-  <!-- Soil -->
-  <ellipse cx="100" cy="155" rx="50" ry="10" fill="#1A1A2E" opacity="0.15"/>
-  <!-- Stem -->
-  <path d="M100 155V90" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Seedling / sprout -->
+  <path d="M60 95 L60 60"/>
   <!-- Left leaf -->
-  <path d="M100 110C85 100 70 85 75 70c20 5 30 20 25 40z" fill="#22C55E" opacity="0.7"/>
+  <path d="M60 70 Q45 60 40 45 Q55 50 60 70" fill="currentColor" opacity="0.1"/>
+  <path d="M60 70 Q45 60 40 45 Q55 50 60 70"/>
   <!-- Right leaf -->
-  <path d="M100 90c15-10 30-25 25-40-20 5-30 20-25 40z" fill="#22C55E" opacity="0.5"/>
-  <!-- Sun rays -->
-  <circle cx="155" cy="50" r="12" fill="#FBBF24" opacity="0.6"/>
-  <line x1="155" y1="30" x2="155" y2="22" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
-  <line x1="175" y1="50" x2="183" y2="50" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
-  <line x1="170" y1="35" x2="176" y2="29" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+  <path d="M60 55 Q75 45 80 30 Q65 35 60 55" fill="currentColor" opacity="0.1"/>
+  <path d="M60 55 Q75 45 80 30 Q65 35 60 55"/>
+  <!-- Ground -->
+  <path d="M35 95 Q60 90 85 95" fill="currentColor" opacity="0.08"/>
+  <path d="M35 95 Q60 90 85 95"/>
+  <!-- Small sun -->
+  <circle cx="90" cy="25" r="6" opacity="0.3"/>
+  <line x1="90" y1="15" x2="90" y2="12" opacity="0.3"/>
+  <line x1="100" y1="25" x2="103" y2="25" opacity="0.3"/>
+  <line x1="97" y1="18" x2="99" y2="16" opacity="0.3"/>
 </svg>

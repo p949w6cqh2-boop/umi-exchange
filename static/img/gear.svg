@@ -1,10 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-  <title>Gear — Settings</title>
-  <!-- Outer gear shape -->
-  <path d="M100 40l8 15h17l8-15h0l-2 17 14 9 15-8v0l-10 14 7 16 17 2v0l-17 5 0 17 17 2v0l-17 5 0 0-7 16 10 14v0l-15-8-14 9 2 17h0l-8-15h-17l-8 15h0l2-17-14-9-15 8v0l10-14-7-16-17-2v0l17-5 0-17-17-2v0l17-5 0 0 7-16-10-14v0l15 8 14-9-2-17z"
-        stroke="#1A1A2E" stroke-width="2.5" fill="none" opacity="0.8"/>
-  <!-- Inner circle -->
-  <circle cx="100" cy="100" r="25" stroke="#1A1A2E" stroke-width="2.5" fill="none"/>
-  <!-- Center dot -->
-  <circle cx="100" cy="100" r="5" fill="#3B82F6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Gear / cog -->
+  <circle cx="60" cy="60" r="18"/>
+  <circle cx="60" cy="60" r="8"/>
+  <!-- Teeth -->
+  <line x1="60" y1="38" x2="60" y2="30"/>
+  <line x1="60" y1="82" x2="60" y2="90"/>
+  <line x1="38" y1="60" x2="30" y2="60"/>
+  <line x1="82" y1="60" x2="90" y2="60"/>
+  <line x1="44" y1="44" x2="38" y2="38"/>
+  <line x1="76" y1="76" x2="82" y2="82"/>
+  <line x1="76" y1="44" x2="82" y2="38"/>
+  <line x1="44" y1="76" x2="38" y2="82"/>
+  <!-- Small decorative circle -->
+  <circle cx="60" cy="60" r="3" fill="currentColor" opacity="0.2"/>
 </svg>

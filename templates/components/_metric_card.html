@@ -1,23 +1,9 @@
-{# Metric card — reusable dashboard stat display. #}
-{# Usage: {% include "_metric_card.html" with label="Active Needs" value=42 %} #}
-{# Optional: icon (emoji), trend ("up"|"down"|"flat"), trend_value ("+12%") #}
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-1">
-  <div class="flex items-center justify-between">
-    <p class="text-sm text-gray-500 font-medium">{{ label }}</p>
-    {% if icon %}
-    <span class="text-lg" aria-hidden="true">{{ icon }}</span>
-    {% endif %}
-  </div>
-  <p class="text-3xl font-bold text-gray-900 mt-1">{{ value }}</p>
-  {% if trend_value %}
-  <p class="text-xs mt-1 flex items-center gap-1
-    {% if trend == 'up' %}text-emerald-600{% elif trend == 'down' %}text-red-600{% else %}text-gray-500{% endif %}">
-    {% if trend == 'up' %}
-    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-    {% elif trend == 'down' %}
-    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-    {% endif %}
-    {{ trend_value }}
-  </p>
+{# Metric card: single stat with label. #}
+{# Usage: {% include "components/_metric_card.html" with label="Active Needs" value=42 %} #}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+  <p class="text-sm text-gray-500 font-medium">{{ label }}</p>
+  <p class="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{{ value }}</p>
+  {% if subtitle %}
+  <p class="text-xs text-gray-400 mt-1">{{ subtitle }}</p>
   {% endif %}
 </div>

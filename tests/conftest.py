@@ -73,3 +73,29 @@ class MatchFactory(DjangoModelFactory):
     offer = factory.SubFactory(OfferFactory)
     proposed_by = factory.SubFactory(MemberFactory)
     status = "proposed"
+
+
+@pytest.fixture
+def user():
+    return UserFactory()
+
+
+@pytest.fixture
+def community(user):
+    return CommunityFactory(created_by=user)
+
+
+@pytest.fixture
+def member(user, community):
+    return MemberFactory(user=user, community=community, role="member")
+
+
+@pytest.fixture
+def coordinator(user, community):
+    return MemberFactory(user=user, community=community, role="coordinator")
+
+
+@pytest.fixture
+def category(community):
+    return CategoryFactory(community=community)
+

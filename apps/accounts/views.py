@@ -1,7 +1,5 @@
 """Account views: registration, login, profile settings."""
-# pyrefly: ignore [missing-import]
 from django.contrib.auth import login
-# pyrefly: ignore [missing-import]
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView as DjangoLoginView, LogoutView
 from django.urls import reverse_lazy
@@ -20,7 +18,7 @@ class RegisterView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        login(self.request, self.object)
+        login(self.request, self.object, backend="django.contrib.auth.backends.ModelBackend")
         return response
 
 
@@ -40,25 +38,12 @@ class SettingsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["memberships"] = self.request.user.member_set.filter(is_active=True).select_related("community")
-
-        # 2FA context — check if django-two-factor-auth is available
-        try:
-            from django_otp.plugins.otp_totp.models import TOTPDevice
-            ctx["two_factor_available"] = True
-            ctx["two_factor_enabled"] = TOTPDevice.objects.filter(
-                user=self.request.user, confirmed=True
-            ).exists()
-        except ImportError:
-            ctx["two_factor_available"] = False
-            ctx["two_factor_enabled"] = False
-
-        # Coordinator 2FA requirement flag (deployment-time decision)
-        from django.conf import settings as django_settings
-        ctx["require_2fa_for_coordinators"] = getattr(
-            django_settings, "REQUIRE_2FA_FOR_COORDINATORS", False
-        )
-        ctx["is_coordinator"] = ctx["memberships"].filter(
-            role__in=["coordinator", "admin"]
-        ).exists()
-
+        
+        # 2FA Integration
+        from django.conf import settings
+        ctx["enable_2fa"] = getattr(settings, "ENABLE_2FA", False)
+        if ctx["enable_2fa"]:
+            from two_factor.utils import default_device
+            ctx["two_factor_enabled"] = bool(default_device(self.request.user))
         return ctx
+

@@ -4,10 +4,9 @@ import json
 from datetime import timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Avg, F
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.views import View
 from django.views.generic import TemplateView
 
 from apps.communities.models import Community, Member
@@ -90,60 +89,42 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
-class DashboardCSVExportView(LoginRequiredMixin, View):
-    """
-    Export community data as CSV. Coordinator access only.
-    Privacy: no PII (emails, phone numbers) is exported — only display names,
-    titles, categories, statuses, and timestamps.
-    """
+class DashboardExportView(LoginRequiredMixin, TemplateView):
+    """Export community data as CSV. Coordinator/admin only."""
 
-    def get(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
-        member = Member.objects.filter(
-            user=request.user, community=community, is_active=True,
+    def dispatch(self, request, *args, **kwargs):
+        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.member = Member.objects.filter(
+            user=request.user, community=self.community, is_active=True,
             role__in=["coordinator", "admin"],
         ).first()
-        if not member:
+        if not self.member:
             return HttpResponseForbidden("Coordinator access required.")
+        return super().dispatch(request, *args, **kwargs)
 
+    def get(self, request, *args, **kwargs):
         export_type = request.GET.get("type", "needs")
-        filename = f"umi-{community.slug}-{export_type}-{timezone.now().strftime('%Y%m%d')}.csv"
+        c = self.community
 
         response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response["Content-Disposition"] = f'attachment; filename="{c.slug}-{export_type}.csv"'
         writer = csv.writer(response)
 
-        if export_type == "needs":
-            writer.writerow(["Title", "Category", "Urgency", "Status", "Requester", "Neighborhood", "Created", "Expires"])
-            for need in Need.objects.filter(community=community).select_related("category", "requester").order_by("-created_at"):
+        if export_type == "matches":
+            writer.writerow(["Match ID", "Need", "Status", "Proposed By", "Proposed At", "Accepted At", "Fulfilled At"])
+            for m in Match.objects.filter(need__community=c).select_related("need", "proposed_by").order_by("-proposed_at"):
                 writer.writerow([
-                    need.title, need.category.name, need.urgency, need.status,
-                    need.requester.display_name, need.neighborhood,
-                    need.created_at.isoformat(), need.expires_at.isoformat(),
+                    str(m.id), m.need.title, m.status, m.proposed_by.display_name,
+                    m.proposed_at.isoformat(), m.accepted_at.isoformat() if m.accepted_at else "",
+                    m.fulfilled_at.isoformat() if m.fulfilled_at else "",
                 ])
-
-        elif export_type == "offers":
-            writer.writerow(["Title", "Category", "Status", "Offerer", "Created", "Expires"])
-            for offer in Offer.objects.filter(community=community).select_related("category", "offerer").order_by("-created_at"):
-                writer.writerow([
-                    offer.title, offer.category.name, offer.status,
-                    offer.offerer.display_name,
-                    offer.created_at.isoformat(), offer.expires_at.isoformat(),
-                ])
-
-        elif export_type == "matches":
-            writer.writerow(["Need", "Offer", "Status", "Proposed By", "Proposed At", "Accepted At", "Fulfilled At"])
-            for match in Match.objects.filter(need__community=community).select_related("need", "offer", "proposed_by").order_by("-proposed_at"):
-                writer.writerow([
-                    match.need.title,
-                    match.offer.title if match.offer else "",
-                    match.status, match.proposed_by.display_name,
-                    match.proposed_at.isoformat(),
-                    match.accepted_at.isoformat() if match.accepted_at else "",
-                    match.fulfilled_at.isoformat() if match.fulfilled_at else "",
-                ])
-
         else:
-            return HttpResponse("Invalid export type. Use: needs, offers, or matches.", status=400)
+            writer.writerow(["Need ID", "Title", "Category", "Urgency", "Status", "Requester", "Neighborhood", "Created", "Expires"])
+            for n in Need.objects.filter(community=c).select_related("category", "requester").order_by("-created_at"):
+                writer.writerow([
+                    str(n.id), n.title, n.category.name, n.urgency, n.status,
+                    n.requester.display_name, n.neighborhood,
+                    n.created_at.isoformat(), n.expires_at.isoformat(),
+                ])
 
         return response

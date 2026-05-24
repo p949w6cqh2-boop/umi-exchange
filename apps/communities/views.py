@@ -162,3 +162,18 @@ class JoinCodeQRView(LoginRequiredMixin, View):
 
 class TechnologyView(TemplateView):
     template_name = "pages/technology.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["tech_items"] = [
+            ("Python", "1991 — 34 years"),
+            ("Django", "2005 — 20 years"),
+            ("PostgreSQL", "1996 — 29 years"),
+            ("Redis", "2009 — 16 years"),
+            ("HTML + CSS", "1993 — 32 years"),
+            ("HTMX", "2020 — hypermedia"),
+            ("Alpine.js", "2019 — 1.2 KB"),
+            ("Docker", "2013 — 12 years"),
+            ("Caddy", "2015 — auto-TLS"),
+        ]
+        return ctx

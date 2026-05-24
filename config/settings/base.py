@@ -18,7 +18,8 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 SITE_URL = env("SITE_URL", default="http://localhost:8000")
 ENCRYPTION_KEY = env("ENCRYPTION_KEY", default="")
 UMI_CONFORMANCE_LEVEL = env("UMI_CONFORMANCE_LEVEL", default="core")
-DEBUG = env.bool("DEBUG", default=True)
+DEBUG = env.bool("DEBUG", default=False)
+
 
 # ── Apps ──────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -46,31 +47,27 @@ INSTALLED_APPS = [
     "apps.health",
 ]
 
-# Optional: 2FA — packages installed, but opt-in per user.
-# Users enable TOTP via their account settings page.
-try:
-    import django_otp  # noqa: F401
-    INSTALLED_APPS += [
-        "django_otp",
-        "django_otp.plugins.otp_totp",
-        "django_otp.plugins.otp_static",
-        "two_factor",
-        "two_factor.plugins.phonenumber",
-    ]
-    TWO_FACTOR_AVAILABLE = True
-except ImportError:
-    TWO_FACTOR_AVAILABLE = False
-
-# Deployment-time flag: require 2FA for coordinators/admins.
-# Set via env var; defaults to False (opt-in only).
-REQUIRE_2FA_FOR_COORDINATORS = env.bool("REQUIRE_2FA_FOR_COORDINATORS", default=False)
-
 # Optional: Django-Q2 (for background tasks — not required for basic operation)
 try:
     import django_q  # noqa: F401
     INSTALLED_APPS.append("django_q")
 except ImportError:
     pass
+
+# Optional: 2FA (django-two-factor-auth)
+ENABLE_2FA = False
+try:
+    import django_otp  # noqa: F401
+    import two_factor  # noqa: F401
+    INSTALLED_APPS += [
+        "django_otp",
+        "django_otp.plugins.otp_totp",
+        "django_otp.plugins.otp_static",
+        "two_factor",
+    ]
+    ENABLE_2FA = True
+except ImportError:
+    pass  # 2FA not installed; features disabled gracefully
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -82,16 +79,14 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
-    "apps.audit.middleware.AuditMiddleware",
 ]
 
-# 2FA middleware — inserted after AuthenticationMiddleware (required by django-otp)
-try:
-    import django_otp  # noqa: F401
-    auth_idx = MIDDLEWARE.index("django.contrib.auth.middleware.AuthenticationMiddleware")
-    MIDDLEWARE.insert(auth_idx + 1, "django_otp.middleware.OTPMiddleware")
-except (ImportError, ValueError):
-    pass
+# Optional: OTP middleware for 2FA (must come after AuthenticationMiddleware)
+if ENABLE_2FA:
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index("django.contrib.auth.middleware.AuthenticationMiddleware") + 1,
+        "django_otp.middleware.OTPMiddleware",
+    )
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -179,13 +174,7 @@ REST_FRAMEWORK = {
 }
 
 # ── Rate Limiting ─────────────────────────────────────
-RATELIMIT_USE_CACHE = "default" if REDIS_URL else None
+RATELIMIT_USE_CACHE = "default" 
 
 # ── Health Check ──────────────────────────────────────
 HEALTH_CHECK_TOKEN = env("HEALTH_CHECK_TOKEN", default="")
-
-# ── 2FA (django-two-factor-auth) ──────────────────────
-LOGIN_URL = "two_factor:login" if TWO_FACTOR_AVAILABLE else "/auth/login/"
-TWO_FACTOR_PATCH_ADMIN = False  # Don't force 2FA on admin login
-TWO_FACTOR_CALL_GATEWAY = None  # Phone 2FA not supported in Core
-TWO_FACTOR_SMS_GATEWAY = None

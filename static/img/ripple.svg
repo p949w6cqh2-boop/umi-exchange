@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-  <title>Ripple Effect</title>
-  <!-- Concentric circles radiating outward -->
-  <circle cx="100" cy="100" r="8" fill="#3B82F6"/>
-  <circle cx="100" cy="100" r="24" stroke="#3B82F6" stroke-width="2" fill="none" opacity="0.6"/>
-  <circle cx="100" cy="100" r="44" stroke="#3B82F6" stroke-width="1.5" fill="none" opacity="0.4"/>
-  <circle cx="100" cy="100" r="64" stroke="#3B82F6" stroke-width="1" fill="none" opacity="0.25"/>
-  <circle cx="100" cy="100" r="84" stroke="#3B82F6" stroke-width="0.75" fill="none" opacity="0.15"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Ripple effect: expanding circles from center -->
+  <circle cx="60" cy="60" r="8" fill="currentColor" opacity="0.15"/>
+  <circle cx="60" cy="60" r="20" opacity="0.4"/>
+  <circle cx="60" cy="60" r="32" opacity="0.25"/>
+  <circle cx="60" cy="60" r="44" opacity="0.15"/>
+  <!-- Center dot -->
+  <circle cx="60" cy="60" r="4" fill="currentColor" opacity="0.6"/>
 </svg>
