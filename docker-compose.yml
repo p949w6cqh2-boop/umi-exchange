@@ -42,7 +42,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - static_files:/srv/static:ro
       - media_files:/srv/media:ro
     depends_on:
