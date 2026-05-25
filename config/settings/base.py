@@ -133,8 +133,9 @@ if REDIS_URL:
 Q_CLUSTER = {
     "name": "umi",
     "workers": 2,
-    "recycle": 500,
-    "timeout": 120,
+    "recycle": 360,
+    "timeout": 300,
+    "retry": 360,  # Must be > timeout to avoid premature task re-triggers
     "orm": "default",  # Use ORM broker (works without Redis)
 }
 

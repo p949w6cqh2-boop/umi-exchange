@@ -10,6 +10,28 @@
     <p class="text-sm text-gray-600">Email: {{ user.email|default:"Not set" }}</p>
   </div>
 
+  {% if enable_2fa %}
+  <div class="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900">Two-Factor Authentication</h2>
+      <p class="text-sm text-gray-600 mt-1">
+        {% if is_2fa_enabled %}
+        <span class="text-green-600 font-medium">Enabled</span> - Your account is protected.
+        {% else %}
+        <span class="text-gray-500">Disabled</span> - Add an extra layer of security.
+        {% endif %}
+      </p>
+    </div>
+    <div>
+      {% if is_2fa_enabled %}
+      <a href="{% url 'two_factor:profile' %}" class="text-sm text-blue-600 hover:text-blue-800">Manage</a>
+      {% else %}
+      <a href="{% url 'two_factor:setup' %}" class="inline-flex items-center justify-center bg-[var(--umi-primary)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#16213E] transition-colors">Setup 2FA</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="bg-white rounded-xl border border-gray-200 p-6">
     <h2 class="text-lg font-semibold text-gray-900">Household</h2>
     {% if memberships.0.household %}
@@ -33,33 +55,6 @@
     {% empty %}
     <p class="text-sm text-gray-500 mt-2"><a href="{% url 'community-join' %}" class="text-blue-600">Join a community</a></p>
     {% endfor %}
-  </div>
-
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Security</h2>
-    {% if enable_2fa %}
-      <div class="mt-2 flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-700 font-medium">Two-Factor Authentication (2FA)</p>
-          <p class="text-xs text-gray-500 mt-0.5">
-            {% if two_factor_enabled %}
-              <span class="text-emerald-600 font-medium">&#10003; Enabled</span> (highly recommended for coordinators/admins)
-            {% else %}
-              <span class="text-red-500 font-medium">&#9888; Disabled</span>
-            {% endif %}
-          </p>
-        </div>
-        <div>
-          {% if two_factor_enabled %}
-            <a href="{% url 'two_factor:profile' %}" class="text-sm text-blue-600 hover:text-blue-800">Manage 2FA</a>
-          {% else %}
-            <a href="{% url 'two_factor:setup' %}" class="text-sm text-blue-600 hover:text-blue-800 font-semibold">Enable 2FA</a>
-          {% endif %}
-        </div>
-      </div>
-    {% else %}
-      <p class="text-sm text-gray-500 mt-2">2FA package is not enabled on this instance.</p>
-    {% endif %}
   </div>
 
   <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">

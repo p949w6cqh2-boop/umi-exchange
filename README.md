@@ -73,8 +73,7 @@ Enabled by default. Admin generates QR code from community settings page. Requir
 Enabled by default. Members can create/join households. Billing counts by households, not individual members.
 
 ### 2FA for Coordinators
-Enabled dynamically. Set `ENABLE_2FA=True` in your environment (or config settings). The system will automatically register the `two-factor-auth` URLs and show the management options in the user profile dashboard.
-
+Uncomment `django_otp`, `django_otp.plugins.otp_totp`, and `two_factor` in `INSTALLED_APPS` and `OTPMiddleware` in `MIDDLEWARE` in `config/settings/base.py`.
 
 ### VPS Hardening
 ```bash

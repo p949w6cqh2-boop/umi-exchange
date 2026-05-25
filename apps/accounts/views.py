@@ -38,12 +38,8 @@ class SettingsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["memberships"] = self.request.user.member_set.filter(is_active=True).select_related("community")
-        
-        # 2FA Integration
         from django.conf import settings
         ctx["enable_2fa"] = getattr(settings, "ENABLE_2FA", False)
         if ctx["enable_2fa"]:
-            from two_factor.utils import default_device
-            ctx["two_factor_enabled"] = bool(default_device(self.request.user))
+            ctx["is_2fa_enabled"] = getattr(self.request.user, "is_verified", lambda: False)() or self.request.user.totpdevice_set.filter(confirmed=True).exists()
         return ctx
-
