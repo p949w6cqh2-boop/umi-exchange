@@ -2,9 +2,10 @@
 Production settings — security hardened, Sentry-integrated, structured logging.
 All security headers pass Mozilla Observatory A+ when combined with Caddy.
 """
-from .base import *  # noqa: F401, F403
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+
+from .base import *  # noqa: F401, F403
 
 DEBUG = False
 

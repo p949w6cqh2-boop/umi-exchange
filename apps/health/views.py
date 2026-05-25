@@ -3,10 +3,9 @@ Health check endpoint — returns 200 when app + database are reachable.
 Used by load balancers, uptime monitors (Uptime Kuma), and deployment scripts.
 Optional token protection via HEALTH_CHECK_TOKEN env var.
 """
-import json
-from django.db import connection
 from django.conf import settings
-from django.http import JsonResponse, HttpResponseForbidden
+from django.db import connection
+from django.http import HttpResponseForbidden, JsonResponse
 from django.views import View
 
 

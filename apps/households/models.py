@@ -1,7 +1,8 @@
 """Household model: parishes think in families, not individuals."""
-import uuid
 import random
 import string
+import uuid
+
 from django.conf import settings
 from django.db import models
 

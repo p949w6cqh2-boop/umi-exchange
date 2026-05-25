@@ -1,10 +1,10 @@
 """Need model — umi:Need entity. Includes Fernet encryption for on_behalf_of."""
 import uuid
-import re
+
+from cryptography.fernet import Fernet
 from django.conf import settings as django_settings
 from django.db import models
 from django.utils import timezone
-from cryptography.fernet import Fernet
 
 
 class Need(models.Model):

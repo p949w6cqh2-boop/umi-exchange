@@ -1,6 +1,7 @@
 """Tests for the Match state machine — the most critical protocol enforcement."""
 import pytest
 from django.core.exceptions import ValidationError
+
 from .conftest import *
 
 

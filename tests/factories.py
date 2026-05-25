@@ -3,7 +3,8 @@ Shared test fixtures: users, communities, members, categories.
 """
 import factory
 from django.contrib.auth import get_user_model
-from apps.communities.models import Community, Member, Category
+
+from apps.communities.models import Category, Community, Member
 
 User = get_user_model()
 

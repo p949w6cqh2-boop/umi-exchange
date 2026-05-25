@@ -1,22 +1,17 @@
 """
 Model tests: User, Community, Need, Offer, Match state machine, AuditLog.
 """
+
 import pytest
 from django.core.exceptions import ValidationError
-from django.utils import timezone
-from datetime import timedelta
 
-from apps.accounts.models import User
-from apps.communities.models import Community, Member, Category
+from apps.audit.models import AuditLog
+from apps.households.models import Household
+from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.offers.models import Offer
-from apps.matches.models import Match
-from apps.audit.models import AuditLog
-from apps.notifications.models import Notification
-from apps.households.models import Household
-from apps.consent.models import Consent
 
-from .factories import UserFactory, CommunityFactory, MemberFactory, CategoryFactory
+from .factories import CategoryFactory, CommunityFactory, MemberFactory, UserFactory
 
 
 @pytest.mark.django_db

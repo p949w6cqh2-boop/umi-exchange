@@ -2,17 +2,18 @@
 import csv
 import json
 from datetime import timedelta
+
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Avg, F
-from django.http import HttpResponseForbidden, HttpResponse
+from django.db.models import Avg, Count, F
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.generic import TemplateView
 
 from apps.communities.models import Community, Member
+from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.offers.models import Offer
-from apps.matches.models import Match
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -69,7 +70,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ctx["category_data"] = json.dumps(list(cats))
 
         # Household count (for billing display)
-        from apps.households.models import Household
         hh_count = Member.objects.filter(
             community=c, is_active=True, household__isnull=False,
         ).values("household").distinct().count()

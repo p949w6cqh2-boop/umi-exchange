@@ -1,13 +1,14 @@
 """Account views: registration, login, profile settings."""
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView as DjangoLoginView, LogoutView
+from django.contrib.auth.views import LoginView as DjangoLoginView
+from django.contrib.auth.views import LogoutView
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, TemplateView
 from django_ratelimit.decorators import ratelimit
 
-from .forms import RegistrationForm, LoginForm
+from .forms import LoginForm, RegistrationForm
 
 
 @method_decorator(ratelimit(key="ip", rate="3/m", method="POST", block=True), name="post")

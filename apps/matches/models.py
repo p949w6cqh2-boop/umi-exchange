@@ -4,6 +4,7 @@ Implements the protocol state machine (Section 4.3) with contact revelation (Sec
 This is the most important model in the entire application.
 """
 import uuid
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone

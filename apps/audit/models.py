@@ -3,6 +3,7 @@ Audit log — append-only, hashed IPs, non-deletable.
 UMI Protocol Section 8.3: all state-changing operations MUST be logged.
 """
 import hashlib
+
 from django.conf import settings
 from django.db import models
 

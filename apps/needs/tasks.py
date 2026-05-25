@@ -4,8 +4,10 @@ UMI Protocol Section 4.1: Needs past expiration with no accepted match are expir
 CRITICAL: Needs with at least one accepted match MUST NOT expire.
 """
 from django.utils import timezone
+
 from apps.audit.models import AuditLog
 from apps.notifications.adapter import NotificationAdapter
+
 from .models import Need
 
 

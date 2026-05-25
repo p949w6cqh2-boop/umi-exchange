@@ -1,6 +1,7 @@
 """UMI Exchange — Root URL Configuration."""
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
+
 from apps.communities.views import LandingView
 
 urlpatterns = [
@@ -17,6 +18,7 @@ urlpatterns = [
 ]
 
 from django.conf import settings
+
 if getattr(settings, "ENABLE_2FA", False):
     from two_factor.urls import urlpatterns as tf_urls
     urlpatterns.insert(1, path("", include(tf_urls)))

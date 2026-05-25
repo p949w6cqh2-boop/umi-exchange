@@ -6,8 +6,8 @@ defense-in-depth by stripping HTML tags on INPUT, so we never store raw HTML
 in the database. This is a belt-and-suspenders approach.
 """
 import re
-from django.core.exceptions import ValidationError
 
+from django.core.exceptions import ValidationError
 
 # Regex to match HTML tags (including self-closing)
 HTML_TAG_RE = re.compile(r"<[^>]+>")

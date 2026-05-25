@@ -1,5 +1,6 @@
 """Consent model — umi:Consent entity. Present at Core for contact preferences; full UI at Extended."""
 import uuid
+
 from django.conf import settings
 from django.db import models
 

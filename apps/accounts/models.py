@@ -1,5 +1,6 @@
 """Custom User model. Email is optional (protocol: participants without email can use username-only)."""
 import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 

@@ -5,7 +5,7 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
-from .factories import UserFactory, CommunityFactory, MemberFactory, CategoryFactory
+from .factories import CategoryFactory, CommunityFactory, MemberFactory, UserFactory
 
 
 @pytest.mark.django_db

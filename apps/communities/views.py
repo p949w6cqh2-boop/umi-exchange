@@ -1,17 +1,19 @@
 """Community views: landing, join, feed, settings, QR code."""
 import io
+
 from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
-from django.views.generic import TemplateView, CreateView, FormView, ListView
+from django.views.generic import CreateView, FormView, ListView, TemplateView
 
-from .forms import CommunityCreateForm, JoinForm
-from .models import Community, Member, Category
 from apps.needs.models import Need
 from apps.offers.models import Offer
+
+from .forms import CommunityCreateForm, JoinForm
+from .models import Category, Community, Member
 
 
 class LandingView(TemplateView):

@@ -1,14 +1,15 @@
 """Shared pytest fixtures and factories for UMI Exchange tests."""
-import pytest
+from datetime import timedelta
+
 import factory
+from django.utils import timezone
 from factory.django import DjangoModelFactory
+
 from apps.accounts.models import User
-from apps.communities.models import Community, Member, Category
+from apps.communities.models import Category, Community, Member
+from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.offers.models import Offer
-from apps.matches.models import Match
-from django.utils import timezone
-from datetime import timedelta
 
 
 class UserFactory(DjangoModelFactory):

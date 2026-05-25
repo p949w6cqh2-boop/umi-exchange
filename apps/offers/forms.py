@@ -1,5 +1,7 @@
 from django import forms
+
 from apps.communities.validators import sanitize_text_field
+
 from .models import Offer
 
 INPUT = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-blue-500"

@@ -1,4 +1,5 @@
 from django import forms
+
 from .models import Household
 
 INPUT_CLASS = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]"

@@ -1,11 +1,11 @@
 """Community, Member, and Category models — the organisational layer."""
-import uuid
 import random
 import string
+import uuid
+
 from django.conf import settings as django_settings
 from django.db import models
 from django.utils.text import slugify
-
 
 DEFAULT_SETTINGS = {
     "auto_expire_days": 30,

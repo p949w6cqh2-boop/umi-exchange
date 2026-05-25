@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import DashboardView, DashboardExportView
+
+from .views import DashboardExportView, DashboardView
 
 urlpatterns = [
     path("", DashboardView.as_view(), name="community-dashboard"),

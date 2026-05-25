@@ -1,4 +1,5 @@
 from django import template
+
 from apps.notifications.models import Notification
 
 register = template.Library()

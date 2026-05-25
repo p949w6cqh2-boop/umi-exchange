@@ -4,8 +4,10 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, DetailView
 from django_ratelimit.decorators import ratelimit
+
 from apps.communities.models import Community, Member
 from apps.needs.models import Need
+
 from .forms import OfferForm
 from .models import Offer
 

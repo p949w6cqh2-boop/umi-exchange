@@ -1,4 +1,5 @@
 from django import forms
+
 from .models import Community
 from .validators import sanitize_text_field
 
