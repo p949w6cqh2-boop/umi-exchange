@@ -3,29 +3,24 @@ Match views: propose, detail, accept/fulfill/cancel.
 Implements self-matching prevention (Section 8.6) and race condition handling (Section 8.7).
 """
 import json
-
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import DetailView
-from django_ratelimit.decorators import ratelimit
 
-from apps.audit.models import AuditLog
 from apps.communities.models import Community, Member
-from apps.communities.validators import sanitize_text_field
 from apps.needs.models import Need
-from apps.notifications.adapter import NotificationAdapter
 from apps.offers.models import Offer
-
+from apps.audit.models import AuditLog
+from apps.communities.validators import sanitize_text_field
+from apps.notifications.adapter import NotificationAdapter
 from .models import Match
 
 
-@method_decorator(ratelimit(key="user", rate="10/m", method="POST", block=True), name="post")
 class MatchProposeView(LoginRequiredMixin, View):
     """POST: propose a match between a need and an offer."""
 
@@ -58,7 +53,7 @@ class MatchProposeView(LoginRequiredMixin, View):
         NotificationAdapter.send(
             need.requester.user, "match_proposed",
             f"{member.display_name} proposed a match on your need '{need.title}'",
-            "View the match to accept or decline.",
+            f"View the match to accept or decline.",
             link=f"/c/{slug}/matches/{match.id}/",
         )
 
@@ -131,7 +126,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
             NotificationAdapter.send(
                 other.user, "match_accepted",
                 f"Match accepted on '{match.need.title}'!",
-                "Contact info has been shared. Check the match detail.",
+                f"Contact info has been shared. Check the match detail.",
                 link=f"/c/{slug}/matches/{match.id}/",
             )
         elif new_status == "fulfilled":

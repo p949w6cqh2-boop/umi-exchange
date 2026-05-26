@@ -2,9 +2,8 @@
 UMI Exchange — Base Settings
 Shared across all environments. Environment-specific overrides in development.py / production.py.
 """
-from pathlib import Path
-
 import environ
+from pathlib import Path
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -165,15 +164,23 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
 
 # ── Email ─────────────────────────────────────────────
+# Console backend for dev; set EMAIL_BACKEND to django.core.mail.backends.smtp.EmailBackend
+# in production and configure SMTP settings via environment variables.
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@umifoundation.org")
+SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+
+# SMTP settings (only used when EMAIL_BACKEND is smtp)
 EMAIL_HOST = env("EMAIL_HOST", default="localhost")
-EMAIL_PORT = env.int("EMAIL_PORT", default=25)
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
-EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
-EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=5)
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=10)
+
+# Subject prefix for admin error emails
+EMAIL_SUBJECT_PREFIX = env("EMAIL_SUBJECT_PREFIX", default="[UMI] ")
 
 # ── REST Framework ────────────────────────────────────
 REST_FRAMEWORK = {
@@ -183,7 +190,7 @@ REST_FRAMEWORK = {
 }
 
 # ── Rate Limiting ─────────────────────────────────────
-RATELIMIT_USE_CACHE = "default"
+RATELIMIT_USE_CACHE = "default" 
 
 # ── Health Check ──────────────────────────────────────
 HEALTH_CHECK_TOKEN = env("HEALTH_CHECK_TOKEN", default="")

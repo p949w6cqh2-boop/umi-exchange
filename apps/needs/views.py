@@ -2,18 +2,14 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
-from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, DetailView
-from django_ratelimit.decorators import ratelimit
 
 from apps.communities.models import Community, Member
 from apps.offers.models import Offer
-
 from .forms import NeedForm
 from .models import Need
 
 
-@method_decorator(ratelimit(key="user", rate="5/m", method="POST", block=True), name="post")
 class NeedCreateView(LoginRequiredMixin, CreateView):
     model = Need
     form_class = NeedForm

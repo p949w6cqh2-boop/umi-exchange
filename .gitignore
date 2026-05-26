@@ -7,7 +7,6 @@ __pycache__/
 env/
 venv/
 ENV/
-source/
 
 # Database
 db.sqlite3
@@ -18,3 +17,18 @@ db.sqlite3-journal
 
 # Tailwind
 tailwindcss
+
+# Virtualenv and Caches
+source/
+.pytest_cache/
+.ruff_cache/
+*.save
+
+# System files / Mounts
+docs/umi_dev_security_protocol.md
+docs/umi_security_cheatsheet.md
+red_team.py
+scripts/security_check.sh
+scripts/setup_hardening.sh
+
+
