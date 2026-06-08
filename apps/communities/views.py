@@ -1,4 +1,5 @@
 """Community views: landing, join, feed, settings, QR code."""
+
 import io
 
 from django.conf import settings as django_settings
@@ -59,8 +60,10 @@ class CommunityCreateView(LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
         # Creator becomes admin
         Member.objects.create(
-            user=self.request.user, community=self.object,
-            display_name=self.request.user.username, role="admin",
+            user=self.request.user,
+            community=self.object,
+            display_name=self.request.user.username,
+            role="admin",
         )
         messages.success(self.request, f"Community '{self.object.name}' created!")
         return response
@@ -68,6 +71,7 @@ class CommunityCreateView(LoginRequiredMixin, CreateView):
 
 class FeedView(LoginRequiredMixin, ListView):
     """Community feed: merged needs + offers, filterable, with HTMX infinite scroll."""
+
     template_name = "communities/feed.html"
     context_object_name = "items"
     paginate_by = 20
@@ -121,7 +125,9 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.community = get_object_or_404(Community, slug=self.kwargs["slug"])
         self.member = Member.objects.filter(
-            user=request.user, community=self.community, is_active=True,
+            user=request.user,
+            community=self.community,
+            is_active=True,
             role__in=["admin", "coordinator"],
         ).first()
         if not self.member:
@@ -143,6 +149,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         if action == "regenerate_join_code":
             import secrets
             import string
+
             new_code = "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
             self.community.join_code = new_code
             self.community.save(update_fields=["join_code"])
@@ -169,6 +176,7 @@ class JoinCodeQRView(LoginRequiredMixin, View):
             return HttpResponse(status=403)
 
         import qrcode
+
         base_url = django_settings.SITE_URL.rstrip("/")
         join_url = f"{base_url}/join/?code={community.join_code}"
 
@@ -180,8 +188,11 @@ class JoinCodeQRView(LoginRequiredMixin, View):
         buffer = io.BytesIO()
         img.save(buffer, format="PNG")
         buffer.seek(0)
-        return HttpResponse(buffer, content_type="image/png",
-            headers={"Content-Disposition": f'inline; filename="{community.slug}-join-qr.png"'})
+        return HttpResponse(
+            buffer,
+            content_type="image/png",
+            headers={"Content-Disposition": f'inline; filename="{community.slug}-join-qr.png"'},
+        )
 
 
 class TechnologyView(TemplateView):

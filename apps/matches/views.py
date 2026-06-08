@@ -2,6 +2,7 @@
 Match views: propose, detail, accept/fulfill/cancel.
 Implements self-matching prevention (Section 8.6) and race condition handling (Section 8.7).
 """
+
 import json
 
 from django.contrib import messages
@@ -72,7 +73,8 @@ class MatchProposeView(LoginRequiredMixin, View):
 
         # Notifications
         NotificationAdapter.send(
-            need.requester.user, "match_proposed",
+            need.requester.user,
+            "match_proposed",
             f"{member.display_name} proposed a match on your need '{need.title}'",
             "View the match to accept or decline.",
             link=f"/c/{slug}/matches/{match.id}/",
@@ -160,7 +162,8 @@ class MatchUpdateView(LoginRequiredMixin, View):
                 recipients.append(match.proposed_by)
             for other in recipients:
                 NotificationAdapter.send(
-                    other.user, "match_accepted",
+                    other.user,
+                    "match_accepted",
                     f"Match accepted on '{match.need.title}'!",
                     "Contact info has been shared. Check the match detail.",
                     link=f"/c/{slug}/matches/{match.id}/",

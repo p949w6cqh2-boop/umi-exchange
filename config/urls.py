@@ -1,4 +1,5 @@
 """UMI Exchange — Root URL Configuration."""
+
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
@@ -22,6 +23,7 @@ urlpatterns = [
 if getattr(settings, "ENABLE_2FA", False):
     try:
         from two_factor.urls import urlpatterns as tf_urls
+
         urlpatterns += [
             path("", include(tf_urls)),
         ]

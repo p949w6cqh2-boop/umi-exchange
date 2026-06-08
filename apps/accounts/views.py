@@ -1,4 +1,5 @@
 """Account views: registration, login, profile settings."""
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -36,6 +37,7 @@ class UMILogoutView(LogoutView):
 
 class SettingsView(LoginRequiredMixin, UpdateView):
     """User profile settings — view and edit email, phone."""
+
     form_class = ProfileForm
     template_name = "accounts/settings.html"
     success_url = reverse_lazy("account-settings")
@@ -51,6 +53,7 @@ class SettingsView(LoginRequiredMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx["memberships"] = self.request.user.member_set.filter(is_active=True).select_related("community")
         from django.conf import settings
+
         ctx["enable_2fa"] = getattr(settings, "ENABLE_2FA", False)
         if ctx["enable_2fa"]:
             ctx["is_2fa_enabled"] = self.request.user.totpdevice_set.filter(confirmed=True).exists()
