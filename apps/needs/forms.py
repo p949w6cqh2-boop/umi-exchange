@@ -1,4 +1,5 @@
 """Need creation form with metadata privacy mitigations."""
+
 import re
 
 from django import forms
@@ -11,16 +12,24 @@ INPUT = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44p
 
 
 class NeedForm(forms.ModelForm):
-    on_behalf_of_text = forms.CharField(required=False, widget=forms.TextInput(attrs={
-        "class": INPUT, "placeholder": "\U0001f512 Their name (encrypted)",
-    }))
+    on_behalf_of_text = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": INPUT,
+                "placeholder": "\U0001f512 Their name (encrypted)",
+            }
+        ),
+    )
 
     class Meta:
         model = Need
         fields = ["category", "title", "description", "urgency", "neighborhood", "contact_pref"]
         widgets = {
             "category": forms.HiddenInput(),
-            "title": forms.TextInput(attrs={"class": INPUT, "placeholder": "What do you need help with?", "maxlength": 200}),
+            "title": forms.TextInput(
+                attrs={"class": INPUT, "placeholder": "What do you need help with?", "maxlength": 200}
+            ),
             "description": forms.Textarea(attrs={"class": INPUT, "rows": 4, "placeholder": "Provide more details..."}),
             "urgency": forms.HiddenInput(),
             "neighborhood": forms.TextInput(attrs={"class": INPUT, "placeholder": "e.g., Westside, near the park"}),
@@ -55,7 +64,7 @@ class NeedForm(forms.ModelForm):
         )
         if pattern.search(value):
             self._neighborhood_warning = (
-                'This looks like a specific address. Consider using a general area instead '
+                "This looks like a specific address. Consider using a general area instead "
                 '(e.g., "Westside" or "near the park").'
             )
         return value

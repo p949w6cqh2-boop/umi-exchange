@@ -1,4 +1,5 @@
 """Management command to restrict audit log table permissions in PostgreSQL."""
+
 from django.core.management.base import BaseCommand
 from django.db import connection
 

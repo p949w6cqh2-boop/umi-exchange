@@ -9,6 +9,7 @@ settings.AUDIT_DB_APP_ROLE (falls back to the configured DATABASES user).
 On non-PostgreSQL backends (e.g. SQLite in development/CI) this is a no-op;
 model-level enforcement in AuditLog.save()/delete() still applies there.
 """
+
 from django.conf import settings
 from django.db import migrations
 
@@ -26,9 +27,7 @@ def revoke_mutations(apps, schema_editor):
     role = _app_role()
     if not role:
         return  # No explicit role to target; skip rather than guess.
-    schema_editor.execute(
-        f'REVOKE UPDATE, DELETE, TRUNCATE ON TABLE audit_auditlog FROM "{role}";'
-    )
+    schema_editor.execute(f'REVOKE UPDATE, DELETE, TRUNCATE ON TABLE audit_auditlog FROM "{role}";')
 
 
 def grant_mutations(apps, schema_editor):
@@ -37,9 +36,7 @@ def grant_mutations(apps, schema_editor):
     role = _app_role()
     if not role:
         return
-    schema_editor.execute(
-        f'GRANT UPDATE, DELETE, TRUNCATE ON TABLE audit_auditlog TO "{role}";'
-    )
+    schema_editor.execute(f'GRANT UPDATE, DELETE, TRUNCATE ON TABLE audit_auditlog TO "{role}";')
 
 
 class Migration(migrations.Migration):

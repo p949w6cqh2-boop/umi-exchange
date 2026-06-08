@@ -10,68 +10,114 @@ import apps.communities.models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('households', '0001_initial'),
+        ("households", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Community',
+            name="Community",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=200)),
-                ('slug', models.SlugField(max_length=100, unique=True)),
-                ('description', models.TextField(blank=True, default='')),
-                ('join_code', models.CharField(default=apps.communities.models.generate_join_code, max_length=12, unique=True)),
-                ('visibility', models.CharField(choices=[('public', 'Public'), ('private', 'Private'), ('unlisted', 'Unlisted')], default='private', max_length=10)),
-                ('settings', models.JSONField(default=dict)),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='created_communities', to=settings.AUTH_USER_MODEL)),
+                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ("name", models.CharField(max_length=200)),
+                ("slug", models.SlugField(max_length=100, unique=True)),
+                ("description", models.TextField(blank=True, default="")),
+                (
+                    "join_code",
+                    models.CharField(default=apps.communities.models.generate_join_code, max_length=12, unique=True),
+                ),
+                (
+                    "visibility",
+                    models.CharField(
+                        choices=[("public", "Public"), ("private", "Private"), ("unlisted", "Unlisted")],
+                        default="private",
+                        max_length=10,
+                    ),
+                ),
+                ("settings", models.JSONField(default=dict)),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="created_communities",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name_plural': 'communities',
-                'db_table': 'communities_community',
+                "verbose_name_plural": "communities",
+                "db_table": "communities_community",
             },
         ),
         migrations.CreateModel(
-            name='Category',
+            name="Category",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=100)),
-                ('icon', models.CharField(default='🔧', max_length=50)),
-                ('sort_order', models.IntegerField(default=0)),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('community', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='categories', to='communities.community')),
+                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ("name", models.CharField(max_length=100)),
+                ("icon", models.CharField(default="🔧", max_length=50)),
+                ("sort_order", models.IntegerField(default=0)),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "community",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="categories",
+                        to="communities.community",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'communities_category',
-                'ordering': ['sort_order', 'name'],
+                "db_table": "communities_category",
+                "ordering": ["sort_order", "name"],
             },
         ),
         migrations.CreateModel(
-            name='Member',
+            name="Member",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('role', models.CharField(choices=[('member', 'Member'), ('coordinator', 'Coordinator'), ('admin', 'Admin')], default='member', max_length=15)),
-                ('display_name', models.CharField(max_length=100)),
-                ('is_active', models.BooleanField(default=True)),
-                ('notification_prefs', models.JSONField(default=dict)),
-                ('joined_at', models.DateTimeField(auto_now_add=True)),
-                ('community', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='members', to='communities.community')),
-                ('household', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='members', to='households.household')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[("member", "Member"), ("coordinator", "Coordinator"), ("admin", "Admin")],
+                        default="member",
+                        max_length=15,
+                    ),
+                ),
+                ("display_name", models.CharField(max_length=100)),
+                ("is_active", models.BooleanField(default=True)),
+                ("notification_prefs", models.JSONField(default=dict)),
+                ("joined_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "community",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="members", to="communities.community"
+                    ),
+                ),
+                (
+                    "household",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="members",
+                        to="households.household",
+                    ),
+                ),
+                ("user", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'communities_member',
-                'indexes': [models.Index(fields=['community', 'is_active', 'role'], name='communities_communi_cd1376_idx')],
-                'unique_together': {('user', 'community')},
+                "db_table": "communities_member",
+                "indexes": [
+                    models.Index(fields=["community", "is_active", "role"], name="communities_communi_cd1376_idx")
+                ],
+                "unique_together": {("user", "community")},
             },
         ),
     ]

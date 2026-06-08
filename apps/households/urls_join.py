@@ -1,4 +1,5 @@
 """URLs under /join/ — community join + household management."""
+
 from django.urls import path
 
 from apps.communities.views import JoinCommunityView

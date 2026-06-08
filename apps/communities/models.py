@@ -1,4 +1,5 @@
 """Community, Member, and Category models — the organisational layer."""
+
 import random
 import string
 import uuid
@@ -40,10 +41,15 @@ class Community(models.Model):
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True, default="")
     join_code = models.CharField(max_length=12, unique=True, default=generate_join_code)
-    visibility = models.CharField(max_length=10, default="private",
-        choices=[("public", "Public"), ("private", "Private"), ("unlisted", "Unlisted")])
+    visibility = models.CharField(
+        max_length=10,
+        default="private",
+        choices=[("public", "Public"), ("private", "Private"), ("unlisted", "Unlisted")],
+    )
     settings = models.JSONField(default=dict)
-    created_by = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_communities")
+    created_by = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_communities"
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -84,8 +90,9 @@ class Member(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="members")
-    household = models.ForeignKey("households.Household", null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="members")
+    household = models.ForeignKey(
+        "households.Household", null=True, blank=True, on_delete=models.SET_NULL, related_name="members"
+    )
     role = models.CharField(max_length=15, default="member", choices=ROLE_CHOICES)
     display_name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)

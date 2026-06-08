@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,22 +16,43 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Consent',
+            name="Consent",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('granted_to', models.CharField(max_length=200)),
-                ('scope', models.JSONField(default=list)),
-                ('purpose', models.CharField(max_length=500)),
-                ('method', models.CharField(choices=[('verbal', 'Verbal'), ('written', 'Written'), ('digital', 'Digital')], default='digital', max_length=10)),
-                ('status', models.CharField(choices=[('active', 'Active'), ('revoked', 'Revoked'), ('expired', 'Expired')], default='active', max_length=10)),
-                ('granted_at', models.DateTimeField(auto_now_add=True)),
-                ('expires_at', models.DateTimeField(blank=True, null=True)),
-                ('revoked_at', models.DateTimeField(blank=True, null=True)),
-                ('custom', models.JSONField(blank=True, default=dict)),
-                ('participant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='consents_given', to=settings.AUTH_USER_MODEL)),
+                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ("granted_to", models.CharField(max_length=200)),
+                ("scope", models.JSONField(default=list)),
+                ("purpose", models.CharField(max_length=500)),
+                (
+                    "method",
+                    models.CharField(
+                        choices=[("verbal", "Verbal"), ("written", "Written"), ("digital", "Digital")],
+                        default="digital",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("active", "Active"), ("revoked", "Revoked"), ("expired", "Expired")],
+                        default="active",
+                        max_length=10,
+                    ),
+                ),
+                ("granted_at", models.DateTimeField(auto_now_add=True)),
+                ("expires_at", models.DateTimeField(blank=True, null=True)),
+                ("revoked_at", models.DateTimeField(blank=True, null=True)),
+                ("custom", models.JSONField(blank=True, default=dict)),
+                (
+                    "participant",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="consents_given",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'consent_consent',
+                "db_table": "consent_consent",
             },
         ),
     ]

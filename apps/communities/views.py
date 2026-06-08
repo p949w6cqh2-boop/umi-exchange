@@ -12,8 +12,8 @@ from django.views.generic import CreateView, FormView, ListView, TemplateView
 from apps.needs.models import Need
 from apps.offers.models import Offer
 
-from .forms import CommunityCreateForm, JoinForm, CommunitySettingsForm
-from .models import Category, Community, Member
+from .forms import CommunityCreateForm, CommunitySettingsForm, JoinForm
+from .models import Community, Member
 
 
 class LandingView(TemplateView):

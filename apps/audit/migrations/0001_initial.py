@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,20 +14,25 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='AuditLog',
+            name="AuditLog",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('action', models.CharField(max_length=10)),
-                ('resource_type', models.CharField(max_length=50)),
-                ('resource_id', models.UUIDField()),
-                ('details', models.JSONField(blank=True, null=True)),
-                ('ip_hash', models.CharField(blank=True, max_length=64)),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("action", models.CharField(max_length=10)),
+                ("resource_type", models.CharField(max_length=50)),
+                ("resource_id", models.UUIDField()),
+                ("details", models.JSONField(blank=True, null=True)),
+                ("ip_hash", models.CharField(blank=True, max_length=64)),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL
+                    ),
+                ),
             ],
             options={
-                'db_table': 'audit_auditlog',
-                'ordering': ['-timestamp'],
+                "db_table": "audit_auditlog",
+                "ordering": ["-timestamp"],
             },
         ),
     ]

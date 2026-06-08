@@ -2,6 +2,7 @@
 Production settings — security hardened, Sentry-integrated, structured logging.
 All security headers pass Mozilla Observatory A+ when combined with Caddy.
 """
+
 import sentry_sdk
 from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -22,8 +23,7 @@ if not SECRET_KEY or SECRET_KEY == _INSECURE_SECRET_KEY:
     )
 if not ENCRYPTION_KEY:
     raise ImproperlyConfigured(
-        "ENCRYPTION_KEY must be set in production; an empty key silently "
-        "disables encryption of sensitive fields."
+        "ENCRYPTION_KEY must be set in production; an empty key silently disables encryption of sensitive fields."
     )
 
 # ── Security Headers ─────────────────────────────────
@@ -46,9 +46,18 @@ USE_X_FORWARDED_PORT = True
 # ── Content Security Policy ──────────────────────────
 # Tight CSP that allows HTMX, Alpine.js (CDN), and inline styles for Tailwind
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "https://unpkg.com",)  # HTMX + Alpine CDN
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'",)  # Tailwind inline styles
-CSP_IMG_SRC = ("'self'", "data:",)  # data: for QR code inline images
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "https://unpkg.com",
+)  # HTMX + Alpine CDN
+CSP_STYLE_SRC = (
+    "'self'",
+    "'unsafe-inline'",
+)  # Tailwind inline styles
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",
+)  # data: for QR code inline images
 CSP_FONT_SRC = ("'self'",)
 CSP_CONNECT_SRC = ("'self'",)  # HTMX XHR requests
 CSP_FRAME_ANCESTORS = ("'none'",)

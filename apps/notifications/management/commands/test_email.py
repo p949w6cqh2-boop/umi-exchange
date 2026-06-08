@@ -2,6 +2,7 @@
 Management command to test email delivery.
 Usage: python manage.py test_email recipient@example.com
 """
+
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand, CommandError

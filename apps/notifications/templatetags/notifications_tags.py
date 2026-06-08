@@ -4,6 +4,7 @@ from apps.notifications.models import Notification
 
 register = template.Library()
 
+
 @register.simple_tag
 def unread_count(user):
     """Return unread notification count for the given user."""

@@ -1,4 +1,5 @@
 """Offer model — umi:Offer entity."""
+
 import uuid
 
 from django.db import models
@@ -6,7 +7,12 @@ from django.utils import timezone
 
 
 class Offer(models.Model):
-    STATUS_CHOICES = [("active", "Active"), ("matched", "Matched"), ("fulfilled", "Fulfilled"), ("withdrawn", "Withdrawn")]
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("matched", "Matched"),
+        ("fulfilled", "Fulfilled"),
+        ("withdrawn", "Withdrawn"),
+    ]
     CONTACT_CHOICES = [("in_app", "In-app"), ("email", "Email"), ("phone", "Phone"), ("any", "Any")]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

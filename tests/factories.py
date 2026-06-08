@@ -1,6 +1,7 @@
 """
 Shared test fixtures: users, communities, members, categories.
 """
+
 import factory
 from django.contrib.auth import get_user_model
 
@@ -17,7 +18,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     username = factory.Sequence(lambda n: f"user{n}")
 
     @factory.post_generation
-    def password(obj, create, extracted, **kwargs):
+    def password(obj, create, extracted, **kwargs):  # noqa: N805 (factory_boy hook signature)
         """Hash the password and persist it ourselves (factory_boy no longer
         auto-saves after postgeneration)."""
         obj.set_password(extracted or "testpass123")

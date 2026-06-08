@@ -3,6 +3,7 @@ Match views: propose, detail, accept/fulfill/cancel.
 Implements self-matching prevention (Section 8.6) and race condition handling (Section 8.7).
 """
 import json
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -12,12 +13,12 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import DetailView
 
+from apps.audit.models import AuditLog
 from apps.communities.models import Community, Member
 from apps.needs.models import Need
-from apps.offers.models import Offer
-from apps.audit.models import AuditLog
-from apps.communities.validators import sanitize_text_field
 from apps.notifications.adapter import NotificationAdapter
+from apps.offers.models import Offer
+
 from .models import Match
 
 
@@ -73,7 +74,7 @@ class MatchProposeView(LoginRequiredMixin, View):
         NotificationAdapter.send(
             need.requester.user, "match_proposed",
             f"{member.display_name} proposed a match on your need '{need.title}'",
-            f"View the match to accept or decline.",
+            "View the match to accept or decline.",
             link=f"/c/{slug}/matches/{match.id}/",
         )
 
@@ -111,7 +112,6 @@ class MatchUpdateView(LoginRequiredMixin, View):
 
     def post(self, request, slug, pk):
         new_status = request.POST.get("status")
-        notes = sanitize_text_field(request.POST.get("notes", ""))
         if new_status not in ("accepted", "fulfilled", "unfulfilled", "cancelled"):
             return HttpResponse(status=400)
 

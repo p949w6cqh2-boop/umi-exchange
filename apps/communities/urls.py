@@ -1,9 +1,11 @@
 from django.urls import path
+
+from apps.dashboard.views import DashboardExportView, DashboardView
+from apps.matches.views import MatchDetailView, MatchProposeView, MatchUpdateView
+from apps.needs.views import NeedCreateView, NeedDeleteView, NeedDetailView
+from apps.offers.views import OfferCreateView, OfferDeleteView, OfferDetailView
+
 from . import views
-from apps.needs.views import NeedCreateView, NeedDetailView, NeedDeleteView
-from apps.offers.views import OfferCreateView, OfferDetailView, OfferDeleteView
-from apps.matches.views import MatchProposeView, MatchDetailView, MatchUpdateView
-from apps.dashboard.views import DashboardView, DashboardExportView
 
 urlpatterns = [
     path("create/", views.CommunityCreateView.as_view(), name="community-create"),

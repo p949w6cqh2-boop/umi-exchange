@@ -6,14 +6,19 @@ from .models import Offer
 
 INPUT = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-blue-500"
 
+
 class OfferForm(forms.ModelForm):
     class Meta:
         model = Offer
         fields = ["category", "title", "description", "contact_pref"]
         widgets = {
             "category": forms.HiddenInput(),
-            "title": forms.TextInput(attrs={"class": INPUT, "placeholder": "What can you help with?", "maxlength": 200}),
-            "description": forms.Textarea(attrs={"class": INPUT, "rows": 4, "placeholder": "Describe your experience..."}),
+            "title": forms.TextInput(
+                attrs={"class": INPUT, "placeholder": "What can you help with?", "maxlength": 200}
+            ),
+            "description": forms.Textarea(
+                attrs={"class": INPUT, "rows": 4, "placeholder": "Describe your experience..."}
+            ),
             "contact_pref": forms.RadioSelect(),
         }
 

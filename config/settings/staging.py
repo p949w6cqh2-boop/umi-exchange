@@ -2,6 +2,7 @@
 Staging settings — inherits production security, but with distinct env markers.
 Deploy via: DJANGO_SETTINGS_MODULE=config.settings.staging
 """
+
 from .production import *  # noqa: F401, F403
 
 # Staging-specific overrides

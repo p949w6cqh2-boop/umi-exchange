@@ -1,6 +1,7 @@
 """
 View smoke tests: verify all URLs return expected status codes.
 """
+
 import pytest
 from django.test import Client
 from django.urls import reverse
@@ -112,20 +113,26 @@ class TestAuthenticatedViews:
 class TestRegistration:
     def test_register_new_user(self):
         client = Client()
-        response = client.post(reverse("register"), {
-            "username": "newuser",
-            "password": "SecurePass123!",
-            "password_confirm": "SecurePass123!",
-        })
+        response = client.post(
+            reverse("register"),
+            {
+                "username": "newuser",
+                "password": "SecurePass123!",
+                "password_confirm": "SecurePass123!",
+            },
+        )
         assert response.status_code == 302  # Redirect on success
 
     def test_register_password_mismatch(self):
         client = Client()
-        response = client.post(reverse("register"), {
-            "username": "newuser",
-            "password": "SecurePass123!",
-            "password_confirm": "WrongPass123!",
-        })
+        response = client.post(
+            reverse("register"),
+            {
+                "username": "newuser",
+                "password": "SecurePass123!",
+                "password_confirm": "WrongPass123!",
+            },
+        )
         assert response.status_code == 200  # Re-renders form with errors
 
 

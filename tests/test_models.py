@@ -65,6 +65,7 @@ class TestNeedModel:
     def test_on_behalf_of_encryption(self):
         """Test Fernet encryption for on_behalf_of field."""
         from django.conf import settings
+
         member = MemberFactory()
         category = CategoryFactory(community=member.community)
         need = Need.objects.create(
@@ -92,12 +93,16 @@ class TestMatchStateMachine:
         requester = MemberFactory(user=user1, community=community)
         offerer = MemberFactory(user=user2, community=community)
         need = Need.objects.create(
-            community=community, requester=requester,
-            category=category, title="Test Need",
+            community=community,
+            requester=requester,
+            category=category,
+            title="Test Need",
         )
         offer = Offer.objects.create(
-            community=community, offerer=offerer,
-            category=category, title="Test Offer",
+            community=community,
+            offerer=offerer,
+            category=category,
+            title="Test Offer",
         )
         match = Match.objects.create(need=need, offer=offer, proposed_by=offerer)
         return match, need, offer
@@ -156,6 +161,7 @@ class TestAuditLog:
     def test_create_audit_entry(self):
         user = UserFactory()
         import uuid
+
         AuditLog.log(user, "create", "need", uuid.uuid4(), details={"test": True})
         assert AuditLog.objects.count() == 1
         entry = AuditLog.objects.first()

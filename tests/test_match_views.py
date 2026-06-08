@@ -2,6 +2,7 @@
 Authorization, race-condition, and self-match tests for the matches views.
 These cover the protocol's consent/safety guarantees (Sections 8.2, 8.6, 8.7).
 """
+
 import pytest
 from django.test import Client
 from django.urls import reverse
@@ -27,7 +28,8 @@ def _scenario(need_status="open", with_offer=True):
     need = NeedFactory(community=community, requester=requester, category=category, status=need_status)
     offer = OfferFactory(community=community, offerer=offerer, category=category) if with_offer else None
     match = MatchFactory(
-        need=need, offer=offer,
+        need=need,
+        offer=offer,
         proposed_by=(offerer if with_offer else MemberFactory(community=community)),
         status="proposed",
     )

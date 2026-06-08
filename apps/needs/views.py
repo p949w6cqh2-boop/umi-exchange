@@ -3,10 +3,11 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, DeleteView
+from django.views.generic import CreateView, DeleteView, DetailView
 
 from apps.communities.models import Community, Member
 from apps.offers.models import Offer
+
 from .forms import NeedForm
 from .models import Need
 
@@ -35,7 +36,7 @@ class NeedCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        super().form_valid(form)
         messages.success(self.request, "Your need has been posted!")
         return redirect("community-feed", slug=self.community.slug)
 
@@ -75,13 +76,13 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
 
 class NeedDeleteView(LoginRequiredMixin, DeleteView):
     model = Need
-    
+
     def get_success_url(self):
         return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})
 
     def get_object(self, queryset=None):
-        from django.http import Http404
         from django.core.exceptions import PermissionDenied
+        from django.http import Http404
         obj = super().get_object(queryset)
         member = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
         if not member:

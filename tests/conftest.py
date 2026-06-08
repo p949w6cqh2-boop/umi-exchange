@@ -1,4 +1,5 @@
 """Shared pytest fixtures and factories for UMI Exchange tests."""
+
 from datetime import timedelta
 
 import factory
@@ -29,7 +30,7 @@ class UserFactory(DjangoModelFactory):
     username = factory.Sequence(lambda n: f"user{n}")
 
     @factory.post_generation
-    def password(obj, create, extracted, **kwargs):
+    def password(obj, create, extracted, **kwargs):  # noqa: N805 (factory_boy hook signature)
         """Hash the password and persist it ourselves (factory_boy no longer
         auto-saves after postgeneration)."""
         obj.set_password(extracted or "testpass123")
@@ -40,6 +41,7 @@ class UserFactory(DjangoModelFactory):
 class CommunityFactory(DjangoModelFactory):
     class Meta:
         model = Community
+
     name = factory.Sequence(lambda n: f"Community {n}")
     slug = factory.Sequence(lambda n: f"community-{n}")
     created_by = factory.SubFactory(UserFactory)
@@ -48,6 +50,7 @@ class CommunityFactory(DjangoModelFactory):
 class MemberFactory(DjangoModelFactory):
     class Meta:
         model = Member
+
     user = factory.SubFactory(UserFactory)
     community = factory.SubFactory(CommunityFactory)
     display_name = factory.Faker("first_name")
@@ -57,6 +60,7 @@ class MemberFactory(DjangoModelFactory):
 class CategoryFactory(DjangoModelFactory):
     class Meta:
         model = Category
+
     community = factory.SubFactory(CommunityFactory)
     name = "Home Repair"
     icon = "\U0001f527"
@@ -65,6 +69,7 @@ class CategoryFactory(DjangoModelFactory):
 class NeedFactory(DjangoModelFactory):
     class Meta:
         model = Need
+
     community = factory.SubFactory(CommunityFactory)
     requester = factory.SubFactory(MemberFactory)
     category = factory.SubFactory(CategoryFactory)
@@ -77,6 +82,7 @@ class NeedFactory(DjangoModelFactory):
 class OfferFactory(DjangoModelFactory):
     class Meta:
         model = Offer
+
     community = factory.SubFactory(CommunityFactory)
     offerer = factory.SubFactory(MemberFactory)
     category = factory.SubFactory(CategoryFactory)
@@ -88,6 +94,7 @@ class OfferFactory(DjangoModelFactory):
 class MatchFactory(DjangoModelFactory):
     class Meta:
         model = Match
+
     need = factory.SubFactory(NeedFactory)
     offer = factory.SubFactory(OfferFactory)
     proposed_by = factory.SubFactory(MemberFactory)
