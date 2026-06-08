@@ -15,8 +15,17 @@ from apps.offers.models import Offer
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
+        skip_postgeneration_save = True
+
     username = factory.Sequence(lambda n: f"user{n}")
-    password = factory.PostGenerationMethodCall("set_password", "testpass123")
+
+    @factory.post_generation
+    def password(obj, create, extracted, **kwargs):
+        """Hash the password and persist it ourselves (factory_boy no longer
+        auto-saves after postgeneration)."""
+        obj.set_password(extracted or "testpass123")
+        if create:
+            obj.save()
 
 
 class CommunityFactory(DjangoModelFactory):
