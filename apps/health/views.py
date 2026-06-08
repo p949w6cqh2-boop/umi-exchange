@@ -3,6 +3,7 @@ Health check endpoint — returns 200 when app + database are reachable.
 Used by load balancers, uptime monitors (Uptime Kuma), and deployment scripts.
 Optional token protection via HEALTH_CHECK_TOKEN env var.
 """
+
 from django.conf import settings
 from django.db import connection
 from django.http import HttpResponseForbidden, JsonResponse
@@ -37,6 +38,7 @@ class HealthCheckView(View):
         # Redis/cache check
         try:
             from django.core.cache import cache
+
             cache.set("_health", "1", 10)
             if cache.get("_health") == "1":
                 checks["cache"] = "ok"

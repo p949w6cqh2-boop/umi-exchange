@@ -7,35 +7,63 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('communities', '0001_initial'),
+        ("communities", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Offer',
+            name="Offer",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=200)),
-                ('description', models.TextField(blank=True)),
-                ('availability', models.JSONField(blank=True, default=dict)),
-                ('radius', models.IntegerField(blank=True, help_text='km; null=unlimited', null=True)),
-                ('contact_pref', models.CharField(choices=[('in_app', 'In-app'), ('email', 'Email'), ('phone', 'Phone'), ('any', 'Any')], default='in_app', max_length=10)),
-                ('status', models.CharField(choices=[('active', 'Active'), ('matched', 'Matched'), ('fulfilled', 'Fulfilled'), ('withdrawn', 'Withdrawn')], default='active', max_length=12)),
-                ('expires_at', models.DateTimeField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('custom', models.JSONField(blank=True, default=dict)),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='communities.category')),
-                ('community', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='offers', to='communities.community')),
-                ('offerer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='offers', to='communities.member')),
+                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ("title", models.CharField(max_length=200)),
+                ("description", models.TextField(blank=True)),
+                ("availability", models.JSONField(blank=True, default=dict)),
+                ("radius", models.IntegerField(blank=True, help_text="km; null=unlimited", null=True)),
+                (
+                    "contact_pref",
+                    models.CharField(
+                        choices=[("in_app", "In-app"), ("email", "Email"), ("phone", "Phone"), ("any", "Any")],
+                        default="in_app",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("active", "Active"),
+                            ("matched", "Matched"),
+                            ("fulfilled", "Fulfilled"),
+                            ("withdrawn", "Withdrawn"),
+                        ],
+                        default="active",
+                        max_length=12,
+                    ),
+                ),
+                ("expires_at", models.DateTimeField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("custom", models.JSONField(blank=True, default=dict)),
+                ("category", models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="communities.category")),
+                (
+                    "community",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="offers", to="communities.community"
+                    ),
+                ),
+                (
+                    "offerer",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="offers", to="communities.member"
+                    ),
+                ),
             ],
             options={
-                'db_table': 'offers_offer',
-                'ordering': ['-created_at'],
+                "db_table": "offers_offer",
+                "ordering": ["-created_at"],
             },
         ),
     ]

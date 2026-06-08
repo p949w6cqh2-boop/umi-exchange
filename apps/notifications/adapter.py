@@ -9,6 +9,7 @@ The adapter never blocks the calling operation — email failures are logged
 but silently caught so that a misconfigured SMTP server does not prevent
 a match from being accepted or a need from being posted.
 """
+
 import logging
 
 from django.conf import settings as django_settings
@@ -46,9 +47,7 @@ class NotificationAdapter:
 
         # 2. Email: send if user has an email address
         if recipient_user.email:
-            email_sent = NotificationAdapter._send_email(
-                recipient_user, title, body, link
-            )
+            email_sent = NotificationAdapter._send_email(recipient_user, title, body, link)
             if email_sent:
                 channels_sent.append("email")
                 notification.channels_sent = channels_sent
@@ -72,13 +71,16 @@ class NotificationAdapter:
             # Try to render HTML template; fall back to plain text
             html_body = None
             try:
-                html_body = render_to_string("emails/notification.html", {
-                    "title": title,
-                    "body": body,
-                    "link": absolute_link,
-                    "recipient": recipient_user,
-                    "site_url": site_url,
-                })
+                html_body = render_to_string(
+                    "emails/notification.html",
+                    {
+                        "title": title,
+                        "body": body,
+                        "link": absolute_link,
+                        "recipient": recipient_user,
+                        "site_url": site_url,
+                    },
+                )
             except Exception:
                 pass  # HTML template not found; plain text only
 

@@ -3,6 +3,7 @@ Match model — umi:Match entity.
 Implements the protocol state machine (Section 4.3) with contact revelation (Section 8.2).
 This is the most important model in the entire application.
 """
+
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -17,6 +18,7 @@ class Match(models.Model):
         accepted → fulfilled | unfulfilled | cancelled
         fulfilled, unfulfilled, cancelled, expired → (terminal)
     """
+
     VALID_TRANSITIONS = {
         "proposed": ["accepted", "cancelled", "expired"],
         "accepted": ["fulfilled", "unfulfilled", "cancelled"],
@@ -27,8 +29,12 @@ class Match(models.Model):
     }
 
     STATUS_CHOICES = [
-        ("proposed", "Proposed"), ("accepted", "Accepted"), ("fulfilled", "Fulfilled"),
-        ("unfulfilled", "Unfulfilled"), ("cancelled", "Cancelled"), ("expired", "Expired"),
+        ("proposed", "Proposed"),
+        ("accepted", "Accepted"),
+        ("fulfilled", "Fulfilled"),
+        ("unfulfilled", "Unfulfilled"),
+        ("cancelled", "Cancelled"),
+        ("expired", "Expired"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

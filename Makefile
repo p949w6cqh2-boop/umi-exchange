@@ -16,9 +16,10 @@ migrate:
 shell:
 	.venv/bin/python manage.py shell
 
-# Lint the codebase using ruff
+# Lint the codebase using ruff (mirrors CI: style check + format check)
 lint:
 	.venv/bin/ruff check .
+	.venv/bin/ruff format --check .
 
 # Format the codebase using ruff
 format:

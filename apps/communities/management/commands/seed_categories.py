@@ -1,4 +1,5 @@
 """Management command to seed default categories for a community."""
+
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.communities.models import DEFAULT_CATEGORIES, Category, Community
@@ -24,7 +25,8 @@ class Command(BaseCommand):
                 Category.objects.create(community=community, name=name, icon=icon, sort_order=i)
                 created += 1
 
-        self.stdout.write(self.style.SUCCESS(
-            f"Done. Created {created} categories for '{community.name}' "
-            f"({len(existing)} already existed)."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done. Created {created} categories for '{community.name}' ({len(existing)} already existed)."
+            )
+        )

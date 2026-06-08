@@ -1,4 +1,5 @@
 """Coordinator dashboard: metrics, stale needs, category breakdown, CSV export."""
+
 import csv
 import json
 from datetime import timedelta
@@ -22,7 +23,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.community = get_object_or_404(Community, slug=kwargs["slug"])
         self.member = Member.objects.filter(
-            user=request.user, community=self.community, is_active=True,
+            user=request.user,
+            community=self.community,
+            is_active=True,
             role__in=["coordinator", "admin"],
         ).first()
         if not self.member:
@@ -46,33 +49,53 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ctx["active_offers"] = Offer.objects.filter(community=c, status="active").count()
         ctx["pending_matches"] = Match.objects.filter(need__community=c, status="proposed").count()
         ctx["fulfilled"] = Match.objects.filter(
-            need__community=c, status="fulfilled", fulfilled_at__gte=period_start,
+            need__community=c,
+            status="fulfilled",
+            fulfilled_at__gte=period_start,
         ).count()
 
         # Average time to match (hours)
         avg = Match.objects.filter(
-            need__community=c, status__in=["accepted", "fulfilled"],
-            accepted_at__isnull=False, accepted_at__gte=period_start,
+            need__community=c,
+            status__in=["accepted", "fulfilled"],
+            accepted_at__isnull=False,
+            accepted_at__gte=period_start,
         ).aggregate(avg_hours=Avg(F("accepted_at") - F("proposed_at")))
         avg_td = avg["avg_hours"]
         ctx["avg_time_to_match"] = round(avg_td.total_seconds() / 3600, 1) if avg_td else 0
 
         # Stale needs: open 7+ days, no matches
-        ctx["stale_needs"] = Need.objects.filter(
-            community=c, status="open",
-            created_at__lt=timezone.now() - timedelta(days=7),
-        ).annotate(match_count=Count("matches")).filter(match_count=0).order_by("created_at")[:20]
+        ctx["stale_needs"] = (
+            Need.objects.filter(
+                community=c,
+                status="open",
+                created_at__lt=timezone.now() - timedelta(days=7),
+            )
+            .annotate(match_count=Count("matches"))
+            .filter(match_count=0)
+            .order_by("created_at")[:20]
+        )
 
         # Category breakdown
-        cats = Need.objects.filter(community=c, created_at__gte=period_start).values(
-            "category__name"
-        ).annotate(total=Count("id")).order_by("-total")
+        cats = (
+            Need.objects.filter(community=c, created_at__gte=period_start)
+            .values("category__name")
+            .annotate(total=Count("id"))
+            .order_by("-total")
+        )
         ctx["category_data"] = json.dumps(list(cats))
 
         # Household count (for billing display)
-        hh_count = Member.objects.filter(
-            community=c, is_active=True, household__isnull=False,
-        ).values("household").distinct().count()
+        hh_count = (
+            Member.objects.filter(
+                community=c,
+                is_active=True,
+                household__isnull=False,
+            )
+            .values("household")
+            .distinct()
+            .count()
+        )
         solo = Member.objects.filter(community=c, is_active=True, household__isnull=True).count()
         ctx["household_count"] = hh_count + solo
         ctx["member_count"] = Member.objects.filter(community=c, is_active=True).count()
@@ -95,7 +118,9 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.community = get_object_or_404(Community, slug=kwargs["slug"])
         self.member = Member.objects.filter(
-            user=request.user, community=self.community, is_active=True,
+            user=request.user,
+            community=self.community,
+            is_active=True,
             role__in=["coordinator", "admin"],
         ).first()
         if not self.member:
@@ -112,24 +137,48 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
 
         if export_type == "matches":
             writer.writerow(["Match ID", "Need", "Status", "Proposed By", "Proposed At", "Accepted At", "Fulfilled At"])
-            matches = (Match.objects.filter(need__community=c)
-                       .select_related("need", "proposed_by").order_by("-proposed_at"))
+            matches = (
+                Match.objects.filter(need__community=c).select_related("need", "proposed_by").order_by("-proposed_at")
+            )
             for m in matches:
-                writer.writerow([
-                    str(m.id), m.need.title, m.status, m.proposed_by.display_name,
-                    m.proposed_at.isoformat(), m.accepted_at.isoformat() if m.accepted_at else "",
-                    m.fulfilled_at.isoformat() if m.fulfilled_at else "",
-                ])
+                writer.writerow(
+                    [
+                        str(m.id),
+                        m.need.title,
+                        m.status,
+                        m.proposed_by.display_name,
+                        m.proposed_at.isoformat(),
+                        m.accepted_at.isoformat() if m.accepted_at else "",
+                        m.fulfilled_at.isoformat() if m.fulfilled_at else "",
+                    ]
+                )
         else:
-            writer.writerow([
-                "Need ID", "Title", "Category", "Urgency", "Status",
-                "Requester", "Neighborhood", "Created", "Expires",
-            ])
+            writer.writerow(
+                [
+                    "Need ID",
+                    "Title",
+                    "Category",
+                    "Urgency",
+                    "Status",
+                    "Requester",
+                    "Neighborhood",
+                    "Created",
+                    "Expires",
+                ]
+            )
             for n in Need.objects.filter(community=c).select_related("category", "requester").order_by("-created_at"):
-                writer.writerow([
-                    str(n.id), n.title, n.category.name, n.urgency, n.status,
-                    n.requester.display_name, n.neighborhood,
-                    n.created_at.isoformat(), n.expires_at.isoformat(),
-                ])
+                writer.writerow(
+                    [
+                        str(n.id),
+                        n.title,
+                        n.category.name,
+                        n.urgency,
+                        n.status,
+                        n.requester.display_name,
+                        n.neighborhood,
+                        n.created_at.isoformat(),
+                        n.expires_at.isoformat(),
+                    ]
+                )
 
         return response

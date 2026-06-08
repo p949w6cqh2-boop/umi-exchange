@@ -1,4 +1,5 @@
 """Append-only audit log enforcement (UMI Protocol Section 8.3)."""
+
 import uuid
 
 import pytest
@@ -10,9 +11,7 @@ from apps.audit.models import AuditLog
 @pytest.mark.django_db
 class TestAuditAppendOnly:
     def _entry(self):
-        return AuditLog.objects.create(
-            user=None, action="create", resource_type="match", resource_id=uuid.uuid4()
-        )
+        return AuditLog.objects.create(user=None, action="create", resource_type="match", resource_id=uuid.uuid4())
 
     def test_insert_is_allowed(self):
         entry = self._entry()

@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,21 +16,41 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Notification',
+            name="Notification",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('type', models.CharField(choices=[('match_proposed', 'Match Proposed'), ('match_accepted', 'Match Accepted'), ('match_fulfilled', 'Match Fulfilled'), ('match_cancelled', 'Match Cancelled'), ('need_expiring', 'Need Expiring'), ('need_expired', 'Need Expired')], max_length=30)),
-                ('title', models.CharField(max_length=200)),
-                ('body', models.TextField()),
-                ('link', models.CharField(blank=True, max_length=500)),
-                ('is_read', models.BooleanField(default=False)),
-                ('channels_sent', models.JSONField(default=list)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('recipient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to=settings.AUTH_USER_MODEL)),
+                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("match_proposed", "Match Proposed"),
+                            ("match_accepted", "Match Accepted"),
+                            ("match_fulfilled", "Match Fulfilled"),
+                            ("match_cancelled", "Match Cancelled"),
+                            ("need_expiring", "Need Expiring"),
+                            ("need_expired", "Need Expired"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("body", models.TextField()),
+                ("link", models.CharField(blank=True, max_length=500)),
+                ("is_read", models.BooleanField(default=False)),
+                ("channels_sent", models.JSONField(default=list)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "recipient",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'notifications_notification',
-                'ordering': ['-created_at'],
+                "db_table": "notifications_notification",
+                "ordering": ["-created_at"],
             },
         ),
     ]

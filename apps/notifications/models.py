@@ -1,4 +1,5 @@
 """Notification model — in-app notifications with email adapter."""
+
 import uuid
 
 from django.conf import settings
@@ -7,9 +8,12 @@ from django.db import models
 
 class Notification(models.Model):
     TYPE_CHOICES = [
-        ("match_proposed", "Match Proposed"), ("match_accepted", "Match Accepted"),
-        ("match_fulfilled", "Match Fulfilled"), ("match_cancelled", "Match Cancelled"),
-        ("need_expiring", "Need Expiring"), ("need_expired", "Need Expired"),
+        ("match_proposed", "Match Proposed"),
+        ("match_accepted", "Match Accepted"),
+        ("match_fulfilled", "Match Fulfilled"),
+        ("match_cancelled", "Match Cancelled"),
+        ("need_expiring", "Need Expiring"),
+        ("need_expired", "Need Expired"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

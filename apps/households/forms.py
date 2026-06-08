@@ -17,7 +17,12 @@ class HouseholdCreateForm(forms.ModelForm):
 
 
 class HouseholdJoinForm(forms.Form):
-    household_code = forms.CharField(max_length=10, widget=forms.TextInput(attrs={
-        "class": f"{INPUT_CLASS} text-center font-mono tracking-widest uppercase",
-        "placeholder": "H-XXXXXX",
-    }))
+    household_code = forms.CharField(
+        max_length=10,
+        widget=forms.TextInput(
+            attrs={
+                "class": f"{INPUT_CLASS} text-center font-mono tracking-widest uppercase",
+                "placeholder": "H-XXXXXX",
+            }
+        ),
+    )

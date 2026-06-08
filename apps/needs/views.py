@@ -1,4 +1,5 @@
 """Need views: create and detail."""
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
@@ -48,6 +49,7 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         from django.http import Http404
+
         obj = super().get_object(queryset)
         if not Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).exists():
             raise Http404("You are not a member of this community.")
@@ -63,9 +65,11 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         ctx["is_own_need"] = member and need.requester == member
         # Suggested offers: same category, active
         if ctx["is_own_need"]:
-            ctx["suggested_offers"] = Offer.objects.filter(
-                community=community, category=need.category, status="active"
-            ).exclude(offerer=member).select_related("offerer")[:5]
+            ctx["suggested_offers"] = (
+                Offer.objects.filter(community=community, category=need.category, status="active")
+                .exclude(offerer=member)
+                .select_related("offerer")[:5]
+            )
         else:
             ctx["suggested_offers"] = Offer.objects.filter(
                 community=community, category=need.category, status="active", offerer=member
@@ -73,6 +77,7 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         # Active matches on this need
         ctx["matches"] = need.matches.select_related("offer", "proposed_by").order_by("-proposed_at")
         return ctx
+
 
 class NeedDeleteView(LoginRequiredMixin, DeleteView):
     model = Need
@@ -83,6 +88,7 @@ class NeedDeleteView(LoginRequiredMixin, DeleteView):
     def get_object(self, queryset=None):
         from django.core.exceptions import PermissionDenied
         from django.http import Http404
+
         obj = super().get_object(queryset)
         member = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
         if not member:

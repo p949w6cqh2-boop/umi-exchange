@@ -2,6 +2,7 @@
 UMI Exchange — Base Settings
 Shared across all environments. Environment-specific overrides in development.py / production.py.
 """
+
 from pathlib import Path
 
 import environ
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
 # Optional: Django-Q2 (for background tasks — not required for basic operation)
 try:
     import django_q  # noqa: F401
+
     INSTALLED_APPS.append("django_q")
 except ImportError:
     pass
@@ -60,6 +62,7 @@ ENABLE_2FA = False
 try:
     import django_otp  # noqa: F401
     import two_factor  # noqa: F401
+
     INSTALLED_APPS += [
         "django_otp",
         "django_otp.plugins.otp_totp",
@@ -130,6 +133,7 @@ REDIS_URL = env("REDIS_URL", default="")
 if REDIS_URL:
     try:
         import django_redis  # noqa: F401
+
         CACHES = {"default": {"BACKEND": "django_redis.cache.RedisCache", "LOCATION": REDIS_URL}}
         SESSION_ENGINE = "django.contrib.sessions.backends.cache"
         SESSION_CACHE_ALIAS = "default"

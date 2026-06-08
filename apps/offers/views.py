@@ -43,6 +43,7 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         from django.http import Http404
+
         obj = super().get_object(queryset)
         if not Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).exists():
             raise Http404("You are not a member of this community.")
@@ -60,6 +61,7 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         ).exclude(requester=member)[:5]
         return ctx
 
+
 class OfferDeleteView(LoginRequiredMixin, DeleteView):
     model = Offer
 
@@ -69,6 +71,7 @@ class OfferDeleteView(LoginRequiredMixin, DeleteView):
     def get_object(self, queryset=None):
         from django.core.exceptions import PermissionDenied
         from django.http import Http404
+
         obj = super().get_object(queryset)
         member = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
         if not member:

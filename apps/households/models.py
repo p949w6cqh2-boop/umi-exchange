@@ -1,4 +1,5 @@
 """Household model: parishes think in families, not individuals."""
+
 import random
 import string
 import uuid

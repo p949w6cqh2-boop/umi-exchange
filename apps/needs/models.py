@@ -1,4 +1,5 @@
 """Need model — umi:Need entity. Includes Fernet encryption for on_behalf_of."""
+
 import uuid
 
 from cryptography.fernet import Fernet
@@ -10,8 +11,11 @@ from django.utils import timezone
 class Need(models.Model):
     URGENCY_CHOICES = [("low", "Low"), ("medium", "Medium"), ("high", "High"), ("critical", "Critical")]
     STATUS_CHOICES = [
-        ("open", "Open"), ("matched", "Matched"), ("fulfilled", "Fulfilled"),
-        ("closed", "Closed"), ("expired", "Expired"),
+        ("open", "Open"),
+        ("matched", "Matched"),
+        ("fulfilled", "Fulfilled"),
+        ("closed", "Closed"),
+        ("expired", "Expired"),
     ]
     CONTACT_CHOICES = [("in_app", "In-app"), ("email", "Email"), ("phone", "Phone"), ("any", "Any")]
 

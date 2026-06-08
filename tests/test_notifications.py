@@ -1,6 +1,7 @@
 """
 Email and notification tests.
 """
+
 import pytest
 from django.core import mail
 from django.test import override_settings
@@ -16,9 +17,7 @@ class TestNotificationAdapter:
 
     def test_creates_in_app_notification(self):
         user = UserFactory()
-        notification = NotificationAdapter.send(
-            user, "test_type", "Test Title", "Test body text"
-        )
+        notification = NotificationAdapter.send(user, "test_type", "Test Title", "Test body text")
         assert notification is not None
         assert notification.title == "Test Title"
         assert notification.body == "Test body text"
@@ -29,19 +28,13 @@ class TestNotificationAdapter:
 
     def test_creates_notification_with_link(self):
         user = UserFactory()
-        notification = NotificationAdapter.send(
-            user, "test_type", "Title", "Body", link="/community/test/"
-        )
+        notification = NotificationAdapter.send(user, "test_type", "Title", "Body", link="/community/test/")
         assert notification.link == "/community/test/"
 
-    @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
-    )
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_sends_email_when_user_has_email(self):
         user = UserFactory(email="test@example.com")
-        notification = NotificationAdapter.send(
-            user, "match_accepted", "Match Accepted", "Your match was accepted!"
-        )
+        notification = NotificationAdapter.send(user, "match_accepted", "Match Accepted", "Your match was accepted!")
         # Check email was sent
         assert len(mail.outbox) == 1
         sent_email = mail.outbox[0]
@@ -52,31 +45,22 @@ class TestNotificationAdapter:
         notification.refresh_from_db()
         assert "email" in notification.channels_sent
 
-    @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
-    )
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_no_email_when_user_has_no_email(self):
         user = UserFactory(email="")
-        NotificationAdapter.send(
-            user, "test_type", "Title", "Body"
-        )
+        NotificationAdapter.send(user, "test_type", "Title", "Body")
         assert len(mail.outbox) == 0
 
-    @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
-    )
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_email_includes_link(self):
         user = UserFactory(email="link@example.com")
         NotificationAdapter.send(
-            user, "match_proposed", "New Match",
-            "Someone proposed a match.", link="/community/test/matches/123/"
+            user, "match_proposed", "New Match", "Someone proposed a match.", link="/community/test/matches/123/"
         )
         assert len(mail.outbox) == 1
         assert "/community/test/matches/123/" in mail.outbox[0].body
 
-    @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
-    )
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_multiple_notifications_send_multiple_emails(self):
         user = UserFactory(email="multi@example.com")
         NotificationAdapter.send(user, "type_a", "First", "Body 1")

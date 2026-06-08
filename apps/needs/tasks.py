@@ -3,6 +3,7 @@ Need expiration task — runs hourly via Django-Q2.
 UMI Protocol Section 4.1: Needs past expiration with no accepted match are expired.
 CRITICAL: Needs with at least one accepted match MUST NOT expire.
 """
+
 from django.utils import timezone
 
 from apps.audit.models import AuditLog

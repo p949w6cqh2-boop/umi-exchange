@@ -1,4 +1,5 @@
 """Audit admin — read-only. No create/edit/delete."""
+
 from django.contrib import admin
 
 from .models import AuditLog

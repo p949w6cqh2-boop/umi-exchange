@@ -1,4 +1,5 @@
 """Global template context: UMI theming and conformance level."""
+
 from django.conf import settings
 
 

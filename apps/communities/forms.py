@@ -29,16 +29,26 @@ class CommunitySettingsForm(forms.ModelForm):
 
 
 class JoinForm(forms.Form):
-    join_code = forms.CharField(max_length=12, widget=forms.TextInput(attrs={
-        "class": f"{INPUT} text-2xl font-mono tracking-[0.3em] text-center uppercase",
-        "placeholder": "AK7X9M2P",
-        "maxlength": 12,
-    }))
-    display_name = forms.CharField(max_length=100, required=False, widget=forms.TextInput(attrs={
-        "class": INPUT,
-        "placeholder": "Display name (optional)",
-    }))
-
+    join_code = forms.CharField(
+        max_length=12,
+        widget=forms.TextInput(
+            attrs={
+                "class": f"{INPUT} text-2xl font-mono tracking-[0.3em] text-center uppercase",
+                "placeholder": "AK7X9M2P",
+                "maxlength": 12,
+            }
+        ),
+    )
+    display_name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": INPUT,
+                "placeholder": "Display name (optional)",
+            }
+        ),
+    )
 
     def clean_display_name(self):
         return sanitize_text_field(self.cleaned_data.get("display_name", ""))

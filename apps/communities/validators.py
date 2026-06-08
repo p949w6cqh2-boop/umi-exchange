@@ -5,6 +5,7 @@ Django's template auto-escaping prevents XSS on OUTPUT. This module provides
 defense-in-depth by stripping HTML tags on INPUT, so we never store raw HTML
 in the database. This is a belt-and-suspenders approach.
 """
+
 import re
 
 from django.core.exceptions import ValidationError
@@ -20,8 +21,19 @@ SCRIPT_PATTERNS = re.compile(
 
 # Basic content moderation blocklist
 PROHIBITED_WORDS = {
-    "abuse", "harass", "kill", "murder", "suicide", "terrorism", "weapon",
-    "drugs", "narcotics", "prostitution", "escort", "porn", "pornography",
+    "abuse",
+    "harass",
+    "kill",
+    "murder",
+    "suicide",
+    "terrorism",
+    "weapon",
+    "drugs",
+    "narcotics",
+    "prostitution",
+    "escort",
+    "porn",
+    "pornography",
 }
 
 
@@ -56,11 +68,12 @@ def validate_clean_content(value):
         return
     text_lower = value.lower()
     for word in PROHIBITED_WORDS:
-        if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
+        if re.search(r"\b" + re.escape(word) + r"\b", text_lower):
             raise ValidationError(
                 "This content violates community guidelines. Please revise.",
                 code="prohibited_content",
             )
+
 
 def sanitize_text_field(value):
     """Strip HTML tags and check for injection patterns. Returns cleaned value."""

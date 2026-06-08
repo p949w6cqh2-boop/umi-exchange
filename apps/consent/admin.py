@@ -1,4 +1,5 @@
 """Consent admin — registered for coordinator oversight."""
+
 from django.contrib import admin
 
 from .models import Consent
