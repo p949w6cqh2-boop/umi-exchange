@@ -21,6 +21,17 @@ from apps.notifications.adapter import NotificationAdapter
 from .models import Match
 
 
+def _reject(request, slug, pk, message, status):
+    """Return an error response, as an HTMX toast when applicable, otherwise a
+    plain response carrying the status code (so callers/tests see 400/403/409)."""
+    if getattr(request, "htmx", False):
+        return HttpResponse(
+            status=status,
+            headers={"HX-Trigger": json.dumps({"showToast": {"message": message, "type": "error"}})},
+        )
+    return HttpResponse(message, status=status)
+
+
 class MatchProposeView(LoginRequiredMixin, View):
     """POST: propose a match between a need and an offer."""
 
@@ -98,37 +109,53 @@ class MatchUpdateView(LoginRequiredMixin, View):
         community = get_object_or_404(Community, slug=slug)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
 
-        # Race condition prevention (Protocol Section 8.7): pessimistic locking
+        # Race condition prevention (Protocol Section 8.7): pessimistic locking.
+        # Lock the Need (the contended resource) so two concurrent accepts on the
+        # same need cannot both succeed; then lock the Match row itself.
         with transaction.atomic():
-            match = Match.objects.select_for_update().get(pk=pk)
+            match = Match.objects.select_for_update().select_related("need", "offer").get(pk=pk)
+            need = Need.objects.select_for_update().get(pk=match.need_id)
+            match.need = need  # operate on the freshly locked instance
+
+            # Authorization (Protocol Section 8.2): only the need requester, the
+            # offer owner (or, for a direct-volunteer match, the proposer), or a
+            # community coordinator may change a match's status.
+            is_requester = need.requester_id == member.id
+            if match.offer is not None:
+                is_offerer = match.offer.offerer_id == member.id
+            else:
+                is_offerer = match.proposed_by_id == member.id  # direct volunteer
+            if not (is_requester or is_offerer or member.is_coordinator):
+                return _reject(request, slug, pk, "You are not authorised to update this match.", 403)
+
+            # Double-accept guard (Section 8.7): the need must still be open to accept.
+            if new_status == "accepted" and need.status != "open":
+                return _reject(request, slug, pk, "This need has already been matched.", 409)
 
             try:
                 match.transition_to(new_status)
             except ValidationError as e:
-                if request.htmx:
-                    return HttpResponse(
-                        status=409,
-                        headers={"HX-Trigger": json.dumps({"showToast": {
-                            "message": str(e.message), "type": "error"
-                        }})},
-                    )
-                messages.error(request, str(e.message))
-                return redirect("match-detail", slug=slug, pk=pk)
+                return _reject(request, slug, pk, str(e.message), 409)
 
         # Audit log
         AuditLog.log(member.user, "update", "match", match.id, details={"status": new_status}, request=request)
 
-        # Notifications
+        # Notifications — inform the counterpart participant(s); never the actor.
         if new_status == "accepted":
-            # Contact revelation notification
-            other = match.offer.offerer if match.need.requester == member else match.need.requester
-            contact = match.get_contact_info_for(member)
-            NotificationAdapter.send(
-                other.user, "match_accepted",
-                f"Match accepted on '{match.need.title}'!",
-                f"Contact info has been shared. Check the match detail.",
-                link=f"/c/{slug}/matches/{match.id}/",
-            )
+            recipients = []
+            if not is_requester:
+                recipients.append(need.requester)
+            if match.offer and not is_offerer:
+                recipients.append(match.offer.offerer)
+            elif match.offer is None and match.proposed_by_id != member.id:
+                recipients.append(match.proposed_by)
+            for other in recipients:
+                NotificationAdapter.send(
+                    other.user, "match_accepted",
+                    f"Match accepted on '{match.need.title}'!",
+                    "Contact info has been shared. Check the match detail.",
+                    link=f"/c/{slug}/matches/{match.id}/",
+                )
         elif new_status == "fulfilled":
             messages.success(request, "Match marked as fulfilled! Thank you.")
         elif new_status == "cancelled":
