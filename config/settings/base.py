@@ -99,15 +99,21 @@ LOGOUT_REDIRECT_URL = "/"
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Use Argon2 if available, fallback to PBKDF2
+# Use Argon2 if its backing library is installed, else fall back to PBKDF2.
+# NOTE: import the `argon2` library itself — importing the hasher class always
+# succeeds even when the library is missing, which silently broke auth before.
 try:
-    from django.contrib.auth.hashers import Argon2PasswordHasher  # noqa: F401
+    import argon2  # noqa: F401
+
     PASSWORD_HASHERS = [
         "django.contrib.auth.hashers.Argon2PasswordHasher",
         "django.contrib.auth.hashers.PBKDF2PasswordHasher",
     ]
-except Exception:
-    pass  # Use Django defaults
+except ImportError:
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+        "django.contrib.auth.hashers.Argon2PasswordHasher",
+    ]
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
