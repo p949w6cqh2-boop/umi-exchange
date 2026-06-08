@@ -101,38 +101,60 @@ class Match(models.Model):
 
         self.save()
 
+    @staticmethod
+    def _contact_dict(member, pref):
+        info = {"display_name": member.display_name, "preference": pref}
+        if pref in ("email", "any") and member.user.email:
+            info["email"] = member.user.email
+        if pref in ("phone", "any") and member.user.phone:
+            info["phone"] = member.user.phone
+        return info
+
     def get_contact_info_for(self, requesting_member):
         """
         Contact revelation logic (UMI Protocol Section 8.2).
-        Returns contact info dict ONLY if:
+        Returns contact info ONLY if:
         1. Match status is 'accepted' or 'fulfilled'
-        2. Requesting member is a participant or coordinator
+        2. Requesting member is a participant or a coordinator
         Returns None otherwise.
+
+        Participants see the OTHER party's details. A coordinator (oversight)
+        sees BOTH parties, exposed under a ``parties`` list on the returned dict
+        while keeping the flat shape for backward compatibility.
         """
         if self.status not in ("accepted", "fulfilled"):
             return None
+        if requesting_member is None:
+            return None
 
-        is_requester = self.need.requester == requesting_member
-        is_offerer = self.offer and self.offer.offerer == requesting_member
-        is_coordinator = requesting_member and requesting_member.is_coordinator
+        requester = self.need.requester
+        requester_pref = self.need.contact_pref
+        # The offering party is the offer owner, or — for an offer-less direct
+        # volunteer match — the member who proposed it.
+        if self.offer is not None:
+            offering_member = self.offer.offerer
+            offering_pref = self.offer.contact_pref
+        else:
+            offering_member = self.proposed_by
+            offering_pref = "in_app"
+
+        is_requester = requester == requesting_member
+        is_offerer = offering_member == requesting_member
+        is_coordinator = requesting_member.is_coordinator
 
         if not (is_requester or is_offerer or is_coordinator):
             return None
 
-        # Determine the OTHER party's info
+        # Participants see the counterpart.
         if is_requester:
-            other_member = self.offer.offerer if self.offer else None
-            other_pref = self.offer.contact_pref if self.offer else "in_app"
-        else:
-            other_member = self.need.requester
-            other_pref = self.need.contact_pref
+            return self._contact_dict(offering_member, offering_pref) if offering_member else None
+        if is_offerer:
+            return self._contact_dict(requester, requester_pref)
 
-        if not other_member:
-            return None
-
-        info = {"display_name": other_member.display_name, "preference": other_pref}
-        if other_pref in ("email", "any") and other_member.user.email:
-            info["email"] = other_member.user.email
-        if other_pref in ("phone", "any") and other_member.user.phone:
-            info["phone"] = other_member.user.phone
-        return info
+        # Coordinator (not a participant): reveal both parties for oversight.
+        parties = [self._contact_dict(requester, requester_pref)]
+        if offering_member:
+            parties.append(self._contact_dict(offering_member, offering_pref))
+        primary = dict(parties[0])
+        primary["parties"] = parties
+        return primary

@@ -70,3 +70,26 @@ class TestContactRevelation:
         outsider = MemberFactory(community=match.need.community)
         info = match.get_contact_info_for(outsider)
         assert info is None  # Non-participant, non-coordinator
+
+    def test_coordinator_no_contact_before_acceptance(self):
+        match = MatchFactory()
+        coordinator = MemberFactory(community=match.need.community, role="coordinator")
+        assert match.get_contact_info_for(coordinator) is None  # still proposed
+
+    def test_coordinator_sees_both_parties_after_acceptance(self):
+        match = MatchFactory()
+        match.transition_to("accepted")
+        coordinator = MemberFactory(community=match.need.community, role="coordinator")
+        info = match.get_contact_info_for(coordinator)
+        assert info is not None
+        names = {p["display_name"] for p in info["parties"]}
+        assert match.need.requester.display_name in names
+        assert match.offer.offerer.display_name in names
+
+    def test_requester_sees_volunteer_in_offer_less_match(self):
+        """In a direct-volunteer (offer-less) match the requester sees the proposer."""
+        match = MatchFactory(offer=None)
+        match.transition_to("accepted")
+        info = match.get_contact_info_for(match.need.requester)
+        assert info is not None
+        assert info["display_name"] == match.proposed_by.display_name
