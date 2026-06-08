@@ -3,11 +3,28 @@ Production settings — security hardened, Sentry-integrated, structured logging
 All security headers pass Mozilla Observatory A+ when combined with Caddy.
 """
 import sentry_sdk
+from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base import *  # noqa: F401, F403
 
 DEBUG = False
+
+# ── Fail fast on insecure secrets ────────────────────
+# In production we must never fall back to the development defaults: an
+# insecure SECRET_KEY undermines all signing, and an empty ENCRYPTION_KEY
+# silently turns field encryption into a no-op. Refuse to start instead.
+_INSECURE_SECRET_KEY = "dev-only-insecure-key-change-in-production-please"
+if not SECRET_KEY or SECRET_KEY == _INSECURE_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "SECRET_KEY must be set to a unique secret value in production; "
+        "the insecure development default is not allowed."
+    )
+if not ENCRYPTION_KEY:
+    raise ImproperlyConfigured(
+        "ENCRYPTION_KEY must be set in production; an empty key silently "
+        "disables encryption of sensitive fields."
+    )
 
 # ── Security Headers ─────────────────────────────────
 SECURE_SSL_REDIRECT = True
