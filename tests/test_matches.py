@@ -2,7 +2,7 @@
 import pytest
 from django.core.exceptions import ValidationError
 
-from .conftest import *
+from .conftest import MatchFactory, MemberFactory
 
 
 @pytest.mark.django_db

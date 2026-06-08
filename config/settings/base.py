@@ -2,8 +2,9 @@
 UMI Exchange — Base Settings
 Shared across all environments. Environment-specific overrides in development.py / production.py.
 """
-import environ
 from pathlib import Path
+
+import environ
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -196,7 +197,7 @@ REST_FRAMEWORK = {
 }
 
 # ── Rate Limiting ─────────────────────────────────────
-RATELIMIT_USE_CACHE = "default" 
+RATELIMIT_USE_CACHE = "default"
 
 # ── Health Check ──────────────────────────────────────
 HEALTH_CHECK_TOKEN = env("HEALTH_CHECK_TOKEN", default="")

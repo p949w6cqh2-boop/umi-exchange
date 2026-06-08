@@ -9,8 +9,6 @@ Usage (in communities/urls.py):
     path("<slug:slug>/dashboard/", DashboardView.as_view(), name="community-dashboard"),
     path("<slug:slug>/dashboard/export/", DashboardExportView.as_view(), name="dashboard-export"),
 """
-from django.urls import path
-from .views import DashboardView, DashboardExportView
 
 # These patterns would be used if dashboard gets its own URL prefix.
 # Currently they are registered under communities/urls.py for slug scoping.

@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, DeleteView
+from django.views.generic import CreateView, DeleteView, DetailView
+
 from apps.communities.models import Community, Member
 from apps.needs.models import Need
+
 from .forms import OfferForm
 from .models import Offer
 
@@ -60,13 +62,13 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
 
 class OfferDeleteView(LoginRequiredMixin, DeleteView):
     model = Offer
-    
+
     def get_success_url(self):
         return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})
 
     def get_object(self, queryset=None):
-        from django.http import Http404
         from django.core.exceptions import PermissionDenied
+        from django.http import Http404
         obj = super().get_object(queryset)
         member = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
         if not member:

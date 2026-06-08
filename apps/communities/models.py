@@ -43,7 +43,9 @@ class Community(models.Model):
     visibility = models.CharField(max_length=10, default="private",
         choices=[("public", "Public"), ("private", "Private"), ("unlisted", "Unlisted")])
     settings = models.JSONField(default=dict)
-    created_by = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_communities")
+    created_by = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_communities"
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

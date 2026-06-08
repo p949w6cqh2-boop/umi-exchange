@@ -12,8 +12,12 @@ class OfferForm(forms.ModelForm):
         fields = ["category", "title", "description", "contact_pref"]
         widgets = {
             "category": forms.HiddenInput(),
-            "title": forms.TextInput(attrs={"class": INPUT, "placeholder": "What can you help with?", "maxlength": 200}),
-            "description": forms.Textarea(attrs={"class": INPUT, "rows": 4, "placeholder": "Describe your experience..."}),
+            "title": forms.TextInput(
+                attrs={"class": INPUT, "placeholder": "What can you help with?", "maxlength": 200}
+            ),
+            "description": forms.Textarea(
+                attrs={"class": INPUT, "rows": 4, "placeholder": "Describe your experience..."}
+            ),
             "contact_pref": forms.RadioSelect(),
         }
 

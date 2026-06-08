@@ -9,7 +9,11 @@ class HouseholdCreateForm(forms.ModelForm):
     class Meta:
         model = Household
         fields = ["name"]
-        widgets = {"name": forms.TextInput(attrs={"class": INPUT_CLASS, "placeholder": 'e.g., "The Rodriguez Family" (optional)'})}
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"class": INPUT_CLASS, "placeholder": 'e.g., "The Rodriguez Family" (optional)'}
+            )
+        }
 
 
 class HouseholdJoinForm(forms.Form):

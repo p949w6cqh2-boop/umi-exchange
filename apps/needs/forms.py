@@ -20,7 +20,9 @@ class NeedForm(forms.ModelForm):
         fields = ["category", "title", "description", "urgency", "neighborhood", "contact_pref"]
         widgets = {
             "category": forms.HiddenInput(),
-            "title": forms.TextInput(attrs={"class": INPUT, "placeholder": "What do you need help with?", "maxlength": 200}),
+            "title": forms.TextInput(
+                attrs={"class": INPUT, "placeholder": "What do you need help with?", "maxlength": 200}
+            ),
             "description": forms.Textarea(attrs={"class": INPUT, "rows": 4, "placeholder": "Provide more details..."}),
             "urgency": forms.HiddenInput(),
             "neighborhood": forms.TextInput(attrs={"class": INPUT, "placeholder": "e.g., Westside, near the park"}),

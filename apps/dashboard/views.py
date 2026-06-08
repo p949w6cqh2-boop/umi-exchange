@@ -112,14 +112,19 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
 
         if export_type == "matches":
             writer.writerow(["Match ID", "Need", "Status", "Proposed By", "Proposed At", "Accepted At", "Fulfilled At"])
-            for m in Match.objects.filter(need__community=c).select_related("need", "proposed_by").order_by("-proposed_at"):
+            matches = (Match.objects.filter(need__community=c)
+                       .select_related("need", "proposed_by").order_by("-proposed_at"))
+            for m in matches:
                 writer.writerow([
                     str(m.id), m.need.title, m.status, m.proposed_by.display_name,
                     m.proposed_at.isoformat(), m.accepted_at.isoformat() if m.accepted_at else "",
                     m.fulfilled_at.isoformat() if m.fulfilled_at else "",
                 ])
         else:
-            writer.writerow(["Need ID", "Title", "Category", "Urgency", "Status", "Requester", "Neighborhood", "Created", "Expires"])
+            writer.writerow([
+                "Need ID", "Title", "Category", "Urgency", "Status",
+                "Requester", "Neighborhood", "Created", "Expires",
+            ])
             for n in Need.objects.filter(community=c).select_related("category", "requester").order_by("-created_at"):
                 writer.writerow([
                     str(n.id), n.title, n.category.name, n.urgency, n.status,

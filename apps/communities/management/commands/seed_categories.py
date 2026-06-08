@@ -1,7 +1,7 @@
 """Management command to seed default categories for a community."""
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.communities.models import Category, Community, DEFAULT_CATEGORIES
+from apps.communities.models import DEFAULT_CATEGORIES, Category, Community
 
 
 class Command(BaseCommand):
