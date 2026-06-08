@@ -6,6 +6,8 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
+from apps.matches.models import Match
+
 from .conftest import (
     CategoryFactory,
     CommunityFactory,
@@ -40,6 +42,10 @@ def _client_for(member):
 
 def _update_url(community, match):
     return reverse("match-update", kwargs={"slug": community.slug, "pk": match.id})
+
+
+def _propose_url(community):
+    return reverse("match-propose", kwargs={"slug": community.slug})
 
 
 @pytest.mark.django_db
@@ -109,7 +115,60 @@ class TestMatchAcceptRace:
 
 
 @pytest.mark.django_db
+class TestSelfMatchPrevention:
+    def test_cannot_propose_on_own_need(self):
+        """The requester proposing on their own need is rejected (Section 8.6)."""
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+        offer = OfferFactory(community=community, offerer=requester, category=category)
+
+        client = _client_for(requester)
+        response = client.post(_propose_url(community), {"need_id": str(need.id), "offer_id": str(offer.id)})
+
+        assert response.status_code == 400
+        assert Match.objects.filter(need=need).count() == 0
+
+    def test_cannot_match_offer_owned_by_requester(self):
+        """An offer owned by the need's requester cannot be matched to it."""
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        proposer = MemberFactory(community=community)
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+        # Offer belongs to the requester, but a different member proposes it.
+        offer = OfferFactory(community=community, offerer=requester, category=category)
+
+        client = _client_for(proposer)
+        response = client.post(_propose_url(community), {"need_id": str(need.id), "offer_id": str(offer.id)})
+
+        assert response.status_code == 400
+        assert Match.objects.filter(need=need).count() == 0
+
+
+@pytest.mark.django_db
 class TestOfferLessMatch:
+    def test_propose_offer_less_match_succeeds(self):
+        """A direct-volunteer proposal with no offer creates a match (no 500).
+
+        The server-rendered flow uses POST-redirect-GET, so success is a 302
+        redirect to the match detail rather than a 201.
+        """
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        volunteer = MemberFactory(community=community)
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+
+        client = _client_for(volunteer)
+        response = client.post(_propose_url(community), {"need_id": str(need.id)})
+
+        assert response.status_code == 302
+        match = Match.objects.get(need=need)
+        assert match.offer is None
+        assert match.proposed_by == volunteer
+
     def test_accept_offer_less_match_does_not_500(self):
         """A direct-volunteer match (no Offer) can be accepted without error."""
         community, need, _offer, match, requester, _offerer = _scenario(with_offer=False)

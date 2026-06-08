@@ -45,9 +45,18 @@ class MatchProposeView(LoginRequiredMixin, View):
         need = get_object_or_404(Need, id=need_id, community=community)
         offer = get_object_or_404(Offer, id=offer_id, community=community) if offer_id else None
 
-        # Self-matching prevention (Protocol Section 8.6)
-        if need.requester == member:
-            messages.error(request, "You cannot propose a match on your own need.")
+        # Self-matching prevention (Protocol Section 8.6): the proposer must not
+        # be the need's requester, and an offer owned by the requester cannot be
+        # matched to that same person's need.
+        if need.requester_id == member.id:
+            return _reject(request, slug, need_id, "You cannot propose a match on your own need.", 400)
+        if offer is not None and offer.offerer_id == need.requester_id:
+            return _reject(request, slug, need_id, "An offer cannot be matched to its owner's own need.", 400)
+
+        # The offer, when supplied, must still be available (offer-less
+        # "direct volunteer" proposals are allowed and skip this check).
+        if offer is not None and offer.status != "active":
+            messages.error(request, "That offer is no longer available.")
             return redirect("need-detail", slug=slug, pk=need_id)
 
         # Need must be open
