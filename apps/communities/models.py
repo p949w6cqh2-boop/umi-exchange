@@ -14,6 +14,19 @@ DEFAULT_SETTINGS = {
     "notification_defaults": {"email_digest": "daily"},
 }
 
+DEFAULT_CATEGORIES = [
+    ("\U0001f527", "Home Repair"),
+    ("\U0001f697", "Transportation"),
+    ("\U0001f35e", "Food"),
+    ("\U0001f476", "Childcare"),
+    ("\U0001f4da", "Tutoring"),
+    ("\U0001f4bb", "Tech Help"),
+    ("\U0001f30d", "Translation"),
+    ("\U0001f33f", "Yard Work"),
+    ("\U0001f91d", "Companionship"),
+    ("\u2795", "Other"),
+]
+
 
 def generate_join_code():
     """8-char alphanumeric. Collision handled by unique constraint + retry."""
@@ -43,11 +56,15 @@ class Community(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        is_new = self._state.adding
         if not self.slug:
             self.slug = slugify(self.name)[:100]
         if not self.settings:
             self.settings = DEFAULT_SETTINGS.copy()
         super().save(*args, **kwargs)
+        if is_new:
+            for i, (icon, name) in enumerate(DEFAULT_CATEGORIES):
+                Category.objects.get_or_create(community=self, name=name, defaults={"icon": icon, "sort_order": i})
 
     def get_absolute_url(self):
         return f"/c/{self.slug}/"

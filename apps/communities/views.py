@@ -12,7 +12,7 @@ from django.views.generic import CreateView, FormView, ListView, TemplateView
 from apps.needs.models import Need
 from apps.offers.models import Offer
 
-from .forms import CommunityCreateForm, JoinForm
+from .forms import CommunityCreateForm, JoinForm, CommunitySettingsForm
 from .models import Category, Community, Member
 
 
@@ -62,15 +62,6 @@ class CommunityCreateView(LoginRequiredMixin, CreateView):
             user=self.request.user, community=self.object,
             display_name=self.request.user.username, role="admin",
         )
-        # Clone default categories
-        defaults = [
-            ("\U0001f527", "Home Repair"), ("\U0001f697", "Transportation"), ("\U0001f35e", "Food"),
-            ("\U0001f476", "Childcare"), ("\U0001f4da", "Tutoring"), ("\U0001f4bb", "Tech Help"),
-            ("\U0001f30d", "Translation"), ("\U0001f33f", "Yard Work"), ("\U0001f91d", "Companionship"),
-            ("\u2795", "Other"),
-        ]
-        for i, (icon, name) in enumerate(defaults):
-            Category.objects.create(community=self.object, name=name, icon=icon, sort_order=i)
         messages.success(self.request, f"Community '{self.object.name}' created!")
         return response
 
@@ -83,7 +74,7 @@ class FeedView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
-        self.member = Member.objects.filter(user=self.request.user, community=self.community, is_active=True).first()
+        self.member = get_object_or_404(Member, user=self.request.user, community=self.community, is_active=True)
 
         needs = Need.objects.filter(community=self.community, status="open").select_related("category", "requester")
         offers = Offer.objects.filter(community=self.community, status="active").select_related("category", "offerer")
@@ -127,13 +118,44 @@ class FeedView(LoginRequiredMixin, ListView):
 class CommunitySettingsView(LoginRequiredMixin, TemplateView):
     template_name = "communities/settings.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        self.community = get_object_or_404(Community, slug=self.kwargs["slug"])
+        self.member = Member.objects.filter(
+            user=request.user, community=self.community, is_active=True,
+            role__in=["admin", "coordinator"],
+        ).first()
+        if not self.member:
+            messages.error(request, "You need coordinator or admin access for settings.")
+            return redirect("community-feed", slug=self.community.slug)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        community = get_object_or_404(Community, slug=self.kwargs["slug"])
-        ctx["community"] = community
-        ctx["members"] = community.members.filter(is_active=True).select_related("user")
-        ctx["categories"] = community.categories.all()
+        ctx["community"] = self.community
+        ctx["members"] = self.community.members.filter(is_active=True).select_related("user")
+        ctx["categories"] = self.community.categories.all()
+        if "form" not in ctx:
+            ctx["form"] = CommunitySettingsForm(instance=self.community)
         return ctx
+
+    def post(self, request, slug):
+        action = request.POST.get("action")
+        if action == "regenerate_join_code":
+            import secrets
+            import string
+            new_code = "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+            self.community.join_code = new_code
+            self.community.save(update_fields=["join_code"])
+            messages.success(request, f"Join code regenerated: {new_code}")
+            return redirect("community-settings", slug=self.community.slug)
+
+        form = CommunitySettingsForm(request.POST, instance=self.community)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Community settings updated.")
+            return redirect("community-settings", slug=self.community.slug)
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
 
 
 class JoinCodeQRView(LoginRequiredMixin, View):

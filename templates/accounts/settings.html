@@ -4,12 +4,56 @@
 <div class="max-w-2xl mx-auto space-y-8">
   <h1 class="text-xl font-semibold text-gray-900">Account Settings</h1>
 
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Account</h2>
-    <p class="text-sm text-gray-600 mt-2">Username: {{ user.username }}</p>
-    <p class="text-sm text-gray-600">Email: {{ user.email|default:"Not set" }}</p>
-  </div>
+  {# Profile Form (Gap 1: POST handler) #}
+  <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    {% csrf_token %}
+    <h2 class="text-lg font-semibold text-gray-900">Profile</h2>
+    <p class="text-sm text-gray-500">Username: <strong>{{ user.username }}</strong> (cannot be changed)</p>
 
+    <div>
+      <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+      {{ form.email }}
+      {% if form.email.errors %}<p class="text-sm text-red-600 mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="id_phone" class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+      {{ form.phone }}
+      {% if form.phone.errors %}<p class="text-sm text-red-600 mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div class="flex items-center justify-between pt-2">
+      <button type="submit"
+              class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] transition-colors">
+        Save Changes
+      </button>
+      <a href="{% url 'password_change' %}" class="text-sm text-blue-600 hover:text-blue-800">Change Password</a>
+    </div>
+  </form>
+
+  {# 2FA Section (Gap 2: conditional UI) #}
+  {% if enable_2fa %}
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900">Two-Factor Authentication</h2>
+    {% if is_2fa_enabled %}
+    <div class="mt-3 flex items-center gap-2">
+      <span class="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        Enabled
+      </span>
+    </div>
+    <p class="text-sm text-gray-600 mt-2">Your account is protected with TOTP two-factor authentication.</p>
+    <a href="{% url 'two_factor:profile' %}" class="inline-block mt-3 text-sm text-blue-600 hover:text-blue-800">Manage 2FA devices</a>
+    {% else %}
+    <p class="text-sm text-gray-600 mt-3">Add an extra layer of security to your account with a TOTP authenticator app.</p>
+    <a href="{% url 'two_factor:setup' %}"
+       class="inline-block mt-3 bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white text-sm font-semibold px-4 py-2 rounded-lg min-h-[44px] leading-[44px] transition-colors">
+      Set Up 2FA
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# Household #}
   <div class="bg-white rounded-xl border border-gray-200 p-6">
     <h2 class="text-lg font-semibold text-gray-900">Household</h2>
     {% if memberships.0.household %}
@@ -23,6 +67,7 @@
     {% endif %}
   </div>
 
+  {# Communities #}
   <div class="bg-white rounded-xl border border-gray-200 p-6">
     <h2 class="text-lg font-semibold text-gray-900">My Communities</h2>
     {% for m in memberships %}

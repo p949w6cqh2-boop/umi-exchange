@@ -24,6 +24,14 @@
            hx-get="{% url 'community-feed' community.slug %}" hx-target="#feed-results"
            hx-trigger="keyup changed delay:300ms" hx-include="[name='category'],[name='urgency']"
            class="border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px] flex-grow">
+    <button hx-get="{% url 'community-feed' community.slug %}" hx-target="#feed-results" hx-swap="innerHTML"
+            hx-include="[name='category'],[name='urgency'],[name='q']"
+            class="border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors"
+            aria-label="Refresh feed" title="Refresh">
+      <svg class="w-5 h-5 htmx-indicator:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+    </button>
   </div>
 
   {# Feed Results #}

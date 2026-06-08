@@ -32,8 +32,47 @@
            class="w-48 h-48 border border-gray-200 rounded-lg">
       <a href="{% url 'join-code-qr' community.slug %}" download="{{ community.slug }}-join-qr.png"
          class="mt-2 inline-block text-sm text-blue-600 hover:text-blue-800">Download QR code</a>
+      <form method="post" class="mt-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="regenerate_join_code">
+        <button type="submit" class="text-sm text-amber-600 hover:text-amber-800 min-h-[44px]"
+                onclick="return confirm('This will invalidate the current join code and QR. Continue?')">
+          Regenerate Join Code
+        </button>
+      </form>
     </div>
   </div>
+
+  {# Community Details Form #}
+  <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    {% csrf_token %}
+    <h2 class="text-lg font-semibold text-gray-900">Community Details</h2>
+
+    <div>
+      <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">Community Name</label>
+      {{ form.name }}
+      {% if form.name.errors %}<p class="text-sm text-red-600 mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+      {{ form.description }}
+      {% if form.description.errors %}<p class="text-sm text-red-600 mt-1">{{ form.description.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label for="id_visibility" class="block text-sm font-medium text-gray-700 mb-1">Visibility</label>
+      {{ form.visibility }}
+      {% if form.visibility.errors %}<p class="text-sm text-red-600 mt-1">{{ form.visibility.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div class="pt-2">
+      <button type="submit"
+              class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] transition-colors">
+        Save Changes
+      </button>
+    </div>
+  </form>
 
   {# Members #}
   <div class="bg-white rounded-xl border border-gray-200 p-6">

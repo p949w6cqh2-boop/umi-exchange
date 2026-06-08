@@ -1,34 +1,60 @@
-
-# Python
+# ── Python ──
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ── Virtual Environments ──
 .venv/
-env/
 venv/
+env/
 ENV/
+source/
 
-# Database
-db.sqlite3
-db.sqlite3-journal
+# ── Database ──
+*.sqlite3
+*.sqlite3-journal
 
-# Environment
+# ── Environment ──
 .env
+.env.*
+!.env.example
 
-# Tailwind
+# ── Static (collected) ──
+staticfiles/
+
+# ── Media (user uploads) ──
+media/
+
+# ── Logs ──
+logs/
+*.log
+
+# ── Node / Tailwind ──
+node_modules/
 tailwindcss
 
-# Virtualenv and Caches
-source/
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*.save
+*~
+
+# ── Testing / CI ──
 .pytest_cache/
 .ruff_cache/
-*.save
+.coverage
+htmlcov/
+.mypy_cache/
 
-# System files / Mounts
-docs/umi_dev_security_protocol.md
-docs/umi_security_cheatsheet.md
-red_team.py
-scripts/security_check.sh
-scripts/setup_hardening.sh
+# ── Docker ──
+docker-compose.yml.save
 
-
+# ── OS ──
+.DS_Store
+Thumbs.db

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
-from apps.needs.views import NeedCreateView, NeedDetailView
-from apps.offers.views import OfferCreateView, OfferDetailView
+from apps.needs.views import NeedCreateView, NeedDetailView, NeedDeleteView
+from apps.offers.views import OfferCreateView, OfferDetailView, OfferDeleteView
 from apps.matches.views import MatchProposeView, MatchDetailView, MatchUpdateView
 from apps.dashboard.views import DashboardView, DashboardExportView
 
@@ -15,9 +15,11 @@ urlpatterns = [
     # Needs
     path("<slug:slug>/needs/new/", NeedCreateView.as_view(), name="need-create"),
     path("<slug:slug>/needs/<uuid:pk>/", NeedDetailView.as_view(), name="need-detail"),
+    path("<slug:slug>/needs/<uuid:pk>/delete/", NeedDeleteView.as_view(), name="need-delete"),
     # Offers
     path("<slug:slug>/offers/new/", OfferCreateView.as_view(), name="offer-create"),
     path("<slug:slug>/offers/<uuid:pk>/", OfferDetailView.as_view(), name="offer-detail"),
+    path("<slug:slug>/offers/<uuid:pk>/delete/", OfferDeleteView.as_view(), name="offer-delete"),
     # Matches
     path("<slug:slug>/matches/propose/", MatchProposeView.as_view(), name="match-propose"),
     path("<slug:slug>/matches/<uuid:pk>/", MatchDetailView.as_view(), name="match-detail"),

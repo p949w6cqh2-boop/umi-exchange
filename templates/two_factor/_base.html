@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12 mb-20">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    {# Header Banner #}
+    <div class="bg-emerald-50 border-b border-emerald-100 px-8 py-6">
+      <h1 class="text-2xl font-bold text-emerald-900">
+        {% block title %}Two-Factor Authentication{% endblock %}
+      </h1>
+    </div>
+    
+    {# Content Area #}
+    <div class="p-8">
+      <div class="prose prose-emerald max-w-none text-gray-600 mb-6">
+        {% block p %}{% endblock p %}
+      </div>
+      
+      <div class="space-y-4">
+        {% block content_wrapper %}
+          {% block two_factor_content %}
+            {# The actual forms from django-two-factor-auth will be injected here #}
+          {% endblock %}
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Base styles for django-two-factor-auth injected forms */
+  .p-8 form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .p-8 label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+  .p-8 input[type="text"],
+  .p-8 input[type="password"],
+  .p-8 input[type="number"] {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #111827;
+    background-color: #ffffff;
+  }
+  .p-8 input[type="text"]:focus,
+  .p-8 input[type="password"]:focus,
+  .p-8 input[type="number"]:focus {
+    outline: none;
+    border-color: #166534;
+    box-shadow: 0 0 0 2px rgba(22, 101, 52, 0.2);
+  }
+  .p-8 button[type="submit"],
+  .p-8 input[type="submit"] {
+    background-color: #166534;
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+  }
+  .p-8 button[type="submit"]:hover,
+  .p-8 input[type="submit"]:hover {
+    background-color: #14532d;
+  }
+</style>
+{% endblock %}

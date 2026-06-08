@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import CreateView, DetailView
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, DetailView, DeleteView
 from apps.communities.models import Community, Member
 from apps.needs.models import Need
 from .forms import OfferForm
@@ -38,6 +39,13 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
     template_name = "offers/detail.html"
     context_object_name = "offer"
 
+    def get_object(self, queryset=None):
+        from django.http import Http404
+        obj = super().get_object(queryset)
+        if not Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).exists():
+            raise Http404("You are not a member of this community.")
+        return obj
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         offer = self.object
@@ -49,3 +57,20 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
             community=offer.community, category=offer.category, status="open"
         ).exclude(requester=member)[:5]
         return ctx
+
+class OfferDeleteView(LoginRequiredMixin, DeleteView):
+    model = Offer
+    
+    def get_success_url(self):
+        return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})
+
+    def get_object(self, queryset=None):
+        from django.http import Http404
+        from django.core.exceptions import PermissionDenied
+        obj = super().get_object(queryset)
+        member = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
+        if not member:
+            raise Http404("You are not a member of this community.")
+        if obj.offerer != member and member.role not in ["admin", "coordinator"]:
+            raise PermissionDenied("You do not have permission to delete this offer.")
+        return obj

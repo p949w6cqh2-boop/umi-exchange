@@ -4,9 +4,9 @@
 
 /* UMI Custom Properties — override via community settings */
 :root {
-  --umi-primary: #1A1A2E;
-  --umi-primary-hover: #16213E;
-  --umi-accent: #3B82F6;
+  --umi-primary: #166534;
+  --umi-primary-hover: #064E2B;
+  --umi-accent: #CA8A04;
   --umi-need-accent: #FBBF24;
   --umi-offer-accent: #60A5FA;
 }

@@ -18,6 +18,12 @@ SCRIPT_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+# Basic content moderation blocklist
+PROHIBITED_WORDS = {
+    "abuse", "harass", "kill", "murder", "suicide", "terrorism", "weapon",
+    "drugs", "narcotics", "prostitution", "escort", "porn", "pornography",
+}
+
 
 def strip_html_tags(value):
     """Remove all HTML tags from a string. Returns plain text."""
@@ -44,10 +50,23 @@ def validate_no_script_injection(value):
         )
 
 
+def validate_clean_content(value):
+    """Raise ValidationError if value contains prohibited words."""
+    if not value:
+        return
+    text_lower = value.lower()
+    for word in PROHIBITED_WORDS:
+        if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
+            raise ValidationError(
+                "This content violates community guidelines. Please revise.",
+                code="prohibited_content",
+            )
+
 def sanitize_text_field(value):
     """Strip HTML tags and check for injection patterns. Returns cleaned value."""
     if not value:
         return value
     cleaned = strip_html_tags(value)
     validate_no_script_injection(cleaned)
+    validate_clean_content(cleaned)
     return cleaned.strip()

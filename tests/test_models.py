@@ -40,6 +40,11 @@ class TestCommunityModel:
         assert community.auto_expire_days == 30
         assert community.neighborhood_mode == "optional"
 
+    def test_auto_seed_categories(self):
+        community = CommunityFactory()
+        assert community.categories.count() == 10
+        assert community.categories.filter(name="Food").exists()
+
 
 @pytest.mark.django_db
 class TestNeedModel:

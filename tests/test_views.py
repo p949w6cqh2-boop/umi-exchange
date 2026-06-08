@@ -148,3 +148,46 @@ class TestDashboardAccess:
         client.force_login(user)
         response = client.get(reverse("community-dashboard", kwargs={"slug": community.slug}))
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestCommunitySettings:
+    def test_settings_requires_admin_or_coordinator(self):
+        user = UserFactory()
+        community = CommunityFactory(created_by=user)
+        MemberFactory(user=user, community=community, role="member")
+        client = Client()
+        client.force_login(user)
+        response = client.get(reverse("community-settings", kwargs={"slug": community.slug}))
+        assert response.status_code == 302
+
+    def test_settings_update_details(self):
+        user = UserFactory()
+        community = CommunityFactory(created_by=user)
+        MemberFactory(user=user, community=community, role="admin")
+        client = Client()
+        client.force_login(user)
+        response = client.post(
+            reverse("community-settings", kwargs={"slug": community.slug}),
+            {"name": "New Community Name", "description": "New description", "visibility": "public"},
+        )
+        assert response.status_code == 302
+        community.refresh_from_db()
+        assert community.name == "New Community Name"
+        assert community.description == "New description"
+        assert community.visibility == "public"
+
+    def test_settings_regenerate_join_code(self):
+        user = UserFactory()
+        community = CommunityFactory(created_by=user)
+        old_code = community.join_code
+        MemberFactory(user=user, community=community, role="admin")
+        client = Client()
+        client.force_login(user)
+        response = client.post(
+            reverse("community-settings", kwargs={"slug": community.slug}),
+            {"action": "regenerate_join_code"},
+        )
+        assert response.status_code == 302
+        community.refresh_from_db()
+        assert community.join_code != old_code

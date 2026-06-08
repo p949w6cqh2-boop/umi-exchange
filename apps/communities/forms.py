@@ -17,6 +17,17 @@ class CommunityCreateForm(forms.ModelForm):
         }
 
 
+class CommunitySettingsForm(forms.ModelForm):
+    class Meta:
+        model = Community
+        fields = ["name", "description", "visibility"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": INPUT, "placeholder": "Community name"}),
+            "description": forms.Textarea(attrs={"class": INPUT, "rows": 3, "placeholder": "Optional description"}),
+            "visibility": forms.Select(attrs={"class": INPUT}),
+        }
+
+
 class JoinForm(forms.Form):
     join_code = forms.CharField(max_length=12, widget=forms.TextInput(attrs={
         "class": f"{INPUT} text-2xl font-mono tracking-[0.3em] text-center uppercase",
