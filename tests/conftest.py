@@ -2,6 +2,8 @@
 from datetime import timedelta
 
 import factory
+import pytest
+from django.conf import settings
 from django.utils import timezone
 from factory.django import DjangoModelFactory
 
@@ -10,6 +12,13 @@ from apps.communities.models import Category, Community, Member
 from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.offers.models import Offer
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _ensure_static_root():
+    """Create STATIC_ROOT before tests run so WhiteNoise does not warn about a
+    missing directory (collectstatic creates it in production)."""
+    settings.STATIC_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 class UserFactory(DjangoModelFactory):
