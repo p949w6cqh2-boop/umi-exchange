@@ -62,8 +62,8 @@
   {% endblock %}
 
   <main id="main" class="flex-grow max-w-7xl mx-auto px-4 md:px-8 py-4 w-full">
-    {# Server-rendered messages. With JS, the toast script below turns these into
-       animated toasts and removes this block; without JS they remain visible. #}
+    {% comment %}Server-rendered messages. With JS, the toast script below turns these into
+       animated toasts and removes this block; without JS they remain visible.{% endcomment %}
     {% if messages %}
     <div id="umi-server-messages" class="mb-4 space-y-2">
       {% for msg in messages %}
@@ -85,9 +85,9 @@
     </div>
   </footer>
 
-  {# Toast notifications: slide in from the right, auto-dismiss after 5s, or
+  {% comment %}Toast notifications: slide in from the right, auto-dismiss after 5s, or
      click to dismiss (slide out). Fed by HTMX `showToast` HX-Triggers and by
-     server-rendered Django messages. #}
+     server-rendered Django messages.{% endcomment %}
   <div id="umi-toasts" aria-live="polite" aria-atomic="false"></div>
   <script>
     (function () {
