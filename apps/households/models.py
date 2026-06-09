@@ -1,6 +1,6 @@
 """Household model: parishes think in families, not individuals."""
 
-import random
+import secrets
 import string
 import uuid
 
@@ -9,8 +9,9 @@ from django.db import models
 
 
 def generate_household_code():
+    """Household join token. Uses a CSPRNG so codes cannot be guessed/predicted."""
     chars = string.ascii_uppercase + string.digits
-    return "H-" + "".join(random.choices(chars, k=6))
+    return "H-" + "".join(secrets.choice(chars) for _ in range(6))
 
 
 class Household(models.Model):

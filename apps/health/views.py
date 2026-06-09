@@ -7,6 +7,7 @@ Optional token protection via HEALTH_CHECK_TOKEN env var.
 from django.conf import settings
 from django.db import connection
 from django.http import HttpResponseForbidden, JsonResponse
+from django.utils.crypto import constant_time_compare
 from django.views import View
 
 
@@ -17,9 +18,10 @@ class HealthCheckView(View):
     """
 
     def get(self, request):
-        # Optional token auth
+        # Optional token auth (constant-time comparison to avoid leaking the
+        # token via response timing).
         token = getattr(settings, "HEALTH_CHECK_TOKEN", "")
-        if token and request.GET.get("token") != token:
+        if token and not constant_time_compare(request.GET.get("token", ""), token):
             return HttpResponseForbidden("Forbidden")
 
         checks = {"status": "ok", "db": "unknown", "cache": "unknown"}
