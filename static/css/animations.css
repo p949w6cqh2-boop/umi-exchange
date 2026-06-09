@@ -1,0 +1,75 @@
+/* UMI Exchange — micro-interactions & visual feedback.
+   Hand-authored (not part of the Tailwind build). All effects degrade to
+   nothing under prefers-reduced-motion (see the guard at the bottom, plus the
+   global override in base.html). */
+
+@keyframes umi-fade-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes umi-lock-out {
+  from { opacity: 1; transform: rotate(0) scale(1); }
+  to   { opacity: 0; transform: rotate(15deg) scale(0.9); }
+}
+@keyframes umi-pop-in {
+  0%   { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+@keyframes umi-grow-line {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes umi-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes umi-pulse-once {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+@keyframes umi-toast-in {
+  from { opacity: 0; transform: translateX(120%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes umi-toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(120%); }
+}
+@keyframes umi-spin { to { transform: rotate(360deg); } }
+
+/* 1. Contact reveal (lock-open) */
+.umi-lock-out { animation: umi-lock-out 200ms ease-in both; }
+.umi-reveal   { animation: umi-fade-slide-up 300ms ease-out both; animation-delay: 180ms; }
+
+/* 2. Timeline step completion */
+.umi-step-pop  { animation: umi-pop-in 300ms ease-out both; }
+.umi-check-in  { animation: umi-fade-in 250ms ease-out both; animation-delay: 250ms; }
+.umi-line      { transform-origin: top; animation: umi-grow-line 200ms ease-out both; }
+
+/* 3. Trust badge first-appearance pulse */
+.umi-badge-pulse { animation: umi-pulse-once 600ms ease-in-out both; }
+
+/* 5. Toasts */
+#umi-toasts {
+  position: fixed; top: 1rem; right: 1rem; z-index: 60;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  width: 22rem; max-width: calc(100vw - 2rem); pointer-events: none;
+}
+.umi-toast { pointer-events: auto; animation: umi-toast-in 300ms ease-out both; }
+.umi-toast.umi-toast-leaving { animation: umi-toast-out 200ms ease-in forwards; }
+
+/* 6. Empty-state illustration fade-in */
+.umi-empty-fade { animation: umi-fade-in 200ms ease-out both; }
+
+/* 4. Refresh icon spins while its HTMX request is in flight */
+.umi-spin-on-request.htmx-request svg { animation: umi-spin 0.8s linear infinite; }
+
+/* 7. Honour reduced-motion (belt-and-braces alongside base.html's global rule) */
+@media (prefers-reduced-motion: reduce) {
+  .umi-lock-out, .umi-reveal, .umi-step-pop, .umi-check-in, .umi-line,
+  .umi-badge-pulse, .umi-toast, .umi-toast.umi-toast-leaving, .umi-empty-fade,
+  .umi-spin-on-request.htmx-request svg {
+    animation: none !important;
+  }
+}
