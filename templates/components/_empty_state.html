@@ -1,17 +1,21 @@
 {# Empty state: centered illustration + message + optional CTA #}
 <div class="max-w-sm mx-auto py-12 text-center">
   {% if illustration %}
-  <div class="umi-empty-fade w-28 h-28 mx-auto mb-4 text-gray-300">
-    {# SVG placeholder — replace with actual illustrations #}
-    <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
-      <circle cx="40" cy="60" r="20"/><circle cx="80" cy="60" r="20"/>
-      <path d="M60 60 L60 40" stroke-dasharray="4 4"/>
+  <div class="umi-fade w-28 h-28 mx-auto mb-5 text-parish-gold/70">
+    {# Simple single-stroke church — warm, hand-drawn feel. #}
+    <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M60 16 V30 M53 23 H67"/>            {# cross #}
+      <path d="M30 56 L60 31 L90 56"/>             {# roof #}
+      <path d="M36 56 V100 H84 V56"/>              {# body #}
+      <path d="M52 100 V78 a8 8 0 0 1 16 0 V100"/> {# arched door #}
+      <circle cx="60" cy="64" r="5"/>              {# rose window #}
     </svg>
   </div>
   {% endif %}
-  <p class="text-lg text-gray-600">{{ message }}</p>
+  <p class="text-lg text-parish-ink/70">{{ message }}</p>
   {% if cta_url %}
-  <a href="{{ cta_url }}" class="mt-4 inline-block bg-[var(--umi-primary)] text-white font-medium px-6 py-3 rounded-lg min-h-[48px]">
+  <a href="{{ cta_url }}" class="mt-4 inline-block btn-primary">
     {{ cta_text }}
   </a>
   {% endif %}

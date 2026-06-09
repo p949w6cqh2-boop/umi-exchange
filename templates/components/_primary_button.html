@@ -3,13 +3,13 @@
 {# Or as a link: {% include "components/_primary_button.html" with text="Go" href="/somewhere/" %} #}
 {% if href %}
 <a href="{{ href }}"
-   class="inline-flex items-center justify-center bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 {{ extra_class }}"
+   class="inline-flex items-center justify-center btn-primary transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 {{ extra_class }}"
    {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}>
   {{ text }}
 </a>
 {% else %}
 <button type="{{ type|default:'submit' }}"
-        class="inline-flex items-center justify-center bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 {{ extra_class }}"
+        class="inline-flex items-center justify-center btn-primary transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 {{ extra_class }}"
         {% if disabled %}disabled{% endif %}
         {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}>
   {{ text }}

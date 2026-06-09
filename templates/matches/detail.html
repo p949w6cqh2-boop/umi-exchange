@@ -2,13 +2,13 @@
 {% block title %}Match — {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-xl mx-auto">
-  <a href="{% url 'community-feed' community.slug %}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to feed</a>
+  <a href="{% url 'community-feed' community.slug %}" class="text-sm text-parish-ink/60 hover:text-parish-ink">&larr; Back to feed</a>
 
   {# Match header #}
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mt-4">
-    <p class="text-sm text-gray-600">Need: <a href="{% url 'need-detail' community.slug match.need.id %}" class="text-blue-600 hover:text-blue-800 font-medium">{{ match.need.title }}</a></p>
+  <div class="umi-card mt-4">
+    <p class="text-sm text-parish-ink/70">Need: <a href="{% url 'need-detail' community.slug match.need.id %}" class="text-parish-green hover:text-parish-greendark font-medium">{{ match.need.title }}</a></p>
     {% if match.offer %}
-    <p class="text-sm text-gray-600 mt-1">Offer: <a href="{% url 'offer-detail' community.slug match.offer.id %}" class="text-blue-600 hover:text-blue-800 font-medium">{{ match.offer.title }}</a></p>
+    <p class="text-sm text-parish-ink/70 mt-1">Offer: <a href="{% url 'offer-detail' community.slug match.offer.id %}" class="text-parish-green hover:text-parish-greendark font-medium">{{ match.offer.title }}</a></p>
     {% endif %}
   </div>
 
@@ -25,15 +25,15 @@
           x-data="{ confirm: false }">
       {% csrf_token %}
       <input type="hidden" name="status" value="accepted">
-      <button type="button" @click="confirm = true" class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px]">Accept Match</button>
+      <button type="button" @click="confirm = true" class="btn-primary">Accept Match</button>
       {# Confirmation dialog #}
       <div x-show="confirm" x-cloak class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.away="confirm = false">
           <h3 class="text-lg font-semibold text-gray-900">Accept this match?</h3>
           <p class="text-base text-gray-600 mt-2">Your contact info will be shared with the other party.</p>
           <div class="flex gap-3 mt-6 justify-end">
-            <button type="button" @click="confirm = false" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 min-h-[44px]">Cancel</button>
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg px-4 py-2 min-h-[44px]">Yes, Accept</button>
+            <button type="button" @click="confirm = false" class="btn-secondary text-sm">Cancel</button>
+            <button type="submit" class="btn-primary text-sm">Yes, Accept</button>
           </div>
         </div>
       </div>
@@ -41,7 +41,7 @@
     <form method="post" action="{% url 'match-update' community.slug match.id %}">
       {% csrf_token %}
       <input type="hidden" name="status" value="cancelled">
-      <button type="submit" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 min-h-[44px]">Decline</button>
+      <button type="submit" class="btn-secondary text-sm">Decline</button>
     </form>
   </div>
   {% elif match.status == "accepted" and is_participant %}
@@ -49,12 +49,12 @@
     <form method="post" action="{% url 'match-update' community.slug match.id %}">
       {% csrf_token %}
       <input type="hidden" name="status" value="fulfilled">
-      <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-lg min-h-[48px]">Mark Fulfilled</button>
+      <button type="submit" class="btn-primary">Mark Fulfilled</button>
     </form>
     <form method="post" action="{% url 'match-update' community.slug match.id %}">
       {% csrf_token %}
       <input type="hidden" name="status" value="cancelled">
-      <button type="submit" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 min-h-[44px]">Cancel</button>
+      <button type="submit" class="btn-secondary text-sm">Cancel</button>
     </form>
   </div>
   {% endif %}
