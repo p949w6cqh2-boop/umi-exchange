@@ -1,11 +1,13 @@
 {# Match timeline: visual state machine. Protocol Section 4.3. #}
-<div class="relative border-l-2 border-gray-300 ml-3 pl-6 space-y-6 mt-4" role="list" aria-label="Match timeline">
+<div class="relative ml-3 pl-6 space-y-6 mt-4" role="list" aria-label="Match timeline">
+  {# Connecting line draws in (height grows top→bottom, 200ms). #}
+  <div class="umi-line absolute left-0 top-0 bottom-0 w-0.5 bg-gray-300" aria-hidden="true"></div>
   {# Step 1: Proposed #}
   <div class="relative" role="listitem">
-    <div class="absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
+    <div class="umi-step-pop absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
       {% if match.status != 'proposed' %}bg-emerald-500 text-white{% else %}bg-blue-100 ring-2 ring-blue-500{% endif %}"
       {% if match.status == 'proposed' %}aria-current="step"{% endif %}>
-      {% if match.status != 'proposed' %}&#10003;{% endif %}
+      {% if match.status != 'proposed' %}<span class="umi-check-in">&#10003;</span>{% endif %}
     </div>
     <p class="text-sm font-medium text-gray-900">Proposed</p>
     <p class="text-sm text-gray-500">{{ match.proposed_by.display_name }} &middot; {{ match.proposed_at|date:"M j, Y g:i A" }}</p>
@@ -14,10 +16,11 @@
   {# Step 2: Accepted #}
   {% if match.status in 'accepted,fulfilled' %}
   <div class="relative" role="listitem">
-    <div class="absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
+    <div class="umi-step-pop absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
       {% if match.status == 'fulfilled' %}bg-emerald-500 text-white{% else %}bg-blue-100 ring-2 ring-blue-500{% endif %}"
+      style="animation-delay:100ms"
       {% if match.status == 'accepted' %}aria-current="step"{% endif %}>
-      {% if match.status == 'fulfilled' %}&#10003;{% endif %}
+      {% if match.status == 'fulfilled' %}<span class="umi-check-in">&#10003;</span>{% endif %}
     </div>
     <p class="text-sm font-medium text-gray-900">Accepted</p>
     {% if match.accepted_at %}<p class="text-sm text-gray-500">{{ match.accepted_at|date:"M j, Y g:i A" }}</p>{% endif %}
@@ -32,7 +35,7 @@
   {# Step 3: Fulfilled #}
   {% if match.status == 'fulfilled' %}
   <div class="relative" role="listitem">
-    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">&#10003;</div>
+    <div class="umi-step-pop absolute -left-[21px] w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs" style="animation-delay:200ms"><span class="umi-check-in">&#10003;</span></div>
     <p class="text-sm font-medium text-gray-900">Fulfilled</p>
     {% if match.fulfilled_at %}<p class="text-sm text-gray-500">{{ match.fulfilled_at|date:"M j, Y g:i A" }}</p>{% endif %}
     {% if match.notes %}<p class="text-sm text-gray-600 mt-1">{{ match.notes|linebreaksbr }}</p>{% endif %}
