@@ -6,6 +6,7 @@
   <title>{% block title %}{{ community.name|default:"UMI Exchange" }}{% endblock %}</title>
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <link rel="stylesheet" href="{% static 'css/animations.css' %}">
   <style>
     :root {
       --umi-primary: {{ umi_primary|default:"#166534" }};
@@ -61,10 +62,12 @@
   {% endblock %}
 
   <main id="main" class="flex-grow max-w-7xl mx-auto px-4 md:px-8 py-4 w-full">
+    {# Server-rendered messages. With JS, the toast script below turns these into
+       animated toasts and removes this block; without JS they remain visible. #}
     {% if messages %}
-    <div class="mb-4 space-y-2">
+    <div id="umi-server-messages" class="mb-4 space-y-2">
       {% for msg in messages %}
-      <div class="rounded-lg p-3 text-sm {% if msg.tags == 'success' %}bg-emerald-50 border border-emerald-200 text-emerald-800{% elif msg.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}">
+      <div data-type="{{ msg.tags }}" class="rounded-lg p-3 text-sm {% if msg.tags == 'success' %}bg-emerald-50 border border-emerald-200 text-emerald-800{% elif msg.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}">
         {{ msg }}
       </div>
       {% endfor %}
@@ -81,5 +84,49 @@
       </a>
     </div>
   </footer>
+
+  {# Toast notifications: slide in from the right, auto-dismiss after 5s, or
+     click to dismiss (slide out). Fed by HTMX `showToast` HX-Triggers and by
+     server-rendered Django messages. #}
+  <div id="umi-toasts" aria-live="polite" aria-atomic="false"></div>
+  <script>
+    (function () {
+      function styleFor(type) {
+        if (type === "success") return "bg-emerald-50 border border-emerald-200 text-emerald-800";
+        if (type === "error") return "bg-red-50 border border-red-200 text-red-800";
+        return "bg-blue-50 border border-blue-200 text-blue-800";
+      }
+      function dismiss(t) {
+        if (t.dataset.leaving) return;
+        t.dataset.leaving = "1";
+        t.classList.add("umi-toast-leaving");
+        setTimeout(function () { t.remove(); }, 220);
+      }
+      window.umiToast = function (message, type) {
+        if (!message) return;
+        var t = document.createElement("div");
+        t.className = "umi-toast rounded-lg p-3 text-sm shadow-md cursor-pointer " + styleFor(type);
+        t.setAttribute("role", "status");
+        t.textContent = message;
+        t.addEventListener("click", function () { dismiss(t); });
+        document.getElementById("umi-toasts").appendChild(t);
+        setTimeout(function () { dismiss(t); }, 5000);
+      };
+      // HTMX HX-Trigger: {"showToast": {"message": "...", "type": "error"}}
+      document.body.addEventListener("showToast", function (e) {
+        var d = e.detail || {};
+        window.umiToast(d.message, d.type);
+      });
+      // Convert server-rendered Django messages into toasts (progressive enhancement).
+      document.addEventListener("DOMContentLoaded", function () {
+        var box = document.getElementById("umi-server-messages");
+        if (!box) return;
+        box.querySelectorAll("[data-type]").forEach(function (el) {
+          window.umiToast(el.textContent.trim(), el.dataset.type);
+        });
+        box.remove();
+      });
+    })();
+  </script>
 </body>
 </html>
