@@ -14,7 +14,7 @@ from apps.needs.models import Need
 from apps.offers.models import Offer
 
 from .forms import CommunityCreateForm, CommunitySettingsForm, JoinForm
-from .models import Community, Member
+from .models import Community, Member, generate_join_code
 
 
 class LandingView(TemplateView):
@@ -147,10 +147,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
     def post(self, request, slug):
         action = request.POST.get("action")
         if action == "regenerate_join_code":
-            import secrets
-            import string
-
-            new_code = "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+            new_code = generate_join_code()
             self.community.join_code = new_code
             self.community.save(update_fields=["join_code"])
             messages.success(request, f"Join code regenerated: {new_code}")
