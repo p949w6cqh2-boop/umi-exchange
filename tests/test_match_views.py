@@ -7,6 +7,7 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
+from apps.audit.models import AuditLog
 from apps.matches.models import Match
 
 from .conftest import (
@@ -48,6 +49,14 @@ def _update_url(community, match):
 
 def _propose_url(community):
     return reverse("match-propose", kwargs={"slug": community.slug})
+
+
+def _detail_url(community, match):
+    return reverse("match-detail", kwargs={"slug": community.slug, "pk": match.id})
+
+
+def _contact_reads(match):
+    return AuditLog.objects.filter(action="read", resource_type="match_contact", resource_id=match.id)
 
 
 @pytest.mark.django_db
@@ -182,3 +191,50 @@ class TestOfferLessMatch:
         assert response.status_code == 302
         match.refresh_from_db()
         assert match.status == "accepted"
+
+
+@pytest.mark.django_db
+class TestContactReadAuditing:
+    def test_revealing_contact_writes_audit_entry(self):
+        """Viewing a match where contact is disclosed records a read in the audit log."""
+        community, need, offer, match, requester, offerer = _scenario()
+        _client_for(requester).post(_update_url(community, match), {"status": "accepted"})
+        assert _contact_reads(match).count() == 0  # nothing read yet
+
+        response = _client_for(offerer).get(_detail_url(community, match))
+        assert response.status_code == 200
+        entries = _contact_reads(match)
+        assert entries.count() == 1
+        assert entries.first().user == offerer.user
+
+    def test_no_audit_when_contact_hidden(self):
+        """Before acceptance contact is hidden, so viewing logs no read entry."""
+        community, need, offer, match, requester, offerer = _scenario()  # still 'proposed'
+
+        response = _client_for(offerer).get(_detail_url(community, match))
+        assert response.status_code == 200
+        assert _contact_reads(match).count() == 0
+
+
+@pytest.mark.django_db
+class TestMatchNotes:
+    def test_note_is_persisted_on_status_change(self):
+        community, need, offer, match, requester, offerer = _scenario()
+        client = _client_for(requester)
+        response = client.post(
+            _update_url(community, match),
+            {"status": "accepted", "notes": "Will drop by Saturday morning"},
+        )
+        assert response.status_code == 302
+        match.refresh_from_db()
+        assert match.status == "accepted"
+        assert match.notes == "Will drop by Saturday morning"
+
+    def test_blank_note_does_not_overwrite(self):
+        community, need, offer, match, requester, offerer = _scenario()
+        match.notes = "existing note"
+        match.save(update_fields=["notes"])
+
+        _client_for(requester).post(_update_url(community, match), {"status": "accepted"})
+        match.refresh_from_db()
+        assert match.notes == "existing note"
