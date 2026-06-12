@@ -58,7 +58,7 @@
   `collectstatic`**; `DEBUG` defaults to `False`).
 
 ## Testing / CI / Deploy
-- **73 tests passing**; `ruff check` + `ruff format` clean; `make lint` runs both.
+- **78 tests passing**; `ruff check` + `ruff format` clean; `make lint` runs both.
 - CI: `.github/workflows/ci.yml` (lint, tests, build); `deploy.yml` (GHCR + SSH).
 - Deploy: `Dockerfile` + `docker-compose.yml` (+ `docker/docker-compose.prod.yml`,
   `Caddyfile`, `Caddyfile.prod`, logrotate); scripts: `harden.sh`, `backup.sh`,
