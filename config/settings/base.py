@@ -82,6 +82,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.accounts.ratelimit.AuthRateLimitMiddleware",
     "apps.casework.middleware.SensitiveSessionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -205,6 +206,8 @@ REST_FRAMEWORK = {
 
 # ── Rate Limiting ─────────────────────────────────────
 RATELIMIT_USE_CACHE = "default"
+# Paths the AuthRateLimitMiddleware throttles (POST). Empty = inert.
+RATELIMIT_AUTH_PATHS = ("/auth/login/", "/auth/register/")
 
 # ── Health Check ──────────────────────────────────────
 HEALTH_CHECK_TOKEN = env("HEALTH_CHECK_TOKEN", default="")

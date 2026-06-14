@@ -92,8 +92,9 @@ class FeedView(LoginRequiredMixin, ListView):
         if urg:
             needs = needs.filter(urgency=urg)
         if q:
-            needs = needs.filter(title__icontains=q)
-            offers = offers.filter(title__icontains=q)
+            from apps.needs.search import apply_search
+            needs = apply_search(needs, q)
+            offers = apply_search(offers, q)
 
         # Tag items with their type for template rendering
         need_list = list(needs)
