@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 
-class TransitionConflict(ValidationError):
+class TransitionConflict(ValidationError):  # noqa: N818 (mirrors Django's ValidationError)
     status_code = 409
 
     def __init__(self, message, current=None, target=None):

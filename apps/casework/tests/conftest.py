@@ -12,12 +12,11 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.casework.middleware import SESSION_KEY
+from apps.casework.models import CaseFile
 from apps.communities.models import Community, Member
 from apps.consent.models import Consent
 from apps.people.models import Person
-
-from apps.casework.middleware import SESSION_KEY
-from apps.casework.models import CaseFile
 
 
 @pytest.fixture(autouse=True)
@@ -26,7 +25,7 @@ def _encryption_key(settings):
 
 
 def make_user(handle):
-    User = get_user_model()
+    User = get_user_model()  # noqa: N806
     try:
         return User.objects.create_user(
             username=handle, email=f"{handle}@example.test",

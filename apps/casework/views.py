@@ -8,23 +8,25 @@ import time
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction
-from django.db.models import Case as SqlCase, IntegerField, Q, Value, When
+from django.db.models import Case as SqlCase
+from django.db.models import IntegerField, Q, Value, When
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import TemplateView
 
+from apps.accounts.ratelimit import rate_limit
 from apps.communities.models import Community
 from apps.consent.models import Consent
 from apps.people.models import Person
 
 from . import access, audit
-from .forms import (AssignForm, CaseCreateForm, FollowUpForm, GrantForm,
-                    NoteForm, ReauthForm, VisitForm)
+from .forms import AssignForm, CaseCreateForm, FollowUpForm, GrantForm, NoteForm, ReauthForm, VisitForm
 from .middleware import mark_authenticated
 from .models import CaseAccessGrant, CaseFile, CaseNote, FollowUp, WarmHandoff
 from .notify import notify
@@ -178,6 +180,8 @@ class CaseCreateView(CommunityMixin, View):
                 consent = Consent.objects.create(
                     participant=participant,
                     granted_to=self.community.name[:200],
+                    grantee_type="community",
+                    grantee_id=self.community.id,
                     scope=scope,
                     purpose=f"Case records — {self.community.name}"[:500],
                     method=d["record_method"],
@@ -526,6 +530,7 @@ class ServiceWorkerView(CommunityMixin, TemplateView):
     content_type = "text/javascript"
 
 
+@method_decorator(rate_limit("cw-sync", 30, 60, by="user"), name="post")
 class SyncView(CommunityMixin, View):
     """POST /c/<slug>/cases/sync/ — idempotent by client_uuid (item 4)."""
 
@@ -735,6 +740,7 @@ class GrantRevokeView(CommunityMixin, View):
         return redirect("casework:detail", slug=slug, pk=case.pk)
 
 
+@method_decorator(rate_limit("cw-export", 10, 3600, by="user"), name="get")
 class CaseExportView(CommunityMixin, View):
     def get(self, request, slug, pk):
         case = self.get_case(pk)
@@ -781,6 +787,7 @@ class CaseExportView(CommunityMixin, View):
         return resp
 
 
+@method_decorator(rate_limit("cw-reauth", 5, 60, by="ip"), name="post")
 class ReauthView(CommunityMixin, View):
     """4-hour sensitive-session confirmation (§3.8)."""
     def get(self, request, slug):

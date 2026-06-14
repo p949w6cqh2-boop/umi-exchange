@@ -1,7 +1,7 @@
 import pytest
 from django.utils import timezone
 
-from apps.casework.models import CaseFile, CaseNote, FollowUp, WarmHandoff
+from apps.casework.models import CaseFile, FollowUp, WarmHandoff
 
 pytestmark = pytest.mark.django_db
 

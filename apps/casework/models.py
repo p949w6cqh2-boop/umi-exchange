@@ -11,6 +11,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.people import crypto
+
 from .state import StateMachineMixin
 
 

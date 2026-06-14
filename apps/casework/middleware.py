@@ -27,7 +27,7 @@ class SensitiveSessionMiddleware:
     def __call__(self, request):
         match = getattr(request, "resolver_match", None)
         # resolver_match isn't set yet in middleware __call__; resolve lazily
-        from django.urls import resolve, Resolver404
+        from django.urls import Resolver404, resolve
         try:
             match = resolve(request.path_info)
         except Resolver404:
