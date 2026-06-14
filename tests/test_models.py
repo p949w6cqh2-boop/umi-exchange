@@ -63,7 +63,7 @@ class TestNeedModel:
         assert need.expires_at is not None
 
     def test_on_behalf_of_encryption(self):
-        """Test Fernet encryption for on_behalf_of field."""
+        """Envelope encryption (§12.2) for on_behalf_of via the on_behalf_of_name property."""
         from django.conf import settings
 
         member = MemberFactory()
@@ -75,10 +75,11 @@ class TestNeedModel:
             title="Test encryption",
         )
         if settings.ENCRYPTION_KEY:
-            need.set_on_behalf_of("Jane Doe")
+            need.on_behalf_of_name = "Jane Doe"
             need.save()
             need.refresh_from_db()
-            assert need.get_on_behalf_of() == "Jane Doe"
+            assert need.on_behalf_of_name == "Jane Doe"
+            assert need.on_behalf_of_dek is not None  # envelope-wrapped, not legacy direct-KEK
 
 
 @pytest.mark.django_db

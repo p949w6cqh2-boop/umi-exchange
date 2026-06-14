@@ -74,7 +74,7 @@ class NeedForm(forms.ModelForm):
         need.community = self.community
         need.requester = self.member
         if hasattr(self, "cleaned_data") and self.cleaned_data.get("on_behalf_of_text"):
-            need.set_on_behalf_of(self.cleaned_data["on_behalf_of_text"])
+            need.on_behalf_of_name = self.cleaned_data["on_behalf_of_text"]
         if commit:
             need.save()
         return need
