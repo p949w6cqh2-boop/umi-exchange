@@ -1,0 +1,52 @@
+<article class="bg-white border {% if note.status == 'draft' %}border-dashed border-amber-300{% else %}border-gray-200{% endif %} rounded-lg p-4">
+  <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-1">
+    <span class="font-medium text-gray-700">{{ note.get_kind_display }}</span>
+    <span>· {{ note.occurred_at|date:"M j, Y H:i" }}</span>
+    <span>· {{ note.author.display_name }}</span>
+    {% if note.co_visitor %}<span>+ {{ note.co_visitor.display_name }}</span>{% endif %}
+    {% if note.duration_minutes %}<span>· {{ note.duration_minutes }} min</span>{% endif %}
+    {% if note.status == "draft" %}<span class="text-amber-700 font-semibold">DRAFT</span>{% endif %}
+    {% if note.amends %}<span class="text-gray-400">amends {{ note.amends.occurred_at|date:"M j" }}</span>{% endif %}
+  </div>
+  {% if note.duplicate_suspects.exists %}
+  <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-2">
+    Possible duplicate: another note by the same visitor within an hour — review and discard one if so.</p>
+  {% endif %}
+  {% if note.actions %}
+  <div class="flex flex-wrap gap-1 mb-2">
+    {% for a in note.actions %}<span class="text-xs bg-gray-100 text-gray-700 rounded-full px-2 py-0.5">{{ a }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  {% if note.aid_value_cents %}
+  <p class="text-xs text-gray-600 mb-1">Aid value: ${{ note.aid_value_dollars }}</p>
+  {% endif %}
+  <p class="text-sm text-gray-800 whitespace-pre-line">{{ note.body }}</p>
+
+  {% if note.status == "draft" and note.author_id == membership.id %}
+  <div class="flex gap-2 mt-3">
+    <form method="post" action="{% url 'casework:note-finalize' slug=community.slug pk=case.pk note_id=note.pk %}"
+          hx-post="{% url 'casework:note-finalize' slug=community.slug pk=case.pk note_id=note.pk %}"
+          hx-target="closest article" hx-swap="outerHTML">
+      {% csrf_token %}
+      <button class="text-xs px-3 py-1.5 bg-gray-900 text-white rounded font-semibold">Finalize</button></form>
+    <form method="post" action="{% url 'casework:note-discard' slug=community.slug pk=case.pk note_id=note.pk %}"
+          hx-post="{% url 'casework:note-discard' slug=community.slug pk=case.pk note_id=note.pk %}"
+          hx-target="closest article" hx-swap="outerHTML"
+          hx-confirm="Discard this draft?">
+      {% csrf_token %}
+      <button class="text-xs px-3 py-1.5 border border-gray-300 rounded text-gray-700">Discard</button></form>
+  </div>
+  {% elif note.status == "final" and can_contribute %}
+  <details class="mt-2">
+    <summary class="text-xs text-gray-500 cursor-pointer">Amend…</summary>
+    <form method="post" action="{% url 'casework:note-amend' slug=community.slug pk=case.pk note_id=note.pk %}"
+          hx-post="{% url 'casework:note-amend' slug=community.slug pk=case.pk note_id=note.pk %}"
+          hx-target="#notes-list" hx-swap="afterbegin" class="mt-2 space-y-2">
+      {% csrf_token %}
+      <textarea name="body" rows="2" class="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                placeholder="Correction or addition (the original stays intact)…"></textarea>
+      <button name="finalize" value="1" class="text-xs px-3 py-1.5 bg-gray-900 text-white rounded font-semibold">Add amendment</button>
+    </form>
+  </details>
+  {% endif %}
+</article>
