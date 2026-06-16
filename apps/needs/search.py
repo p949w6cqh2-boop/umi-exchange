@@ -11,6 +11,7 @@ Postgres: stemmed websearch over the generated `search_vector` column
 (GIN-indexed, see the 0002_fulltext_search migration).
 Anything else: graceful icontains fallback — identical call site.
 """
+
 from django.db import connection
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
@@ -22,8 +23,7 @@ def apply_search(qs, q: str):
         return qs
     if connection.vendor == "postgresql":
         return qs.annotate(
-            _fts=RawSQL(
-                "search_vector @@ plainto_tsquery('english', %s)", (q,)),
+            _fts=RawSQL("search_vector @@ plainto_tsquery('english', %s)", (q,)),
         ).filter(_fts=True)
     return qs.filter(Q(title__icontains=q) | Q(description__icontains=q))
 
@@ -34,6 +34,5 @@ def order_by_relevance(qs, q: str):
     if not q or connection.vendor != "postgresql":
         return qs
     return qs.annotate(
-        _rank=RawSQL(
-            "ts_rank(search_vector, plainto_tsquery('english', %s))", (q,)),
+        _rank=RawSQL("ts_rank(search_vector, plainto_tsquery('english', %s))", (q,)),
     ).order_by("-_rank")

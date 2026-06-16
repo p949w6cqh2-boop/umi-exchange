@@ -93,6 +93,7 @@ class FeedView(LoginRequiredMixin, ListView):
             needs = needs.filter(urgency=urg)
         if q:
             from apps.needs.search import apply_search
+
             needs = apply_search(needs, q)
             offers = apply_search(offers, q)
 

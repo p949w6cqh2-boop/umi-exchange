@@ -8,6 +8,7 @@ Non-decrypting helper routes (the re-auth page itself, the service worker,
 the offline manifest) are exempt. The offline sync endpoint returns 403 JSON
 {"reauth": true} instead of a redirect so the client can keep its queue.
 """
+
 import time
 
 from django.http import JsonResponse
@@ -28,6 +29,7 @@ class SensitiveSessionMiddleware:
         match = getattr(request, "resolver_match", None)
         # resolver_match isn't set yet in middleware __call__; resolve lazily
         from django.urls import Resolver404, resolve
+
         try:
             match = resolve(request.path_info)
         except Resolver404:
@@ -39,8 +41,7 @@ class SensitiveSessionMiddleware:
                 if not ts or (time.time() - ts) > MAX_AGE_SECONDS:
                     if match.url_name == "sync":
                         return JsonResponse({"reauth": True}, status=403)
-                    reauth = reverse("casework:reauth",
-                                     kwargs={"slug": match.kwargs.get("slug")})
+                    reauth = reverse("casework:reauth", kwargs={"slug": match.kwargs.get("slug")})
                     return redirect(f"{reauth}?next={request.get_full_path()}")
         return self.get_response(request)
 

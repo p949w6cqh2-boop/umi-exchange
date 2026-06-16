@@ -7,6 +7,7 @@ treats them as valid for their declared type.
 
 Renumber + repoint dependencies if consent has migrations beyond 0001.
 """
+
 from django.db import migrations, models
 
 
@@ -31,7 +32,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("consent", "0001_initial"),
         ("communities", "0001_initial"),
@@ -42,10 +42,15 @@ class Migration(migrations.Migration):
             model_name="consent",
             name="grantee_type",
             field=models.CharField(
-                choices=[("community", "Community"),
-                         ("organization", "Organization"),
-                         ("member", "Member"), ("other", "Other")],
-                default="community", max_length=20),
+                choices=[
+                    ("community", "Community"),
+                    ("organization", "Organization"),
+                    ("member", "Member"),
+                    ("other", "Other"),
+                ],
+                default="community",
+                max_length=20,
+            ),
         ),
         migrations.AddField(
             model_name="consent",
@@ -54,8 +59,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="consent",
-            index=models.Index(fields=["grantee_type", "grantee_id"],
-                               name="consent_grantee_idx"),
+            index=models.Index(fields=["grantee_type", "grantee_id"], name="consent_grantee_idx"),
         ),
         migrations.RunPython(backfill_grantee_ids, noop),
     ]

@@ -10,6 +10,7 @@ transition_to():
 TransitionConflict subclasses ValidationError (as requested) and carries
 status_code=409 so views can map it directly.
 """
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -39,15 +40,16 @@ class StateMachineMixin:
 
             if current != snapshot:
                 raise TransitionConflict(
-                    f"This record changed while you were viewing it "
-                    f"(now '{current}'). Reload and try again.",
-                    current=current, target=new_status,
+                    f"This record changed while you were viewing it (now '{current}'). Reload and try again.",
+                    current=current,
+                    target=new_status,
                 )
             allowed = self.VALID_TRANSITIONS.get(current, set())
             if new_status not in allowed:
                 raise TransitionConflict(
                     f"Cannot move from '{current}' to '{new_status}'.",
-                    current=current, target=new_status,
+                    current=current,
+                    target=new_status,
                 )
 
             setattr(locked, self.STATUS_FIELD, new_status)
@@ -55,6 +57,7 @@ class StateMachineMixin:
             ts_field = self.TRANSITION_TIMESTAMPS.get(new_status)
             if ts_field:
                 from django.utils import timezone
+
                 setattr(locked, ts_field, timezone.now())
                 update_fields.append(ts_field)
             # copy any extra fields the caller staged on self

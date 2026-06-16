@@ -10,6 +10,7 @@ emails at rest anywhere, matching the audit-log discipline). Fixed-window
 is deliberate: simple, O(1), and the manual's thresholds don't need
 sliding precision.
 """
+
 import hashlib
 import time
 from functools import wraps
@@ -18,13 +19,14 @@ from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 
-AUTH_IP_LIMIT, AUTH_IP_WINDOW = 5, 60            # 5/min per IP
-AUTH_ACCT_LIMIT, AUTH_ACCT_WINDOW = 20, 3600     # 20/hr per account
+AUTH_IP_LIMIT, AUTH_IP_WINDOW = 5, 60  # 5/min per IP
+AUTH_ACCT_LIMIT, AUTH_ACCT_WINDOW = 20, 3600  # 20/hr per account
 
 
 def _client_ip(request) -> str:
-    return (request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
-            or request.META.get("REMOTE_ADDR", "") or "")
+    return (
+        request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "") or ""
+    )
 
 
 def _h(value: str) -> str:
@@ -38,7 +40,7 @@ def check(scope_key: str, limit: int, window: int):
     cache.add(key, 0, timeout=window + 5)
     try:
         count = cache.incr(key)
-    except ValueError:        # key evicted between add and incr
+    except ValueError:  # key evicted between add and incr
         cache.set(key, 1, timeout=window + 5)
         count = 1
     reset = (bucket + 1) * window
@@ -47,15 +49,13 @@ def check(scope_key: str, limit: int, window: int):
 
 def _too_many(request, limit, remaining, reset) -> HttpResponse:
     retry = max(1, reset - int(time.time()))
-    wants_json = (request.headers.get("HX-Request") == "true"
-                  or request.content_type == "application/json")
+    wants_json = request.headers.get("HX-Request") == "true" or request.content_type == "application/json"
     if wants_json:
-        resp = JsonResponse({"error": "rate_limited", "retry_after": retry},
-                            status=429)
+        resp = JsonResponse({"error": "rate_limited", "retry_after": retry}, status=429)
     else:
         resp = HttpResponse(
-            "Too many attempts — please wait a moment and try again.",
-            status=429, content_type="text/plain")
+            "Too many attempts — please wait a moment and try again.", status=429, content_type="text/plain"
+        )
     resp["Retry-After"] = str(retry)
     _stamp(resp, limit, remaining, reset)
     return resp
@@ -70,6 +70,7 @@ def _stamp(resp, limit, remaining, reset):
 def rate_limit(scope: str, limit: int, window: int, by: str = "ip"):
     """Decorator for view callables (use with method_decorator on CBVs).
     by="user" falls back to IP for anonymous requests."""
+
     def decorator(view):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
@@ -79,8 +80,7 @@ def rate_limit(scope: str, limit: int, window: int, by: str = "ip"):
                 ident = str(request.user.pk)
             else:
                 ident = _h(_client_ip(request))
-            allowed, remaining, reset = check(
-                f"{scope}:{by}:{ident}", limit, window)
+            allowed, remaining, reset = check(f"{scope}:{by}:{ident}", limit, window)
             if not allowed:
                 return _too_many(request, limit, remaining, reset)
             resp = view(request, *args, **kwargs)
@@ -89,7 +89,9 @@ def rate_limit(scope: str, limit: int, window: int, by: str = "ip"):
             except Exception:
                 pass
             return resp
+
         return wrapper
+
     return decorator
 
 
@@ -102,22 +104,22 @@ class AuthRateLimitMiddleware:
         self.paths = tuple(getattr(settings, "RATELIMIT_AUTH_PATHS", ()))
 
     def __call__(self, request):
-        if (getattr(settings, "RATELIMIT_ENABLED", True)
-                and self.paths and request.method == "POST"
-                and request.path.startswith(self.paths)):
-            allowed, remaining, reset = check(
-                f"auth:ip:{_h(_client_ip(request))}",
-                AUTH_IP_LIMIT, AUTH_IP_WINDOW)
+        if (
+            getattr(settings, "RATELIMIT_ENABLED", True)
+            and self.paths
+            and request.method == "POST"
+            and request.path.startswith(self.paths)
+        ):
+            allowed, remaining, reset = check(f"auth:ip:{_h(_client_ip(request))}", AUTH_IP_LIMIT, AUTH_IP_WINDOW)
             if not allowed:
                 return _too_many(request, AUTH_IP_LIMIT, remaining, reset)
-            ident = (request.POST.get("login")
-                     or request.POST.get("username")
-                     or request.POST.get("email") or "").strip().lower()
+            ident = (
+                (request.POST.get("login") or request.POST.get("username") or request.POST.get("email") or "")
+                .strip()
+                .lower()
+            )
             if ident:
-                allowed, remaining, reset = check(
-                    f"auth:acct:{_h(ident)}",
-                    AUTH_ACCT_LIMIT, AUTH_ACCT_WINDOW)
+                allowed, remaining, reset = check(f"auth:acct:{_h(ident)}", AUTH_ACCT_LIMIT, AUTH_ACCT_WINDOW)
                 if not allowed:
-                    return _too_many(request, AUTH_ACCT_LIMIT,
-                                     remaining, reset)
+                    return _too_many(request, AUTH_ACCT_LIMIT, remaining, reset)
         return self.get_response(request)

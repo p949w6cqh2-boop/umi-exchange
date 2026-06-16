@@ -5,8 +5,16 @@ from .models import CaseAccessGrant, CaseFile, CaseNote, FollowUp, WarmHandoff
 
 @admin.register(CaseFile)
 class CaseFileAdmin(admin.ModelAdmin):
-    list_display = ("short_code", "community", "status", "sensitivity",
-                    "assigned_to", "intake_date", "emergency_opened", "updated_at")
+    list_display = (
+        "short_code",
+        "community",
+        "status",
+        "sensitivity",
+        "assigned_to",
+        "intake_date",
+        "emergency_opened",
+        "updated_at",
+    )
     list_filter = ("status", "sensitivity", "emergency_opened", "community")
     search_fields = ("id", "physical_ref")
     raw_id_fields = ("subject_person", "opened_by", "assigned_to", "consent")
@@ -16,12 +24,10 @@ class CaseFileAdmin(admin.ModelAdmin):
 
 @admin.register(CaseNote)
 class CaseNoteAdmin(admin.ModelAdmin):
-    list_display = ("id", "case", "kind", "status", "author",
-                    "occurred_at", "aid_value_cents")
+    list_display = ("id", "case", "kind", "status", "author", "occurred_at", "aid_value_cents")
     list_filter = ("kind", "status")
     search_fields = ("id", "case__id", "client_uuid")
-    raw_id_fields = ("case", "author", "co_visitor", "amends",
-                     "related_need", "related_match")
+    raw_id_fields = ("case", "author", "co_visitor", "amends", "related_need", "related_match")
 
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.status == CaseNote.STATUS_FINAL:
@@ -44,8 +50,7 @@ class FollowUpAdmin(admin.ModelAdmin):
 
 @admin.register(WarmHandoff)
 class WarmHandoffAdmin(admin.ModelAdmin):
-    list_display = ("case", "from_member", "to_member", "status",
-                    "created_at", "acknowledged_at")
+    list_display = ("case", "from_member", "to_member", "status", "created_at", "acknowledged_at")
     list_filter = ("status",)
     raw_id_fields = ("case", "from_member", "to_member")
     readonly_fields = ("id", "created_at", "acknowledged_at", "summary_enc")
@@ -53,8 +58,7 @@ class WarmHandoffAdmin(admin.ModelAdmin):
 
 @admin.register(CaseAccessGrant)
 class CaseAccessGrantAdmin(admin.ModelAdmin):
-    list_display = ("case", "member", "role", "granted_by",
-                    "expires_at", "revoked_at", "created_at")
+    list_display = ("case", "member", "role", "granted_by", "expires_at", "revoked_at", "created_at")
     list_filter = ("role",)
     raw_id_fields = ("case", "member", "granted_by")
     readonly_fields = ("id", "created_at")

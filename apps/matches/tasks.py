@@ -13,6 +13,7 @@ Field names follow the Lake 1 model (need, proposed_by, proposed_at,
 status) — if yours drifted, the tests in
 apps/casework/tests/test_s10_improvements.py will fail first and loudest.
 """
+
 import logging
 from datetime import timedelta
 
@@ -45,16 +46,14 @@ def expire_stale_proposals() -> int:
 
         cutoff = timezone.now() - timedelta(days=days)
         stale_ids = list(
-            Match.objects.filter(status="proposed",
-                                 proposed_at__lt=cutoff,
-                                 need__community=community)
-            .values_list("pk", flat=True))
+            Match.objects.filter(status="proposed", proposed_at__lt=cutoff, need__community=community).values_list(
+                "pk", flat=True
+            )
+        )
 
         for pk in stale_ids:
             with transaction.atomic():
-                match = (Match.objects.select_for_update()
-                         .select_related("need", "proposed_by__user")
-                         .get(pk=pk))
+                match = Match.objects.select_for_update().select_related("need", "proposed_by__user").get(pk=pk)
                 if match.status != "proposed":
                     continue  # accepted/cancelled while we were sweeping
                 match.status = "expired"
@@ -66,12 +65,16 @@ def expire_stale_proposals() -> int:
             if proposer is not None:
                 try:
                     Notification.objects.create(
-                        recipient=proposer, type="match_expired",
+                        recipient=proposer,
+                        type="match_expired",
                         title="A match proposal expired",
-                        body=(f"Your proposal on “{match.need.title}” went "
-                              f"{days} days without acceptance and has "
-                              f"expired. Re-propose it if it's still on."),
-                        link=f"/c/{community.slug}/")
+                        body=(
+                            f"Your proposal on “{match.need.title}” went "
+                            f"{days} days without acceptance and has "
+                            f"expired. Re-propose it if it's still on."
+                        ),
+                        link=f"/c/{community.slug}/",
+                    )
                 except Exception:  # notifications must never break the sweep
                     logger.exception("match expiry notification failed")
             expired += 1
@@ -81,8 +84,8 @@ def expire_stale_proposals() -> int:
 
 def register_schedule():
     from django_q.models import Schedule
+
     Schedule.objects.update_or_create(
         name="matches-expiry-sweep",
-        defaults={"func": "apps.matches.tasks.expire_stale_proposals",
-                  "schedule_type": Schedule.DAILY, "repeats": -1},
+        defaults={"func": "apps.matches.tasks.expire_stale_proposals", "schedule_type": Schedule.DAILY, "repeats": -1},
     )

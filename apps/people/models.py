@@ -5,6 +5,7 @@ A Person is frequently NOT an account-holding User (the elderly neighbor a
 coordinator visits). No plaintext name column exists anywhere; lists render
 the short code, and names decrypt only for authorized viewers.
 """
+
 import uuid
 
 from django.conf import settings
@@ -22,21 +23,34 @@ class Person(models.Model):
     dob_enc = models.BinaryField(null=True, blank=True)
 
     linked_user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="person_record",
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="person_record",
     )
     household = models.ForeignKey(
-        "households.Household", null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="persons",
+        "households.Household",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="persons",
     )
     created_in_community = models.ForeignKey(
-        "communities.Community", on_delete=models.PROTECT, related_name="persons",
+        "communities.Community",
+        on_delete=models.PROTECT,
+        related_name="persons",
     )
     created_by = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT, related_name="persons_created",
+        "communities.Member",
+        on_delete=models.PROTECT,
+        related_name="persons_created",
     )
     merged_into = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL,
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
         related_name="merge_sources",
     )
     custom = models.JSONField(default=dict, blank=True)

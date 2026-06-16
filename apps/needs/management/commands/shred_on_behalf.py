@@ -7,6 +7,7 @@ has no value) and writes an audit row recording only the need id.
   python manage.py shred_on_behalf --need <uuid> [--need <uuid> …] \
       [--reason erasure_request]
 """
+
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.audit.services import emit
@@ -17,8 +18,7 @@ class Command(BaseCommand):
     help = "Crypto-shred Need.on_behalf_of for the given need id(s)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--need", action="append", required=True,
-                            dest="need_ids", metavar="UUID")
+        parser.add_argument("--need", action="append", required=True, dest="need_ids", metavar="UUID")
         parser.add_argument("--reason", default="erasure_request")
 
     def handle(self, *args, **opts):
@@ -33,6 +33,5 @@ class Command(BaseCommand):
             need.on_behalf_of = None
             need.on_behalf_of_dek = None
             need.save(update_fields=["on_behalf_of", "on_behalf_of_dek"])
-            emit("need.on_behalf_shredded", need,
-                 details={"reason": opts["reason"][:200]})
+            emit("need.on_behalf_shredded", need, details={"reason": opts["reason"][:200]})
             self.stdout.write(self.style.SUCCESS(f"{need_id}: shredded."))

@@ -7,6 +7,7 @@ this is a no-op there and the test suite is unaffected). The apps.audit code
 is untouched; existing rows remain valid. Reverse is a deliberate no-op —
 shrinking back would truncate or fail on the new event names.
 """
+
 from django.db import migrations
 
 
@@ -15,9 +16,7 @@ def widen_action_column(apps, schema_editor):
         return
     AuditLog = apps.get_model("audit", "AuditLog")
     table = AuditLog._meta.db_table
-    schema_editor.execute(
-        f'ALTER TABLE "{table}" ALTER COLUMN "action" TYPE varchar(32)'
-    )
+    schema_editor.execute(f'ALTER TABLE "{table}" ALTER COLUMN "action" TYPE varchar(32)')
 
 
 def noop(apps, schema_editor):
@@ -25,7 +24,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("casework", "0001_initial"),
         ("audit", "0001_initial"),

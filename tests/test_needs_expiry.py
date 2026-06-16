@@ -3,6 +3,7 @@
 Regression test for the previously-silent bulk .update() that flipped proposed
 matches to 'expired' with no audit entry.
 """
+
 from datetime import timedelta
 
 import pytest
@@ -21,7 +22,10 @@ def test_expiry_audits_each_expired_match():
     requester = MemberFactory(community=community)
     offerer = MemberFactory(community=community)
     need = NeedFactory(
-        community=community, requester=requester, category=cat, status="open",
+        community=community,
+        requester=requester,
+        category=cat,
+        status="open",
         expires_at=timezone.now() - timedelta(days=1),
     )
     offer = OfferFactory(community=community, offerer=offerer, category=cat)

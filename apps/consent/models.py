@@ -52,6 +52,7 @@ class Consent(models.Model):
 
     def is_currently_active(self) -> bool:
         from django.utils import timezone
+
         if self.status != "active" or self.revoked_at:
             return False
         return not (self.expires_at and self.expires_at <= timezone.now())

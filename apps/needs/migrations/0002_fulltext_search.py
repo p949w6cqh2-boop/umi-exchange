@@ -5,6 +5,7 @@ the ordering explicit).
 Postgres-only by vendor guard; reversible; idempotent (IF NOT EXISTS).
 Renumber + repoint dependencies if needs has migrations beyond 0001.
 """
+
 from django.db import migrations
 
 TABLES = (
@@ -36,12 +37,10 @@ def drop_fts(apps, schema_editor):
         return
     for table, index in TABLES:
         schema_editor.execute(f'DROP INDEX IF EXISTS "{index}"')
-        schema_editor.execute(
-            f'ALTER TABLE "{table}" DROP COLUMN IF EXISTS search_vector')
+        schema_editor.execute(f'ALTER TABLE "{table}" DROP COLUMN IF EXISTS search_vector')
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("needs", "0001_initial"),
         ("offers", "0001_initial"),

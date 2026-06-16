@@ -57,6 +57,7 @@ class Need(models.Model):
         """Plaintext accessor — the ONLY way code should read/write this.
         Reads both schemes; writes always envelope (per-need DEK)."""
         from apps.people import crypto
+
         if not self.on_behalf_of:
             return None
         if self.on_behalf_of_dek:
@@ -66,10 +67,12 @@ class Need(models.Model):
     @on_behalf_of_name.setter
     def on_behalf_of_name(self, value):
         from apps.people import crypto
+
         if isinstance(value, (bytes, bytearray, memoryview)):
             raise TypeError(
                 "on_behalf_of_name takes PLAINTEXT — a write site is still passing "
-                "pre-encrypted bytes; remove its inline crypto.")
+                "pre-encrypted bytes; remove its inline crypto."
+            )
         if value in (None, ""):
             self.on_behalf_of = None
             self.on_behalf_of_dek = None

@@ -8,6 +8,7 @@ Rules it enforces:
   * user stored only when authenticated (else NULL = system event);
   * IPs stored as SHA-256 hashes, never raw (Part A §8.3).
 """
+
 import hashlib
 
 from .models import AuditLog
@@ -16,8 +17,7 @@ from .models import AuditLog
 def ip_hash(request) -> str:
     if request is None:
         return ""
-    ip = (request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
-          or request.META.get("REMOTE_ADDR", ""))
+    ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
     return hashlib.sha256(ip.encode()).hexdigest() if ip else ""
 
 

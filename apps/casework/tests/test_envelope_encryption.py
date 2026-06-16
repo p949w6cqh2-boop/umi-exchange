@@ -5,6 +5,7 @@ Reuses the casework `world` fixture and the defensive Need builder from the
 §10 tests. NOTE: when stage 4 removes the legacy read branch, delete
 test_legacy_rows_dual_read along with it.
 """
+
 import io
 import uuid
 
@@ -30,7 +31,7 @@ def _envelope_need(world, name="Maria Quiet"):
 
 def _legacy_need(world, name="Old Style"):
     need = _make_need(world, f"Legacy test {uuid.uuid4().hex[:6]}")
-    need.on_behalf_of = crypto.encrypt_str(name)   # direct-KEK, pre-envelope
+    need.on_behalf_of = crypto.encrypt_str(name)  # direct-KEK, pre-envelope
     need.on_behalf_of_dek = None
     need.save(update_fields=["on_behalf_of", "on_behalf_of_dek"])
     need.refresh_from_db()
@@ -89,9 +90,8 @@ def test_backfill_converts_legacy_and_is_idempotent(world):
     already.refresh_from_db()
     assert bytes(already.on_behalf_of_dek) == untouched_dek  # not re-touched
 
-    snapshot = {n.pk: bytes(n.on_behalf_of_dek)
-                for n in (legacy1, legacy2, already)}
-    call_command("migrate_on_behalf_envelope")               # second run
+    snapshot = {n.pk: bytes(n.on_behalf_of_dek) for n in (legacy1, legacy2, already)}
+    call_command("migrate_on_behalf_envelope")  # second run
     for need in (legacy1, legacy2, already):
         need.refresh_from_db()
         assert bytes(need.on_behalf_of_dek) == snapshot[need.pk]
@@ -103,7 +103,7 @@ def test_backfill_to_legacy_reverses_for_rollback(world):
     need.refresh_from_db()
     assert need.on_behalf_of_dek is None
     assert crypto.decrypt_str(need.on_behalf_of) == "Rollback Row"
-    assert need.on_behalf_of_name == "Rollback Row"          # legacy branch
+    assert need.on_behalf_of_name == "Rollback Row"  # legacy branch
 
 
 def test_verify_census_output(world):
@@ -118,18 +118,18 @@ def test_verify_census_output(world):
 # ------------------------------------------------------------- KEK rotation
 def test_kek_rotation_rewraps_deks(world, settings):
     old_key = settings.ENCRYPTION_KEY
-    need = _envelope_need(world, "Rotated Name")     # wrapped under old_key
+    need = _envelope_need(world, "Rotated Name")  # wrapped under old_key
     old_wrap = bytes(need.on_behalf_of_dek)
 
     new_key = Fernet.generate_key().decode()
-    settings.ENCRYPTION_KEYS = [new_key, old_key]    # step 2 of the runbook
+    settings.ENCRYPTION_KEYS = [new_key, old_key]  # step 2 of the runbook
     assert need.on_behalf_of_name == "Rotated Name"  # MultiFernet still reads
 
-    call_command("rotate_keks")                      # step 3
+    call_command("rotate_keks")  # step 3
     need.refresh_from_db()
     assert bytes(need.on_behalf_of_dek) != old_wrap
 
-    settings.ENCRYPTION_KEYS = [new_key]             # step 5: old key retired
+    settings.ENCRYPTION_KEYS = [new_key]  # step 5: old key retired
     assert need.on_behalf_of_name == "Rotated Name"  # envelope survives
 
 
@@ -141,9 +141,9 @@ def test_direct_fields_need_old_kek_until_rewritten(world, settings):
     new_key = Fernet.generate_key().decode()
 
     settings.ENCRYPTION_KEYS = [new_key, old_key]
-    assert world.person.display_name == "Maria Garcia"   # still reads
+    assert world.person.display_name == "Maria Garcia"  # still reads
 
-    settings.ENCRYPTION_KEYS = [new_key]                 # premature retirement
+    settings.ENCRYPTION_KEYS = [new_key]  # premature retirement
     with pytest.raises(ValueError):
         _ = world.person.display_name
 
@@ -155,6 +155,5 @@ def test_shred_command_destroys_and_audits(world):
     need.refresh_from_db()
     assert need.on_behalf_of is None and need.on_behalf_of_dek is None
     assert need.on_behalf_of_name is None
-    row = AuditLog.objects.get(action="need.on_behalf_shredded",
-                               resource_id=need.pk)
+    row = AuditLog.objects.get(action="need.on_behalf_shredded", resource_id=need.pk)
     assert row.details["reason"] == "erasure_request"

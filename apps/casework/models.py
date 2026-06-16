@@ -3,6 +3,7 @@ Lake 2 data model (design §3.3): CaseFile, CaseNote, FollowUp, WarmHandoff,
 CaseAccessGrant. UUID PKs throughout; 🔒 fields are Fernet BinaryFields with
 decrypt-on-access properties; state machines per §3.5 via StateMachineMixin.
 """
+
 import uuid
 from datetime import timedelta
 
@@ -17,38 +18,33 @@ from .state import StateMachineMixin
 
 class CaseFile(StateMachineMixin, models.Model):
     STATUS_OPEN, STATUS_MONITORING, STATUS_CLOSED = "open", "monitoring", "closed"
-    STATUS_CHOICES = [(STATUS_OPEN, "Open"), (STATUS_MONITORING, "Monitoring"),
-                      (STATUS_CLOSED, "Closed")]
+    STATUS_CHOICES = [(STATUS_OPEN, "Open"), (STATUS_MONITORING, "Monitoring"), (STATUS_CLOSED, "Closed")]
     SENS_STANDARD, SENS_RESTRICTED = "standard", "restricted"
     SENSITIVITY_CHOICES = [(SENS_STANDARD, "Standard"), (SENS_RESTRICTED, "Restricted")]
 
     VALID_TRANSITIONS = {
-        "open":       {"monitoring", "closed"},
+        "open": {"monitoring", "closed"},
         "monitoring": {"open", "closed"},
-        "closed":     {"open"},          # reopen — admin only (enforced in view)
+        "closed": {"open"},  # reopen — admin only (enforced in view)
     }
     TRANSITION_TIMESTAMPS = {"closed": "closed_at"}
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    community = models.ForeignKey(
-        "communities.Community", on_delete=models.PROTECT, related_name="case_files")
-    subject_person = models.ForeignKey(
-        "people.Person", on_delete=models.PROTECT, related_name="case_files")
-    opened_by = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT, related_name="cases_opened")
+    community = models.ForeignKey("communities.Community", on_delete=models.PROTECT, related_name="case_files")
+    subject_person = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="case_files")
+    opened_by = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="cases_opened")
     assigned_to = models.ForeignKey(
-        "communities.Member", null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="cases_assigned")
+        "communities.Member", null=True, blank=True, on_delete=models.SET_NULL, related_name="cases_assigned"
+    )
 
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_OPEN)
-    sensitivity = models.CharField(
-        max_length=12, choices=SENSITIVITY_CHOICES, default=SENS_STANDARD)
+    sensitivity = models.CharField(max_length=12, choices=SENSITIVITY_CHOICES, default=SENS_STANDARD)
 
     # Consent-first opening (§3.6): consent may be null ONLY with the
     # emergency flag — enforced by a DB CheckConstraint below.
     consent = models.ForeignKey(
-        "consent.Consent", null=True, blank=True,
-        on_delete=models.PROTECT, related_name="case_files")
+        "consent.Consent", null=True, blank=True, on_delete=models.PROTECT, related_name="case_files"
+    )
     emergency_opened = models.BooleanField(default=False)
     emergency_justification = models.TextField(blank=True, default="")
 
@@ -103,40 +99,44 @@ class CaseFile(StateMachineMixin, models.Model):
 
 
 class CaseNote(StateMachineMixin, models.Model):
-    KIND_CHOICES = [("visit", "Home visit"), ("call", "Phone call"),
-                    ("office", "Office visit"), ("aid", "Aid given"),
-                    ("handoff", "Handoff"), ("system", "System")]
-    LOCATION_CHOICES = [("home", "Home"), ("office", "Office"),
-                        ("phone", "Phone"), ("other", "Other")]
+    KIND_CHOICES = [
+        ("visit", "Home visit"),
+        ("call", "Phone call"),
+        ("office", "Office visit"),
+        ("aid", "Aid given"),
+        ("handoff", "Handoff"),
+        ("system", "System"),
+    ]
+    LOCATION_CHOICES = [("home", "Home"), ("office", "Office"), ("phone", "Phone"), ("other", "Other")]
     # Quick-tap actions — the 3-minute form (Manual §8.2, design §3.3)
-    ACTIONS = [("food_provided", "Food provided"),
-               ("utility_referral", "Utility referral"),
-               ("rent_assist", "Rent assistance"),
-               ("prayer", "Prayer"),
-               ("info_provided", "Information provided"),
-               ("other", "Other")]
+    ACTIONS = [
+        ("food_provided", "Food provided"),
+        ("utility_referral", "Utility referral"),
+        ("rent_assist", "Rent assistance"),
+        ("prayer", "Prayer"),
+        ("info_provided", "Information provided"),
+        ("other", "Other"),
+    ]
 
     STATUS_DRAFT, STATUS_FINAL, STATUS_DISCARDED = "draft", "final", "discarded"
     VALID_TRANSITIONS = {
-        "draft":     {"final", "discarded"},   # author only (enforced in view)
-        "final":     set(),                    # immutable; amendments are new rows
+        "draft": {"final", "discarded"},  # author only (enforced in view)
+        "final": set(),  # immutable; amendments are new rows
         "discarded": set(),
     }
     TRANSITION_TIMESTAMPS = {"final": "finalized_at"}
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     case = models.ForeignKey(CaseFile, on_delete=models.CASCADE, related_name="notes")
-    author = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT, related_name="case_notes")
+    author = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="case_notes")
     co_visitor = models.ForeignKey(
-        "communities.Member", null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="co_visited_notes")
+        "communities.Member", null=True, blank=True, on_delete=models.SET_NULL, related_name="co_visited_notes"
+    )
 
     kind = models.CharField(max_length=10, choices=KIND_CHOICES, default="visit")
     occurred_at = models.DateTimeField(default=timezone.now)
     duration_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
-    location_kind = models.CharField(
-        max_length=10, choices=LOCATION_CHOICES, default="home")
+    location_kind = models.CharField(max_length=10, choices=LOCATION_CHOICES, default="home")
     actions = models.JSONField(default=list, blank=True)
 
     # Deliberately plaintext for aggregation (design §3.3): the bare number,
@@ -146,20 +146,21 @@ class CaseNote(StateMachineMixin, models.Model):
 
     body_enc = models.BinaryField(null=True, blank=True)  # 🔒
 
-    status = models.CharField(max_length=10, default=STATUS_DRAFT, choices=[
-        ("draft", "Draft"), ("final", "Final"), ("discarded", "Discarded")])
+    status = models.CharField(
+        max_length=10,
+        default=STATUS_DRAFT,
+        choices=[("draft", "Draft"), ("final", "Final"), ("discarded", "Discarded")],
+    )
     finalized_at = models.DateTimeField(null=True, blank=True)
-    amends = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL,
-        related_name="amendments")
+    amends = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="amendments")
 
     client_uuid = models.UUIDField(null=True, blank=True, unique=True)  # offline idempotency
     related_need = models.ForeignKey(
-        "needs.Need", null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="case_notes")
+        "needs.Need", null=True, blank=True, on_delete=models.SET_NULL, related_name="case_notes"
+    )
     related_match = models.ForeignKey(
-        "matches.Match", null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="case_notes")
+        "matches.Match", null=True, blank=True, on_delete=models.SET_NULL, related_name="case_notes"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -173,12 +174,9 @@ class CaseNote(StateMachineMixin, models.Model):
     # ---- immutability guards (A7: model-level, mirroring the audit pattern)
     def save(self, *args, **kwargs):
         if self.pk and not self._state.adding:
-            old_status = (type(self).objects
-                          .filter(pk=self.pk)
-                          .values_list("status", flat=True).first())
+            old_status = type(self).objects.filter(pk=self.pk).values_list("status", flat=True).first()
             if old_status == self.STATUS_FINAL:
-                raise ValidationError(
-                    "Finalized notes are immutable. Create an amendment instead.")
+                raise ValidationError("Finalized notes are immutable. Create an amendment instead.")
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -207,12 +205,17 @@ class CaseNote(StateMachineMixin, models.Model):
         if not self.occurred_at:
             return type(self).objects.none()
         window = timedelta(minutes=60)
-        return (type(self).objects
-                .filter(case=self.case, author=self.author,
-                        occurred_at__gte=self.occurred_at - window,
-                        occurred_at__lte=self.occurred_at + window)
-                .exclude(pk=self.pk)
-                .exclude(status=self.STATUS_DISCARDED))
+        return (
+            type(self)
+            .objects.filter(
+                case=self.case,
+                author=self.author,
+                occurred_at__gte=self.occurred_at - window,
+                occurred_at__lte=self.occurred_at + window,
+            )
+            .exclude(pk=self.pk)
+            .exclude(status=self.STATUS_DISCARDED)
+        )
 
     def __str__(self):
         return f"Note {str(self.id)[:8]} ({self.kind}/{self.status})"
@@ -220,37 +223,36 @@ class CaseNote(StateMachineMixin, models.Model):
 
 class FollowUp(StateMachineMixin, models.Model):
     VALID_TRANSITIONS = {
-        "open": {"done", "cancelled"},   # assignee, creator, or admin
-        "done": set(), "cancelled": set(),
+        "open": {"done", "cancelled"},  # assignee, creator, or admin
+        "done": set(),
+        "cancelled": set(),
     }
     TRANSITION_TIMESTAMPS = {"done": "done_at"}
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     case = models.ForeignKey(CaseFile, on_delete=models.CASCADE, related_name="followups")
-    created_by = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT, related_name="followups_created")
-    assigned_to = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT, related_name="followups_assigned")
+    created_by = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="followups_created")
+    assigned_to = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="followups_assigned")
 
     # Plaintext BY DESIGN, coached non-sensitive ("Check in re: utility bill",
     # never a name) — the daily digest must render without decrypting (§3.6).
     title = models.CharField(max_length=200)
     detail_enc = models.BinaryField(null=True, blank=True)  # 🔒
     due_date = models.DateField()
-    status = models.CharField(max_length=10, default="open", choices=[
-        ("open", "Open"), ("done", "Done"), ("cancelled", "Cancelled")])
+    status = models.CharField(
+        max_length=10, default="open", choices=[("open", "Open"), ("done", "Done"), ("cancelled", "Cancelled")]
+    )
     done_at = models.DateTimeField(null=True, blank=True)
     source_note = models.ForeignKey(
-        CaseNote, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="followups")
+        CaseNote, null=True, blank=True, on_delete=models.SET_NULL, related_name="followups"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "casework_follow_up"
         ordering = ["due_date"]
         indexes = [
-            models.Index(fields=["assigned_to", "status", "due_date"],
-                         name="cw_fu_assignee_idx"),
+            models.Index(fields=["assigned_to", "status", "due_date"], name="cw_fu_assignee_idx"),
             models.Index(fields=["case", "status"], name="cw_fu_case_idx"),
             models.Index(fields=["due_date", "status"], name="cw_fu_due_idx"),
         ]
@@ -269,20 +271,19 @@ class FollowUp(StateMachineMixin, models.Model):
 
 class WarmHandoff(StateMachineMixin, models.Model):
     VALID_TRANSITIONS = {
-        "pending": {"acknowledged"},     # to_member only (enforced in view)
+        "pending": {"acknowledged"},  # to_member only (enforced in view)
         "acknowledged": set(),
     }
     TRANSITION_TIMESTAMPS = {"acknowledged": "acknowledged_at"}
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     case = models.ForeignKey(CaseFile, on_delete=models.CASCADE, related_name="handoffs")
-    from_member = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT, related_name="handoffs_sent")
-    to_member = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT, related_name="handoffs_received")
+    from_member = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="handoffs_sent")
+    to_member = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="handoffs_received")
     summary_enc = models.BinaryField(null=True, blank=True)  # 🔒
-    status = models.CharField(max_length=12, default="pending", choices=[
-        ("pending", "Pending"), ("acknowledged", "Acknowledged")])
+    status = models.CharField(
+        max_length=12, default="pending", choices=[("pending", "Pending"), ("acknowledged", "Acknowledged")]
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     acknowledged_at = models.DateTimeField(null=True, blank=True)
 
@@ -310,12 +311,9 @@ class CaseAccessGrant(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     case = models.ForeignKey(CaseFile, on_delete=models.CASCADE, related_name="grants")
-    member = models.ForeignKey(
-        "communities.Member", on_delete=models.CASCADE, related_name="case_grants")
+    member = models.ForeignKey("communities.Member", on_delete=models.CASCADE, related_name="case_grants")
     role = models.CharField(max_length=12, choices=ROLE_CHOICES, default="viewer")
-    granted_by = models.ForeignKey(
-        "communities.Member", on_delete=models.PROTECT,
-        related_name="case_grants_given")
+    granted_by = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="case_grants_given")
     reason = models.CharField(max_length=200)
     expires_at = models.DateTimeField(null=True, blank=True)
     revoked_at = models.DateTimeField(null=True, blank=True)

@@ -3,11 +3,11 @@
 Numbered after the §10.4 FTS migration; if your needs app is elsewhere in
 its sequence, renumber and repoint as before.
 """
+
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("needs", "0002_fulltext_search"),
     ]

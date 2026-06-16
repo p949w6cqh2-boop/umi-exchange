@@ -22,6 +22,7 @@ to the legacy single settings.ENCRYPTION_KEY. Read at call time on purpose:
 tests and rotations may swap keys mid-process; the cost is negligible at
 this scale.
 """
+
 from __future__ import annotations
 
 import json
@@ -42,9 +43,7 @@ def _keks() -> list[bytes]:
         single = getattr(settings, "ENCRYPTION_KEY", "") or ""
         keys = [single] if single else []
     if not keys:
-        raise ImproperlyConfigured(
-            "ENCRYPTION_KEYS/ENCRYPTION_KEY not set; encrypted fields are "
-            "unavailable.")
+        raise ImproperlyConfigured("ENCRYPTION_KEYS/ENCRYPTION_KEY not set; encrypted fields are unavailable.")
     return [_key_bytes(k) for k in keys]
 
 
@@ -70,15 +69,14 @@ def decrypt_str(blob: bytes | None) -> str | None:
         return kek_multifernet().decrypt(bytes(blob)).decode("utf-8")
     except InvalidToken as exc:
         raise ValueError(
-            "Could not decrypt field (no configured KEK matches — wrong or "
-            "retired ENCRYPTION_KEY?)") from exc
+            "Could not decrypt field (no configured KEK matches — wrong or retired ENCRYPTION_KEY?)"
+        ) from exc
 
 
 def encrypt_json(value) -> bytes | None:
     if value in (None, "", {}, []):
         return None
-    return encrypt_str(json.dumps(value, separators=(",", ":"),
-                                  ensure_ascii=False))
+    return encrypt_str(json.dumps(value, separators=(",", ":"), ensure_ascii=False))
 
 
 def decrypt_json(blob: bytes | None):
@@ -99,8 +97,7 @@ def unwrap_dek(wrapped: bytes) -> bytes:
     try:
         return kek_multifernet().decrypt(bytes(wrapped))
     except InvalidToken as exc:
-        raise ValueError(
-            "Could not unwrap DEK (no configured KEK matches).") from exc
+        raise ValueError("Could not unwrap DEK (no configured KEK matches).") from exc
 
 
 def rewrap_dek(wrapped: bytes) -> bytes:
@@ -109,8 +106,7 @@ def rewrap_dek(wrapped: bytes) -> bytes:
     try:
         return kek_multifernet().rotate(bytes(wrapped))
     except InvalidToken as exc:
-        raise ValueError(
-            "Could not rotate DEK wrap (no configured KEK matches).") from exc
+        raise ValueError("Could not rotate DEK wrap (no configured KEK matches).") from exc
 
 
 def envelope_encrypt_str(value: str | None) -> tuple[bytes | None, bytes | None]:
@@ -122,14 +118,11 @@ def envelope_encrypt_str(value: str | None) -> tuple[bytes | None, bytes | None]
     return ciphertext, wrap_dek(dek)
 
 
-def envelope_decrypt_str(ciphertext: bytes | None,
-                         wrapped_dek: bytes | None) -> str | None:
+def envelope_decrypt_str(ciphertext: bytes | None, wrapped_dek: bytes | None) -> str | None:
     if not ciphertext:
         return None
     if not wrapped_dek:
-        raise ValueError(
-            "Envelope ciphertext without a DEK — row was crypto-shredded "
-            "or the DEK column was lost.")
+        raise ValueError("Envelope ciphertext without a DEK — row was crypto-shredded or the DEK column was lost.")
     dek = unwrap_dek(wrapped_dek)
     try:
         return Fernet(dek).decrypt(bytes(ciphertext)).decode("utf-8")
@@ -140,8 +133,7 @@ def envelope_decrypt_str(ciphertext: bytes | None,
 def envelope_encrypt_json(value) -> tuple[bytes | None, bytes | None]:
     if value in (None, "", {}, []):
         return None, None
-    return envelope_encrypt_str(json.dumps(value, separators=(",", ":"),
-                                           ensure_ascii=False))
+    return envelope_encrypt_str(json.dumps(value, separators=(",", ":"), ensure_ascii=False))
 
 
 def envelope_decrypt_json(ciphertext, wrapped_dek):

@@ -5,6 +5,7 @@ their per-record DEKs are untouched, which is the whole point of §12.2.
 
 Extend ENVELOPE_DEK_FIELDS as more envelope columns arrive (casework next).
 """
+
 import time
 
 from django.apps import apps as django_apps
@@ -31,20 +32,16 @@ class Command(BaseCommand):
         grand_total = 0
         for app_label, model_name, dek_field in ENVELOPE_DEK_FIELDS:
             model = django_apps.get_model(app_label, model_name)
-            pending = model.objects.filter(
-                **{f"{dek_field}__isnull": False}).order_by("pk")
+            pending = model.objects.filter(**{f"{dek_field}__isnull": False}).order_by("pk")
             if opts["dry_run"]:
-                self.stdout.write(
-                    f"{app_label}.{model_name}.{dek_field}: "
-                    f"{pending.count()} wrap(s) would be rotated.")
+                self.stdout.write(f"{app_label}.{model_name}.{dek_field}: {pending.count()} wrap(s) would be rotated.")
                 continue
 
             total, last_pk = 0, None
             while True:
                 qs = pending.filter(pk__gt=last_pk) if last_pk else pending
                 with transaction.atomic():
-                    rows = list(qs.select_for_update(skip_locked=True)
-                                [: opts["batch_size"]])
+                    rows = list(qs.select_for_update(skip_locked=True)[: opts["batch_size"]])
                     if not rows:
                         break
                     for obj in rows:
@@ -56,6 +53,5 @@ class Command(BaseCommand):
                 if opts["sleep"]:
                     time.sleep(opts["sleep"])
             grand_total += total
-            self.stdout.write(self.style.SUCCESS(
-                f"{app_label}.{model_name}: rotated {total} DEK wrap(s)."))
+            self.stdout.write(self.style.SUCCESS(f"{app_label}.{model_name}: rotated {total} DEK wrap(s)."))
         self.stdout.write(self.style.SUCCESS(f"Total: {grand_total}."))

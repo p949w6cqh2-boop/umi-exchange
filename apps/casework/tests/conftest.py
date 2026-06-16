@@ -3,6 +3,7 @@ Shared fixtures. NOTE: the suite exercises real URLs + middleware, so it
 assumes the three §0 install edits are in place (INSTALLED_APPS, the
 SensitiveSessionMiddleware line, and the config/urls.py include).
 """
+
 import time
 from types import SimpleNamespace
 
@@ -27,22 +28,17 @@ def _encryption_key(settings):
 def make_user(handle):
     User = get_user_model()  # noqa: N806
     try:
-        return User.objects.create_user(
-            username=handle, email=f"{handle}@example.test",
-            password="pw-Str0ng!pass")
+        return User.objects.create_user(username=handle, email=f"{handle}@example.test", password="pw-Str0ng!pass")
     except TypeError:  # email-only custom managers
-        return User.objects.create_user(
-            email=f"{handle}@example.test", password="pw-Str0ng!pass")
+        return User.objects.create_user(email=f"{handle}@example.test", password="pw-Str0ng!pass")
 
 
 def make_community(created_by):
-    kwargs = dict(name="St. Patrick Conference", slug="st-patrick",
-                  created_by=created_by)
+    kwargs = dict(name="St. Patrick Conference", slug="st-patrick", created_by=created_by)
     try:
         return Community.objects.create(**kwargs)
     except Exception:
-        return Community.objects.create(visibility="private",
-                                        join_code="TESTCODE1234", **kwargs)
+        return Community.objects.create(visibility="private", join_code="TESTCODE1234", **kwargs)
 
 
 @pytest.fixture
@@ -56,9 +52,7 @@ def world(db):
     community = make_community(admin_u)
 
     def member(user, role, name):
-        return Member.objects.create(user=user, community=community,
-                                     role=role, display_name=name,
-                                     is_active=True)
+        return Member.objects.create(user=user, community=community, role=role, display_name=name, is_active=True)
 
     admin = member(admin_u, "admin", "Father Tom")
     coordinator = member(coord_u, "coordinator", "Anne")
@@ -66,32 +60,45 @@ def world(db):
     plain = member(plain_u, "member", "Sam")
     subject_member = member(subject_u, "member", "Maria")
 
-    person = Person(created_in_community=community, created_by=coordinator,
-                    linked_user=subject_u)
+    person = Person(created_in_community=community, created_by=coordinator, linked_user=subject_u)
     person.display_name = "Maria Garcia"
     person.contact = {"raw": "555-0100"}
     person.save()
 
     consent = Consent.objects.create(
-        participant=subject_u, granted_to=community.name,
+        participant=subject_u,
+        granted_to=community.name,
         scope=["case_records", "case_export"],
-        purpose="Casework tests", method="digital")
+        purpose="Casework tests",
+        method="digital",
+    )
 
     case = CaseFile.objects.create(
-        community=community, subject_person=person,
-        opened_by=coordinator, assigned_to=coordinator, consent=consent)
+        community=community, subject_person=person, opened_by=coordinator, assigned_to=coordinator, consent=consent
+    )
 
     return SimpleNamespace(
-        community=community, person=person, consent=consent, case=case,
-        admin=admin, coordinator=coordinator, coordinator2=coordinator2,
-        plain=plain, subject_member=subject_member,
-        admin_u=admin_u, coord_u=coord_u, coord2_u=coord2_u,
-        plain_u=plain_u, subject_u=subject_u)
+        community=community,
+        person=person,
+        consent=consent,
+        case=case,
+        admin=admin,
+        coordinator=coordinator,
+        coordinator2=coordinator2,
+        plain=plain,
+        subject_member=subject_member,
+        admin_u=admin_u,
+        coord_u=coord_u,
+        coord2_u=coord2_u,
+        plain_u=plain_u,
+        subject_u=subject_u,
+    )
 
 
 @pytest.fixture
 def auth(client):
     """auth(user) → logged-in client with a fresh sensitive-session stamp."""
+
     def _login(user, stamp=True):
         client.force_login(user)
         if stamp:
@@ -99,15 +106,17 @@ def auth(client):
             s[SESSION_KEY] = time.time()
             s.save()
         return client
+
     return _login
 
 
 @pytest.fixture
 def u(world):
     """URL helper: u('detail', pk=case.pk)"""
+
     def _u(name, **kw):
-        return reverse(f"casework:{name}",
-                       kwargs={"slug": world.community.slug, **kw})
+        return reverse(f"casework:{name}", kwargs={"slug": world.community.slug, **kw})
+
     return _u
 
 
@@ -115,14 +124,16 @@ def u(world):
 def make_note(world):
     from apps.casework.models import CaseNote
 
-    def _make(author=None, case=None, status="draft", body="Visited; all well.",
-              **kw):
-        note = CaseNote(case=case or world.case,
-                        author=author or world.coordinator,
-                        status=status,
-                        finalized_at=(timezone.now() if status == "final" else None),
-                        **kw)
+    def _make(author=None, case=None, status="draft", body="Visited; all well.", **kw):
+        note = CaseNote(
+            case=case or world.case,
+            author=author or world.coordinator,
+            status=status,
+            finalized_at=(timezone.now() if status == "final" else None),
+            **kw,
+        )
         note.body = body
         note.save()
         return note
+
     return _make

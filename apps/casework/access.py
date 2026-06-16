@@ -9,6 +9,7 @@ Levels: NONE < VIEWER < CONTRIBUTOR.
 The subject themself gets NONE on the record body (existence transparency
 is a separate, list-level concern — design §3.4).
 """
+
 from django.utils import timezone
 
 NONE, VIEWER, CONTRIBUTOR = 0, 1, 2
@@ -21,9 +22,8 @@ def get_membership(user, community):
     if not user.is_authenticated:
         return None
     from apps.communities.models import Member
-    return Member.objects.filter(
-        user=user, community=community, is_active=True
-    ).select_related("user").first()
+
+    return Member.objects.filter(user=user, community=community, is_active=True).select_related("user").first()
 
 
 def case_access(member, case) -> int:
@@ -35,9 +35,14 @@ def case_access(member, case) -> int:
         return CONTRIBUTOR
     if case.sensitivity == "standard" and member.role in COORDINATOR_ROLES:
         return CONTRIBUTOR
-    grant = case.grants.filter(
-        member=member, revoked_at__isnull=True,
-    ).exclude(expires_at__lt=timezone.now()).first()
+    grant = (
+        case.grants.filter(
+            member=member,
+            revoked_at__isnull=True,
+        )
+        .exclude(expires_at__lt=timezone.now())
+        .first()
+    )
     if grant:
         return CONTRIBUTOR if grant.role == "contributor" else VIEWER
     return NONE
