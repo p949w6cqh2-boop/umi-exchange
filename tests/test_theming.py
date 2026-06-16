@@ -1,4 +1,5 @@
 """Per-community theming: presets, custom overrides, and the settings picker."""
+
 import pytest
 from django.urls import reverse
 
@@ -43,8 +44,9 @@ class TestThemePickerView:
         client.force_login(admin.user)
         url = reverse("community-settings", kwargs={"slug": community.slug})
 
-        resp = client.post(url, {"action": "set_theme", "theme": "ocean",
-                                 "custom_primary": "#aabbcc", "custom_accent": ""})
+        resp = client.post(
+            url, {"action": "set_theme", "theme": "ocean", "custom_primary": "#aabbcc", "custom_accent": ""}
+        )
         assert resp.status_code == 302
         community.refresh_from_db()
         assert community.settings["theme"] == "ocean"
