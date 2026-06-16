@@ -1,0 +1,200 @@
+## Apps
+accounts
+audit
+communities
+consent
+dashboard
+health
+households
+matches
+needs
+notifications
+offers
+__pycache__
+
+## Models + key fields
+### 
+class User(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(blank=True, null=True, unique=True)
+    phone = models.CharField(max_length=20, blank=True)
+### 
+class AuditLog(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    action = models.CharField(max_length=10)  # create, read, update, delete
+    resource_type = models.CharField(max_length=50)
+    resource_id = models.UUIDField()
+    details = models.JSONField(null=True, blank=True)
+    ip_hash = models.CharField(max_length=64, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+### 
+class Community(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True, default="")
+    join_code = models.CharField(max_length=12, unique=True, default=generate_join_code)
+    visibility = models.CharField(
+    settings = models.JSONField(default=dict)
+    created_by = models.ForeignKey(
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+class Member(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="members")
+    household = models.ForeignKey(
+    role = models.CharField(max_length=15, default="member", choices=ROLE_CHOICES)
+    display_name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    notification_prefs = models.JSONField(default=dict)
+    joined_at = models.DateTimeField(auto_now_add=True)
+class Category(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="categories")
+    name = models.CharField(max_length=100)
+    icon = models.CharField(max_length=50, default="\U0001f527")
+    sort_order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+### 
+class Consent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    participant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="consents_given")
+    granted_to = models.CharField(max_length=200)  # Community name or org identifier
+    scope = models.JSONField(default=list)  # ["display_name", "email", "phone", "need_history"]
+    purpose = models.CharField(max_length=500)
+    method = models.CharField(max_length=10, choices=METHOD_CHOICES, default="digital")
+    status = models.CharField(max_length=10, default="active", choices=STATUS_CHOICES)
+    granted_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    custom = models.JSONField(default=dict, blank=True)
+### 
+### 
+class Household(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200, blank=True, help_text='e.g., "The Rodriguez Family"')
+    created_by = models.ForeignKey(
+    join_code = models.CharField(max_length=10, unique=True, default=generate_household_code)
+    created_at = models.DateTimeField(auto_now_add=True)
+### 
+class Match(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    need = models.ForeignKey("needs.Need", on_delete=models.CASCADE, related_name="matches")
+    offer = models.ForeignKey("offers.Offer", on_delete=models.SET_NULL, null=True, blank=True, related_name="matches")
+    proposed_by = models.ForeignKey("communities.Member", on_delete=models.CASCADE, related_name="proposed_matches")
+    status = models.CharField(max_length=12, default="proposed", choices=STATUS_CHOICES)
+    notes = models.TextField(blank=True)
+    rating = models.SmallIntegerField(null=True, blank=True)  # 1-5, coordinator only
+    proposed_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    fulfilled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    custom = models.JSONField(default=dict, blank=True)
+### 
+class Need(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    community = models.ForeignKey("communities.Community", on_delete=models.CASCADE, related_name="needs")
+    requester = models.ForeignKey("communities.Member", on_delete=models.CASCADE, related_name="needs")
+    category = models.ForeignKey("communities.Category", on_delete=models.PROTECT)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    urgency = models.CharField(max_length=10, default="medium", choices=URGENCY_CHOICES)
+    neighborhood = models.CharField(max_length=100, blank=True)
+    contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
+    status = models.CharField(max_length=10, default="open", choices=STATUS_CHOICES)
+    on_behalf_of = models.BinaryField(null=True, blank=True)
+    expires_at = models.DateTimeField()
+    fulfilled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    custom = models.JSONField(default=dict, blank=True)
+### 
+class Notification(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    type = models.CharField(max_length=30, choices=TYPE_CHOICES)
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    link = models.CharField(max_length=500, blank=True)
+    is_read = models.BooleanField(default=False)
+    channels_sent = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+### 
+class Offer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    community = models.ForeignKey("communities.Community", on_delete=models.CASCADE, related_name="offers")
+    offerer = models.ForeignKey("communities.Member", on_delete=models.CASCADE, related_name="offers")
+    category = models.ForeignKey("communities.Category", on_delete=models.PROTECT)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    availability = models.JSONField(default=dict, blank=True)
+    radius = models.IntegerField(null=True, blank=True, help_text="km; null=unlimited")
+    contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
+    status = models.CharField(max_length=12, default="active", choices=STATUS_CHOICES)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    custom = models.JSONField(default=dict, blank=True)
+
+## URL prefixes (unique)
+
+account/
+admin/
+auth/
+c/
+consent/
+count/
+create/
+health/
+join/
+login/
+logout/
+mark-read/
+notifications/
+    path(
+register/
+<slug:slug>/
+<slug:slug>/dashboard/
+<slug:slug>/dashboard/export/
+<slug:slug>/matches/propose/
+
+## HTMX partials
+templates/components/_category_grid.html
+templates/components/_contact_info_box.html
+templates/components/_empty_state.html
+templates/components/_filter_bar.html
+templates/components/_match_timeline.html
+templates/components/_metric_card.html
+templates/components/_need_card.html
+templates/components/_notification_badge.html
+templates/components/_offer_card.html
+templates/components/_primary_button.html
+templates/components/_protocol_badge.html
+templates/components/_trust_badge.html
+templates/components/_urgency_selector.html
+
+## Helper functions
+    def form_valid(self, form):
+    def get_object(self, queryset=None):
+    def form_valid(self, form):
+    def get_context_data(self, **kwargs):
+    def get_initial(self):
+    def form_valid(self, form):
+    def form_valid(self, form):
+    def get_queryset(self):
+    def get_template_names(self):
+    def get_context_data(self, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
+    def get_context_data(self, **kwargs):
+    def post(self, request, slug):
+    def get(self, request, slug):
+    def get_context_data(self, **kwargs):
+    def get_queryset(self):
+    def post(self, request, pk):
+    def dispatch(self, request, *args, **kwargs):
+    def get_period_start(self):
+    def get_context_data(self, **kwargs):

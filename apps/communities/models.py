@@ -1,6 +1,6 @@
 """Community, Member, and Category models — the organisational layer."""
 
-import random
+import secrets
 import string
 import uuid
 
@@ -30,9 +30,9 @@ DEFAULT_CATEGORIES = [
 
 
 def generate_join_code():
-    """8-char alphanumeric. Collision handled by unique constraint + retry."""
+    """8-char CSPRNG alphanumeric code. Collision handled by unique constraint + retry."""
     chars = string.ascii_uppercase + string.digits
-    return "".join(random.choices(chars, k=8))
+    return "".join(secrets.choice(chars) for _ in range(8))
 
 
 class Community(models.Model):

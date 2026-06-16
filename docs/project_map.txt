@@ -1,0 +1,355 @@
+# UMI Exchange – Project Map
+
+## Directory Structure
+.
+./static
+./static/css
+./static/img
+./static/well-known
+./static/js
+./.github
+./.github/workflows
+./scripts
+./.venv
+./docs
+./.pytest_cache
+./.pytest_cache/v
+./.pytest_cache/v/cache
+./logs
+./staticfiles
+./config
+./config/settings
+./config/settings/__pycache__
+./config/__pycache__
+./.git
+./docker
+./tests
+./tests/__pycache__
+./source
+./source/bin
+./source/lib
+./source/lib/python3.12
+./source/lib/python3.12/site-packages
+./source/lib/python3.12/site-packages/pip-24.0.dist-info
+./source/lib/python3.12/site-packages/pip
+./source/lib/python3.12/site-packages/pip/_vendor
+./source/lib/python3.12/site-packages/pip/_vendor/platformdirs
+./source/lib/python3.12/site-packages/pip/_vendor/platformdirs/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/webencodings
+./source/lib/python3.12/site-packages/pip/_vendor/webencodings/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/idna
+./source/lib/python3.12/site-packages/pip/_vendor/idna/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/chardet
+./source/lib/python3.12/site-packages/pip/_vendor/chardet/cli
+./source/lib/python3.12/site-packages/pip/_vendor/chardet/cli/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/chardet/metadata
+./source/lib/python3.12/site-packages/pip/_vendor/chardet/metadata/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/chardet/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/msgpack
+./source/lib/python3.12/site-packages/pip/_vendor/msgpack/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/rich
+./source/lib/python3.12/site-packages/pip/_vendor/rich/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/distlib
+./source/lib/python3.12/site-packages/pip/_vendor/distlib/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pyparsing
+./source/lib/python3.12/site-packages/pip/_vendor/pyparsing/diagram
+./source/lib/python3.12/site-packages/pip/_vendor/pyparsing/diagram/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pyparsing/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/distro
+./source/lib/python3.12/site-packages/pip/_vendor/distro/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/certifi
+./source/lib/python3.12/site-packages/pip/_vendor/certifi/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/tenacity
+./source/lib/python3.12/site-packages/pip/_vendor/tenacity/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/resolvelib
+./source/lib/python3.12/site-packages/pip/_vendor/resolvelib/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/resolvelib/compat
+./source/lib/python3.12/site-packages/pip/_vendor/resolvelib/compat/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pygments
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/filters
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/filters/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/formatters
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/formatters/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/lexers
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/styles
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/styles/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pygments/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/requests
+./source/lib/python3.12/site-packages/pip/_vendor/requests/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/colorama
+./source/lib/python3.12/site-packages/pip/_vendor/colorama/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/colorama/tests
+./source/lib/python3.12/site-packages/pip/_vendor/colorama/tests/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/tomli
+./source/lib/python3.12/site-packages/pip/_vendor/tomli/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks
+./source/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process
+./source/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/packaging
+./source/lib/python3.12/site-packages/pip/_vendor/packaging/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/cachecontrol
+./source/lib/python3.12/site-packages/pip/_vendor/cachecontrol/caches
+./source/lib/python3.12/site-packages/pip/_vendor/cachecontrol/caches/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/cachecontrol/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/truststore
+./source/lib/python3.12/site-packages/pip/_vendor/truststore/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/pkg_resources
+./source/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/util
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/util/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/packages
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/packages/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/packages/backports
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/packages/backports/__pycache__
+./source/lib/python3.12/site-packages/pip/_vendor/urllib3/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal
+./source/lib/python3.12/site-packages/pip/_internal/commands
+./source/lib/python3.12/site-packages/pip/_internal/commands/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/locations
+./source/lib/python3.12/site-packages/pip/_internal/locations/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/cli
+./source/lib/python3.12/site-packages/pip/_internal/cli/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/req
+./source/lib/python3.12/site-packages/pip/_internal/req/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/operations
+./source/lib/python3.12/site-packages/pip/_internal/operations/install
+./source/lib/python3.12/site-packages/pip/_internal/operations/install/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/operations/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/operations/build
+./source/lib/python3.12/site-packages/pip/_internal/operations/build/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/vcs
+./source/lib/python3.12/site-packages/pip/_internal/vcs/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/distributions
+./source/lib/python3.12/site-packages/pip/_internal/distributions/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/resolution
+./source/lib/python3.12/site-packages/pip/_internal/resolution/legacy
+./source/lib/python3.12/site-packages/pip/_internal/resolution/legacy/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib
+./source/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/resolution/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/models
+./source/lib/python3.12/site-packages/pip/_internal/models/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/metadata
+./source/lib/python3.12/site-packages/pip/_internal/metadata/importlib
+./source/lib/python3.12/site-packages/pip/_internal/metadata/importlib/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/metadata/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/index
+./source/lib/python3.12/site-packages/pip/_internal/index/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/utils
+./source/lib/python3.12/site-packages/pip/_internal/utils/__pycache__
+./source/lib/python3.12/site-packages/pip/_internal/network
+./source/lib/python3.12/site-packages/pip/_internal/network/__pycache__
+./source/lib/python3.12/site-packages/pip/__pycache__
+./source/include
+./source/include/python3.12
+./templates
+./templates/components
+./templates/households
+./templates/communities
+./templates/needs
+./templates/pages
+./templates/accounts
+./templates/notifications
+./templates/dashboard
+./templates/two_factor
+./templates/matches
+./templates/consent
+./templates/offers
+./templates/emails
+./.ruff_cache
+./.ruff_cache/0.15.14
+./apps
+./apps/households
+./apps/households/migrations
+./apps/households/migrations/__pycache__
+./apps/households/__pycache__
+./apps/communities
+./apps/communities/management
+./apps/communities/management/commands
+./apps/communities/management/__pycache__
+./apps/communities/fixtures
+./apps/communities/migrations
+./apps/communities/migrations/__pycache__
+./apps/communities/__pycache__
+./apps/needs
+./apps/needs/management
+./apps/needs/management/commands
+./apps/needs/management/__pycache__
+./apps/needs/migrations
+./apps/needs/migrations/__pycache__
+./apps/needs/__pycache__
+./apps/audit
+./apps/audit/management
+./apps/audit/management/commands
+./apps/audit/management/__pycache__
+./apps/audit/migrations
+./apps/audit/migrations/__pycache__
+./apps/audit/__pycache__
+./apps/accounts
+./apps/accounts/migrations
+./apps/accounts/migrations/__pycache__
+./apps/accounts/__pycache__
+./apps/notifications
+./apps/notifications/management
+./apps/notifications/management/commands
+
+## Apps and Models
+### apps/accounts/
+### apps/audit/
+  - class AuditLog(models.Model):
+### apps/communities/
+  - class Community(models.Model):
+  - class Member(models.Model):
+  - class Category(models.Model):
+### apps/consent/
+  - class Consent(models.Model):
+### apps/dashboard/
+### apps/households/
+  - class Household(models.Model):
+### apps/matches/
+  - class Match(models.Model):
+### apps/needs/
+  - class Need(models.Model):
+### apps/notifications/
+  - class Notification(models.Model):
+### apps/offers/
+  - class Offer(models.Model):
+
+## URL Patterns
+apps/accounts/urls.py:    path("register/", views.RegisterView.as_view(), name="register"),
+apps/accounts/urls.py:    path("login/", views.UMILoginView.as_view(), name="login"),
+apps/accounts/urls.py:    path("logout/", views.UMILogoutView.as_view(), name="logout"),
+apps/accounts/urls.py:    path(
+apps/accounts/urls.py:    path(
+apps/accounts/urls.py:    path(
+apps/accounts/urls.py:    path(
+apps/accounts/urls.py:    path(
+apps/accounts/urls.py:    path(
+apps/communities/urls.py:    path("create/", views.CommunityCreateView.as_view(), name="community-create"),
+apps/communities/urls.py:    path("<slug:slug>/", views.FeedView.as_view(), name="community-feed"),
+apps/communities/urls.py:    path("<slug:slug>/settings/", views.CommunitySettingsView.as_view(), name="community-settings"),
+apps/communities/urls.py:    path("<slug:slug>/settings/qr/", views.JoinCodeQRView.as_view(), name="join-code-qr"),
+apps/communities/urls.py:    path("<slug:slug>/dashboard/", DashboardView.as_view(), name="community-dashboard"),
+apps/communities/urls.py:    path("<slug:slug>/dashboard/export/", DashboardExportView.as_view(), name="dashboard-export"),
+apps/communities/urls.py:    path("<slug:slug>/needs/new/", NeedCreateView.as_view(), name="need-create"),
+apps/communities/urls.py:    path("<slug:slug>/needs/<uuid:pk>/", NeedDetailView.as_view(), name="need-detail"),
+apps/communities/urls.py:    path("<slug:slug>/needs/<uuid:pk>/delete/", NeedDeleteView.as_view(), name="need-delete"),
+apps/communities/urls.py:    path("<slug:slug>/offers/new/", OfferCreateView.as_view(), name="offer-create"),
+apps/communities/urls.py:    path("<slug:slug>/offers/<uuid:pk>/", OfferDetailView.as_view(), name="offer-detail"),
+apps/communities/urls.py:    path("<slug:slug>/offers/<uuid:pk>/delete/", OfferDeleteView.as_view(), name="offer-delete"),
+apps/communities/urls.py:    path("<slug:slug>/matches/propose/", MatchProposeView.as_view(), name="match-propose"),
+apps/communities/urls.py:    path("<slug:slug>/matches/<uuid:pk>/", MatchDetailView.as_view(), name="match-detail"),
+apps/communities/urls.py:    path("<slug:slug>/matches/<uuid:pk>/update/", MatchUpdateView.as_view(), name="match-update"),
+apps/consent/urls.py:    path("", views.ConsentListView.as_view(), name="consent-list"),
+apps/consent/urls.py:    path("<uuid:pk>/revoke/", views.ConsentRevokeView.as_view(), name="consent-revoke"),
+apps/dashboard/urls.py:    path("<slug:slug>/dashboard/", DashboardView.as_view(), name="community-dashboard"),
+apps/dashboard/urls.py:    path("<slug:slug>/dashboard/export/", DashboardExportView.as_view(), name="dashboard-export"),
+apps/dashboard/urls.py:    # path("", DashboardView.as_view(), name="index"),
+apps/dashboard/urls.py:    # path("export/", DashboardExportView.as_view(), name="export"),
+apps/health/urls.py:    path("", HealthCheckView.as_view(), name="health-check"),
+apps/notifications/urls.py:    path("", views.NotificationListView.as_view(), name="notification-list"),
+apps/notifications/urls.py:    path("mark-read/", views.MarkAllReadView.as_view(), name="notifications-mark-read"),
+apps/notifications/urls.py:    path("count/", views.UnreadCountView.as_view(), name="notifications-count"),
+config/urls.py:    path("admin/", admin.site.urls),
+config/urls.py:    path("", LandingView.as_view(), name="landing"),
+config/urls.py:    path("health/", include("apps.health.urls")),
+config/urls.py:    path("auth/", include("apps.accounts.urls")),
+config/urls.py:    path("join/", include("apps.households.urls_join")),
+config/urls.py:    path("c/", include("apps.communities.urls")),
+config/urls.py:    path("account/", include("apps.accounts.urls_settings")),
+config/urls.py:    path("consent/", include("apps.consent.urls")),
+config/urls.py:    path("notifications/", include("apps.notifications.urls")),
+config/urls.py:    path("technology/", include("apps.communities.urls_tech")),
+config/urls.py:            path("", include(tf_urls)),
+
+## Views (class names)
+apps/accounts/views.py:class RegisterView(CreateView):
+apps/accounts/views.py:class UMILoginView(DjangoLoginView):
+apps/accounts/views.py:class UMILogoutView(LogoutView):
+apps/accounts/views.py:class SettingsView(LoginRequiredMixin, UpdateView):
+apps/communities/views.py:class LandingView(TemplateView):
+apps/communities/views.py:class JoinCommunityView(LoginRequiredMixin, FormView):
+apps/communities/views.py:class CommunityCreateView(LoginRequiredMixin, CreateView):
+apps/communities/views.py:class FeedView(LoginRequiredMixin, ListView):
+apps/communities/views.py:class CommunitySettingsView(LoginRequiredMixin, TemplateView):
+apps/communities/views.py:class JoinCodeQRView(LoginRequiredMixin, View):
+apps/communities/views.py:class TechnologyView(TemplateView):
+apps/consent/views.py:class ConsentListView(LoginRequiredMixin, ListView):
+apps/consent/views.py:class ConsentRevokeView(LoginRequiredMixin, View):
+apps/dashboard/views.py:class DashboardView(LoginRequiredMixin, TemplateView):
+apps/dashboard/views.py:class DashboardExportView(LoginRequiredMixin, TemplateView):
+apps/health/views.py:class HealthCheckView(View):
+apps/households/views.py:class HouseholdCreateView(LoginRequiredMixin, CreateView):
+apps/households/views.py:class HouseholdJoinView(LoginRequiredMixin, FormView):
+apps/matches/views.py:class MatchProposeView(LoginRequiredMixin, View):
+apps/matches/views.py:class MatchDetailView(LoginRequiredMixin, DetailView):
+apps/matches/views.py:class MatchUpdateView(LoginRequiredMixin, View):
+apps/needs/views.py:class NeedCreateView(LoginRequiredMixin, CreateView):
+apps/needs/views.py:class NeedDetailView(LoginRequiredMixin, DetailView):
+apps/needs/views.py:class NeedDeleteView(LoginRequiredMixin, DeleteView):
+apps/notifications/views.py:class NotificationListView(LoginRequiredMixin, ListView):
+apps/notifications/views.py:class MarkAllReadView(LoginRequiredMixin, View):
+apps/notifications/views.py:class UnreadCountView(LoginRequiredMixin, View):
+apps/offers/views.py:class OfferCreateView(LoginRequiredMixin, CreateView):
+apps/offers/views.py:class OfferDetailView(LoginRequiredMixin, DetailView):
+apps/offers/views.py:class OfferDeleteView(LoginRequiredMixin, DeleteView):
+
+## Custom Template Tags
+./.venv/lib/python3.12/site-packages/django/contrib/admin/templatetags/log.py
+./.venv/lib/python3.12/site-packages/django/contrib/admin/templatetags/admin_urls.py
+./.venv/lib/python3.12/site-packages/django/contrib/admin/templatetags/admin_list.py
+./.venv/lib/python3.12/site-packages/django/contrib/admin/templatetags/admin_modify.py
+./.venv/lib/python3.12/site-packages/django/contrib/humanize/templatetags/humanize.py
+./.venv/lib/python3.12/site-packages/django/contrib/flatpages/templatetags/flatpages.py
+./.venv/lib/python3.12/site-packages/django/templatetags/i18n.py
+./.venv/lib/python3.12/site-packages/django/templatetags/l10n.py
+./.venv/lib/python3.12/site-packages/django/templatetags/static.py
+./.venv/lib/python3.12/site-packages/django/templatetags/tz.py
+./.venv/lib/python3.12/site-packages/django/templatetags/cache.py
+./.venv/lib/python3.12/site-packages/django_htmx/templatetags/django_htmx.py
+./.venv/lib/python3.12/site-packages/two_factor/plugins/phonenumber/templatetags/phonenumber.py
+./.venv/lib/python3.12/site-packages/two_factor/templatetags/two_factor_tags.py
+./.venv/lib/python3.12/site-packages/rest_framework/templatetags/rest_framework.py
+./.venv/lib/python3.12/site-packages/csp/templatetags/csp.py
+./.venv/lib/python3.12/site-packages/guardian/templatetags/guardian_tags.py
+./apps/notifications/templatetags/notifications_tags.py
+
+## Environment Variables
+SECRET_KEY=change-me-to-a-random-50-char-string
+DATABASE_URL=sqlite:///db.sqlite3
+ALLOWED_HOSTS=localhost,127.0.0.1
+REDIS_URL=redis://localhost:6379/0
+SITE_URL=http://localhost:8000
+ENCRYPTION_KEY=
+DEBUG=True
+DJANGO_SETTINGS_MODULE=config.settings.development
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+DEFAULT_FROM_EMAIL=noreply@yourdomain.org
+EMAIL_HOST=smtp.yourdomain.org
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+SENTRY_DSN=
+SENTRY_ENVIRONMENT=production
+HEALTH_CHECK_TOKEN=
+GIT_SHA=
+DB_PASSWORD=change-me-in-production
+POSTGRES_USER=umi
+POSTGRES_PASSWORD=umi
+POSTGRES_DB=umi_exchange
+REDIS_PASSWORD=
+BACKUP_BUCKET=
+BACKUP_ACCESS_KEY=
+BACKUP_SECRET_KEY=
+BACKUP_ENDPOINT=https://s3.us-west-001.backblazeb2.com
+UMI_CONFORMANCE_LEVEL=core
