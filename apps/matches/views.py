@@ -131,7 +131,11 @@ class MatchUpdateView(LoginRequiredMixin, View):
         # Lock the Need (the contended resource) so two concurrent accepts on the
         # same need cannot both succeed; then lock the Match row itself.
         with transaction.atomic():
-            match = Match.objects.select_for_update().select_related("need", "offer").get(pk=pk)
+            # Lock only the Match row (of=("self",)): select_related pulls in the
+            # nullable `offer` as a LEFT OUTER JOIN, and Postgres refuses a bare
+            # FOR UPDATE on the nullable side of an outer join. We only need to
+            # lock the match itself here; the Need is locked separately below.
+            match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
             need = Need.objects.select_for_update().get(pk=match.need_id)
             match.need = need  # operate on the freshly locked instance
 
