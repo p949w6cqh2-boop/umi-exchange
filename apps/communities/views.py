@@ -1,6 +1,7 @@
 """Community views: landing, join, feed, settings, QR code."""
 
 import io
+import re
 
 from django.conf import settings as django_settings
 from django.contrib import messages
@@ -15,6 +16,7 @@ from apps.offers.models import Offer
 
 from .forms import CommunityCreateForm, CommunitySettingsForm, JoinForm
 from .models import Community, Member, generate_join_code
+from .themes import THEME_DEFAULT, THEMES
 
 
 class LandingView(TemplateView):
@@ -142,6 +144,9 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         ctx["community"] = self.community
         ctx["members"] = self.community.members.filter(is_active=True).select_related("user")
         ctx["categories"] = self.community.categories.all()
+        ctx["themes"] = THEMES
+        ctx["current_theme"] = (self.community.settings or {}).get("theme", THEME_DEFAULT)
+        ctx["theme_custom"] = (self.community.settings or {}).get("theme_custom", {})
         if "form" not in ctx:
             ctx["form"] = CommunitySettingsForm(instance=self.community)
         return ctx
@@ -153,6 +158,25 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             self.community.join_code = new_code
             self.community.save(update_fields=["join_code"])
             messages.success(request, f"Join code regenerated: {new_code}")
+            return redirect("community-settings", slug=self.community.slug)
+
+        if action == "set_theme":
+            settings = dict(self.community.settings or {})
+            key = request.POST.get("theme", THEME_DEFAULT)
+            settings["theme"] = key if key in THEMES else THEME_DEFAULT
+            # Optional custom overrides — only accept valid #RRGGBB hex.
+            custom = {}
+            for var in ("primary", "accent"):
+                val = (request.POST.get(f"custom_{var}") or "").strip()
+                if re.fullmatch(r"#[0-9A-Fa-f]{6}", val):
+                    custom[var] = val
+            if custom:
+                settings["theme_custom"] = custom
+            else:
+                settings.pop("theme_custom", None)
+            self.community.settings = settings
+            self.community.save(update_fields=["settings"])
+            messages.success(request, "Theme updated.")
             return redirect("community-settings", slug=self.community.slug)
 
         form = CommunitySettingsForm(request.POST, instance=self.community)
