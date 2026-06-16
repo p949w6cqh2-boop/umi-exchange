@@ -77,6 +77,11 @@ class FeedView(LoginRequiredMixin, ListView):
     template_name = "communities/feed.html"
     context_object_name = "items"
     paginate_by = 20
+    # Cap rows pulled per type so the feed can't load an entire community's
+    # open needs+offers into memory just to sort and paginate. The DB applies
+    # the LIMIT (newest-first); we merge the two capped sets. Matches the
+    # bounded-list pattern used by the casework list view.
+    feed_per_type_cap = 500
 
     def get_queryset(self):
         self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
@@ -99,9 +104,11 @@ class FeedView(LoginRequiredMixin, ListView):
             needs = apply_search(needs, q)
             offers = apply_search(offers, q)
 
-        # Tag items with their type for template rendering
-        need_list = list(needs)
-        offer_list = list(offers)
+        # Tag items with their type for template rendering. Order + slice at
+        # the DB layer (LIMIT) so memory stays bounded regardless of community size.
+        cap = self.feed_per_type_cap
+        need_list = list(needs.order_by("-created_at")[:cap])
+        offer_list = list(offers.order_by("-created_at")[:cap])
         for n in need_list:
             n.item_type = "need"
         for o in offer_list:

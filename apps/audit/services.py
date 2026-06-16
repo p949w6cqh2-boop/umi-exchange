@@ -6,19 +6,32 @@ casework keeps a thin shim so nothing breaks.
 Rules it enforces:
   * dotted action names, hard-capped at 32 chars (raises, never truncates);
   * user stored only when authenticated (else NULL = system event);
-  * IPs stored as SHA-256 hashes, never raw (Part A §8.3).
+  * IPs stored as salted SHA-256 hashes, never raw (Part A §8.3).
 """
 
 import hashlib
+
+from django.conf import settings
+
+from apps.accounts.ratelimit import client_ip
 
 from .models import AuditLog
 
 
 def ip_hash(request) -> str:
+    """Salted SHA-256 of the client IP, matching AuditLog.log().
+
+    Uses the reverse-proxy-set client IP (never the client-spoofable
+    left-most X-Forwarded-For) and salts with SECRET_KEY so the hashes
+    cannot be reversed with a precomputed (rainbow) table.
+    """
     if request is None:
         return ""
-    ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
-    return hashlib.sha256(ip.encode()).hexdigest() if ip else ""
+    ip = client_ip(request)
+    if not ip:
+        return ""
+    salted = f"{ip}:{settings.SECRET_KEY}"
+    return hashlib.sha256(salted.encode()).hexdigest()
 
 
 def emit(action: str, resource, *, user=None, request=None, details=None):

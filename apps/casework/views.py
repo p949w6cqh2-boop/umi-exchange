@@ -737,11 +737,15 @@ class FollowUpStatusView(CommunityMixin, View):
 
 class MyFollowUpsView(CommunityMixin, View):
     def get(self, request, slug):
-        items = (
+        assigned = (
             FollowUp.objects.filter(assigned_to=self.membership, status="open", case__community=self.community)
             .select_related("case")
             .order_by("due_date")
         )
+        # Being the assignee is not, by itself, current authorization: access
+        # to a case can be revoked or expire after a follow-up is assigned.
+        # Re-check case_access() so a stale assignment never leaks case data.
+        items = [fu for fu in assigned if access.case_access(self.membership, fu.case) > access.NONE]
         ctx = {
             "community": self.community,
             "membership": self.membership,

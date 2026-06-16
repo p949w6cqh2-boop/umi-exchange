@@ -69,7 +69,7 @@ class CaseFile(StateMachineMixin, models.Model):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(consent__isnull=False) | models.Q(emergency_opened=True),
+                condition=models.Q(consent__isnull=False) | models.Q(emergency_opened=True),
                 name="cw_cf_consent_or_emergency",
             ),
         ]
