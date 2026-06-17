@@ -174,8 +174,12 @@ def test_reverse_migration_restores_direct_kek(world):
     reverse_func(django_apps)
     case.refresh_from_db()
     assert case.summary_enc_dek is None
+    # Rollback invariant holds at the storage layer (direct-KEK ciphertext intact)...
     assert crypto.decrypt_str(case.summary_enc) == "Roundtrip"
-    assert case.summary == "Roundtrip"
+    # ...but post-Stage-E the property no longer reads legacy: a DEK-less
+    # ciphertext fails loud rather than silently decrypting.
+    with pytest.raises(ValueError):
+        _ = case.summary
 
 
 def test_census_command_reports_state(world, make_note):
