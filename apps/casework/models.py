@@ -52,6 +52,7 @@ class CaseFile(StateMachineMixin, models.Model):
     intake_date = models.DateField(default=timezone.localdate)
     physical_ref = models.CharField(max_length=100, blank=True, default="")
     summary_enc = models.BinaryField(null=True, blank=True)  # 🔒
+    summary_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
 
     closed_at = models.DateTimeField(null=True, blank=True)
     custom = models.JSONField(default=dict, blank=True)
@@ -76,11 +77,25 @@ class CaseFile(StateMachineMixin, models.Model):
 
     @property
     def summary(self) -> str | None:
+        # Dual-read: envelope when a DEK is present, else legacy direct-KEK
+        # (legacy branch removed in Stage E once census shows legacy=0).
+        if not self.summary_enc:
+            return None
+        if self.summary_enc_dek:
+            return crypto.envelope_decrypt_str(self.summary_enc, self.summary_enc_dek)
         return crypto.decrypt_str(self.summary_enc)
 
     @summary.setter
-    def summary(self, value: str | None):
-        self.summary_enc = crypto.encrypt_str(value)
+    def summary(self, value):
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError(
+                "summary takes PLAINTEXT — a write site is passing pre-encrypted bytes; remove its inline crypto."
+            )
+        if value in (None, ""):
+            self.summary_enc = None
+            self.summary_enc_dek = None
+            return
+        self.summary_enc, self.summary_enc_dek = crypto.envelope_encrypt_str(str(value))
 
     @property
     def short_code(self) -> str:
@@ -145,6 +160,7 @@ class CaseNote(StateMachineMixin, models.Model):
     aid_currency = models.CharField(max_length=3, default="USD")
 
     body_enc = models.BinaryField(null=True, blank=True)  # 🔒
+    body_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
 
     status = models.CharField(
         max_length=10,
@@ -186,11 +202,23 @@ class CaseNote(StateMachineMixin, models.Model):
 
     @property
     def body(self) -> str | None:
-        return crypto.decrypt_str(self.body_enc)
+        if not self.body_enc:
+            return None
+        if self.body_enc_dek:
+            return crypto.envelope_decrypt_str(self.body_enc, self.body_enc_dek)
+        return crypto.decrypt_str(self.body_enc)  # legacy (removed Stage E)
 
     @body.setter
-    def body(self, value: str | None):
-        self.body_enc = crypto.encrypt_str(value)
+    def body(self, value):
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError(
+                "body takes PLAINTEXT — a write site is passing pre-encrypted bytes; remove its inline crypto."
+            )
+        if value in (None, ""):
+            self.body_enc = None
+            self.body_enc_dek = None
+            return
+        self.body_enc, self.body_enc_dek = crypto.envelope_encrypt_str(str(value))
 
     @property
     def aid_value_dollars(self) -> str | None:
@@ -238,6 +266,7 @@ class FollowUp(StateMachineMixin, models.Model):
     # never a name) — the daily digest must render without decrypting (§3.6).
     title = models.CharField(max_length=200)
     detail_enc = models.BinaryField(null=True, blank=True)  # 🔒
+    detail_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
     due_date = models.DateField()
     status = models.CharField(
         max_length=10, default="open", choices=[("open", "Open"), ("done", "Done"), ("cancelled", "Cancelled")]
@@ -259,11 +288,23 @@ class FollowUp(StateMachineMixin, models.Model):
 
     @property
     def detail(self) -> str | None:
-        return crypto.decrypt_str(self.detail_enc)
+        if not self.detail_enc:
+            return None
+        if self.detail_enc_dek:
+            return crypto.envelope_decrypt_str(self.detail_enc, self.detail_enc_dek)
+        return crypto.decrypt_str(self.detail_enc)  # legacy (removed Stage E)
 
     @detail.setter
-    def detail(self, value: str | None):
-        self.detail_enc = crypto.encrypt_str(value)
+    def detail(self, value):
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError(
+                "detail takes PLAINTEXT — a write site is passing pre-encrypted bytes; remove its inline crypto."
+            )
+        if value in (None, ""):
+            self.detail_enc = None
+            self.detail_enc_dek = None
+            return
+        self.detail_enc, self.detail_enc_dek = crypto.envelope_encrypt_str(str(value))
 
     def __str__(self):
         return f"FollowUp {str(self.id)[:8]} ({self.status})"
@@ -281,6 +322,7 @@ class WarmHandoff(StateMachineMixin, models.Model):
     from_member = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="handoffs_sent")
     to_member = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="handoffs_received")
     summary_enc = models.BinaryField(null=True, blank=True)  # 🔒
+    summary_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
     status = models.CharField(
         max_length=12, default="pending", choices=[("pending", "Pending"), ("acknowledged", "Acknowledged")]
     )
@@ -296,11 +338,25 @@ class WarmHandoff(StateMachineMixin, models.Model):
 
     @property
     def summary(self) -> str | None:
+        # Dual-read: envelope when a DEK is present, else legacy direct-KEK
+        # (legacy branch removed in Stage E once census shows legacy=0).
+        if not self.summary_enc:
+            return None
+        if self.summary_enc_dek:
+            return crypto.envelope_decrypt_str(self.summary_enc, self.summary_enc_dek)
         return crypto.decrypt_str(self.summary_enc)
 
     @summary.setter
-    def summary(self, value: str | None):
-        self.summary_enc = crypto.encrypt_str(value)
+    def summary(self, value):
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError(
+                "summary takes PLAINTEXT — a write site is passing pre-encrypted bytes; remove its inline crypto."
+            )
+        if value in (None, ""):
+            self.summary_enc = None
+            self.summary_enc_dek = None
+            return
+        self.summary_enc, self.summary_enc_dek = crypto.envelope_encrypt_str(str(value))
 
     def __str__(self):
         return f"Handoff {str(self.id)[:8]} ({self.status})"

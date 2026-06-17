@@ -25,7 +25,7 @@ def test_note_body_round_trip(world, make_note):
 
 def test_summary_detail_round_trip(world):
     world.case.summary = "Family of four; rent arrears."
-    world.case.save(update_fields=["summary_enc"])
+    world.case.save(update_fields=["summary_enc", "summary_enc_dek"])
     assert CaseFile.objects.get(pk=world.case.pk).summary == "Family of four; rent arrears."
 
     ho = WarmHandoff(case=world.case, from_member=world.coordinator, to_member=world.coordinator2)
