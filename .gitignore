@@ -1,0 +1,4 @@
+# Local-only sensitive notes — never committed (consent, not surveillance)
+inbox/private.md
+*.private.md
+.DS_Store
