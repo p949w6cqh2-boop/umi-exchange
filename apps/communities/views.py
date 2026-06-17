@@ -242,4 +242,3 @@ class TechnologyView(TemplateView):
             ("Caddy", "2015 — auto-TLS"),
         ]
         return ctx
-
