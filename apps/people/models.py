@@ -17,10 +17,15 @@ from . import crypto
 class Person(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # 🔒 Fernet — no plaintext name/contact/DOB columns exist
+    # 🔒 Fernet — no plaintext name/contact/DOB columns exist.
+    # Envelope encryption: ciphertext + a per-record DEK (wrapped by the KEK
+    # list) → enables crypto-shred. `*_enc_dek IS NULL` ⇒ legacy direct-KEK.
     display_name_enc = models.BinaryField(null=True, blank=True)
+    display_name_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
     contact_enc = models.BinaryField(null=True, blank=True)  # JSON {phone,email,address}
+    contact_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
     dob_enc = models.BinaryField(null=True, blank=True)
+    dob_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
 
     linked_user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -64,29 +69,60 @@ class Person(models.Model):
         ]
 
     # ---- decrypt-on-access properties ----------------------------------
+    # Dual-read: envelope when a DEK is present, else legacy direct-KEK
+    # (legacy branch removed in the Person Stage E contract once the prod
+    # census shows legacy=0). Setters always envelope-write BOTH columns.
     @property
     def display_name(self) -> str | None:
+        if not self.display_name_enc:
+            return None
+        if self.display_name_enc_dek:
+            return crypto.envelope_decrypt_str(self.display_name_enc, self.display_name_enc_dek)
         return crypto.decrypt_str(self.display_name_enc)
 
     @display_name.setter
     def display_name(self, value: str | None):
-        self.display_name_enc = crypto.encrypt_str(value)
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError("display_name takes PLAINTEXT — a write site is passing pre-encrypted bytes.")
+        if value in (None, ""):
+            self.display_name_enc = None
+            self.display_name_enc_dek = None
+            return
+        self.display_name_enc, self.display_name_enc_dek = crypto.envelope_encrypt_str(str(value))
 
     @property
     def contact(self) -> dict | None:
+        if not self.contact_enc:
+            return None
+        if self.contact_enc_dek:
+            return crypto.envelope_decrypt_json(self.contact_enc, self.contact_enc_dek)
         return crypto.decrypt_json(self.contact_enc)
 
     @contact.setter
     def contact(self, value: dict | None):
-        self.contact_enc = crypto.encrypt_json(value)
+        if value in (None, "", {}, []):
+            self.contact_enc = None
+            self.contact_enc_dek = None
+            return
+        self.contact_enc, self.contact_enc_dek = crypto.envelope_encrypt_json(value)
 
     @property
     def dob(self) -> str | None:
+        if not self.dob_enc:
+            return None
+        if self.dob_enc_dek:
+            return crypto.envelope_decrypt_str(self.dob_enc, self.dob_enc_dek)
         return crypto.decrypt_str(self.dob_enc)
 
     @dob.setter
     def dob(self, value: str | None):
-        self.dob_enc = crypto.encrypt_str(value)
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError("dob takes PLAINTEXT — a write site is passing pre-encrypted bytes.")
+        if value in (None, ""):
+            self.dob_enc = None
+            self.dob_enc_dek = None
+            return
+        self.dob_enc, self.dob_enc_dek = crypto.envelope_encrypt_str(str(value))
 
     # ---- safe, non-PII renderings --------------------------------------
     @property

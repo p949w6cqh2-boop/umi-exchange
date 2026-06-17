@@ -21,6 +21,9 @@ ENVELOPE_DEK_FIELDS = [
     ("casework", "CaseNote", "body_enc_dek"),
     ("casework", "FollowUp", "detail_enc_dek"),
     ("casework", "WarmHandoff", "summary_enc_dek"),
+    ("people", "Person", "display_name_enc_dek"),
+    ("people", "Person", "contact_enc_dek"),
+    ("people", "Person", "dob_enc_dek"),
 ]
 
 
