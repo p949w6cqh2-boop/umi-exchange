@@ -17,6 +17,10 @@ from apps.people import crypto
 ENVELOPE_DEK_FIELDS = [
     # (app_label, model_name, dek_field)
     ("needs", "Need", "on_behalf_of_dek"),
+    ("casework", "CaseFile", "summary_enc_dek"),
+    ("casework", "CaseNote", "body_enc_dek"),
+    ("casework", "FollowUp", "detail_enc_dek"),
+    ("casework", "WarmHandoff", "summary_enc_dek"),
 ]
 
 
