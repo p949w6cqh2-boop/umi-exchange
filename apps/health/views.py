@@ -50,4 +50,3 @@ class HealthCheckView(View):
             checks["cache"] = "not configured"
 
         return JsonResponse(checks, status=status_code)
-

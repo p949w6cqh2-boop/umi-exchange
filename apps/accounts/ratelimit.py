@@ -23,10 +23,20 @@ AUTH_IP_LIMIT, AUTH_IP_WINDOW = 5, 60  # 5/min per IP
 AUTH_ACCT_LIMIT, AUTH_ACCT_WINDOW = 20, 3600  # 20/hr per account
 
 
-def _client_ip(request) -> str:
-    return (
-        request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "") or ""
-    )
+def client_ip(request) -> str:
+    """Trusted client IP for rate-limiting and audit hashing.
+
+    We trust only X-Real-IP, which the reverse proxy (Caddy) sets and
+    overwrites on every request. The left-most X-Forwarded-For entry is
+    client-supplied and therefore spoofable — trusting it would let an
+    attacker bypass per-IP limits and poison audit IP hashes — so it is
+    deliberately NOT used. Falls back to the direct peer (REMOTE_ADDR).
+    """
+    return request.META.get("HTTP_X_REAL_IP", "").strip() or request.META.get("REMOTE_ADDR", "") or ""
+
+
+# Backwards-compatible alias for internal callers.
+_client_ip = client_ip
 
 
 def _h(value: str) -> str:

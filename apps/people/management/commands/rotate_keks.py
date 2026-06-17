@@ -41,7 +41,13 @@ class Command(BaseCommand):
             while True:
                 qs = pending.filter(pk__gt=last_pk) if last_pk else pending
                 with transaction.atomic():
-                    rows = list(qs.select_for_update(skip_locked=True)[: opts["batch_size"]])
+                    # NOTE: do NOT use skip_locked here. The cursor advances by
+                    # pk, so a skipped (locked) row — whose pk is below rows we
+                    # do process — would fall behind last_pk and never be
+                    # revisited, leaving its DEK wrapped under the old KEK
+                    # forever. Blocking briefly on a locked row guarantees every
+                    # wrap is rotated; batches stay small to keep locks short.
+                    rows = list(qs.select_for_update()[: opts["batch_size"]])
                     if not rows:
                         break
                     for obj in rows:
