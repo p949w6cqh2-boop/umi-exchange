@@ -90,6 +90,17 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
     template_name = "matches/detail.html"
     context_object_name = "match"
 
+    def get_object(self, queryset=None):
+        """Enforce community membership — prevent cross-community IDOR."""
+        from django.http import Http404
+
+        obj = super().get_object(queryset)
+        if not Member.objects.filter(
+            user=self.request.user, community=obj.need.community, is_active=True
+        ).exists():
+            raise Http404("You are not a member of this community.")
+        return obj
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         match = self.object
@@ -138,6 +149,12 @@ class MatchUpdateView(LoginRequiredMixin, View):
             match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
             need = Need.objects.select_for_update().get(pk=match.need_id)
             match.need = need  # operate on the freshly locked instance
+
+            # Cross-community IDOR guard: the match must belong to the
+            # community identified by the URL slug.  Without this, a
+            # coordinator in Community A could mutate matches in Community B.
+            if need.community_id != community.id:
+                return _reject(request, slug, pk, "Match does not belong to this community.", 403)
 
             # Authorization (Protocol Section 8.2): only the need requester, the
             # offer owner (or, for a direct-volunteer match, the proposer), or a
