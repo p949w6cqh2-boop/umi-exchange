@@ -116,7 +116,10 @@ def test_reverse_migration_restores_direct_kek(member):
     assert p.display_name_enc_dek is None and p.contact_enc_dek is None
     assert crypto.decrypt_str(p.display_name_enc) == "Roundtrip"
     assert crypto.decrypt_json(p.contact_enc) == {"x": "y"}
-    assert p.display_name == "Roundtrip"  # dual-read still serves legacy rows
+    # Post-Stage-E the property no longer reads legacy: a DEK-less ciphertext
+    # fails loud rather than silently decrypting.
+    with pytest.raises(ValueError):
+        _ = p.display_name
 
 
 def test_census_command_reports_state(member, person):

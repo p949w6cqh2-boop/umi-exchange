@@ -69,16 +69,19 @@ class Person(models.Model):
         ]
 
     # ---- decrypt-on-access properties ----------------------------------
-    # Dual-read: envelope when a DEK is present, else legacy direct-KEK
-    # (legacy branch removed in the Person Stage E contract once the prod
-    # census shows legacy=0). Setters always envelope-write BOTH columns.
+    # Envelope-only (Stage E): the legacy direct-KEK read branch was removed
+    # after the prod census reported legacy=0. A populated ciphertext with no
+    # DEK now fails loud. Setters always envelope-write BOTH columns.
     @property
     def display_name(self) -> str | None:
         if not self.display_name_enc:
             return None
-        if self.display_name_enc_dek:
-            return crypto.envelope_decrypt_str(self.display_name_enc, self.display_name_enc_dek)
-        return crypto.decrypt_str(self.display_name_enc)
+        if not self.display_name_enc_dek:
+            raise ValueError(
+                "Person.display_name has ciphertext but no DEK — run the people 0003 "
+                "envelope backfill and check `people_envelope_status`."
+            )
+        return crypto.envelope_decrypt_str(self.display_name_enc, self.display_name_enc_dek)
 
     @display_name.setter
     def display_name(self, value: str | None):
@@ -94,9 +97,12 @@ class Person(models.Model):
     def contact(self) -> dict | None:
         if not self.contact_enc:
             return None
-        if self.contact_enc_dek:
-            return crypto.envelope_decrypt_json(self.contact_enc, self.contact_enc_dek)
-        return crypto.decrypt_json(self.contact_enc)
+        if not self.contact_enc_dek:
+            raise ValueError(
+                "Person.contact has ciphertext but no DEK — run the people 0003 "
+                "envelope backfill and check `people_envelope_status`."
+            )
+        return crypto.envelope_decrypt_json(self.contact_enc, self.contact_enc_dek)
 
     @contact.setter
     def contact(self, value: dict | None):
@@ -110,9 +116,12 @@ class Person(models.Model):
     def dob(self) -> str | None:
         if not self.dob_enc:
             return None
-        if self.dob_enc_dek:
-            return crypto.envelope_decrypt_str(self.dob_enc, self.dob_enc_dek)
-        return crypto.decrypt_str(self.dob_enc)
+        if not self.dob_enc_dek:
+            raise ValueError(
+                "Person.dob has ciphertext but no DEK — run the people 0003 "
+                "envelope backfill and check `people_envelope_status`."
+            )
+        return crypto.envelope_decrypt_str(self.dob_enc, self.dob_enc_dek)
 
     @dob.setter
     def dob(self, value: str | None):
