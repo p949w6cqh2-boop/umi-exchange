@@ -30,15 +30,10 @@ DEFAULT_CATEGORIES = [
 
 
 def generate_join_code():
-<<<<<<< HEAD
-    """8-char CSPRNG alphanumeric code. Collision handled by unique constraint + retry."""
-=======
     """8-char alphanumeric token. Uses a CSPRNG: join codes are auth tokens, so
     they must be unguessable. Collisions handled by unique constraint + retry."""
->>>>>>> 00ead8ba3a7913a061a0eca6815776a91f3c34b4
     chars = string.ascii_uppercase + string.digits
     return "".join(secrets.choice(chars) for _ in range(8))
-
 
 class Community(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
