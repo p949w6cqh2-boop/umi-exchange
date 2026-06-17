@@ -154,11 +154,6 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
     def post(self, request, slug):
         action = request.POST.get("action")
         if action == "regenerate_join_code":
-<<<<<<< HEAD
-            from .models import generate_join_code
-
-=======
->>>>>>> 00ead8ba3a7913a061a0eca6815776a91f3c34b4
             new_code = generate_join_code()
             self.community.join_code = new_code
             self.community.save(update_fields=["join_code"])
@@ -240,3 +235,4 @@ class TechnologyView(TemplateView):
             ("Caddy", "2015 — auto-TLS"),
         ]
         return ctx
+

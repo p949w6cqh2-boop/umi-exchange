@@ -4,8 +4,6 @@ Used by load balancers, uptime monitors (Uptime Kuma), and deployment scripts.
 Optional token protection via HEALTH_CHECK_TOKEN env var.
 """
 
-import hmac
-
 from django.conf import settings
 from django.db import connection
 from django.http import HttpResponseForbidden, JsonResponse
@@ -20,16 +18,10 @@ class HealthCheckView(View):
     """
 
     def get(self, request):
-<<<<<<< HEAD
-        # Optional token auth — constant-time compare to prevent timing attacks
-        token = getattr(settings, "HEALTH_CHECK_TOKEN", "")
-        if token and not hmac.compare_digest(request.GET.get("token", ""), token):
-=======
         # Optional token auth (constant-time comparison to avoid leaking the
         # token via response timing).
         token = getattr(settings, "HEALTH_CHECK_TOKEN", "")
         if token and not constant_time_compare(request.GET.get("token", ""), token):
->>>>>>> 00ead8ba3a7913a061a0eca6815776a91f3c34b4
             return HttpResponseForbidden("Forbidden")
 
         checks = {"status": "ok", "db": "unknown", "cache": "unknown"}
@@ -58,3 +50,4 @@ class HealthCheckView(View):
             checks["cache"] = "not configured"
 
         return JsonResponse(checks, status=status_code)
+
