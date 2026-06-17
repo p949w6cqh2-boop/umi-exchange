@@ -77,13 +77,17 @@ class CaseFile(StateMachineMixin, models.Model):
 
     @property
     def summary(self) -> str | None:
-        # Dual-read: envelope when a DEK is present, else legacy direct-KEK
-        # (legacy branch removed in Stage E once census shows legacy=0).
+        # Envelope-only (Stage E): the legacy direct-KEK read branch was removed
+        # after the prod census reported legacy=0. A populated ciphertext with no
+        # DEK is now a hard error, not a silent legacy read.
         if not self.summary_enc:
             return None
-        if self.summary_enc_dek:
-            return crypto.envelope_decrypt_str(self.summary_enc, self.summary_enc_dek)
-        return crypto.decrypt_str(self.summary_enc)
+        if not self.summary_enc_dek:
+            raise ValueError(
+                f"{type(self).__name__}.summary has ciphertext but no DEK — run the "
+                "0004 envelope backfill and check `casework_envelope_status`."
+            )
+        return crypto.envelope_decrypt_str(self.summary_enc, self.summary_enc_dek)
 
     @summary.setter
     def summary(self, value):
@@ -202,11 +206,15 @@ class CaseNote(StateMachineMixin, models.Model):
 
     @property
     def body(self) -> str | None:
+        # Envelope-only (Stage E): legacy direct-KEK read branch removed.
         if not self.body_enc:
             return None
-        if self.body_enc_dek:
-            return crypto.envelope_decrypt_str(self.body_enc, self.body_enc_dek)
-        return crypto.decrypt_str(self.body_enc)  # legacy (removed Stage E)
+        if not self.body_enc_dek:
+            raise ValueError(
+                "CaseNote.body has ciphertext but no DEK — run the 0004 envelope "
+                "backfill and check `casework_envelope_status`."
+            )
+        return crypto.envelope_decrypt_str(self.body_enc, self.body_enc_dek)
 
     @body.setter
     def body(self, value):
@@ -288,11 +296,15 @@ class FollowUp(StateMachineMixin, models.Model):
 
     @property
     def detail(self) -> str | None:
+        # Envelope-only (Stage E): legacy direct-KEK read branch removed.
         if not self.detail_enc:
             return None
-        if self.detail_enc_dek:
-            return crypto.envelope_decrypt_str(self.detail_enc, self.detail_enc_dek)
-        return crypto.decrypt_str(self.detail_enc)  # legacy (removed Stage E)
+        if not self.detail_enc_dek:
+            raise ValueError(
+                "FollowUp.detail has ciphertext but no DEK — run the 0004 envelope "
+                "backfill and check `casework_envelope_status`."
+            )
+        return crypto.envelope_decrypt_str(self.detail_enc, self.detail_enc_dek)
 
     @detail.setter
     def detail(self, value):
@@ -338,13 +350,17 @@ class WarmHandoff(StateMachineMixin, models.Model):
 
     @property
     def summary(self) -> str | None:
-        # Dual-read: envelope when a DEK is present, else legacy direct-KEK
-        # (legacy branch removed in Stage E once census shows legacy=0).
+        # Envelope-only (Stage E): the legacy direct-KEK read branch was removed
+        # after the prod census reported legacy=0. A populated ciphertext with no
+        # DEK is now a hard error, not a silent legacy read.
         if not self.summary_enc:
             return None
-        if self.summary_enc_dek:
-            return crypto.envelope_decrypt_str(self.summary_enc, self.summary_enc_dek)
-        return crypto.decrypt_str(self.summary_enc)
+        if not self.summary_enc_dek:
+            raise ValueError(
+                f"{type(self).__name__}.summary has ciphertext but no DEK — run the "
+                "0004 envelope backfill and check `casework_envelope_status`."
+            )
+        return crypto.envelope_decrypt_str(self.summary_enc, self.summary_enc_dek)
 
     @summary.setter
     def summary(self, value):
