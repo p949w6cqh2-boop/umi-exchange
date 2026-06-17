@@ -50,10 +50,13 @@ class MatchProposeView(LoginRequiredMixin, View):
 
         # Self-matching prevention (Protocol Section 8.6): the proposer must not
         # be the need's requester, and an offer owned by the requester cannot be
-        # matched to that same person's need.
-        if need.requester_id == member.id:
+        # matched to that same person's need.  Check both Member-level AND
+        # User-level identity to block the same human using separate sessions.
+        if need.requester_id == member.id or need.requester.user_id == request.user.id:
             return _reject(request, slug, need_id, "You cannot propose a match on your own need.", 400)
-        if offer is not None and offer.offerer_id == need.requester_id:
+        if offer is not None and (
+            offer.offerer_id == need.requester_id or offer.offerer.user_id == need.requester.user_id
+        ):
             return _reject(request, slug, need_id, "An offer cannot be matched to its owner's own need.", 400)
 
         # The offer, when supplied, must still be available (offer-less
@@ -201,7 +204,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
                     other.user,
                     "match_accepted",
                     f"Match accepted on '{match.need.title}'!",
-                    "Contact info has been shared. Check the match detail.",
+                    "Contact info has been shared — open the match page to see it.",
                     link=f"/c/{slug}/matches/{match.id}/",
                 )
         elif new_status == "fulfilled":
