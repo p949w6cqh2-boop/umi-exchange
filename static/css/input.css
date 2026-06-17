@@ -2,20 +2,103 @@
 @tailwind components;
 @tailwind utilities;
 
-/* UMI Custom Properties — override via community settings */
+/* ── UMI Parish atmosphere — design tokens ───────────────────────────────
+   Warm, calm, unpretentious. Override --umi-primary / --umi-accent per
+   community via base.html. */
 :root {
-  --umi-primary: #166534;
-  --umi-primary-hover: #064E2B;
-  --umi-accent: #CA8A04;
-  --umi-need-accent: #FBBF24;
-  --umi-offer-accent: #60A5FA;
+  --umi-primary: #2b5e2b;        /* deep muted green */
+  --umi-primary-hover: #244f24;
+  --umi-accent: #c49a3c;         /* soft gold */
+  --umi-bg: #fdfbf7;             /* warm off-white paper */
+  --umi-bg-soft: #f5f0e8;        /* soft cream */
+  --umi-text: #2c2a29;           /* warm dark brown */
+  --umi-text-soft: #6b6358;      /* muted warm grey */
+  --umi-card: #faf7f1;           /* light warm grey card */
+  --umi-border: #e6ded5;         /* subtle warm border */
+  --umi-need-accent: #2b5e2b;    /* needs → green left border */
+  --umi-offer-accent: #c49a3c;   /* offers → gold left border */
 }
 
-/* Focus indicators — WCAG 2.1 AA compliant */
+@layer base {
+  body {
+    background-color: var(--umi-bg);
+    /* gentle light from the top centre, like a window */
+    background-image: radial-gradient(120% 60% at 50% -10%, #ffffff 0%, var(--umi-bg) 55%, var(--umi-bg-soft) 100%);
+    background-attachment: fixed;
+    color: var(--umi-text);
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: theme("fontFamily.serif");
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--umi-text);
+  }
+  /* Bare links lean on the green accent (styled buttons set their own colour). */
+  a:not([class]) {
+    color: var(--umi-primary);
+  }
+}
+
+@layer components {
+  /* Intimate, readable content column. Edge-to-edge on the smallest screens. */
+  .umi-container {
+    @apply mx-auto w-full px-4 sm:px-6;
+    max-width: 960px;
+  }
+
+  /* Bulletin-insert card: neutral warm surface, hairline border, lift only on hover. */
+  .umi-card {
+    @apply rounded-xl p-6 transition;
+    background-color: var(--umi-card);
+    border: 1px solid var(--umi-border);
+  }
+  .umi-card-hover:hover {
+    box-shadow: 0 1px 3px rgba(44, 42, 41, 0.08);
+    transform: scale(1.01);
+  }
+  .umi-need-card { border-left: 3px solid var(--umi-need-accent); }
+  .umi-offer-card { border-left: 3px solid var(--umi-offer-accent); }
+
+  /* Pill buttons — soft and welcoming. */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium text-white transition;
+    background-color: var(--umi-primary);
+  }
+  .btn-primary:hover { background-color: var(--umi-primary-hover); }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium transition;
+    background-color: transparent;
+    border: 1px solid var(--umi-primary);
+    color: var(--umi-primary);
+  }
+  .btn-secondary:hover { background-color: rgba(43, 94, 43, 0.06); }
+
+  /* Calm, translucent header. */
+  .umi-header {
+    background-color: rgba(253, 251, 247, 0.8);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--umi-border);
+  }
+}
+
+/* ── Micro-interactions — gentle fades only, no movement ─────────────────── */
+@keyframes umi-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes umi-fade-out { from { opacity: 1; } to { opacity: 0; } }
+.umi-fade { animation: umi-fade-in 200ms ease both; }
+.umi-crossfade-out { animation: umi-fade-out 200ms ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .umi-fade, .umi-crossfade-out { animation: none !important; }
+}
+
+/* Focus indicators — WCAG 2.1 AA compliant (green, to match the palette) */
 @layer utilities {
   .focus-ring {
-    @apply focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply focus-visible:ring-2 focus-visible:ring-offset-2;
   }
+  .focus-ring:focus-visible { --tw-ring-color: var(--umi-primary); }
 }
 
 /* Alpine.js x-cloak: hide elements until Alpine initializes */

@@ -9,15 +9,23 @@
   <link rel="stylesheet" href="{% static 'css/animations.css' %}">
   <style>
     :root {
-      --umi-primary: {{ umi_primary|default:"#166534" }};
-      --umi-accent: {{ umi_accent|default:"#CA8A04" }};
+      --umi-primary: {{ umi_theme.primary|default:"#2B5E2B" }};
+      --umi-primary-hover: {{ umi_theme.primary_hover|default:"#244F24" }};
+      --umi-accent: {{ umi_theme.accent|default:"#C49A3C" }};
+      --umi-bg: {{ umi_theme.bg|default:"#FDFBF7" }};
+      --umi-bg-soft: {{ umi_theme.bg_soft|default:"#F5F0E8" }};
+      --umi-card: {{ umi_theme.card|default:"#FAF7F1" }};
+      --umi-border: {{ umi_theme.border|default:"#E6DED5" }};
+      --umi-text: {{ umi_theme.ink|default:"#2C2A29" }};
+      --umi-need-accent: {{ umi_theme.primary|default:"#2B5E2B" }};
+      --umi-offer-accent: {{ umi_theme.accent|default:"#C49A3C" }};
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
-    /* Global Input Visibility Fix */
+    /* Keep form fields legible against the warm background */
     input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]), textarea, select {
-      color: #111827 !important;
+      color: #2C2A29 !important;
       background-color: #ffffff !important;
     }
   </style>
@@ -26,42 +34,42 @@
   <script src="{% static 'js/alpine.min.js' %}" defer></script>
   <script>window.Alpine || document.write('<script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer><\/script>')</script>
 </head>
-<body class="bg-gray-50 font-sans text-base text-gray-900 min-h-screen flex flex-col">
-  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to content</a>
+<body class="font-sans text-base min-h-screen flex flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-[var(--umi-primary)] text-white px-4 py-2 rounded z-50">Skip to content</a>
 
   {% block header %}
-  <header class="sticky top-0 z-10 bg-white border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+  <header class="umi-header sticky top-0 z-10">
+    <div class="umi-container py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         {% if community %}
-          <a href="{% url 'community-feed' community.slug %}" class="text-lg font-semibold text-gray-900 hover:text-gray-700">
+          <a href="{% url 'community-feed' community.slug %}" class="font-serif text-xl text-parish-ink hover:text-parish-green">
             {{ community.name }}
           </a>
         {% else %}
-          <a href="{% url 'landing' %}" class="text-lg font-semibold text-gray-900">UMI Exchange</a>
+          <a href="{% url 'landing' %}" class="font-serif text-xl text-parish-ink">UMI Exchange</a>
         {% endif %}
       </div>
       <div class="flex items-center gap-4">
         {% if user.is_authenticated %}
           {% include "components/_notification_badge.html" %}
           {% if community and member and member.role in 'admin coordinator' %}
-            <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-amber-600 hover:text-amber-800 min-h-[44px] flex items-center mr-2">
+            <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-parish-green hover:text-parish-greendark min-h-[44px] flex items-center mr-2">
               Community Settings
             </a>
           {% endif %}
-          <a href="{% url 'account-settings' %}" class="text-sm text-gray-600 hover:text-gray-900 min-h-[44px] flex items-center" aria-label="Account settings">
+          <a href="{% url 'account-settings' %}" class="text-parish-ink/60 hover:text-parish-ink min-h-[44px] flex items-center" aria-label="Account settings">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           </a>
         {% else %}
-          <a href="{% url 'login' %}" class="text-sm text-gray-600 hover:text-gray-900 min-h-[44px] flex items-center">Sign In</a>
-          <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px] flex items-center">Join</a>
+          <a href="{% url 'login' %}" class="text-sm text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center">Sign In</a>
+          <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[var(--umi-primary-hover)] text-white text-sm font-medium px-4 py-2 rounded-full min-h-[44px] flex items-center">Join</a>
         {% endif %}
       </div>
     </div>
   </header>
   {% endblock %}
 
-  <main id="main" class="flex-grow max-w-7xl mx-auto px-4 md:px-8 py-4 w-full">
+  <main id="main" class="flex-grow umi-container py-6 w-full">
     {% comment %}Server-rendered messages. With JS, the toast script below turns these into
        animated toasts and removes this block; without JS they remain visible.{% endcomment %}
     {% if messages %}
@@ -76,10 +84,10 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="border-t border-gray-200 py-6 mt-8">
-    <div class="max-w-7xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <span class="text-xs text-gray-400">&copy; 2026 UMI Exchange</span>
-      <a href="https://umi-protocol.org/spec/v0.1" class="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+  <footer class="border-t border-parish-border py-6 mt-8">
+    <div class="umi-container flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span class="text-xs text-parish-ink/50">&copy; 2026 UMI Exchange</span>
+      <a href="https://umi-protocol.org/spec/v0.1" class="inline-flex items-center gap-1.5 text-xs text-parish-ink/50 hover:text-parish-ink transition-colors">
         &#9889; Built on UMI Protocol v0.1 &mdash; Build your own
       </a>
     </div>

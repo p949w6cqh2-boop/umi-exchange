@@ -23,7 +23,7 @@
 
     <div class="flex items-center justify-between pt-2">
       <button type="submit"
-              class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] transition-colors">
+              class="btn-primary transition-colors">
         Save Changes
       </button>
       <a href="{% url 'password_change' %}" class="text-sm text-blue-600 hover:text-blue-800">Change Password</a>
@@ -46,7 +46,7 @@
     {% else %}
     <p class="text-sm text-gray-600 mt-3">Add an extra layer of security to your account with a TOTP authenticator app.</p>
     <a href="{% url 'two_factor:setup' %}"
-       class="inline-block mt-3 bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white text-sm font-semibold px-4 py-2 rounded-lg min-h-[44px] leading-[44px] transition-colors">
+       class="inline-block mt-3 btn-primary text-sm transition-colors">
       Set Up 2FA
     </a>
     {% endif %}

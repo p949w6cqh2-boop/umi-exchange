@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}My follow-ups — {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-6">
+  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-gray-600 hover:underline">&larr; Case files</a>
+  <h1 class="text-2xl font-bold text-gray-900 mt-2 mb-4">My follow-up queue</h1>
+  {% include "casework/_followups_mine.html" %}
+</div>
+{% endblock %}

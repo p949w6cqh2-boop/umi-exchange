@@ -68,10 +68,45 @@
 
     <div class="pt-2">
       <button type="submit"
-              class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] transition-colors">
+              class="btn-primary transition-colors">
         Save Changes
       </button>
     </div>
+  </form>
+
+  {# Theme — each community its own look #}
+  <form method="post" class="umi-card">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="set_theme">
+    <h2 class="text-lg text-parish-ink">Appearance</h2>
+    <p class="text-sm text-parish-ink/60 mt-1">Pick a look for your community — or set your own colours below.</p>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+      {% for key, t in themes.items %}
+      <label class="cursor-pointer rounded-lg border p-3 flex items-center gap-3 has-[:checked]:ring-2"
+             style="border-color:{{ t.border }}; background:{{ t.bg }};">
+        <input type="radio" name="theme" value="{{ key }}" class="sr-only" {% if key == current_theme %}checked{% endif %}>
+        <span class="inline-flex gap-1">
+          <span class="w-5 h-5 rounded-full" style="background:{{ t.primary }}"></span>
+          <span class="w-5 h-5 rounded-full" style="background:{{ t.accent }}"></span>
+        </span>
+        <span class="text-sm" style="color:{{ t.ink }}">{{ t.label }}{% if key == current_theme %} ✓{% endif %}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-end gap-4">
+      <div>
+        <label for="custom_primary" class="block text-sm text-parish-ink/70 mb-1">Custom primary (optional)</label>
+        <input type="color" id="custom_primary" name="custom_primary" value="{{ theme_custom.primary|default:'' }}" class="h-10 w-16 rounded border border-parish-border">
+      </div>
+      <div>
+        <label for="custom_accent" class="block text-sm text-parish-ink/70 mb-1">Custom accent (optional)</label>
+        <input type="color" id="custom_accent" name="custom_accent" value="{{ theme_custom.accent|default:'' }}" class="h-10 w-16 rounded border border-parish-border">
+      </div>
+      <button type="submit" class="btn-primary">Save theme</button>
+    </div>
+    <p class="text-xs text-parish-ink/50 mt-2">Leave the custom colours untouched to use the preset exactly. Changes apply to everyone in this community.</p>
   </form>
 
   {# Members #}

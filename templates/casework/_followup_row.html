@@ -1,0 +1,22 @@
+<li id="fu-{{ fu.pk }}" class="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3 text-sm">
+  <div>
+    <p class="font-medium text-gray-800">{{ fu.title }}</p>
+    <p class="text-xs text-gray-500">Due {{ fu.due_date }} · {{ fu.assigned_to.display_name }}
+      {% if fu.status != "open" %}· <span class="uppercase">{{ fu.status }}</span>{% endif %}</p>
+    {% if fu.detail %}<p class="text-xs text-gray-600 mt-1">{{ fu.detail }}</p>{% endif %}
+  </div>
+  {% if fu.status == "open" %}
+  <div class="flex gap-1">
+    <form method="post" action="{% url 'casework:followup-status' slug=community.slug pk=fu.pk %}"
+          hx-post="{% url 'casework:followup-status' slug=community.slug pk=fu.pk %}"
+          hx-target="#fu-{{ fu.pk }}" hx-swap="outerHTML">
+      {% csrf_token %}<input type="hidden" name="status" value="done">
+      <button class="text-xs px-2 py-1 bg-green-700 text-white rounded">Done</button></form>
+    <form method="post" action="{% url 'casework:followup-status' slug=community.slug pk=fu.pk %}"
+          hx-post="{% url 'casework:followup-status' slug=community.slug pk=fu.pk %}"
+          hx-target="#fu-{{ fu.pk }}" hx-swap="outerHTML">
+      {% csrf_token %}<input type="hidden" name="status" value="cancelled">
+      <button class="text-xs px-2 py-1 border border-gray-300 rounded text-gray-600">Cancel</button></form>
+  </div>
+  {% endif %}
+</li>

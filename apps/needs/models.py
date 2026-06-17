@@ -1,9 +1,8 @@
-"""Need model — umi:Need entity. Includes Fernet encryption for on_behalf_of."""
+"""Need model — umi:Need entity. on_behalf_of uses envelope encryption (§12.2)
+via apps.people.crypto; read/write only through the on_behalf_of_name property."""
 
 import uuid
 
-from cryptography.fernet import Fernet
-from django.conf import settings as django_settings
 from django.db import models
 from django.utils import timezone
 
@@ -30,6 +29,9 @@ class Need(models.Model):
     contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
     status = models.CharField(max_length=10, default="open", choices=STATUS_CHOICES)
     on_behalf_of = models.BinaryField(null=True, blank=True)
+    # §12.2 — per-need DEK, wrapped by the master KEK (MultiFernet).
+    # NULL + ciphertext present ⇒ legacy direct-KEK row (dual-read, D3).
+    on_behalf_of_dek = models.BinaryField(null=True, blank=True, editable=False)
     expires_at = models.DateTimeField()
     fulfilled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -50,16 +52,32 @@ class Need(models.Model):
     def get_absolute_url(self):
         return f"/c/{self.community.slug}/needs/{self.id}/"
 
-    def set_on_behalf_of(self, plaintext):
-        if plaintext and django_settings.ENCRYPTION_KEY:
-            f = Fernet(django_settings.ENCRYPTION_KEY.encode())
-            self.on_behalf_of = f.encrypt(plaintext.encode())
+    @property
+    def on_behalf_of_name(self) -> str | None:
+        """Plaintext accessor — the ONLY way code should read/write this.
+        Reads both schemes; writes always envelope (per-need DEK)."""
+        from apps.people import crypto
 
-    def get_on_behalf_of(self):
-        if self.on_behalf_of and django_settings.ENCRYPTION_KEY:
-            f = Fernet(django_settings.ENCRYPTION_KEY.encode())
-            return f.decrypt(bytes(self.on_behalf_of)).decode()
-        return None
+        if not self.on_behalf_of:
+            return None
+        if self.on_behalf_of_dek:
+            return crypto.envelope_decrypt_str(self.on_behalf_of, self.on_behalf_of_dek)
+        return crypto.decrypt_str(self.on_behalf_of)  # legacy direct-KEK row
+
+    @on_behalf_of_name.setter
+    def on_behalf_of_name(self, value):
+        from apps.people import crypto
+
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError(
+                "on_behalf_of_name takes PLAINTEXT — a write site is still passing "
+                "pre-encrypted bytes; remove its inline crypto."
+            )
+        if value in (None, ""):
+            self.on_behalf_of = None
+            self.on_behalf_of_dek = None
+            return
+        self.on_behalf_of, self.on_behalf_of_dek = crypto.envelope_encrypt_str(str(value).strip())
 
     def save(self, *args, **kwargs):
         if not self.expires_at:

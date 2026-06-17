@@ -13,7 +13,7 @@
         {% if field.errors %}<p class="text-sm text-red-600 mt-1">{{ field.errors.0 }}</p>{% endif %}
       </div>
       {% endfor %}
-      <button type="submit" class="w-full bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-6 py-3 rounded-lg min-h-[48px] mt-6">Create Account</button>
+      <button type="submit" class="w-full btn-primary mt-6">Create Account</button>
     </form>
     <p class="text-sm text-gray-500 mt-4 text-center">Already have an account? <a href="{% url 'login' %}" class="text-blue-600 hover:text-blue-800">Sign in</a></p>
   </div>

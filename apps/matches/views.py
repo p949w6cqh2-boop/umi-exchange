@@ -16,6 +16,7 @@ from django.views.generic import DetailView
 
 from apps.audit.models import AuditLog
 from apps.communities.models import Community, Member
+from apps.communities.validators import sanitize_text_field
 from apps.needs.models import Need
 from apps.notifications.adapter import NotificationAdapter
 from apps.offers.models import Offer
@@ -106,6 +107,11 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         ctx["contact_info"] = match.get_contact_info_for(member)
         ctx["show_contact"] = ctx["contact_info"] is not None
 
+        # Audit every contact-info disclosure (Section 8.3): record who accessed
+        # whose contact details and when, so reveals leave an immutable trail.
+        if ctx["show_contact"] and member:
+            AuditLog.log(member.user, "read", "match_contact", match.id, request=self.request)
+
         return ctx
 
 
@@ -114,6 +120,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
 
     def post(self, request, slug, pk):
         new_status = request.POST.get("status")
+        notes = sanitize_text_field(request.POST.get("notes", ""))
         if new_status not in ("accepted", "fulfilled", "unfulfilled", "cancelled"):
             return HttpResponse(status=400)
 
@@ -143,13 +150,21 @@ class MatchUpdateView(LoginRequiredMixin, View):
             if new_status == "accepted" and need.status != "open":
                 return _reject(request, slug, pk, "This need has already been matched.", 409)
 
+            # Persist an optional note alongside the status change (saved by
+            # transition_to()'s final save()). Blank input leaves notes intact.
+            if notes:
+                match.notes = notes
+
             try:
                 match.transition_to(new_status)
             except ValidationError as e:
                 return _reject(request, slug, pk, str(e.message), 409)
 
         # Audit log
-        AuditLog.log(member.user, "update", "match", match.id, details={"status": new_status}, request=request)
+        details = {"status": new_status}
+        if notes:
+            details["notes"] = notes
+        AuditLog.log(member.user, "update", "match", match.id, details=details, request=request)
 
         # Notifications — inform the counterpart participant(s); never the actor.
         if new_status == "accepted":

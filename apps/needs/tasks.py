@@ -7,6 +7,7 @@ CRITICAL: Needs with at least one accepted match MUST NOT expire.
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
+from apps.audit.services import emit
 from apps.notifications.adapter import NotificationAdapter
 
 from .models import Need
@@ -27,8 +28,12 @@ def expire_stale_needs():
         need.status = "expired"
         need.save(update_fields=["status", "updated_at"])
 
-        # Cancel all proposed matches on this need
-        need.matches.filter(status="proposed").update(status="expired")
+        # Expire proposed matches individually so each leaves an audit entry
+        # (§8.3) — was a silent bulk .update() that bypassed the audit trail.
+        for m in need.matches.filter(status="proposed"):
+            m.status = "expired"
+            m.save(update_fields=["status"])
+            emit("match.expired", m, details={"reason": "need_expired"})
 
         # Notify requester
         NotificationAdapter.send(

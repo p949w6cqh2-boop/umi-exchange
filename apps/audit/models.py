@@ -13,7 +13,9 @@ from django.db import models
 class AuditLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
-    action = models.CharField(max_length=10)  # create, read, update, delete
+    # Dotted event names (e.g. "match.contact_revealed", "case.opened_emergency").
+    # Legacy create/read/update/delete values remain valid. (§10.1)
+    action = models.CharField(max_length=32)
     resource_type = models.CharField(max_length=50)
     resource_id = models.UUIDField()
     details = models.JSONField(null=True, blank=True)

@@ -1,0 +1,24 @@
+{% if items %}
+<ul class="space-y-2">
+  {% for fu in items %}
+  <li id="fu-{{ fu.pk }}" class="bg-white border {% if fu.due_date < today %}border-red-300{% else %}border-gray-200{% endif %} rounded-lg p-3 text-sm">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <p class="font-medium text-gray-800">{{ fu.title }}
+          {% if fu.due_date < today %}<span class="text-xs text-red-700 font-semibold ml-1">OVERDUE</span>{% endif %}</p>
+        <p class="text-xs text-gray-500">Due {{ fu.due_date }} ·
+          <a class="underline" href="{% url 'casework:detail' slug=community.slug pk=fu.case_id %}">case {{ fu.case.short_code }}</a></p>
+      </div>
+      <form method="post" action="{% url 'casework:followup-status' slug=community.slug pk=fu.pk %}"
+            hx-post="{% url 'casework:followup-status' slug=community.slug pk=fu.pk %}"
+            hx-target="#fu-{{ fu.pk }}" hx-swap="outerHTML">
+        {% csrf_token %}<input type="hidden" name="status" value="done">
+        <button class="text-xs px-2 py-1 bg-green-700 text-white rounded">Done</button>
+      </form>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm text-gray-500">No open follow-ups. Well done.</p>
+{% endif %}

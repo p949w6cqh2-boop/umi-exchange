@@ -5,7 +5,7 @@
     <span class="text-xl font-bold text-gray-900">UMI Exchange</span>
     <div class="flex items-center gap-3">
       <a href="{% url 'login' %}" class="text-sm font-medium text-gray-700 hover:text-gray-900 min-h-[44px] flex items-center">Sign In</a>
-      <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px] flex items-center">Join a Community</a>
+      <a href="{% url 'community-join' %}" class="btn-primary text-sm">Join a Community</a>
     </div>
   </div>
 </header>
@@ -16,7 +16,7 @@
   <h1 class="text-2xl md:text-4xl font-bold text-gray-900">Connect people who need help<br>with people who can help.</h1>
   <p class="text-lg text-gray-600 mt-4 max-w-2xl mx-auto">A simple, private tool for coordinating mutual aid in your community.</p>
   <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-    <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[#064E2B] text-white font-semibold px-8 py-3 rounded-lg min-h-[48px]">Join a Community</a>
+    <a href="{% url 'community-join' %}" class="btn-primary">Join a Community</a>
     <a href="{% url 'technology' %}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-3 rounded-lg min-h-[48px]">Learn More</a>
   </div>
 </div>
@@ -31,7 +31,7 @@
   <div class="max-w-3xl mx-auto text-center">
     <h2 class="text-xl font-semibold text-gray-900">For dioceses, networks, and agencies</h2>
     <p class="text-base text-gray-600 mt-4">Deploy across multiple communities with centralised oversight. Integrate with existing systems via the UMI Protocol API.</p>
-    <a href="mailto:usermegadatainfrastructure@proton.me" class="mt-6 inline-block bg-[var(--umi-primary)] text-white font-medium px-6 py-3 rounded-lg min-h-[48px]">Contact us about network deployment</a>
+    <a href="mailto:usermegadatainfrastructure@proton.me" class="mt-6 inline-block btn-primary">Contact us about network deployment</a>
   </div>
 </div>
 {% endblock %}
