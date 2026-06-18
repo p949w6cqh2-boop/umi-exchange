@@ -1,0 +1,27 @@
+name: Brain ↔ STATE drift guard (report-only)
+
+# C4 cadence — graduated to REPORT-ONLY (2026-06-17). Weekly, in CI; it reports,
+# it never acts. Writes a summary; does not fail. Graduates to "acting" (auto-open
+# a sync PR) only after 3 clean runs — see cadence/cadence.md.
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"        # Sunday 00:00 UTC
+  workflow_dispatch: {}         # allow manual runs
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Brain ↔ STATE drift
+        env:
+          # Same-owner default token works if umi-exchange is public OR readable by it.
+          # For a private Lake-1 repo, add a read-only PAT as the secret UMI_EXCHANGE_RO_TOKEN.
+          GH_TOKEN: ${{ secrets.UMI_EXCHANGE_RO_TOKEN || github.token }}
+          UMI_EXCHANGE_REPO: p949w6cqh2-boop/umi-exchange
+          UMI_EXCHANGE_BRANCH: main
+        run: bash cadence/drift-guard/check-drift.sh | tee -a "$GITHUB_STEP_SUMMARY"

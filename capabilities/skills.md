@@ -1,29 +1,24 @@
 # Capabilities — the skills registry (C3)
 
-> STATUS: **DRAFT** by Claude Code, 2026-06-17. Jasiah to confirm which become real
-> `/skills` (one command forever).
+> STATUS: **CONFIRMED by Jasiah, 2026-06-17 (interview round 2).**
 >
-> Principle (the blueprint): *"Typed the same thing three times? That's a skill waiting to
-> exist."* Each skill has a **defined role**, the **keyring keys** it needs, and **where it
-> routes for context**. The agent stays general-purpose; skills route to more context.
-> **No key = no capability.** If it can, assume it will → every skill's worst case is a safe-fail.
+> Principle: *"Typed the same thing three times? That's a skill waiting to exist."* Each skill
+> has a defined role, the **keyring keys** it needs, and where it routes for context. The agent
+> stays general-purpose; skills route to more context. **No key = no capability.** If it can,
+> assume it will → every skill's worst case is a safe-fail.
+>
+> **Autonomy policy (Jasiah):** everything stays **Manual** (Jasiah signs off) until proven.
+> The Brain↔STATE drift guard is the one exception — **report-only now, may act after 3 clean runs.**
 
-## Observed skills (from how we've actually worked, 3×+)
-| Skill | Fires when | Keyring keys needed | Routes to | Safe-fail |
+## Registry
+| Skill | Autonomy | Keyring keys | Routes to | Why this level |
 |---|---|---|---|---|
-| **verify-and-integrate an AGI bundle** | a design/code bundle arrives | branch ✅ · push-to-main ❌ ASK | the bundle + repo; `STATE.md` | branch, never main; tests must pass first |
-| **run the pre-deploy gate** | before a merge/release | read-only ✅ | `CLAUDE.md` · runbook | report only; never deploys |
-| **draft an AGI prompt** | new build/design needed | none (text only) | `docs/prompt-inventory.md` | output is a draft to copy-paste |
-| **rotate / retire a KEK** | key rotation due | prod ops ❌ ASK | `docs/envelope-rollout-runbook.md` | dry-run + 3 censuses before dropping a key |
-| **reconcile Brain ↔ STATE.md** | ground truth moved | branch ✅ | `umi-exchange/STATE.md` | propose diff; Jasiah confirms |
-| **review / babysit a PR** | PR opened / CI event | comment ✅ · merge ❌ ASK | the PR + CI logs | fix on branch; ask before merge |
-| **flaw audit + fix** | "what else is broken?" | branch ✅ | sandbox-report | add a regression test with every fix |
+| **verify-and-integrate a bundle** | Manual | branch ✅ · push-main ❌ | bundle + repo · `STATE.md` | Jasiah is final authority on what enters the codebase |
+| **run the pre-deploy gate** | Manual | read-only | `CLAUDE.md` · runbook | deployment is high-risk; Jasiah approves |
+| **draft an AGI prompt** | Manual (autonomous later) | none | `docs/prompt-inventory.md` | still refining the art |
+| **rotate / retire a KEK** | Manual | prod ops ❌ | envelope-rollout-runbook | security-critical ops |
+| **reconcile Brain ↔ STATE** | **Report-only** (act after 3 clean runs) | branch ✅ | `umi-exchange/STATE.md` · `cadence/` | low-risk, high-value, fully observable |
+| **babysit a PR** | Manual | comment ✅ · merge ❌ | PR + CI logs | Jasiah decides when to merge |
 
 ## How a new skill is born
-1. Notice the same prompt repeated (Mon / Wed / Fri).
-2. Name it; write a one-paragraph **role** + its required keyring keys + its context pointers.
-3. Add a row above. (Later: a real `/skill` command in the harness.)
-
-## Open (Jasiah to decide)
-- Which of these become first-class `/commands` now?
-- Any skill that should be **fully autonomous** vs **always-ask**? (drives the keys above)
+1. Notice the same prompt repeated (Mon/Wed/Fri). 2. Name it; write its role + required keys + context pointers. 3. Add a row. 4. Later: a real `/skill` command. 5. Promote autonomy only after battle-testing (see `cadence/cadence.md`).

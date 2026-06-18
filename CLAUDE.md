@@ -9,7 +9,7 @@
   TL;DR: propose/draft/analyse freely; **never** push to `main`, send, delete, spend, or touch live parish data without asking.
 
 ## Where things live
-The four C's (C1 done; C2–C4 drafted 2026-06-17, awaiting Jasiah's verify):
+The four C's (all confirmed by Jasiah 2026-06-17 — rounds 1 & 2):
 | Need… | Go to |
 |---|---|
 | **C1 Context** — who Jasiah is / origin / entity status | `identity/who-i-am.md` |
