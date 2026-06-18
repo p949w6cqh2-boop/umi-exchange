@@ -8,18 +8,21 @@
 - **`trust/keyring.md`** — what you may/may not do. **Load-bearing. Non-negotiable.**
   TL;DR: propose/draft/analyse freely; **never** push to `main`, send, delete, spend, or touch live parish data without asking.
 
-## Where things live
+## Where things live  (routing tree — every folder has its own `CLAUDE.md` index; click in)
 The four C's (all confirmed by Jasiah 2026-06-17 — rounds 1 & 2):
-| Need… | Go to |
-|---|---|
-| **C1 Context** — who Jasiah is / origin / entity status | `identity/who-i-am.md` |
-| **C1 Context** — what UMI means, the 5-year vision, the 8 lakes | `vision/what-is-umi.md` |
-| **C1 Context** — tool stack, who-does-what, project inventory | `projects/stack.md` |
-| **C2 Connections** — the map (graph), people/tools/worlds, static-vs-live | `connections/connections.md` |
-| **C3 Capabilities** — the skills registry (gated by the keyring) | `capabilities/skills.md` |
-| **C4 Cadence** — when work fires (manual / event / schedule) | `cadence/cadence.md` |
-| Permissions / the keyring / safe-fail rules | `trust/keyring.md` |
-| Loose notes not yet filed | `inbox/` |
+| C | Node (folder index) | Source file(s) |
+|---|---|---|
+| **C1 Context** | `identity/CLAUDE.md` | `identity/who-i-am.md` |
+| **C1 Context** | `vision/CLAUDE.md` | `vision/what-is-umi.md` · `vision/journey.md` (had-vs-getting) |
+| **C1 Context** | `projects/CLAUDE.md` | `projects/stack.md` (live truth → `umi-exchange/STATE.md`) |
+| **C2 Connections** | `connections/CLAUDE.md` | `connections/connections.md` (graph + static-vs-live) |
+| **C3 Capabilities** | `capabilities/CLAUDE.md` | `capabilities/skills.md` |
+| **C4 Cadence** | `cadence/CLAUDE.md` | `cadence/cadence.md` · `cadence/drift-guard/` |
+| **Trust (load-bearing)** | `trust/CLAUDE.md` | `trust/keyring.md` |
+| Loose notes | `inbox/CLAUDE.md` | `inbox/` (`private.md` = local-only) |
+
+> Routing rule: this file and every folder `CLAUDE.md` hold **pointers, not knowledge**.
+> If you can't reach a fact by clicking down from here, that's the first bug to fix.
 
 ## The built reality (ground truth — code, not design)
 - **Lake 1 = `umi-exchange`** (separate repo). Django/Postgres/Redis/HTMX. Lake 1's own `STATE.md` is the authoritative snapshot of what's actually built.
