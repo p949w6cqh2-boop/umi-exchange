@@ -9,11 +9,15 @@
   TL;DR: propose/draft/analyse freely; **never** push to `main`, send, delete, spend, or touch live parish data without asking.
 
 ## Where things live
+The four C's (C1 done; C2–C4 drafted 2026-06-17, awaiting Jasiah's verify):
 | Need… | Go to |
 |---|---|
-| Who Jasiah is / origin story / entity status | `identity/who-i-am.md` |
-| What UMI means, canonical names, the 5-year vision, the 8 lakes | `vision/what-is-umi.md` |
-| Tool stack, who-does-what, project ("world") inventory | `projects/stack.md` |
+| **C1 Context** — who Jasiah is / origin / entity status | `identity/who-i-am.md` |
+| **C1 Context** — what UMI means, the 5-year vision, the 8 lakes | `vision/what-is-umi.md` |
+| **C1 Context** — tool stack, who-does-what, project inventory | `projects/stack.md` |
+| **C2 Connections** — the map (graph), people/tools/worlds, static-vs-live | `connections/connections.md` |
+| **C3 Capabilities** — the skills registry (gated by the keyring) | `capabilities/skills.md` |
+| **C4 Cadence** — when work fires (manual / event / schedule) | `cadence/cadence.md` |
 | Permissions / the keyring / safe-fail rules | `trust/keyring.md` |
 | Loose notes not yet filed | `inbox/` |
 
@@ -26,8 +30,9 @@
 - **BUILT** — exists in code, tested. · **DESIGNED** — spec/design only, unbuilt, unverified. · **IDEA** — not yet specced.
 - Designs are **not** facts. When a node asserts something, it must carry one of these tags.
 
-## Cadence (how work fires) — to wire up later
+## Cadence (how work fires) → `cadence/cadence.md`
 - **Manual** — Jasiah asks. · **Event** — a hook fires. · **Schedule** — recurring (e.g. weekly check).
+  Autonomy is earned: more autonomy = more watching. Start manual, graduate after battle-testing.
 
 ## How to extend this brain
 - New knowledge → a markdown file in the right folder + a pointer added here.
