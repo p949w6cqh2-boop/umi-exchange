@@ -21,9 +21,11 @@ if not SECRET_KEY or SECRET_KEY == _INSECURE_SECRET_KEY:
         "SECRET_KEY must be set to a unique secret value in production; "
         "the insecure development default is not allowed."
     )
-if not ENCRYPTION_KEY:
+if not ENCRYPTION_KEYS and not ENCRYPTION_KEY:
     raise ImproperlyConfigured(
-        "ENCRYPTION_KEY must be set in production; an empty key silently disables encryption of sensitive fields."
+        "ENCRYPTION_KEYS (preferred, comma-separated, primary first) or the legacy single "
+        "ENCRYPTION_KEY must be set in production; an empty key silently disables encryption "
+        "of sensitive fields."
     )
 
 # ── Security Headers ─────────────────────────────────

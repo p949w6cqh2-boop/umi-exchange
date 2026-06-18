@@ -19,6 +19,11 @@ SECRET_KEY = env("SECRET_KEY", default="dev-only-insecure-key-change-in-producti
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 SITE_URL = env("SITE_URL", default="http://localhost:8000")
 ENCRYPTION_KEY = env("ENCRYPTION_KEY", default="")
+# Rotation-ready key list (primary first), comma-separated in the env. Preferred
+# over the single ENCRYPTION_KEY; required to run rotate_keks / retire an old KEK
+# (set ENCRYPTION_KEYS="<new>,<old>", rotate, then drop to "<new>"). crypto._keks()
+# uses this list when present, falling back to ENCRYPTION_KEY otherwise.
+ENCRYPTION_KEYS = env.list("ENCRYPTION_KEYS", default=[])
 UMI_CONFORMANCE_LEVEL = env("UMI_CONFORMANCE_LEVEL", default="core")
 DEBUG = env.bool("DEBUG", default=False)
 
