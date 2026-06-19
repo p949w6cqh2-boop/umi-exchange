@@ -13,7 +13,7 @@ The four C's (all confirmed by Jasiah 2026-06-17 — rounds 1 & 2):
 | C | Node (folder index) | Source file(s) |
 |---|---|---|
 | **C1 Context** | `identity/CLAUDE.md` | `identity/who-i-am.md` |
-| **C1 Context** | `vision/CLAUDE.md` | `vision/what-is-umi.md` · `vision/journey.md` (had-vs-getting) |
+| **C1 Context** | `vision/CLAUDE.md` | `vision/why.md` (the mission) · `vision/what-is-umi.md` · `vision/journey.md` |
 | **C1 Context** | `projects/CLAUDE.md` | `projects/stack.md` (live truth → `umi-exchange/STATE.md`) |
 | **C2 Connections** | `connections/CLAUDE.md` | `connections/connections.md` (graph + static-vs-live) |
 | **C3 Capabilities** | `capabilities/CLAUDE.md` | `capabilities/skills.md` |
