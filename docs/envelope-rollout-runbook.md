@@ -35,6 +35,7 @@ expand-only and reversible.
 
 - [ ] `python manage.py casework_envelope_status` → every field `legacy=0, unreadable=0`
 - [ ] `python manage.py people_envelope_status` → every field `legacy=0, unreadable=0`
+- [ ] `python manage.py migrate_on_behalf_envelope --verify` → `legacy=0  unreadable=0` (the `needs.on_behalf_of` census; `needs` uses this `--verify` flag rather than a separate `*_status` command). If `legacy>0`, run `migrate_on_behalf_envelope` (no flag) to backfill, then re-verify.
 
 `unreadable > 0` means a row a configured KEK can't decrypt — **stop and investigate**
 (wrong/retired key) before going further. Note: casework's case-detail view reads
@@ -56,7 +57,7 @@ Only after **all** PII is envelope-only (Phases 2–4 complete for needs + casew
 - [ ] Add the new KEK as primary, keep the old one for unwrap:
       `ENCRYPTION_KEYS = [<new_key>, <old_key>]`
 - [ ] `python manage.py rotate_keks` — re-wraps every envelope DEK under the new primary. (Covers all registered fields: needs, casework, Person.)
-- [ ] Verify: both `*_envelope_status` commands still report `legacy=0, unreadable=0`.
+- [ ] Verify **all three** censuses still report `legacy=0, unreadable=0`: `casework_envelope_status`, `people_envelope_status`, and `migrate_on_behalf_envelope --verify` (needs). All PII — needs + casework + Person — must be envelope-only, or dropping the old KEK makes a legacy row unreadable.
 - [ ] Drop the old key: `ENCRYPTION_KEYS = [<new_key>]`. Old KEK is retired.
 
 ---
@@ -73,4 +74,5 @@ Only after **all** PII is envelope-only (Phases 2–4 complete for needs + casew
 |---|---|
 | `migrate` | apply DEK columns + backfill |
 | `casework_envelope_status` / `people_envelope_status` | census: empty / legacy / envelope / unreadable per field |
+| `migrate_on_behalf_envelope --verify` | the same census for `needs.on_behalf_of` (needs uses this flag, not a `*_status` command); `migrate_on_behalf_envelope` (no flag) backfills it |
 | `rotate_keks` | re-wrap all DEKs under the new primary KEK |

@@ -2,78 +2,64 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `294b13b` (2026-06-09).
+> Reflects `main` @ `ae01f21` (2026-06-17).
+> This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI Protocol.
 
-## Protocol
-- **UMI Protocol v0.1, Core conformance.**
-- **Entities implemented:** `umi:Need`, `umi:Offer`, `umi:Match`, `umi:Consent`.
-- **Not implemented:** referrals, attestations. (A trust-badge UI component
-  exists but is a placeholder — no attestation model/logic behind it.)
-- **Match state machine:** `proposed → accepted | cancelled | expired`;
-  `accepted → fulfilled | unfulfilled | cancelled`. Terminal states enforced.
+## Protocol & conformance
+- **UMI Protocol v0.1 — Core ✅ + Casework ✅.** Next milestone: **Federation** (unbuilt).
+- **Lake 1 entities:** `umi:Need`, `umi:Offer`, `umi:Match`, `umi:Consent`.
+- **Lake 2 entities (casework):** `Person`, `CaseFile`, `CaseNote`, `FollowUp`, `WarmHandoff`, `CaseAccessGrant`.
+- **Not implemented:** referrals, attestations, federation (a trust-badge UI placeholder exists with no model behind it).
+- **Match state machine:** `proposed → accepted | cancelled | expired`; `accepted → fulfilled | unfulfilled | cancelled`. Terminal states enforced via `transition_to()`.
 - **Security / consent rules enforced in code:**
-  - Contact info revealed only after acceptance (§8.2), to participants/coordinators.
+  - Contact info revealed only after acceptance (§8.2), to participants/coordinators; every disclosure is audited.
   - Self-match prevention (§8.6): proposer ≠ requester **and** offer-owner ≠ requester.
-  - Authorization on match updates: only requester / offer-owner / proposer
-    (direct volunteer) / coordinator; others get **HTTP 403**.
-  - Race handling (§8.7): `SELECT FOR UPDATE` locks the **Need**; second
-    concurrent accept → **HTTP 409**.
-  - Append-only audit log (§8.3): model-level `save`/`delete` blocks + a Postgres
-    `REVOKE` migration; IPs SHA-256 hashed; **contact-info disclosures are audited**.
-  - Match status changes persist an optional **sanitized note**.
-  - Join codes generated with a **CSPRNG** (`secrets`); health-check token compared
-    in constant time.
+  - Match-update authz: requester / offer-owner / proposer / coordinator only; others **403**.
+  - Race handling (§8.7): match accept locks the **Match** row (`select_for_update(of=("self",))`, Postgres-safe with the nullable `offer` outer join) **and** the **Need**; second concurrent accept → **409**.
+  - Append-only audit (§8.3): model-level `save`/`delete` blocks + Postgres `REVOKE`; **IPs salted-SHA-256** (`SECRET_KEY`); client IP read from the trusted `X-Real-IP`, never the spoofable left-most `X-Forwarded-For`.
+  - Join/household codes via CSPRNG (`secrets`); health-check token compared in constant time.
   - Production **refuses to boot** on an insecure `SECRET_KEY` / empty `ENCRYPTION_KEY`.
 
+## Encryption (crypto-shred) — A–E complete
+- `apps/people/crypto.py`: **direct-KEK** (`encrypt_str`/`decrypt_str`, MultiFernet over `ENCRYPTION_KEYS`, rotation-ready) **and envelope** (per-record DEK wrapped by the KEK list → crypto-shred: delete the `*_enc_dek` and the ciphertext is permanently opaque).
+- **Envelope-encrypted PII** (all migrated, dual-read → backfill → **Stage E** legacy-read removal all shipped — getters now **fail loud** on a DEK-less ciphertext):
+  - `needs.Need.on_behalf_of`
+  - casework: `CaseFile.summary`, `CaseNote.body`, `FollowUp.detail`, `WarmHandoff.summary`
+  - `people.Person`: `display_name`, `contact` (JSON), `dob`
+- **Ops:** `rotate_keks` re-wraps every DEK under the new primary KEK (registry covers all fields). Census commands `casework_envelope_status` + `people_envelope_status` report empty/legacy/envelope/unreadable per field. **Old-KEK retirement is now unblocked** (all PII envelope-only). Full sequence: `docs/envelope-rollout-runbook.md`.
+
+## Casework (Lake 2) specifics
+- Sensitivity levels (standard/restricted); single authz matrix `apps/casework/access.py::case_access()`.
+- Consent-first opening (emergency flag allows null consent via a DB `CheckConstraint`); revocation **freeze** (no new notes/export once consent revoked).
+- 4-hour sensitive-session **re-auth** middleware on casework decrypt views.
+- Finalized notes are immutable (amendments are new rows).
+- **Offline visit capture:** scope-limited **service worker** + IndexedDB queue; draft note bodies are **AES-GCM encrypted at rest** (non-extractable WebCrypto key), decrypted only in-memory at sync; idempotent sync endpoint.
+- Warm handoffs, follow-ups (re-gated by current `case_access()`), access grants (viewer/contributor, expiring/revocable), case export gated by `case_export` consent scope.
+
 ## Codebase
-- **Stack:** Django 5.x, PostgreSQL, Redis, HTMX, Alpine.js, Tailwind CSS,
-  WhiteNoise, gunicorn. Argon2 password hashing (`argon2-cffi`, PBKDF2 fallback).
-- **11 Django apps:** accounts, audit, communities, consent, dashboard, health,
-  households, matches, needs, notifications, offers.
-- **Features:** needs, offers, matches (propose / accept / fulfill / cancel),
-  consents (list / revoke), community feed (HTMX filter / search / refresh),
-  coordinator dashboard + **CSV export**, notifications, append-only audit log,
-  households (CSPRNG join codes), QR community-join, optional **2FA**
-  (`django-two-factor-auth`, off by default), health endpoint, a public landing
-  page, and a **Category** model under `communities`.
-- **Optional background queue:** django-q2 (added to `INSTALLED_APPS` only if
-  installed; `Q_CLUSTER` configured with the ORM broker — no Redis required).
-- **Migrations:** present for all model apps (audit has `0002` append-only;
-  dashboard has none — no models).
+- **Stack:** Django 5.2, PostgreSQL (prod/CI) / SQLite (local default), Redis (optional), HTMX, Alpine.js, Tailwind (`static/css/output.css`), WhiteNoise, gunicorn, Argon2.
+- **13 Django apps:** accounts, audit, communities, consent, dashboard, health, households, matches, needs, notifications, offers, **people**, **casework**.
+- **Per-community theming:** 10 presets + per-community hex overrides via `Community.settings` → CSS custom properties.
+- **Rate limiting:** fixed-window limiter (`apps/accounts/ratelimit.py`); auth POSTs limited per trusted IP + per account.
+- **Optional:** django-q2 (ORM broker, no Redis required), 2FA (off by default).
+- **Migrations:** all model apps; casework `0003`/`0004` (envelope DEK cols + backfill), people `0002`/`0003` (same). Backfills are batched, idempotent, resumable (`atomic=False`), reversible.
 
 ## Visual design — warm "parish atmosphere"
-- Background `#FDFBF7` with a soft top-centre radial gradient; warm-brown ink `#2C2A29`.
-- Accents: deep green `#2B5E2B` (primary), soft gold `#C49A3C` (secondary).
-- Serif headings (**Lora → Georgia** fallback; **no external webfont loaded**),
-  Open Sans body, generous line-height.
-- 960px max content width; translucent **blurred header** with a hairline border.
-- Bulletin-style cards: warm surface, **green (need) / gold (offer)** left border;
-  urgency shown as **muted colour dots with dark-grey text**.
-- **Green pill buttons** (primary solid / secondary outline).
-- **Calm micro-interactions only:** contact-reveal crossfade (no rotation),
-  timeline checkmark fade (no scaling), refresh spinner, toast slide-in/out,
-  empty-state SVG (single-stroke church) fade-in. All respect `prefers-reduced-motion`.
-- Tailwind compiled to `static/css/output.css` (config carries the parish palette);
-  served via WhiteNoise `CompressedManifestStaticFilesStorage` (**needs
-  `collectstatic`**; `DEBUG` defaults to `False`).
+- Light themes only; default "parish": bg `#FDFBF7`, ink `#2C2A29`, primary green `#2B5E2B`, gold `#C49A3C`. Serif headings (Lora→Georgia, no external webfont), Open Sans body.
+- Translucent blurred header; bulletin-style cards with green (need) / gold (offer) accents; green pill buttons; calm micro-interactions only (respect `prefers-reduced-motion`).
+- Tailwind compiled to `static/css/output.css`; served via WhiteNoise manifest storage (**needs `collectstatic`**; `DEBUG=False` in prod).
 
 ## Testing / CI / Deploy
-- **78 tests passing**; `ruff check` + `ruff format` clean; `make lint` runs both.
-- CI: `.github/workflows/ci.yml` (lint, tests, build); `deploy.yml` (GHCR + SSH).
-- Deploy: `Dockerfile` + `docker-compose.yml` (+ `docker/docker-compose.prod.yml`,
-  `Caddyfile`, `Caddyfile.prod`, logrotate); scripts: `harden.sh`, `backup.sh`,
-  `restore.sh`, `security_check.sh`, `setup_hardening.sh`.
+- **~200 tests passing** on **both SQLite and Postgres**; `ruff check` + `ruff format --check` clean; `check --deploy` **0 issues** under production settings. `make lint` / `make test`.
+- CI (`.github/workflows/ci.yml`) runs lint + tests on **Postgres 16**. Deploy: `Dockerfile` + compose (+ prod compose, Caddy, logrotate); scripts `harden.sh`, `backup.sh`, `restore.sh`, `security_check.sh`.
+- Docs: `CLAUDE.md` (agent guide), `docs/envelope-rollout-runbook.md`, `docs/prompt-inventory.md`, `docs/sandbox-report.md`, `docs/INTEGRATION-PLAN.md`.
 
 ## NOT in this codebase (guard against scope creep)
-The following belonged to an earlier "Parish Aid Board / Lake 1" lineage and are
-**not** part of UMI Exchange — do not assume or reintroduce them: Stripe billing,
-Twilio SMS, Chart.js dashboards, PWA manifest/service worker, blog, scheduled
-email digests (only an `email_digest` *config key* exists), and an account-deletion
-flow.
+Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow. (A PWA-style **service worker exists**, but **only** scoped to casework offline visit capture — not a site-wide PWA.)
 
 ## Repo state / open items
-- All feature work is merged into `main` (security fixes, lint/test cleanup,
-  parish redesign, contact-read auditing + match notes).
-- Stale branches still exist pending deletion — repo is **not** fully cleaned up yet.
-- **St. Patrick pilot:** environment scaffolding exists; implementation playbook
-  not yet generated.
+- All feature work merged to `main`: Lakes 1+2, envelope encryption A–E, the verified-flaw fixes (salted audit IP hash, X-Forwarded-For hardening, follow-up re-gating, audited household join, DB-bounded feed, `rotate_keks` skip-lock fix, `CheckConstraint condition=`, Postgres match-lock fix, offline-draft encryption), CLAUDE.md, envelope runbook.
+- **Next manual/ops step:** old-KEK retirement (runbook Phase 5) once deployed + censuses confirmed clean in prod.
+- **Open governance decision:** with crypto-shred shipped, the privacy policy can honour the §5.8 erasure promise (delete DEK) — state the real retention model.
+- **Roadmap (DESIGNED, not built):** Federation (next conformance level), Person blind index (`person_name_bidx`, §12.3), Lakes 3–8, mobile (React Native) + LLM need classifier.
+- Some stale remote branches may remain pending deletion.
