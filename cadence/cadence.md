@@ -7,6 +7,10 @@
 
 ## Manual — something you ask for (the default)
 Everything in `capabilities/skills.md` lives here today, by Jasiah's policy, except the drift guard.
+- **`/brain-refresh`** (`cadence/brain-refresh.md`) — nightly consolidation pass. **Stage 1 Manual**:
+  run by hand, review the digest; graduate to scheduled report-only (cron → `claude -p`) after it
+  proves safe. Reconcile · prune-to-archive · route-check · digest. Worst case is safe-fail (branch +
+  archive, never delete/merge).
 
 ## Event — something happens (a hook fires)
 - PR opened / CI status changes → review or triage (comment ✅; merge ASK). *(Available, used ad hoc.)*
