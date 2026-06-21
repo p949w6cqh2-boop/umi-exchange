@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "apps.consent",
     "apps.people",
     "apps.casework",
+    "apps.tags",
     "apps.health",
 ]
 
@@ -115,6 +116,9 @@ SESSION_SAVE_EVERY_REQUEST = True
 # Use Argon2 if its backing library is installed, else fall back to PBKDF2.
 # NOTE: import the `argon2` library itself — importing the hasher class always
 # succeeds even when the library is missing, which silently broke auth before.
+# IMPORTANT: when the library is absent, do NOT list the Argon2 hasher at all.
+# Django must be able to load every hasher in the list; listing an unavailable
+# one causes a hard crash when verifying a password that was hashed with it.
 try:
     import argon2  # noqa: F401
 
@@ -125,7 +129,6 @@ try:
 except ImportError:
     PASSWORD_HASHERS = [
         "django.contrib.auth.hashers.PBKDF2PasswordHasher",
-        "django.contrib.auth.hashers.Argon2PasswordHasher",
     ]
 
 AUTHENTICATION_BACKENDS = [

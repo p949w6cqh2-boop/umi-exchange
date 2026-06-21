@@ -99,3 +99,8 @@ class MatchFactory(DjangoModelFactory):
     offer = factory.SubFactory(OfferFactory)
     proposed_by = factory.SubFactory(MemberFactory)
     status = "proposed"
+
+
+@pytest.fixture
+def user(db):
+    return UserFactory()
