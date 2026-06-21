@@ -5,6 +5,8 @@
 > Maintained for / by **Jasiah** (Founder & Steward). All plain markdown — portable to any tool.
 
 ## 🔑 Read this FIRST, every session
+- **`capabilities/session-bootstrap.md`** — the run-first preamble + wiring (import / SessionStart hook)
+  that makes a Claude Code session actually load this brain. Start here when wiring up a new machine.
 - **`trust/keyring.md`** — what you may/may not do. **Load-bearing. Non-negotiable.**
   TL;DR: propose/draft/analyse freely; **never** push to `main`, send, delete, spend, or touch live parish data without asking.
 
