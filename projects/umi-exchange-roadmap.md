@@ -1,6 +1,6 @@
 # umi-exchange — Roadmap & Open Threads
 
-> STATUS: live handoff, updated 2026-06-18. **A new session should read this first** to pick up
+> STATUS: live handoff, updated 2026-06-21. **A new session should read this first** to pick up
 > where the last one left off. Ground truth for what's *built* = `umi-exchange/STATE.md`.
 
 ## ✅ Built & on main (umi-exchange @ `f9fe711`)
