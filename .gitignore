@@ -58,3 +58,8 @@ docker-compose.yml.save
 # ── OS ──
 .DS_Store
 Thumbs.db
+
+# ── Local nested repos (not part of this project; keep out of git status + pytest collection) ──
+/umi-exchange/
+/umi-brain/
+/umi-brain.bundle
