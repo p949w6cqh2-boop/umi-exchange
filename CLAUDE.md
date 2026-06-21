@@ -52,7 +52,7 @@ make format     # ruff format .
 
 ## Architecture
 
-12 project apps under `apps/`:
+13 project apps under `apps/`:
 
 - **Lake 1 — mutual aid:** `communities` (Community/Member/Category, feed, per-community theming),
   `needs`, `offers`, `matches` (propose→accept→fulfill), `households`, `notifications`, `dashboard`,
@@ -63,8 +63,10 @@ make format     # ruff format .
 
 Key mechanisms (respect these — they're load-bearing):
 
-- **State machines:** entities change state only via `transition_to(...)` (`StateMachineMixin`);
-  invalid transitions raise `ValidationError`. Views map conflicts → HTTP 409.
+- **State machines:** entities change state only via `transition_to(...)`; invalid transitions raise
+  `ValidationError`, which views map to HTTP 409. Casework entities (`CaseFile`/`CaseNote`/`FollowUp`/
+  `WarmHandoff`) inherit this from `StateMachineMixin` (`apps/casework/state.py`); `matches` defines
+  its own `transition_to` (`apps/matches/models.py`).
 - **Append-only audit (§8.3):** `AuditLog` refuses UPDATE/DELETE; a Postgres migration `REVOKE`s
   them too. Write via `apps.audit.services.emit(action, resource, …)` or `AuditLog.log(...)`.
   IP addresses are stored **salted-SHA-256**, never raw; client IP comes from the trusted
