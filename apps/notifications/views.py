@@ -47,4 +47,3 @@ class RecentNotificationsView(LoginRequiredMixin, View):
             request=request,
         )
         return HttpResponse(html)
-

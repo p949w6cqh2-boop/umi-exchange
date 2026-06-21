@@ -98,9 +98,7 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         from django.http import Http404
 
         obj = super().get_object(queryset)
-        if not Member.objects.filter(
-            user=self.request.user, community=obj.need.community, is_active=True
-        ).exists():
+        if not Member.objects.filter(user=self.request.user, community=obj.need.community, is_active=True).exists():
             raise Http404("You are not a member of this community.")
         return obj
 
