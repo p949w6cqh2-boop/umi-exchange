@@ -13,6 +13,7 @@ from django.views.generic import CreateView, FormView, ListView, TemplateView
 
 from apps.needs.models import Need
 from apps.offers.models import Offer
+from apps.tags.badges import verified_badges_for
 
 from .forms import CommunityCreateForm, CommunitySettingsForm, JoinForm
 from .models import Community, Member, generate_join_code
@@ -127,7 +128,19 @@ class FeedView(LoginRequiredMixin, ListView):
         ctx["community"] = self.community
         ctx["member"] = self.member
         ctx["categories"] = self.community.categories.filter(is_active=True)
+        self._attach_poster_badges(ctx.get("items", []))
         return ctx
+
+    def _attach_poster_badges(self, items):
+        """Attach each item's poster's verified, viewer-visible tag badges for
+        read-only display on feed cards — one batched query for the whole page."""
+
+        def poster_id(it):
+            return it.requester_id if it.item_type == "need" else it.offerer_id
+
+        badges = verified_badges_for({poster_id(it) for it in items}, self.member)
+        for it in items:
+            it.poster_badges = badges.get(poster_id(it), [])
 
 
 class CommunitySettingsView(LoginRequiredMixin, TemplateView):

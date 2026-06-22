@@ -52,6 +52,11 @@
       <div class="flex items-center gap-4">
         {% if user.is_authenticated %}
           {% include "components/_notification_badge.html" %}
+          {% if community and member %}
+            <a href="{% url 'tags:my-tags' community.slug %}" class="text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center">
+              My Tags
+            </a>
+          {% endif %}
           {% if community and member and member.role in 'admin coordinator' %}
             <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-parish-green hover:text-parish-greendark min-h-[44px] flex items-center mr-2">
               Community Settings
