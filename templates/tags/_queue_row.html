@@ -1,7 +1,7 @@
-{#
+{% comment %}
   Single queue row — pending or flagged MemberTag awaiting coordinator/admin action.
   Variables: mt, community, member, verify_form, reject_form, revoke_form (optional), is_flagged (optional)
-#}
+{% endcomment %}
 <div id="queue-row-{{ mt.id }}"
      class="umi-card p-4 {% if is_flagged %}border-l-4 border-amber-400{% endif %}">
 

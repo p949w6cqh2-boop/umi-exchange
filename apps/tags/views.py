@@ -100,15 +100,28 @@ class TagClaimView(LoginRequiredMixin, View):
         tag = form.cleaned_data["tag"]
         visibility = form.cleaned_data["visibility"]
 
+        existing = MemberTag.objects.filter(member=member, tag=tag).first()
         try:
-            mt = MemberTag(member=member, tag=tag, visibility=visibility)
-            mt.clean()
-            mt.save()
-            mt.claim(request=request)
+            if existing is not None:
+                # A row already exists for this (member, tag). If the member removed
+                # it earlier, re-claiming reactivates that same row — the unique
+                # (member, tag) constraint forbids inserting a second one. Any other
+                # status is a genuine duplicate claim.
+                if existing.status != "removed":
+                    return _error(request, "You have already claimed this tag.")
+                existing.visibility = visibility
+                existing.clean()
+                existing.claim(request=request)
+                mt = existing
+            else:
+                mt = MemberTag(member=member, tag=tag, visibility=visibility)
+                mt.clean()
+                mt.save()
+                mt.claim(request=request)
         except IntegrityError:
             return _error(request, "You have already claimed this tag.")
         except ValidationError as e:
-            return _error(request, str(e.message))
+            return _error(request, "; ".join(e.messages))
 
         if request.headers.get("HX-Request"):
             return _htmx_toast(f'"{tag.label}" added to your profile.', "success")
@@ -244,10 +257,12 @@ class TagVerifyView(LoginRequiredMixin, View):
             mt.verify(member, evidence_note=evidence_note, request=request)
         except PermissionDenied as e:
             return _error(request, str(e), 403)
-        except ValidationError as e:
-            return _error(request, str(e.message), 400)
+        # TransitionConflict subclasses ValidationError — catch it FIRST so a
+        # bad-state verify maps to 409, not the 400 ValidationError branch below.
         except TransitionConflict as e:
             return _error(request, str(e.message), 409)
+        except ValidationError as e:
+            return _error(request, str(e.message), 400)
 
         if request.headers.get("HX-Request"):
             return HttpResponse(
