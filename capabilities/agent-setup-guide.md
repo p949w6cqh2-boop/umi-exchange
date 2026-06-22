@@ -48,19 +48,19 @@ the markdown to load every session; the window is disposable, `/clear` is the ca
   anti-hallucination gates; SessionStart hook defeats amnesia.
 
 ## 5. MANUAL SETUP TUTORIAL — do these by hand (in order)
-> Assumes repos side by side, e.g. `~/code/umi-brain` + `~/code/umi-exchange`. Replace paths/usernames.
+> Assumes repos side by side, e.g. `~/umi-brain` + `~/umi-exchange`. Replace paths/usernames.
 
 **A. Sync this brain locally**
 ```bash
-cd ~/code/umi-brain
+cd ~/umi-brain
 git remote add exchange <your-umi-exchange-remote-url>   # one-time
 git pull exchange umi-brain-export                        # pulls bootstrap, /brain-refresh, this guide
 ```
 
 **B. Make every session load the brain** — create `~/.claude/CLAUDE.md`:
 ```
-@/home/<you>/code/umi-brain/CLAUDE.md
-@/home/<you>/code/umi-brain/trust/keyring.md
+@/home/umi/umi-brain/CLAUDE.md
+@/home/umi/umi-brain/trust/keyring.md
 ```
 
 **C. SessionStart hook + (optional) GLM/effort** — `~/.claude/settings.json` (merge, don't overwrite):
@@ -70,7 +70,7 @@ git pull exchange umi-brain-export                        # pulls bootstrap, /br
     "SessionStart": [
       { "matcher": "startup|resume|clear",
         "hooks": [ { "type": "command",
-          "command": "git -C /home/<you>/code/umi-brain pull --quiet 2>/dev/null; cat /home/<you>/code/umi-brain/capabilities/session-bootstrap.md" } ] }
+          "command": "git -C /home/umi/umi-brain pull --quiet 2>/dev/null; cat /home/umi/umi-brain/capabilities/session-bootstrap.md" } ] }
     ]
   }
 }

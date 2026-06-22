@@ -28,12 +28,12 @@ the keyring is silent on an action.
 ```
 
 ## B — Wiring (so it loads without you re-pasting)
-Two layers; use both. Assumes the repos sit side by side, e.g. `~/code/umi-brain` + `~/code/umi-exchange`.
+Two layers; use both. Assumes the repos sit side by side, e.g. `~/umi-brain` + `~/umi-exchange`.
 
 **1. Static import — `~/.claude/CLAUDE.md` (personal, NOT the public repo CLAUDE.md):**
 ```
-@/home/<you>/code/umi-brain/CLAUDE.md
-@/home/<you>/code/umi-brain/trust/keyring.md
+@/home/umi/umi-brain/CLAUDE.md
+@/home/umi/umi-brain/trust/keyring.md
 ```
 Absolute paths (relative imports resolve against the file's own dir). Router is pointers; the agent
 pulls leaf files (roadmap, why, prompt-library) on demand. Never import private brain content into
@@ -48,7 +48,7 @@ the committed, public `umi-exchange/CLAUDE.md`.
         "matcher": "startup|resume|clear",
         "hooks": [
           { "type": "command",
-            "command": "git -C ~/code/umi-brain pull --quiet 2>/dev/null; cat ~/code/umi-brain/capabilities/session-bootstrap.md" }
+            "command": "git -C ~/umi-brain pull --quiet 2>/dev/null; cat ~/umi-brain/capabilities/session-bootstrap.md" }
         ]
       }
     ]
