@@ -36,6 +36,13 @@ the markdown to load every session; the window is disposable, `/clear` is the ca
   DB in TOML, read-only, never prod.
 - Make Playwright **on-demand/project-scoped** (heavy), not always-on global.
 
+**Scouted UMI-fit tooling (skills are cheap → load many; MCPs stay rationed):**
+- *Security (UMI is security-first):* **Semgrep** (SAST, crypto-misuse/secrets) + **Bandit** (Python) — run as **gates** (pre-commit/CI), zero token cost; Semgrep-MCP only for interactive triage. Snyk (SCA) optional.
+- *Accessibility (WCAG AA is a design goal):* **a11y-mcp / playwright-axe-mcp** (axe-core) — on-demand audits of rendered HTMX.
+- *Django/Python (skills):* **Monty Django Code Review** (data integrity, multi-tenant, safe migrations) + a **pytest** skill (matches factory_boy fixtures).
+- *Anthropic official plugins:* `security-guidance`, `code-review`, `feature-dev`, `commit-commands`, `frontend-design`.
+- *Later:* Sentry MCP (error monitoring) once deployed.
+
 ## 4. Commands & routines (correct names)
 - `/model` → `sonnet` (4.6, fast), `opus` (4.8, hard builds), `fable` (5, longest tasks); pair with
   `/effort` (low…max). GLM 5.2 via Z.ai for cheap routine passes.
@@ -44,8 +51,9 @@ the markdown to load every session; the window is disposable, `/clear` is the ca
   code analysis use **Plan mode** (Shift+Tab).
 - Custom commands live in `<repo>/.claude/commands/*.md`. Built for UMI: `audit-context`,
   `prep-feature` (in umi-exchange), `brain-refresh` (in this brain, `cadence/`).
-- Enforcement: pre-commit (`ruff` + `makemigrations --check`) + CI on Postgres 16 are the real
-  anti-hallucination gates; SessionStart hook defeats amnesia.
+- Enforcement: pre-commit (`ruff` + `makemigrations --check` + **`bandit`**) + CI on Postgres 16
+  (+ **`semgrep --config=auto`**) are the real anti-hallucination gates; SessionStart hook defeats
+  amnesia. Baseline existing findings before gating, or every commit blocks.
 
 ## 5. MANUAL SETUP TUTORIAL — do these by hand (in order)
 > Assumes repos side by side, e.g. `~/umi-brain` + `~/umi-exchange`. Replace paths/usernames.
