@@ -11,3 +11,5 @@ select = ["E", "F", "I", "N", "W"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.development"
 python_files = ["tests.py", "test_*.py"]
+# Gate the FULL suite: top-level tests/ + every apps/*/tests/ (envelope/casework/people included).
+testpaths = ["tests", "apps"]
