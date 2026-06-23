@@ -74,7 +74,7 @@ jobs:
         run: python manage.py check
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest tests/ -v --tb=short
+          coverage run -m pytest -v --tb=short
           coverage report --fail-under=50
           coverage xml
       - name: Upload coverage
