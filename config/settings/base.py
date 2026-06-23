@@ -37,9 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third-party (required)
-    "rest_framework",
     "django_htmx",
-    "guardian",
     # Project apps
     "apps.accounts",
     "apps.households",
@@ -133,7 +131,6 @@ except ImportError:
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "guardian.backends.ObjectPermissionBackend",
 ]
 
 # ── Database ──────────────────────────────────────────
@@ -204,13 +201,6 @@ EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=10)
 
 # Subject prefix for admin error emails
 EMAIL_SUBJECT_PREFIX = env("EMAIL_SUBJECT_PREFIX", default="[UMI] ")
-
-# ── REST Framework ────────────────────────────────────
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 20,
-}
 
 # ── Rate Limiting ─────────────────────────────────────
 RATELIMIT_USE_CACHE = "default"
