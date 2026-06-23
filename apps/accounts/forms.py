@@ -45,6 +45,14 @@ class RegistrationForm(forms.ModelForm):
             ),
         }
 
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if not email:
+            return None  # Store as NULL so unique constraint allows multiple blanks
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("This email is already in use.")
+        return email
+
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("password") != cleaned.get("password_confirm"):

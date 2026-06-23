@@ -50,10 +50,13 @@ class MatchProposeView(LoginRequiredMixin, View):
 
         # Self-matching prevention (Protocol Section 8.6): the proposer must not
         # be the need's requester, and an offer owned by the requester cannot be
-        # matched to that same person's need.
-        if need.requester_id == member.id:
+        # matched to that same person's need.  Check both Member-level AND
+        # User-level identity to block the same human using separate sessions.
+        if need.requester_id == member.id or need.requester.user_id == request.user.id:
             return _reject(request, slug, need_id, "You cannot propose a match on your own need.", 400)
-        if offer is not None and offer.offerer_id == need.requester_id:
+        if offer is not None and (
+            offer.offerer_id == need.requester_id or offer.offerer.user_id == need.requester.user_id
+        ):
             return _reject(request, slug, need_id, "An offer cannot be matched to its owner's own need.", 400)
 
         # The offer, when supplied, must still be available (offer-less
@@ -89,6 +92,15 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
     model = Match
     template_name = "matches/detail.html"
     context_object_name = "match"
+
+    def get_object(self, queryset=None):
+        """Enforce community membership — prevent cross-community IDOR."""
+        from django.http import Http404
+
+        obj = super().get_object(queryset)
+        if not Member.objects.filter(user=self.request.user, community=obj.need.community, is_active=True).exists():
+            raise Http404("You are not a member of this community.")
+        return obj
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -139,6 +151,12 @@ class MatchUpdateView(LoginRequiredMixin, View):
             need = Need.objects.select_for_update().get(pk=match.need_id)
             match.need = need  # operate on the freshly locked instance
 
+            # Cross-community IDOR guard: the match must belong to the
+            # community identified by the URL slug.  Without this, a
+            # coordinator in Community A could mutate matches in Community B.
+            if need.community_id != community.id:
+                return _reject(request, slug, pk, "Match does not belong to this community.", 403)
+
             # Authorization (Protocol Section 8.2): only the need requester, the
             # offer owner (or, for a direct-volunteer match, the proposer), or a
             # community coordinator may change a match's status.
@@ -184,7 +202,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
                     other.user,
                     "match_accepted",
                     f"Match accepted on '{match.need.title}'!",
-                    "Contact info has been shared. Check the match detail.",
+                    "Contact info has been shared — open the match page to see it.",
                     link=f"/c/{slug}/matches/{match.id}/",
                 )
         elif new_status == "fulfilled":

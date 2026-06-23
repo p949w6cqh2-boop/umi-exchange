@@ -34,6 +34,14 @@ class UMILoginView(DjangoLoginView):
 class UMILogoutView(LogoutView):
     next_page = reverse_lazy("landing")
 
+    def dispatch(self, request, *args, **kwargs):
+        # Consume any pending messages so they don't leak onto the landing page
+        # after sign-out (e.g. "Match cancelled!" appearing on the login screen).
+        storage = messages.get_messages(request)
+        for _ in storage:
+            pass  # iterate to mark all as consumed
+        return super().dispatch(request, *args, **kwargs)
+
 
 class SettingsView(LoginRequiredMixin, UpdateView):
     """User profile settings — view and edit email, phone."""
