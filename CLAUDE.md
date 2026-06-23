@@ -52,19 +52,22 @@ make format     # ruff format .
 
 ## Architecture
 
-12 project apps under `apps/`:
+14 project apps under `apps/`:
 
 - **Lake 1 — mutual aid:** `communities` (Community/Member/Category, feed, per-community theming),
   `needs`, `offers`, `matches` (propose→accept→fulfill), `households`, `notifications`, `dashboard`,
-  `accounts` (auth + rate limiting).
+  `accounts` (auth + rate limiting), `tags` (member tags & verification).
 - **Lake 2 — casework:** `casework` (CaseFile/CaseNote/FollowUp/WarmHandoff/CaseAccessGrant), backed by
   `people` (Person) and `consent`.
 - **Cross-cutting:** `audit` (append-only log), `health` (load-balancer probe).
 
 Key mechanisms (respect these — they're load-bearing):
 
-- **State machines:** entities change state only via `transition_to(...)` (`StateMachineMixin`);
-  invalid transitions raise `ValidationError`. Views map conflicts → HTTP 409.
+- **State machines:** entities change state only via `transition_to(...)`; invalid transitions raise
+  `ValidationError` (subclass `TransitionConflict`), which views map to HTTP 409. `StateMachineMixin`
+  lives in `apps/common/state.py` (used by `casework` and `tags`; `apps/casework/state.py` re-exports
+  it); `matches` defines its own `transition_to` in `apps/matches/models.py`. Note `TransitionConflict`
+  subclasses `ValidationError`, so an `except` for it must come **before** any `except ValidationError`.
 - **Append-only audit (§8.3):** `AuditLog` refuses UPDATE/DELETE; a Postgres migration `REVOKE`s
   them too. Write via `apps.audit.services.emit(action, resource, …)` or `AuditLog.log(...)`.
   IP addresses are stored **salted-SHA-256**, never raw; client IP comes from the trusted
@@ -95,6 +98,10 @@ Key mechanisms (respect these — they're load-bearing):
 - **WhiteNoise manifest storage** in prod requires `collectstatic`; serve over HTTPS.
 - **Django 6.0:** use `CheckConstraint(condition=…)`, not `check=`.
 - **Don't hand-edit `output.css`** (generated, minified) — recompile instead.
+- **Multi-line `{# … #}` is NOT a Django comment.** The template lexer's `tag_re` has no `DOTALL`, so
+  `{# #}` only comments to end-of-line. A `{#`/`#}` spanning newlines leaves any `{% … %}`/`{{ … }}`
+  on the inner lines **live** — a usage-example `{% include %}` inside such a block self-recursed to a
+  `RecursionError`. Use `{% comment %}…{% endcomment %}` for multi-line comments.
 
 ## Workflow conventions
 
