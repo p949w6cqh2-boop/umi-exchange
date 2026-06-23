@@ -19,6 +19,7 @@
     <h1 class="text-xl font-semibold text-gray-900 mt-2">{{ need.title }}</h1>
     <div class="text-sm text-gray-500 mt-2">
       Posted by {{ need.requester.display_name }}
+      {% include "tags/_badges_inline.html" with badges=poster_badges %}
       {% if need.neighborhood %}&middot; {{ need.neighborhood }}
         <span class="relative group inline-block">
           <svg class="w-3.5 h-3.5 text-gray-300 cursor-help inline" fill="currentColor" viewBox="0 0 20 20">

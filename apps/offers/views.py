@@ -6,6 +6,7 @@ from django.views.generic import CreateView, DeleteView, DetailView
 
 from apps.communities.models import Community, Member
 from apps.needs.models import Need
+from apps.tags.badges import verified_badges_for
 
 from .forms import OfferForm
 from .models import Offer
@@ -55,6 +56,7 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         ctx["community"] = offer.community
         member = Member.objects.filter(user=self.request.user, community=offer.community, is_active=True).first()
         ctx["member"] = member
+        ctx["poster_badges"] = verified_badges_for([offer.offerer_id], member).get(offer.offerer_id, [])
         ctx["is_own_offer"] = member and offer.offerer == member
         ctx["matching_needs"] = Need.objects.filter(
             community=offer.community, category=offer.category, status="open"

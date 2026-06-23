@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}My Tags — {{ community.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-8">
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="font-serif text-2xl text-parish-ink">My Tags</h1>
+      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }}</p>
+    </div>
+    <a href="{% url 'community-feed' community.slug %}"
+       class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
+  </div>
+
+  {# ── Active tags ─────────────────────────────────────────────────── #}
+  {% if my_tags %}
+  <section aria-label="Your current tags">
+    <div id="my-tag-list" class="space-y-3">
+      {% for mt in my_tags %}
+      <div id="tag-row-{{ mt.id }}"
+           class="umi-card flex flex-col sm:flex-row sm:items-start gap-3 p-4">
+
+        {# Icon + label #}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            {% if mt.tag.icon %}
+            <span class="text-lg" aria-hidden="true">{{ mt.tag.icon }}</span>
+            {% endif %}
+            <span class="font-medium text-parish-ink">{{ mt.tag.label }}</span>
+            {% include "tags/_badge.html" with mt=mt %}
+          </div>
+          <p class="text-xs text-parish-ink/50 mt-1 capitalize">
+            {{ mt.tag.get_category_display }}
+            &middot;
+            {% if mt.status == "verified" %}
+              Verified {% if mt.verified_at %}{{ mt.verified_at|date:"N j, Y" }}{% endif %}
+            {% elif mt.status == "rejected" %}
+              Not approved{% if mt.rejection_reason %} — {{ mt.rejection_reason }}{% endif %}
+            {% elif mt.status == "pending" %}
+              Awaiting review
+            {% else %}
+              Self-reported
+            {% endif %}
+          </p>
+        </div>
+
+        {# Actions #}
+        <div class="flex items-center gap-2 flex-shrink-0">
+
+          {# Request verification (self_claimed or rejected, coordinator/admin tiers only) #}
+          {% if mt.status == "self_claimed" and mt.tag.tier != "self_serve" %}
+          <div x-data="{ open: false }" class="relative">
+            <button @click="open = !open"
+                    class="text-xs text-[var(--umi-primary)] hover:underline min-h-[36px] px-2"
+                    aria-expanded="false" :aria-expanded="open.toString()">
+              Request verification
+            </button>
+            <div x-show="open" x-cloak @click.away="open = false"
+                 class="absolute right-0 top-10 z-20 w-72 bg-white rounded-xl shadow-lg border border-[var(--umi-border)] p-4">
+              <p class="text-sm font-medium text-parish-ink mb-2">Submit for verification</p>
+              <form hx-post="{% url 'tags:request-verify' slug=community.slug pk=mt.id %}"
+                    hx-swap="none"
+                    @htmx:after-request="open = false">
+                {% csrf_token %}
+                <div class="mb-3">
+                  {{ request_verify_form.evidence_note }}
+                  <p class="text-xs text-parish-ink/50 mt-1">No personal details — a coordinator will confirm independently.</p>
+                </div>
+                <button type="submit" class="btn-primary w-full text-sm py-2">Submit request</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+
+          {# Re-request after rejection #}
+          {% if mt.status == "rejected" and mt.tag.tier != "self_serve" %}
+          <div x-data="{ open: false }" class="relative">
+            <button @click="open = !open"
+                    class="text-xs text-[var(--umi-primary)] hover:underline min-h-[36px] px-2">
+              Re-submit
+            </button>
+            <div x-show="open" x-cloak @click.away="open = false"
+                 class="absolute right-0 top-10 z-20 w-72 bg-white rounded-xl shadow-lg border border-[var(--umi-border)] p-4">
+              <p class="text-sm font-medium text-parish-ink mb-2">Re-submit for verification</p>
+              {% if mt.rejection_reason %}
+              <p class="text-xs text-red-700 bg-red-50 rounded p-2 mb-3">Previous reason: {{ mt.rejection_reason }}</p>
+              {% endif %}
+              <form hx-post="{% url 'tags:request-verify' slug=community.slug pk=mt.id %}"
+                    hx-swap="none"
+                    @htmx:after-request="open = false">
+                {% csrf_token %}
+                <div class="mb-3">{{ request_verify_form.evidence_note }}</div>
+                <button type="submit" class="btn-primary w-full text-sm py-2">Re-submit</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+
+          {# Remove tag #}
+          <form hx-post="{% url 'tags:remove' slug=community.slug pk=mt.id %}"
+                hx-swap="none"
+                hx-confirm="Remove '{{ mt.tag.label }}' from your profile?">
+            {% csrf_token %}
+            <button type="submit"
+                    class="text-xs text-parish-ink/40 hover:text-red-600 min-h-[36px] px-2 transition-colors"
+                    title="Remove this tag">
+              Remove
+            </button>
+          </form>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <div class="umi-card p-8 text-center text-parish-ink/50">
+    <p class="text-base">You haven't added any tags yet.</p>
+    <p class="text-sm mt-1">Tags let the community know your role, skills, and background.</p>
+  </div>
+  {% endif %}
+
+  {# ── Add a tag ───────────────────────────────────────────────────── #}
+  {% if claim_form.fields.tag.queryset.exists %}
+  <section aria-label="Add a tag">
+    <div class="umi-card p-5"
+         x-data="{ open: false }">
+      <button @click="open = !open"
+              class="flex items-center gap-2 text-[var(--umi-primary)] font-medium text-sm min-h-[44px]"
+              :aria-expanded="open.toString()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Add a tag
+      </button>
+
+      <div x-show="open" x-cloak class="mt-4">
+        <form hx-post="{% url 'tags:claim' slug=community.slug %}"
+              hx-swap="none"
+              @htmx:after-request="if(event.detail.successful){ open = false; location.reload(); }">
+          {% csrf_token %}
+          <div class="space-y-4">
+            <div>
+              <label for="{{ claim_form.tag.id_for_label }}" class="block text-sm font-medium text-parish-ink mb-1">Tag</label>
+              {{ claim_form.tag }}
+            </div>
+            <div>
+              <label for="{{ claim_form.visibility.id_for_label }}" class="block text-sm font-medium text-parish-ink mb-1">Visibility</label>
+              {{ claim_form.visibility }}
+              <p class="text-xs text-parish-ink/50 mt-1">"All community members" = any signed-in member. Logged-out visitors never see tags.</p>
+            </div>
+            <button type="submit" class="btn-primary text-sm py-2.5 px-5">Add tag</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# Coordinator link #}
+  {% if member.is_coordinator %}
+  <p class="text-center">
+    <a href="{% url 'tags:queue' slug=community.slug %}"
+       class="text-sm text-[var(--umi-primary)] hover:underline">
+      View verification queue &rarr;
+    </a>
+  </p>
+  {% endif %}
+
+</div>
+
+<script>
+// Remove tag row from DOM after successful HTMX remove
+document.body.addEventListener("tagRemoved", function(e) {
+  var id = e.detail && e.detail.id;
+  if (id) {
+    var row = document.getElementById("tag-row-" + id);
+    if (row) row.remove();
+  }
+});
+</script>
+{% endblock %}

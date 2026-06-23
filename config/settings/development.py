@@ -3,6 +3,7 @@
 from .base import *  # noqa: F401, F403
 
 DEBUG = True
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 INSTALLED_APPS += ["debug_toolbar"] if False else []  # Set True to enable
 
 # Use standard static files storage (no manifest required) for dev/test

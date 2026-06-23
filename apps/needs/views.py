@@ -8,6 +8,7 @@ from django.views.generic import CreateView, DeleteView, DetailView
 
 from apps.communities.models import Community, Member
 from apps.offers.models import Offer
+from apps.tags.badges import verified_badges_for
 
 from .forms import NeedForm
 from .models import Need
@@ -62,6 +63,7 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         member = Member.objects.filter(user=self.request.user, community=community, is_active=True).first()
         ctx["community"] = community
         ctx["member"] = member
+        ctx["poster_badges"] = verified_badges_for([need.requester_id], member).get(need.requester_id, [])
         ctx["is_own_need"] = member and need.requester == member
         # Suggested offers: same category, active
         if ctx["is_own_need"]:

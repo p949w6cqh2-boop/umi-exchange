@@ -20,8 +20,9 @@
   {% if need.description %}
   <p class="text-base text-parish-ink/70 mt-1 line-clamp-2">{{ need.description }}</p>
   {% endif %}
-  <div class="flex items-center gap-2 mt-3 text-sm text-parish-ink/55">
+  <div class="flex items-center gap-2 mt-3 text-sm text-parish-ink/55 flex-wrap">
     <span>{{ need.requester.display_name }}</span>
+    {% include "tags/_badges_inline.html" with badges=need.poster_badges %}
     {% if need.neighborhood %}<span>&middot;</span><span>{{ need.neighborhood }}</span>{% endif %}
     <span>&middot;</span>
     <span>{{ need.created_at|timesince }} ago</span>
