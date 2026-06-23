@@ -22,16 +22,19 @@
 @layer base {
   body {
     background-color: var(--umi-bg);
-    /* gentle light from the top centre, like a window */
-    background-image: radial-gradient(120% 60% at 50% -10%, #ffffff 0%, var(--umi-bg) 55%, var(--umi-bg-soft) 100%);
-    background-attachment: fixed;
+    /* window light from the top centre + a faint bulletin-paper grain (themed via --umi-border) */
+    background-image:
+      radial-gradient(120% 60% at 50% -10%, #ffffff 0%, var(--umi-bg) 55%, var(--umi-bg-soft) 100%),
+      radial-gradient(var(--umi-border) 0.5px, transparent 0.5px);
+    background-size: auto, 22px 22px;
+    background-attachment: fixed, fixed;
     color: var(--umi-text);
     line-height: 1.6;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: theme("fontFamily.serif");
-    font-weight: 500;
-    letter-spacing: -0.01em;
+    font-weight: 600;
+    letter-spacing: -0.015em;
     color: var(--umi-text);
   }
   /* Bare links lean on the green accent (styled buttons set their own colour). */
@@ -49,30 +52,67 @@
 
   /* Bulletin-insert card: neutral warm surface, hairline border, lift only on hover. */
   .umi-card {
-    @apply rounded-xl p-6 transition;
+    @apply rounded-xl p-6 transition-shadow duration-300;
     background-color: var(--umi-card);
     border: 1px solid var(--umi-border);
   }
   .umi-card-hover:hover {
-    box-shadow: 0 1px 3px rgba(44, 42, 41, 0.08);
-    transform: scale(1.01);
+    box-shadow: 0 8px 24px rgba(44, 42, 41, 0.10);
+    transform: scale(1.01);              /* gated globally by prefers-reduced-motion */
   }
-  .umi-need-card { border-left: 3px solid var(--umi-need-accent); }
-  .umi-offer-card { border-left: 3px solid var(--umi-offer-accent); }
+  .umi-need-card { border-left: 5px solid var(--umi-need-accent); }
+  .umi-offer-card { border-left: 5px solid var(--umi-offer-accent); }
 
   /* Pill buttons — soft and welcoming. */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium text-white transition;
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium text-white transition shadow-sm hover:shadow-md;
     background-color: var(--umi-primary);
   }
   .btn-primary:hover { background-color: var(--umi-primary-hover); }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium transition;
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium transition hover:shadow-sm;
     background-color: transparent;
     border: 1px solid var(--umi-primary);
     color: var(--umi-primary);
   }
   .btn-secondary:hover { background-color: rgba(43, 94, 43, 0.06); }
+  /* Gold accent button (var-driven) — secondary CTAs, empty-state actions. */
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 min-h-[48px] font-medium transition shadow-sm hover:shadow-md;
+    background-color: var(--umi-accent);
+    color: var(--umi-text);
+  }
+  .btn-accent:hover { filter: brightness(0.95); }
+
+  /* Category pill — quiet themed chip. */
+  .umi-pill {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+    background-color: var(--umi-bg-soft);
+    color: var(--umi-text-soft);
+  }
+
+  /* Tactile form controls. */
+  .umi-input {
+    @apply w-full px-4 py-3 rounded-lg transition focus-ring;
+    background-color: #ffffff;
+    border: 2px solid var(--umi-border);
+    color: var(--umi-text);
+  }
+  .umi-input:focus { outline: none; border-color: var(--umi-primary); }
+  .umi-label { @apply block text-sm font-semibold mb-2; color: var(--umi-text-soft); }
+
+  /* Modal panel + match-timeline markers. */
+  .umi-modal-panel {
+    @apply w-full max-w-lg rounded-2xl overflow-hidden;
+    background-color: var(--umi-card);
+    border: 1px solid var(--umi-border);
+    box-shadow: 0 20px 50px rgba(44, 42, 41, 0.25);
+  }
+  .umi-timeline-dot {
+    @apply w-8 h-8 rounded-full flex items-center justify-center mr-3 border-2;
+    border-color: var(--umi-border); background-color: var(--umi-bg-soft); color: var(--umi-text-soft);
+  }
+  .umi-timeline-active { background-color: var(--umi-primary); border-color: var(--umi-primary); color: #fff; }
 
   /* Calm, translucent header. */
   .umi-header {
