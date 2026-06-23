@@ -8,4 +8,3 @@ urlpatterns = [
     path("count/", views.UnreadCountView.as_view(), name="notifications-count"),
     path("recent/", views.RecentNotificationsView.as_view(), name="notifications-recent"),
 ]
-
