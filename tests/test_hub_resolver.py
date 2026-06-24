@@ -16,6 +16,13 @@ def test_hub_requires_auth(client):
     assert "/auth/login/" in resp.url
 
 
+def test_hub_community_requires_auth(client):
+    community = CommunityFactory()
+    resp = client.get(reverse("hub:community", kwargs={"slug": community.slug}))
+    assert resp.status_code == 302
+    assert "/auth/login/" in resp.url
+
+
 def test_zero_memberships_redirects_to_join(client):
     user = UserFactory()
     _login(client, user)

@@ -14,7 +14,9 @@ class HubResolverView(LoginRequiredMixin, View):
     """
 
     def get(self, request):
-        memberships = Member.objects.filter(user=request.user, is_active=True).select_related("community")
+        memberships = Member.objects.filter(
+            user=request.user, is_active=True, community__is_active=True
+        ).select_related("community")
         slugs = {m.community.slug for m in memberships}
         if not slugs:
             return redirect("/join/")
@@ -23,7 +25,7 @@ class HubResolverView(LoginRequiredMixin, View):
             return redirect("hub:community", slug=last)
         if len(slugs) == 1:
             return redirect("hub:community", slug=next(iter(slugs)))
-        most_recent = memberships.order_by("-joined_at").first()
+        most_recent = max(memberships, key=lambda m: m.joined_at)
         return redirect("hub:community", slug=most_recent.community.slug)
 
 
