@@ -4,6 +4,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.communities.models import Community, Member
+from apps.hub import selectors
 
 
 class HubResolverView(LoginRequiredMixin, View):
@@ -41,8 +42,17 @@ class HubView(LoginRequiredMixin, TemplateView):
         request.session["hub:last_slug"] = self.community.slug
         return super().dispatch(request, *args, **kwargs)
 
+    def get_template_names(self):
+        if self.request.htmx:
+            return ["hub/_hub_body.html"]
+        return ["hub/index.html"]
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["community"] = self.community
         ctx["member"] = self.member
+        ctx["communities"] = selectors.member_communities(self.request.user)
+        ctx["open_matches"] = selectors.open_matches_for(self.member)
+        ctx["notifications"] = selectors.recent_notifications(self.request.user)
+        ctx["member_tags"] = selectors.own_tags(self.member)
         return ctx
