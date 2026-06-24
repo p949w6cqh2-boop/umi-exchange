@@ -11,7 +11,9 @@ such community can adopt it as a starting point and re-skin it per community.
 
 Stack: **Django 5.2** · PostgreSQL (prod/CI) / SQLite (local default) · Redis (optional) ·
 HTMX + Alpine.js + Tailwind (compiled `static/css/output.css`) · WhiteNoise · gunicorn ·
-django-q2 (optional background tasks) · Argon2 password hashing.
+django-q2 (optional background tasks) · Argon2 password hashing (PBKDF2 fallback when the `argon2`
+lib is absent — base settings never list a hasher whose library is missing, which would hard-crash
+password verification).
 
 ## Commands
 
@@ -68,8 +70,11 @@ Key mechanisms (respect these — they're load-bearing):
   lives in `apps/common/state.py` (used by `casework` and `tags`; `apps/casework/state.py` re-exports
   it); `matches` defines its own `transition_to` in `apps/matches/models.py`. Note `TransitionConflict`
   subclasses `ValidationError`, so an `except` for it must come **before** any `except ValidationError`.
-- **Append-only audit (§8.3):** `AuditLog` refuses UPDATE/DELETE; a Postgres migration `REVOKE`s
-  them too. Write via `apps.audit.services.emit(action, resource, …)` or `AuditLog.log(...)`.
+- **Append-only audit (§8.3):** `AuditLog` refuses UPDATE/DELETE; a Postgres migration
+  (`audit/migrations/0002_append_only.py`) `REVOKE`s `UPDATE, DELETE, TRUNCATE` on the table too, and
+  `manage.py restrict_audit_permissions` additionally `REVOKE`s `UPDATE, DELETE` on `audit_auditlog`
+  from the app's runtime DB role (defense-in-depth). Write via `apps.audit.services.emit(action, resource, …)`
+  or `AuditLog.log(...)`.
   IP addresses are stored **salted-SHA-256**, never raw; client IP comes from the trusted
   `X-Real-IP` (reverse proxy), never the spoofable left-most `X-Forwarded-For`.
 - **Encryption:** `apps/people/crypto.py`. Two layers: *direct-KEK* (`encrypt_str`/`decrypt_str`,
