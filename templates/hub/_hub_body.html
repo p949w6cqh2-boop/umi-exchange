@@ -1,4 +1,20 @@
 <section class="umi-container hub" aria-labelledby="hub-heading">
+  {% if communities|length > 1 %}
+  <nav class="umi-switcher" aria-label="Your communities">
+    <ul>
+      {% for mem in communities %}
+        <li>
+          <a href="{% url 'hub:community' slug=mem.community.slug %}"
+             hx-get="{% url 'hub:community' slug=mem.community.slug %}"
+             hx-target="#hub-body" hx-push-url="true"
+             {% if mem.community_id == community.id %}aria-current="page"{% endif %}>
+            {{ mem.community.name }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+  {% endif %}
   <h1 id="hub-heading" class="umi-h1">{{ community.name }}</h1>
   <p class="umi-muted">Welcome back, {{ member.display_name }}.</p>
 
