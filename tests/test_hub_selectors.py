@@ -14,13 +14,22 @@ pytestmark = pytest.mark.django_db
 
 
 def test_member_communities_only_active_newest_first():
+    import datetime
+
+    from django.utils import timezone
+
+    from apps.communities.models import Member
+
     user = UserFactory()
     a = MemberFactory(user=user, community=CommunityFactory())
     b = MemberFactory(user=user, community=CommunityFactory())
     inactive = MemberFactory(user=user, community=CommunityFactory(), is_active=False)
+    # joined_at is auto_now_add; force deterministic values to assert -joined_at order
+    Member.objects.filter(pk=a.pk).update(joined_at=timezone.now() - datetime.timedelta(days=2))
+    Member.objects.filter(pk=b.pk).update(joined_at=timezone.now())
     result = selectors.member_communities(user)
     assert inactive not in result
-    assert set(result) == {a, b}
+    assert [m.pk for m in result] == [b.pk, a.pk]  # active only, newest (b) first
 
 
 def test_open_matches_includes_participant_roles_excludes_others():
@@ -52,14 +61,17 @@ def test_open_matches_excludes_terminal_status():
     assert selectors.open_matches_for(me) == []
 
 
-def test_open_matches_excludes_other_communities():
-    me_a = MemberFactory(community=CommunityFactory())
-    # same user, different community
-    me_b = MemberFactory(user=me_a.user, community=CommunityFactory())
-    need_b = NeedFactory(community=me_b.community, requester=me_b)
-    MatchFactory(need=need_b, proposed_by=me_b, status="proposed")
-    # focused on A → B's match must not appear
-    assert selectors.open_matches_for(me_a) == []
+def test_open_matches_excludes_match_outside_member_community():
+    # `me` is a participant (proposer) of a match whose need is in ANOTHER
+    # community. Member-identity alone would include it, so this isolates the
+    # need__community scope guard — the "no cross-community leak" constraint.
+    # (Delete that filter and only THIS test fails.)
+    me = MemberFactory(community=CommunityFactory())
+    other_community = CommunityFactory()
+    other_member = MemberFactory(community=other_community)
+    need_elsewhere = NeedFactory(community=other_community, requester=other_member)
+    MatchFactory(need=need_elsewhere, proposed_by=me, status="proposed")
+    assert selectors.open_matches_for(me) == []
 
 
 def test_open_matches_respects_cap():
@@ -93,9 +105,16 @@ def test_own_tags_only_this_member_all_statuses():
     community = CommunityFactory()
     me = MemberFactory(community=community)
     other = MemberFactory(community=community)
-    tag = Tag.objects.create(community=community, slug="driver", label="Driver")
-    mine = MemberTag.objects.create(member=me, tag=tag, status="self_claimed")
-    theirs = MemberTag.objects.create(member=other, tag=tag, status="verified")
+    # sort_order pins the expected ordering: Cook (0) before Driver (1)
+    tag_driver = Tag.objects.create(community=community, slug="driver", label="Driver", sort_order=1)
+    tag_cook = Tag.objects.create(community=community, slug="cook", label="Cook", sort_order=0)
+    mine_claimed = MemberTag.objects.create(member=me, tag=tag_driver, status="self_claimed")
+    mine_verified = MemberTag.objects.create(member=me, tag=tag_cook, status="verified")
+    theirs = MemberTag.objects.create(member=other, tag=tag_driver, status="verified")
     result = selectors.own_tags(me)
-    assert mine in result
+    # all of the member's OWN tags surface regardless of status; others' excluded
+    assert mine_claimed in result
+    assert mine_verified in result  # non-default status still surfaces
     assert theirs not in result
+    # ordered by tag.sort_order then label
+    assert [mt.pk for mt in result] == [mine_verified.pk, mine_claimed.pk]
