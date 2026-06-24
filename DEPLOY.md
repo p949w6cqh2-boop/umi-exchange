@@ -116,7 +116,7 @@ cd umi-exchange
 
 # Install Python dependencies
 pip install django django-environ dj-database-url django-htmx django-ratelimit \
-  django-guardian whitenoise cryptography djangorestframework qrcode pillow
+  whitenoise cryptography qrcode pillow
 
 # Run with SQLite (no PostgreSQL needed for testing)
 python manage.py migrate
