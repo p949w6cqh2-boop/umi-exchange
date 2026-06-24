@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `ae01f21` (2026-06-17).
+> Reflects `main` @ `f3b63fe` (2026-06-23).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI Protocol.
 
 ## Protocol & conformance
@@ -23,7 +23,7 @@
 ## Encryption (crypto-shred) — A–E complete
 - `apps/people/crypto.py`: **direct-KEK** (`encrypt_str`/`decrypt_str`, MultiFernet over `ENCRYPTION_KEYS`, rotation-ready) **and envelope** (per-record DEK wrapped by the KEK list → crypto-shred: delete the `*_enc_dek` and the ciphertext is permanently opaque).
 - **Envelope-encrypted PII** (all migrated, dual-read → backfill → **Stage E** legacy-read removal all shipped — getters now **fail loud** on a DEK-less ciphertext):
-  - `needs.Need.on_behalf_of`
+  - `needs.Need.on_behalf_of` (read/write via the `on_behalf_of_name` property)
   - casework: `CaseFile.summary`, `CaseNote.body`, `FollowUp.detail`, `WarmHandoff.summary`
   - `people.Person`: `display_name`, `contact` (JSON), `dob`
 - **Ops:** `rotate_keks` re-wraps every DEK under the new primary KEK (registry covers all fields). Census commands `casework_envelope_status` + `people_envelope_status` report empty/legacy/envelope/unreadable per field. **Old-KEK retirement is now unblocked** (all PII envelope-only). Full sequence: `docs/envelope-rollout-runbook.md`.
@@ -38,7 +38,8 @@
 
 ## Codebase
 - **Stack:** Django 5.2, PostgreSQL (prod/CI) / SQLite (local default), Redis (optional), HTMX, Alpine.js, Tailwind (`static/css/output.css`), WhiteNoise, gunicorn, Argon2.
-- **13 Django apps:** accounts, audit, communities, consent, dashboard, health, households, matches, needs, notifications, offers, **people**, **casework**.
+- **14 Django apps:** accounts, audit, communities, consent, dashboard, health, households, matches, needs, notifications, offers, **people**, **casework**, **tags** (member tags & verification). Plus `apps/common` — a shared, non-registered module (`state.py` `StateMachineMixin`), not counted as an app.
+- **Member tags & verification:** `apps/tags` — members claim tags; coordinators verify/reject/revoke (state machine via `apps/common/state.py`); **verified-only** badges surface on feed + detail pages (visibility-honoured so coordinator-only tags never leak); Django admin queue. A self-reported claim never renders as endorsed.
 - **Per-community theming:** 10 presets + per-community hex overrides via `Community.settings` → CSS custom properties.
 - **Rate limiting:** fixed-window limiter (`apps/accounts/ratelimit.py`); auth POSTs limited per trusted IP + per account.
 - **Optional:** django-q2 (ORM broker, no Redis required), 2FA (off by default).
@@ -50,7 +51,7 @@
 - Tailwind compiled to `static/css/output.css`; served via WhiteNoise manifest storage (**needs `collectstatic`**; `DEBUG=False` in prod).
 
 ## Testing / CI / Deploy
-- **~200 tests passing** on **both SQLite and Postgres**; `ruff check` + `ruff format --check` clean; `check --deploy` **0 issues** under production settings. `make lint` / `make test`.
+- **~310 tests passing** on **both SQLite and Postgres**; `ruff check` + `ruff format --check` clean; `check --deploy` **0 issues** under production settings. `make lint` / `make test`.
 - CI (`.github/workflows/ci.yml`) runs lint + tests on **Postgres 16**. Deploy: `Dockerfile` + compose (+ prod compose, Caddy, logrotate); scripts `harden.sh`, `backup.sh`, `restore.sh`, `security_check.sh`.
 - Docs: `CLAUDE.md` (agent guide), `docs/envelope-rollout-runbook.md`, `docs/prompt-inventory.md`, `docs/sandbox-report.md`, `docs/INTEGRATION-PLAN.md`.
 
