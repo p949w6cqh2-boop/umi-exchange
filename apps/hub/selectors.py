@@ -26,7 +26,7 @@ def open_matches_for(member):
             need__community=member.community,
             status__in=OPEN_MATCH_STATUSES,
         )
-        .select_related("need", "offer")
+        .select_related("need", "need__community", "offer")
         .order_by("-proposed_at")
         .distinct()[:OPEN_MATCHES_CAP]
     )
