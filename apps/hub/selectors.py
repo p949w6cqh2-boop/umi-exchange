@@ -13,8 +13,16 @@ RECENT_NOTIFICATIONS_CAP = 8
 
 
 def member_communities(user):
-    """The user's active memberships, newest first, with community preloaded."""
-    return list(Member.objects.filter(user=user, is_active=True).select_related("community").order_by("-joined_at"))
+    """The user's active memberships in active communities, newest first.
+
+    Filters `community__is_active` to match HubResolverView, so the switcher
+    never lists a deactivated community that would 404 on click.
+    """
+    return list(
+        Member.objects.filter(user=user, is_active=True, community__is_active=True)
+        .select_related("community")
+        .order_by("-joined_at")
+    )
 
 
 def open_matches_for(member):
