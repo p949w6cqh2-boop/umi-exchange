@@ -19,12 +19,18 @@ def test_switcher_lists_only_my_communities(client):
 
 
 def test_switcher_marks_focused_community(client):
+    import re
+
     user = UserFactory()
     a = MemberFactory(user=user, community=CommunityFactory(name="Alpha"))
     MemberFactory(user=user, community=CommunityFactory(name="Beta"))
     client.force_login(user)
     resp = client.get(reverse("hub:community", kwargs={"slug": a.community.slug}))
-    assert 'aria-current="page"' in resp.content.decode()
+    body = resp.content.decode()
+    # exactly one community is marked current, and it is the focused one (Alpha)
+    assert body.count('aria-current="page"') == 1
+    marked = re.search(r'<a\b[^>]*aria-current="page"[^>]*>(.*?)</a>', body, re.S)
+    assert marked and "Alpha" in marked.group(1)
 
 
 def test_switch_to_other_membership_renders_that_community(client):

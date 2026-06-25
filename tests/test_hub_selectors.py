@@ -24,11 +24,13 @@ def test_member_communities_only_active_newest_first():
     a = MemberFactory(user=user, community=CommunityFactory())
     b = MemberFactory(user=user, community=CommunityFactory())
     inactive = MemberFactory(user=user, community=CommunityFactory(), is_active=False)
+    in_dead_community = MemberFactory(user=user, community=CommunityFactory(is_active=False))
     # joined_at is auto_now_add; force deterministic values to assert -joined_at order
     Member.objects.filter(pk=a.pk).update(joined_at=timezone.now() - datetime.timedelta(days=2))
     Member.objects.filter(pk=b.pk).update(joined_at=timezone.now())
     result = selectors.member_communities(user)
-    assert inactive not in result
+    assert inactive not in result  # inactive membership excluded
+    assert in_dead_community not in result  # membership in a deactivated community excluded
     assert [m.pk for m in result] == [b.pk, a.pk]  # active only, newest (b) first
 
 
