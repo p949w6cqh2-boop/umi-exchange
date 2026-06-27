@@ -1,11 +1,57 @@
 """Per-community theming: presets, custom overrides, and the settings picker."""
 
+import re
+from pathlib import Path
+
 import pytest
 from django.urls import reverse
 
 from apps.communities.themes import THEME_DEFAULT, THEMES, resolve_theme
 
 from .conftest import CommunityFactory, MemberFactory
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Direction D — "Community Hub" re-tint (founder-approved 2026-06-27).
+# See docs/community-hub-direction-D.md. Parish green → water-teal.
+DIRECTION_D_PRIMARY = "#0F6B73"
+DIRECTION_D_PRIMARY_HOVER = "#0B585F"
+GOLD_ACCENT = "#C49A3C"
+
+
+def _luminance(hex_color):
+    """WCAG relative luminance of a #rrggbb color."""
+    h = hex_color.lstrip("#")
+    chans = [int(h[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in chans]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def _contrast(a, b):
+    la, lb = _luminance(a), _luminance(b)
+    hi, lo = max(la, lb), min(la, lb)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def _base_html_default(var):
+    """Extract the |default fallback hex for a --umi-* var injected in base.html."""
+    txt = (REPO_ROOT / "templates" / "base.html").read_text()
+    m = re.search(rf'--umi-{var}:\s*\{{\{{[^}}]*default:"(#[0-9A-Fa-f]{{6}})"', txt)
+    return m.group(1).lower() if m else None
+
+
+def _input_css_root(var):
+    """Extract the :root fallback hex for a --umi-* var in input.css."""
+    txt = (REPO_ROOT / "static" / "css" / "input.css").read_text()
+    m = re.search(rf"--umi-{var}:\s*(#[0-9A-Fa-f]{{6}})", txt)
+    return m.group(1).lower() if m else None
+
+
+def _tailwind_parish(key):
+    """Extract a parish.<key> static color hex from tailwind.config.js."""
+    txt = (REPO_ROOT / "tailwind.config.js").read_text()
+    m = re.search(rf'{key}:\s*"(#[0-9A-Fa-f]{{6}})"', txt)
+    return m.group(1).lower() if m else None
 
 
 def test_none_community_is_default():
@@ -34,6 +80,50 @@ class TestThemeResolution:
         t = resolve_theme(c)
         assert t["primary"] == "#123456"  # custom wins
         assert t["accent"] == THEMES["kinfolk"]["accent"]  # rest still from the preset
+
+
+class TestDirectionDPalette:
+    """Community Hub re-tint: default theme is water-teal, gold kept, AA-safe, sources in sync."""
+
+    def test_default_theme_is_water_teal(self):
+        t = resolve_theme(None)
+        assert t["primary"].lower() == DIRECTION_D_PRIMARY.lower()
+        assert t["primary_hover"].lower() == DIRECTION_D_PRIMARY_HOVER.lower()
+
+    def test_default_theme_keeps_gold_accent(self):
+        # reads parish, not generic-SaaS: gold stays the warm accent
+        assert resolve_theme(None)["accent"].lower() == GOLD_ACCENT.lower()
+
+    @pytest.mark.django_db
+    def test_per_community_override_still_wins(self):
+        # theming-safe: a community's own primary still beats the new teal default
+        c = CommunityFactory()
+        c.settings = {"theme_custom": {"primary": "#aa0000"}}
+        c.save()
+        assert resolve_theme(c)["primary"] == "#aa0000"
+
+    def test_default_primary_passes_wcag_aa(self):
+        t = resolve_theme(None)
+        assert _contrast(t["primary"], t["bg"]) >= 4.5  # primary text/icon on bg
+        assert _contrast("#FFFFFF", t["primary"]) >= 4.5  # white label on the button
+
+    def test_css_fallbacks_match_canonical_theme(self):
+        """Four-source-sync guard: base.html, input.css and tailwind.config must equal
+        THEMES['parish']. Regression for the prep-feature finding — change only some
+        sources and default community pages render the old color."""
+        canon = THEMES[THEME_DEFAULT]
+        primary, hover = canon["primary"].lower(), canon["primary_hover"].lower()
+
+        assert _base_html_default("primary") == primary, "base.html --umi-primary default drifted"
+        assert _base_html_default("primary-hover") == hover, "base.html --umi-primary-hover drifted"
+        assert _base_html_default("need-accent") == primary, "base.html need-accent should follow primary"
+
+        assert _input_css_root("primary") == primary, "input.css --umi-primary drifted"
+        assert _input_css_root("primary-hover") == hover, "input.css --umi-primary-hover drifted"
+        assert _input_css_root("need-accent") == primary, "input.css need-accent should follow primary"
+
+        assert _tailwind_parish("green") == primary, "tailwind parish.green drifted"
+        assert _tailwind_parish("greendark") == hover, "tailwind parish.greendark drifted"
 
 
 @pytest.mark.django_db

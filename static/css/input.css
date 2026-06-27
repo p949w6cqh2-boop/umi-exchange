@@ -2,20 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── UMI Parish atmosphere — design tokens ───────────────────────────────
-   Warm, calm, unpretentious. Override --umi-primary / --umi-accent per
+/* ── UMI Community Hub atmosphere — design tokens ─────────────────────────
+   Warm "town well": water-teal gathering color, gold warm accent, cream paper
+   with a barely-cool surface tint. Override --umi-primary / --umi-accent per
    community via base.html. */
 :root {
-  --umi-primary: #2b5e2b;        /* deep muted green */
-  --umi-primary-hover: #244f24;
+  --umi-primary: #0f6b73;        /* water-teal (gathering color) */
+  --umi-primary-hover: #0b585f;
   --umi-accent: #c49a3c;         /* soft gold */
   --umi-bg: #fdfbf7;             /* warm off-white paper */
-  --umi-bg-soft: #f5f0e8;        /* soft cream */
+  --umi-bg-soft: #eff1ee;        /* barely-cool soft surface */
   --umi-text: #2c2a29;           /* warm dark brown */
   --umi-text-soft: #6b6358;      /* muted warm grey */
-  --umi-card: #faf7f1;           /* light warm grey card */
-  --umi-border: #e6ded5;         /* subtle warm border */
-  --umi-need-accent: #2b5e2b;    /* needs → green left border */
+  --umi-card: #f6f8f5;           /* barely-cool card */
+  --umi-border: #dde6e2;         /* barely-cool border */
+  --umi-need-accent: #0f6b73;    /* needs → teal left border */
   --umi-offer-accent: #c49a3c;   /* offers → gold left border */
 }
 

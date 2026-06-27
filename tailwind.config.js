@@ -10,18 +10,18 @@ module.exports = {
         serif: ["Lora", "Georgia", "Cambria", "Times New Roman", "serif"],
       },
       colors: {
-        // Parish atmosphere palette.
+        // Community Hub atmosphere palette (Direction D: water-teal + gold).
         parish: {
           bg: "#FDFBF7", // warm off-white paper
-          soft: "#F5F0E8", // soft cream
-          card: "#FAF7F1", // light warm grey card
-          border: "#E6DED5", // subtle warm border
+          soft: "#EFF1EE", // barely-cool soft surface
+          card: "#F6F8F5", // barely-cool card
+          border: "#DDE6E2", // barely-cool border
           ink: "#2C2A29", // warm dark brown text
-          green: "#2B5E2B", // deep muted green (primary accent)
-          greendark: "#244F24", // hover green
+          green: "#0F6B73", // water-teal (primary) — name kept for back-compat
+          greendark: "#0B585F", // hover teal
           gold: "#C49A3C", // soft gold (secondary accent)
         },
-        "umi-primary": "var(--umi-primary, #2B5E2B)",
+        "umi-primary": "var(--umi-primary, #0F6B73)",
         "umi-accent": "var(--umi-accent, #C49A3C)",
       },
       maxWidth: {

@@ -17,14 +17,16 @@ THEME_DEFAULT = "parish"
 # Each theme supplies the full var set. ink stays dark everywhere for legibility.
 THEMES = {
     "parish": {
-        "label": "Parish — warm green",
-        "primary": "#2B5E2B",
-        "primary_hover": "#244F24",
+        # Community Hub (Direction D): warm "town well" — water-teal gathering color,
+        # gold kept as the warm accent, cream paper with a barely-cool surface tint.
+        "label": "Parish — warm teal",
+        "primary": "#0F6B73",
+        "primary_hover": "#0B585F",
         "accent": "#C49A3C",
         "bg": "#FDFBF7",
-        "bg_soft": "#F5F0E8",
-        "card": "#FAF7F1",
-        "border": "#E6DED5",
+        "bg_soft": "#EFF1EE",
+        "card": "#F6F8F5",
+        "border": "#DDE6E2",
         "ink": "#2C2A29",
     },
     "kinfolk": {
