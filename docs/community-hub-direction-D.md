@@ -5,6 +5,26 @@
 > (see `docs/ui-polish-spec.md`, `static/css/input.css`, `templates/base.html`) toward a warmer,
 > livelier **town-square / wellspring** feel — entirely through the existing `--umi-*` tokens, so it
 > stays theming-safe and light-only.
+>
+> **Scope correction (prep-feature pass, 2026-06-27):** the original draft below said this is a
+> re-tint of *two* files (`base.html` + `input.css`). That undercounts. The default green palette has
+> **four** sources and they must move together, or the re-tint applies only halfway (default community
+> pages stay green). See **"Where the default green actually lives"** and **Open questions 3 & 4**,
+> which raise two real decisions the first draft didn't surface.
+
+## Decisions (founder, 2026-06-27) — APPROVED, building
+1. **Teal depth:** `#0F6B73` (lively mid water-teal). `primary-hover` → `#0B585F`.
+2. **Soft surfaces:** apply a **barely-there cool tint** — `--umi-bg-soft` → `#EFF1EE`,
+   `--umi-card` → `#F6F8F5`, `--umi-border` → `#DDE6E2`. `--umi-bg` stays cream `#FDFBF7`.
+3. **Preset strategy: (A)** re-tint `THEMES["parish"]` itself → teal and relabel "Parish — warm teal".
+4. **`parish-green` classes: (b)** migrate the ~10 template usages to the var-backed `umi-primary`
+   color so they finally respect per-community theming; also re-tint `tailwind.config.js` `parish.*`
+   to teal so any straggler matches.
+
+Built via TDD (`tests/test_theming.py`): default theme renders teal, gold retained, per-community
+override still wins, WCAG AA guard, and a **four-source-sync** test that fails if the fallbacks drift
+from the canonical theme. Layout/type/spacing ("breathing room", masthead headings, one-CTA) is a
+**separate follow-up pass** — this change is the palette foundation.
 
 ## The idea in one line
 A warm digital **town well** people gather around: cream paper, **water-teal** as the gathering color,
@@ -12,10 +32,27 @@ A warm digital **town well** people gather around: cream paper, **water-teal** a
 calm and dignified. Human, never corporate, never churchy.
 
 ## How this stays theming-safe (read first)
-`templates/base.html` injects every color as a `--umi-*` **default** (`{{ umi_theme.x|default:"…" }}`).
-Direction D **only changes those default hex values** — it adds no hardcoded colors to components and
-forks no new classes. Per-community theming keeps working: a community that sets its own `primary`
-still overrides teal. So this doc is a palette re-tint, nothing structural.
+Direction D **only changes default hex values** — it adds no hardcoded colors to components and forks
+no new classes. Per-community theming keeps working: a community that sets its own `primary` via
+`theme_custom` still overrides teal (`resolve_theme()` applies overrides last). So this is a palette
+re-tint, nothing structural.
+
+## Where the default green actually lives (prep-feature finding — read before building)
+The shipped default `#2B5E2B` green is defined in **four** places, in the order that decides what a
+user actually sees:
+
+| # | Source | Role | In original draft? |
+|---|--------|------|--------------------|
+| 1 | `apps/communities/themes.py` → `THEMES["parish"]` | **The real default.** `resolve_theme()` fills `umi_theme.*` for every community page → wins the cascade. | ❌ missed |
+| 2 | `templates/base.html` `{{ …\|default:"#2B5E2B" }}` (L12,13,20) | Fallback only when `umi_theme` is absent (non-community pages / missing key). | ✅ |
+| 3 | `static/css/input.css` `:root` (L9,10,18) | CSS fallback; compiled into `output.css`. | ✅ |
+| 4 | `tailwind.config.js` `parish.green` / `parish.greendark` | **Static** `parish-green`/`parish-greendark` utility classes used in ~10 templates — do **not** follow `--umi-*` at all. | ❌ missed |
+
+**Consequence:** changing only #2 + #3 (what the draft said) leaves **default community pages green** —
+`resolve_theme()` returns `THEMES["parish"]["primary"]`, so base.html's `|default` never fires — and
+every `text-parish-green` class stays green regardless. **#1 and #4 must change too.** The build plan
+must touch all four sources, then recompile `output.css` (never hand-edit it). See Open Qs 3 & 4 for
+the two decisions this raises.
 
 ## Reconciled `--umi-*` palette (current → Direction D)
 Contrast measured against `--umi-bg` cream `#FDFBF7` (WCAG AA: 4.5 normal text / 3.0 large).
@@ -34,10 +71,12 @@ Contrast measured against `--umi-bg` cream `#FDFBF7` (WCAG AA: 4.5 normal text /
 | `--umi-need-accent` | green (=primary) | **`#0F6B73`** teal (follows primary) | — | ✅ need rail → teal |
 | `--umi-offer-accent` | `#C49A3C` gold | **`#C49A3C`** (unchanged) | — | ⛔ offer rail stays gold |
 
-**Net:** three values change (`primary`, `primary-hover`, `need-accent` → teal). Everything warm —
-paper, card, border, ink, **and the gold accent** — stays. White text on the teal button is 6.23:1
-(AA pass). The teal is intentionally pitched near the current green's perceived weight so it's a calm
-drop-in, not a jarring rebrand.
+**Net (per source):** three token *values* change (`primary`, `primary-hover`, `need-accent` → teal;
+`need-accent` follows `primary` automatically in base.html). Everything warm — paper, card, border,
+ink, **and the gold accent** — stays. White text on the teal button is 6.23:1 (AA pass). The teal is
+intentionally pitched near the current green's perceived weight so it's a calm drop-in, not a jarring
+rebrand. **But those three values must be changed in all four sources above** (themes.py, base.html,
+input.css, tailwind.config.js) — so the edit is small but spans four files, not two.
 
 ## Type pairing (keep — it already fits)
 Retain **Lora** (serif display, Georgia fallback, no external webfont) for headings and **Open Sans**
@@ -77,13 +116,38 @@ than an app title. No new fonts.
 2. **Cool tint on the soft surfaces?** Keep `--umi-bg-soft`/`--umi-card`/`--umi-border` fully warm
    (recommended — protects the cream-not-sterile feel), or give them a *barely-there* cool tint
    (e.g. border `#DDE6E2`) to lean further into "water"? Risk: the brief's "sterile white" warning.
+3. **Re-tint the "parish" preset, or add a new one?** (raised by the four-source finding) The default
+   `THEMES["parish"]` is labelled *"Parish — warm green"* — making its `primary` teal makes the label
+   lie. Options:
+   - **(A)** Re-tint `THEMES["parish"]` → teal and relabel (e.g. "Parish — warm teal"). Simplest;
+     changes what "parish" *means* for every existing community on the default.
+   - **(B, recommended)** Add a new `THEMES["hub"]` (the teal palette) and flip `THEME_DEFAULT` to it,
+     leaving green "parish" selectable. Non-destructive, reversible per community. *Note:* an `ocean`
+     preset (teal `#146C7E`) already exists and is close — worth a look before adding another.
+4. **What to do with the `parish-green` Tailwind classes** (source #4, ~10 templates)?
+   - **(a)** Re-point `tailwind.config.js` `parish.green`/`greendark` → teal. Minimal; they stay a
+     *static* named color (still don't follow per-community theming).
+   - **(b, more correct)** Migrate those usages from `parish-green` to the var-backed `umi-primary`
+     color (already defined as `var(--umi-primary, …)` in the config) so they finally respect
+     per-community themes. Larger (touches ~10 templates) and fixes a latent bug: today a community on
+     the `rose`/`ocean`/etc. theme still shows parish-*green* on those elements.
 
 ## Scope / constraints honored
 Design only — no code, no templates, no migrations. Light theme only (no dark surface introduced).
-All colors expressed as `--umi-*` defaults (theming-safe). Gold retained. **STOP here for approval**
-before any build; once approved, the change is a small re-tint of the defaults in `base.html` +
-`input.css` (then recompile `output.css`), and the Sign-in Hub — built on these vars — inherits it
-for free.
+All colors expressed as defaults (theming-safe; `theme_custom` overrides still win). Gold retained.
+**STOP here for approval** before any build.
+
+Once approved, the build is a small re-tint but spans **four sources** (not two): `themes.py`
+`THEMES["parish"]`/new preset · `base.html` defaults · `input.css` `:root` · `tailwind.config.js`
+`parish.*` → then **recompile** `output.css` (`npx tailwindcss@3.4.14 -i static/css/input.css -o
+static/css/output.css --minify`; never hand-edit it). The Sign-in Hub — built on these vars —
+inherits it for free.
+
+**Verify gates:** `ruff check . && ruff format --check .` (covers `themes.py`) · `makemigrations
+--check` (expect clean — no model change) · `pytest -q` on Postgres (incl. a new regression test that
+asserts the default palette stays in sync across all four sources + a WCAG ≥ 4.5:1 primary-on-`bg`
+guard) · `check --deploy` = 0 issues · visual spot-check: default feed, a `theme_custom` override
+(must still win), and a non-parish preset; confirm light-only and gold intact.
 
 > Note: the brief referenced brain *voice / design-direction* nodes whose paths weren't supplied. This
 > draft is reconciled against the codebase tokens + `docs/ui-polish-spec.md` + the brief's mood; if
