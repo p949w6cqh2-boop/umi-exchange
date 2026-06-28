@@ -1,37 +1,46 @@
 {% extends "base.html" %}
-{% block header %}
-<header class="bg-white border-b border-gray-200">
-  <div class="max-w-7xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
-    <span class="text-xl font-bold text-gray-900">UMI Exchange</span>
-    <div class="flex items-center gap-3">
-      <a href="{% url 'login' %}" class="text-sm font-medium text-gray-700 hover:text-gray-900 min-h-[44px] flex items-center">Sign In</a>
-      <a href="{% url 'community-join' %}" class="btn-primary text-sm">Join a Community</a>
-    </div>
-  </div>
-</header>
-{% endblock %}
+
+{% comment %}Landing uses the themed base header (wordmark + Sign In + Join). Scan-first:
+   one huge masthead, one action, a visual board peek, tiny labels. Few words by design.{% endcomment %}
 
 {% block content %}
-<div class="text-center py-12 md:py-20">
-  <h1 class="text-2xl md:text-4xl font-bold text-gray-900">Connect people who need help<br>with people who can help.</h1>
-  <p class="text-lg text-gray-600 mt-4 max-w-2xl mx-auto">A simple, private tool for coordinating mutual aid in your community.</p>
-  <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-    <a href="{% url 'community-join' %}" class="btn-primary">Join a Community</a>
-    <a href="{% url 'technology' %}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-3 rounded-lg min-h-[48px]">Learn More</a>
+<section class="umi-section">
+  <div class="max-w-3xl">
+    <h1 class="umi-masthead">Need a hand?<br>Lend one.</h1>
+    <span class="umi-rule mt-6"></span>
+    <div class="mt-8 flex flex-wrap items-center gap-5">
+      <a href="{% url 'community-join' %}" class="btn-primary">Join a community</a>
+      <a href="{% url 'technology' %}" class="text-sm font-semibold text-umi-primary hover:text-umi-primary-hover min-h-[44px] inline-flex items-center">How it works &rarr;</a>
+    </div>
   </div>
-</div>
+</section>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-12 max-w-4xl mx-auto">
-  <div class="text-center"><span class="text-4xl">&#129309;</span><h3 class="text-lg font-semibold mt-4">Match</h3><p class="text-base text-gray-600 mt-2">Needs meet offers. A coordinator connects them.</p></div>
-  <div class="text-center"><span class="text-4xl">&#128274;</span><h3 class="text-lg font-semibold mt-4">Private</h3><p class="text-base text-gray-600 mt-2">Contact info shared only after mutual agreement.</p></div>
-  <div class="text-center"><span class="text-4xl">&#127760;</span><h3 class="text-lg font-semibold mt-4">Open Standard</h3><p class="text-base text-gray-600 mt-2">Built on UMI Protocol v0.1. Self-hostable. Interoperable.</p></div>
-</div>
-
-<div class="bg-gray-50 py-12 px-4 border-t border-gray-200 -mx-4 md:-mx-8">
-  <div class="max-w-3xl mx-auto text-center">
-    <h2 class="text-xl font-semibold text-gray-900">For dioceses, networks, and agencies</h2>
-    <p class="text-base text-gray-600 mt-4">Deploy across multiple communities with centralised oversight. Integrate with existing systems via the UMI Protocol API.</p>
-    <a href="mailto:usermegadatainfrastructure@proton.me" class="mt-6 inline-block btn-primary">Contact us about network deployment</a>
+<section class="umi-section border-t border-gray-200">
+  <h2 class="umi-kicker mb-6">On the board</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <article class="umi-card umi-need-card umi-card-hover">
+      <span class="umi-pill">Transport</span>
+      <h3 class="font-serif text-xl font-semibold mt-3">Ride to the clinic</h3>
+    </article>
+    <article class="umi-card umi-offer-card umi-card-hover">
+      <span class="umi-pill">Tutoring</span>
+      <h3 class="font-serif text-xl font-semibold mt-3">Maths, evenings</h3>
+    </article>
+    <article class="umi-card umi-need-card umi-card-hover">
+      <span class="umi-pill">Meals</span>
+      <h3 class="font-serif text-xl font-semibold mt-3">For a new family</h3>
+    </article>
   </div>
-</div>
+</section>
+
+<section class="umi-section border-t border-gray-200">
+  <div class="flex flex-wrap gap-x-10 gap-y-4 text-base">
+    <span class="inline-flex items-center gap-2"><span class="text-xl" aria-hidden="true">&#129309;</span> <strong class="font-semibold">Matched</strong> by a coordinator</span>
+    <span class="inline-flex items-center gap-2"><span class="text-xl" aria-hidden="true">&#128274;</span> <strong class="font-semibold">Private</strong> until you agree</span>
+    <span class="inline-flex items-center gap-2"><span class="text-xl" aria-hidden="true">&#127760;</span> <strong class="font-semibold">Open</strong> standard</span>
+  </div>
+  <p class="mt-8 text-sm text-gray-500">
+    Running a diocese or network? <a href="mailto:usermegadatainfrastructure@proton.me" class="font-semibold text-umi-primary hover:text-umi-primary-hover">Get in touch &rarr;</a>
+  </p>
+</section>
 {% endblock %}

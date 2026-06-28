@@ -9,15 +9,15 @@
   <link rel="stylesheet" href="{% static 'css/animations.css' %}">
   <style>
     :root {
-      --umi-primary: {{ umi_theme.primary|default:"#2B5E2B" }};
-      --umi-primary-hover: {{ umi_theme.primary_hover|default:"#244F24" }};
+      --umi-primary: {{ umi_theme.primary|default:"#0F6B73" }};
+      --umi-primary-hover: {{ umi_theme.primary_hover|default:"#0B585F" }};
       --umi-accent: {{ umi_theme.accent|default:"#C49A3C" }};
       --umi-bg: {{ umi_theme.bg|default:"#FDFBF7" }};
-      --umi-bg-soft: {{ umi_theme.bg_soft|default:"#F5F0E8" }};
-      --umi-card: {{ umi_theme.card|default:"#FAF7F1" }};
-      --umi-border: {{ umi_theme.border|default:"#E6DED5" }};
+      --umi-bg-soft: {{ umi_theme.bg_soft|default:"#EFF1EE" }};
+      --umi-card: {{ umi_theme.card|default:"#F6F8F5" }};
+      --umi-border: {{ umi_theme.border|default:"#DDE6E2" }};
       --umi-text: {{ umi_theme.ink|default:"#2C2A29" }};
-      --umi-need-accent: {{ umi_theme.primary|default:"#2B5E2B" }};
+      --umi-need-accent: {{ umi_theme.primary|default:"#0F6B73" }};
       --umi-offer-accent: {{ umi_theme.accent|default:"#C49A3C" }};
     }
     @media (prefers-reduced-motion: reduce) {
@@ -42,7 +42,7 @@
     <div class="umi-container py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         {% if community %}
-          <a href="{% url 'community-feed' community.slug %}" class="font-serif text-xl text-parish-ink hover:text-parish-green">
+          <a href="{% url 'community-feed' community.slug %}" class="font-serif text-xl text-parish-ink hover:text-umi-primary">
             {{ community.name }}
           </a>
         {% else %}
@@ -58,7 +58,7 @@
             </a>
           {% endif %}
           {% if community and member and member.role in 'admin coordinator' %}
-            <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-parish-green hover:text-parish-greendark min-h-[44px] flex items-center mr-2">
+            <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-umi-primary hover:text-umi-primary-hover min-h-[44px] flex items-center mr-2">
               Community Settings
             </a>
           {% endif %}

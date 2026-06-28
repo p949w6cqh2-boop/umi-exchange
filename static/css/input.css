@@ -2,20 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── UMI Parish atmosphere — design tokens ───────────────────────────────
-   Warm, calm, unpretentious. Override --umi-primary / --umi-accent per
+/* ── UMI Community Hub atmosphere — design tokens ─────────────────────────
+   Warm "town well": water-teal gathering color, gold warm accent, cream paper
+   with a barely-cool surface tint. Override --umi-primary / --umi-accent per
    community via base.html. */
 :root {
-  --umi-primary: #2b5e2b;        /* deep muted green */
-  --umi-primary-hover: #244f24;
+  --umi-primary: #0f6b73;        /* water-teal (gathering color) */
+  --umi-primary-hover: #0b585f;
   --umi-accent: #c49a3c;         /* soft gold */
   --umi-bg: #fdfbf7;             /* warm off-white paper */
-  --umi-bg-soft: #f5f0e8;        /* soft cream */
+  --umi-bg-soft: #eff1ee;        /* barely-cool soft surface */
   --umi-text: #2c2a29;           /* warm dark brown */
   --umi-text-soft: #6b6358;      /* muted warm grey */
-  --umi-card: #faf7f1;           /* light warm grey card */
-  --umi-border: #e6ded5;         /* subtle warm border */
-  --umi-need-accent: #2b5e2b;    /* needs → green left border */
+  --umi-card: #f6f8f5;           /* barely-cool card */
+  --umi-border: #dde6e2;         /* barely-cool border */
+  --umi-need-accent: #0f6b73;    /* needs → teal left border */
   --umi-offer-accent: #c49a3c;   /* offers → gold left border */
 }
 
@@ -50,9 +51,9 @@
     max-width: 960px;
   }
 
-  /* Bulletin-insert card: neutral warm surface, hairline border, lift only on hover. */
+  /* Bulletin-insert card: neutral warm surface, hairline border, soft lift. */
   .umi-card {
-    @apply rounded-xl p-6 transition-shadow duration-300;
+    @apply rounded-xl p-6 md:p-7 shadow-pew transition-shadow duration-300;
     background-color: var(--umi-card);
     border: 1px solid var(--umi-border);
   }
@@ -75,7 +76,7 @@
     border: 1px solid var(--umi-primary);
     color: var(--umi-primary);
   }
-  .btn-secondary:hover { background-color: rgba(43, 94, 43, 0.06); }
+  .btn-secondary:hover { background-color: rgba(15, 107, 115, 0.06); }
   /* Gold accent button (var-driven) — secondary CTAs, empty-state actions. */
   .btn-accent {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 min-h-[48px] font-medium transition shadow-sm hover:shadow-md;
@@ -120,6 +121,36 @@
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--umi-border);
+  }
+
+  /* ── Editorial noticeboard type & rhythm ──────────────────────────────────
+     Oversized serif mastheads, a short accent rule, a small kicker, and roomy
+     section spacing — the "noticeboard, not an app" feel. */
+  .umi-masthead {
+    @apply font-serif font-semibold tracking-tight;
+    font-size: clamp(2.75rem, 7vw, 4.5rem);
+    line-height: 1.03;
+    color: var(--umi-text);
+  }
+  .umi-display {
+    @apply font-serif font-semibold tracking-tight;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.12;
+    color: var(--umi-text);
+  }
+  .umi-kicker {
+    @apply inline-block text-xs font-semibold uppercase;
+    letter-spacing: 0.18em;
+    color: var(--umi-primary);
+  }
+  .umi-rule {
+    @apply block rounded-full;
+    width: 3rem;
+    height: 4px;
+    background-color: var(--umi-primary);
+  }
+  .umi-section {
+    @apply py-12 md:py-20;
   }
 }
 
