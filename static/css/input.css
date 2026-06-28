@@ -128,8 +128,8 @@
      section spacing — the "noticeboard, not an app" feel. */
   .umi-masthead {
     @apply font-serif font-semibold tracking-tight;
-    font-size: clamp(2.25rem, 6vw, 4rem);
-    line-height: 1.05;
+    font-size: clamp(2.75rem, 7vw, 4.5rem);
+    line-height: 1.03;
     color: var(--umi-text);
   }
   .umi-display {
