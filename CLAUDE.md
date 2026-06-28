@@ -15,6 +15,20 @@ django-q2 (optional background tasks) · Argon2 password hashing (PBKDF2 fallbac
 lib is absent — base settings never list a hasher whose library is missing, which would hard-crash
 password verification).
 
+## gstack
+
+If you have **gstack** installed, use its skills when working in this repo:
+
+- **Web browsing:** always use the **`/browse`** skill for all web browsing. **Never** use
+  `mcp__claude-in-chrome__*` tools.
+- **Available gstack skills:** `/office-hours` · `/plan-ceo-review` · `/plan-eng-review` ·
+  `/plan-design-review` · `/design-consultation` · `/design-shotgun` · `/design-html` · `/review` ·
+  `/ship` · `/land-and-deploy` · `/canary` · `/benchmark` · `/browse` · `/connect-chrome` · `/qa` ·
+  `/qa-only` · `/design-review` · `/setup-browser-cookies` · `/setup-deploy` · `/setup-gbrain` ·
+  `/retro` · `/investigate` · `/document-release` · `/document-generate` · `/codex` · `/cso` ·
+  `/autoplan` · `/plan-devex-review` · `/devex-review` · `/careful` · `/freeze` · `/guard` ·
+  `/unfreeze` · `/gstack-upgrade` · `/learn`
+
 ## Commands
 
 ```bash
