@@ -54,6 +54,16 @@ def _tailwind_parish(key):
     return m.group(1).lower() if m else None
 
 
+def _tailwind_gray(step):
+    """Extract gray.<step> from the overridden gray ramp in tailwind.config.js."""
+    txt = (REPO_ROOT / "tailwind.config.js").read_text()
+    block = re.search(r"gray:\s*\{(.*?)\}", txt, re.DOTALL)
+    if not block:
+        return None
+    m = re.search(rf'\b{step}:\s*"(#[0-9A-Fa-f]{{6}})"', block.group(1))
+    return m.group(1).lower() if m else None
+
+
 def test_none_community_is_default():
     assert resolve_theme(None)["primary"] == THEMES[THEME_DEFAULT]["primary"]
 
@@ -135,6 +145,21 @@ class TestDirectionDPalette:
                 if "parish-green" in line:
                     offenders.append(f"{p.relative_to(REPO_ROOT)}:{i}")
         assert not offenders, "static parish-green classes remain:\n  " + "\n  ".join(offenders)
+
+
+class TestWarmNeutralRamp:
+    """Stage A: Tailwind's cool gray scale is overridden with a warm parish ramp, so the
+    ~500 gray-* usages across 53 templates warm app-wide with no per-template edits."""
+
+    def test_gray_ramp_is_warmed(self):
+        assert _tailwind_gray("900") == "#2c2a29", "gray.900 should be warm ink, not TW #111827"
+        assert _tailwind_gray("600") == "#6b6358", "gray.600 should be warm muted, not TW #4B5563"
+        assert _tailwind_gray("200") == "#e6ded5", "gray.200 should be warm border, not TW #E5E7EB"
+        assert _tailwind_gray("50") == "#faf7f1", "gray.50 should be warm light, not TW #F9FAFB"
+
+    def test_warm_ink_passes_aa_on_cream(self):
+        assert _contrast("#2C2A29", "#FDFBF7") >= 4.5  # warm ink on cream paper
+        assert _contrast("#6B6358", "#FDFBF7") >= 4.5  # warm muted text still readable
 
 
 @pytest.mark.django_db

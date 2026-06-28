@@ -10,6 +10,22 @@ module.exports = {
         serif: ["Lora", "Georgia", "Cambria", "Times New Roman", "serif"],
       },
       colors: {
+        // Warm neutral ramp — overrides Tailwind's cool default gray so every
+        // gray-* usage across the app reads as warm "parish paper" instead of
+        // sterile blue-grey. Lightness preserved (hue → warm), so it's a safe
+        // app-wide re-skin with no per-template edits. 900 = ink, 600 = muted.
+        gray: {
+          50: "#FAF7F1",
+          100: "#F1ECE4",
+          200: "#E6DED5",
+          300: "#D8CEC2",
+          400: "#B0A595",
+          500: "#8A7F70",
+          600: "#6B6358",
+          700: "#4A443C",
+          800: "#332F29",
+          900: "#2C2A29",
+        },
         // Community Hub atmosphere palette (Direction D: water-teal + gold).
         parish: {
           bg: "#FDFBF7", // warm off-white paper
