@@ -51,9 +51,9 @@
     max-width: 960px;
   }
 
-  /* Bulletin-insert card: neutral warm surface, hairline border, lift only on hover. */
+  /* Bulletin-insert card: neutral warm surface, hairline border, soft lift. */
   .umi-card {
-    @apply rounded-xl p-6 transition-shadow duration-300;
+    @apply rounded-xl p-6 md:p-7 shadow-pew transition-shadow duration-300;
     background-color: var(--umi-card);
     border: 1px solid var(--umi-border);
   }
@@ -76,7 +76,7 @@
     border: 1px solid var(--umi-primary);
     color: var(--umi-primary);
   }
-  .btn-secondary:hover { background-color: rgba(43, 94, 43, 0.06); }
+  .btn-secondary:hover { background-color: rgba(15, 107, 115, 0.06); }
   /* Gold accent button (var-driven) — secondary CTAs, empty-state actions. */
   .btn-accent {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 min-h-[48px] font-medium transition shadow-sm hover:shadow-md;
@@ -121,6 +121,36 @@
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--umi-border);
+  }
+
+  /* ── Editorial noticeboard type & rhythm ──────────────────────────────────
+     Oversized serif mastheads, a short accent rule, a small kicker, and roomy
+     section spacing — the "noticeboard, not an app" feel. */
+  .umi-masthead {
+    @apply font-serif font-semibold tracking-tight;
+    font-size: clamp(2.25rem, 6vw, 4rem);
+    line-height: 1.05;
+    color: var(--umi-text);
+  }
+  .umi-display {
+    @apply font-serif font-semibold tracking-tight;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.12;
+    color: var(--umi-text);
+  }
+  .umi-kicker {
+    @apply inline-block text-xs font-semibold uppercase;
+    letter-spacing: 0.18em;
+    color: var(--umi-primary);
+  }
+  .umi-rule {
+    @apply block rounded-full;
+    width: 3rem;
+    height: 4px;
+    background-color: var(--umi-primary);
+  }
+  .umi-section {
+    @apply py-12 md:py-20;
   }
 }
 
