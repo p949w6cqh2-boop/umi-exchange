@@ -15,6 +15,14 @@ django-q2 (optional background tasks) · Argon2 password hashing (PBKDF2 fallbac
 lib is absent — base settings never list a hasher whose library is missing, which would hard-crash
 password verification).
 
+## Design context
+
+- **`PRODUCT.md`** — strategic: register (product), users, purpose, brand personality, anti-references,
+  design principles, a11y. The "who/what/why."
+- **`DESIGN.md`** — visual: "The Wellspring" system (water-teal + gold, warm neutrals, editorial
+  noticeboard), tokens, typography, components, motion. The "how it looks."
+- Read both before any UI work so changes stay on-brand. (Generated via `/impeccable init`.)
+
 ## gstack
 
 If you have **gstack** installed, use its skills when working in this repo:
