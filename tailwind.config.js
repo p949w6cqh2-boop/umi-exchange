@@ -22,6 +22,7 @@ module.exports = {
           gold: "#C49A3C", // soft gold (secondary accent)
         },
         "umi-primary": "var(--umi-primary, #0F6B73)",
+        "umi-primary-hover": "var(--umi-primary-hover, #0B585F)",
         "umi-accent": "var(--umi-accent, #C49A3C)",
       },
       maxWidth: {

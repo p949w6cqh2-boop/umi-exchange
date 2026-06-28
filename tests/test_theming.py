@@ -125,6 +125,17 @@ class TestDirectionDPalette:
         assert _tailwind_parish("green") == primary, "tailwind parish.green drifted"
         assert _tailwind_parish("greendark") == hover, "tailwind parish.greendark drifted"
 
+    def test_no_static_parish_green_classes_remain(self):
+        """Option b: templates use the var-backed `umi-primary` color, not the static
+        `parish-green`/`parish-greendark` utilities — so these surfaces follow per-community
+        theming (a `rose`/`ocean` community no longer shows the parish color here)."""
+        offenders = []
+        for p in (REPO_ROOT / "templates").rglob("*.html"):
+            for i, line in enumerate(p.read_text().splitlines(), 1):
+                if "parish-green" in line:
+                    offenders.append(f"{p.relative_to(REPO_ROOT)}:{i}")
+        assert not offenders, "static parish-green classes remain:\n  " + "\n  ".join(offenders)
+
 
 @pytest.mark.django_db
 class TestThemePickerView:

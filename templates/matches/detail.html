@@ -6,9 +6,9 @@
 
   {# Match header #}
   <div class="umi-card mt-4">
-    <p class="text-sm text-parish-ink/70">Need: <a href="{% url 'need-detail' community.slug match.need.id %}" class="text-parish-green hover:text-parish-greendark font-medium">{{ match.need.title }}</a></p>
+    <p class="text-sm text-parish-ink/70">Need: <a href="{% url 'need-detail' community.slug match.need.id %}" class="text-umi-primary hover:text-umi-primary-hover font-medium">{{ match.need.title }}</a></p>
     {% if match.offer %}
-    <p class="text-sm text-parish-ink/70 mt-1">Offer: <a href="{% url 'offer-detail' community.slug match.offer.id %}" class="text-parish-green hover:text-parish-greendark font-medium">{{ match.offer.title }}</a></p>
+    <p class="text-sm text-parish-ink/70 mt-1">Offer: <a href="{% url 'offer-detail' community.slug match.offer.id %}" class="text-umi-primary hover:text-umi-primary-hover font-medium">{{ match.offer.title }}</a></p>
     {% endif %}
   </div>
 

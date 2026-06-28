@@ -3,7 +3,7 @@
   {# Step 1: Proposed #}
   <div class="relative" role="listitem">
     <div class="absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
-      {% if match.status != 'proposed' %}bg-emerald-500 text-white{% else %}bg-parish-soft ring-2 ring-parish-green{% endif %}"
+      {% if match.status != 'proposed' %}bg-emerald-500 text-white{% else %}bg-parish-soft ring-2 ring-umi-primary{% endif %}"
       {% if match.status == 'proposed' %}aria-current="step"{% endif %}>
       {% if match.status != 'proposed' %}<span class="umi-fade">&#10003;</span>{% endif %}
     </div>
@@ -15,7 +15,7 @@
   {% if match.status in 'accepted,fulfilled' %}
   <div class="relative" role="listitem">
     <div class="absolute -left-[21px] w-6 h-6 rounded-full flex items-center justify-center text-xs
-      {% if match.status == 'fulfilled' %}bg-emerald-500 text-white{% else %}bg-parish-soft ring-2 ring-parish-green{% endif %}"
+      {% if match.status == 'fulfilled' %}bg-emerald-500 text-white{% else %}bg-parish-soft ring-2 ring-umi-primary{% endif %}"
       {% if match.status == 'accepted' %}aria-current="step"{% endif %}>
       {% if match.status == 'fulfilled' %}<span class="umi-fade">&#10003;</span>{% endif %}
     </div>

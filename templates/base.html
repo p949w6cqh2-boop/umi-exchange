@@ -42,7 +42,7 @@
     <div class="umi-container py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         {% if community %}
-          <a href="{% url 'community-feed' community.slug %}" class="font-serif text-xl text-parish-ink hover:text-parish-green">
+          <a href="{% url 'community-feed' community.slug %}" class="font-serif text-xl text-parish-ink hover:text-umi-primary">
             {{ community.name }}
           </a>
         {% else %}
@@ -58,7 +58,7 @@
             </a>
           {% endif %}
           {% if community and member and member.role in 'admin coordinator' %}
-            <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-parish-green hover:text-parish-greendark min-h-[44px] flex items-center mr-2">
+            <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-umi-primary hover:text-umi-primary-hover min-h-[44px] flex items-center mr-2">
               Community Settings
             </a>
           {% endif %}
