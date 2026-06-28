@@ -29,7 +29,8 @@ jobs:
         run: bandit -r apps/ -c pyproject.toml -ll || true
       - name: pip-audit
         run: pip install -r requirements.txt && pip-audit --strict || true
-
+      - name: Semgrep SAST
+        run: pip install semgrep && semgrep ci --config p/django --config p/python || true
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
