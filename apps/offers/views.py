@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView
 
+from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.needs.models import Need
 from apps.tags.badges import verified_badges_for
@@ -33,6 +34,13 @@ class OfferCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         super().form_valid(form)
+        emit(
+            "offer.created",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"status": self.object.status},
+        )
         messages.success(self.request, "Your offer has been posted!")
         return redirect("community-feed", slug=self.community.slug)
 
@@ -58,6 +66,19 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         ctx["member"] = member
         ctx["poster_badges"] = verified_badges_for([offer.offerer_id], member).get(offer.offerer_id, [])
         ctx["is_own_offer"] = member and offer.offerer == member
+        # §8.2: contact locked for ordinary members; coordinators get audited oversight.
+        contact_info = None
+        if member and member.is_coordinator and offer.offerer != member:
+            contact_info = offer.offerer.contact_dict(offer.contact_pref)
+            emit(
+                "offer.contact_disclosed",
+                offer,
+                user=self.request.user,
+                request=self.request,
+                details={"viewer_role": member.role},
+            )
+        ctx["contact_info"] = contact_info
+        ctx["show_contact"] = contact_info is not None
         ctx["matching_needs"] = Need.objects.filter(
             community=offer.community, category=offer.category, status="open"
         ).exclude(requester=member)[:5]
@@ -66,6 +87,16 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
 
 class OfferDeleteView(LoginRequiredMixin, DeleteView):
     model = Offer
+
+    def form_valid(self, form):
+        emit(
+            "offer.deleted",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"status": self.object.status},
+        )
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})

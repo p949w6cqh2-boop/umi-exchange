@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView
 
+from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -39,6 +40,13 @@ class NeedCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         super().form_valid(form)
+        emit(
+            "need.created",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"urgency": self.object.urgency},
+        )
         messages.success(self.request, "Your need has been posted!")
         return redirect("community-feed", slug=self.community.slug)
 
@@ -65,6 +73,20 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         ctx["member"] = member
         ctx["poster_badges"] = verified_badges_for([need.requester_id], member).get(need.requester_id, [])
         ctx["is_own_need"] = member and need.requester == member
+        # §8.2: contact stays locked for ordinary members (revealed only via an
+        # accepted match). Coordinators get oversight access here — audited (§8.3).
+        contact_info = None
+        if member and member.is_coordinator and need.requester != member:
+            contact_info = need.requester.contact_dict(need.contact_pref)
+            emit(
+                "need.contact_disclosed",
+                need,
+                user=self.request.user,
+                request=self.request,
+                details={"viewer_role": member.role},
+            )
+        ctx["contact_info"] = contact_info
+        ctx["show_contact"] = contact_info is not None
         # Suggested offers: same category, active
         if ctx["is_own_need"]:
             ctx["suggested_offers"] = (
@@ -83,6 +105,17 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
 
 class NeedDeleteView(LoginRequiredMixin, DeleteView):
     model = Need
+
+    def form_valid(self, form):
+        # self.object is loaded in post() before deletion — emit while its pk still exists.
+        emit(
+            "need.deleted",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"status": self.object.status},
+        )
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})

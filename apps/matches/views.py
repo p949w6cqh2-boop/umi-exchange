@@ -15,6 +15,7 @@ from django.views import View
 from django.views.generic import DetailView
 
 from apps.audit.models import AuditLog
+from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.communities.validators import sanitize_text_field
 from apps.needs.models import Need
@@ -177,6 +178,9 @@ class MatchUpdateView(LoginRequiredMixin, View):
             if notes:
                 match.notes = notes
 
+            # Capture pre-transition status so we only audit a real cascade change.
+            old_need_status = need.status
+            old_offer_status = match.offer.status if match.offer else None
             try:
                 match.transition_to(new_status)
             except ValidationError as e:
@@ -187,6 +191,19 @@ class MatchUpdateView(LoginRequiredMixin, View):
         if notes:
             details["notes"] = notes
         AuditLog.log(member.user, "update", "match", match.id, details=details, request=request)
+
+        # Dotted state-change audit (§8.3) for the need/offer that transition_to()
+        # cascaded — only when it actually changed them, so no-op saves don't log.
+        if need.status != old_need_status:
+            emit("need.updated", need, user=member.user, request=request, details={"status": need.status})
+        if match.offer is not None and match.offer.status != old_offer_status:
+            emit(
+                "offer.updated",
+                match.offer,
+                user=member.user,
+                request=request,
+                details={"status": match.offer.status},
+            )
 
         # Notifications — inform the counterpart participant(s); never the actor.
         if new_status == "accepted":
