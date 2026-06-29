@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView
 
+from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.needs.models import Need
 from apps.tags.badges import verified_badges_for
@@ -33,6 +34,13 @@ class OfferCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         super().form_valid(form)
+        emit(
+            "offer.created",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"status": self.object.status},
+        )
         messages.success(self.request, "Your offer has been posted!")
         return redirect("community-feed", slug=self.community.slug)
 
@@ -66,6 +74,16 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
 
 class OfferDeleteView(LoginRequiredMixin, DeleteView):
     model = Offer
+
+    def form_valid(self, form):
+        emit(
+            "offer.deleted",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"status": self.object.status},
+        )
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})

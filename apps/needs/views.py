@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView
 
+from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -39,6 +40,13 @@ class NeedCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         super().form_valid(form)
+        emit(
+            "need.created",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"urgency": self.object.urgency},
+        )
         messages.success(self.request, "Your need has been posted!")
         return redirect("community-feed", slug=self.community.slug)
 
@@ -83,6 +91,17 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
 
 class NeedDeleteView(LoginRequiredMixin, DeleteView):
     model = Need
+
+    def form_valid(self, form):
+        # self.object is loaded in post() before deletion — emit while its pk still exists.
+        emit(
+            "need.deleted",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"status": self.object.status},
+        )
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})

@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
 
+from apps.audit.services import emit
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -48,7 +49,10 @@ class JoinCommunityView(LoginRequiredMixin, FormView):
             return redirect("community-feed", slug=community.slug)
 
         display_name = form.cleaned_data.get("display_name") or self.request.user.username
-        Member.objects.create(user=self.request.user, community=community, display_name=display_name, role="member")
+        member = Member.objects.create(
+            user=self.request.user, community=community, display_name=display_name, role="member"
+        )
+        emit("member.joined", member, user=self.request.user, request=self.request, details={"role": member.role})
         messages.success(self.request, f"Welcome to {community.name}!")
         return redirect("community-feed", slug=community.slug)
 
@@ -61,13 +65,21 @@ class CommunityCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         response = super().form_valid(form)
+        emit(
+            "community.created",
+            self.object,
+            user=self.request.user,
+            request=self.request,
+            details={"visibility": self.object.visibility},
+        )
         # Creator becomes admin
-        Member.objects.create(
+        creator = Member.objects.create(
             user=self.request.user,
             community=self.object,
             display_name=self.request.user.username,
             role="admin",
         )
+        emit("member.joined", creator, user=self.request.user, request=self.request, details={"role": creator.role})
         messages.success(self.request, f"Community '{self.object.name}' created!")
         return response
 
