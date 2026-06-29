@@ -12,7 +12,7 @@
 
     {# Category grid #}
     <fieldset>
-      <legend class="text-sm font-medium text-gray-700 mb-2">What kind of help do you need?</legend>
+      <legend class="umi-label">What kind of help do you need?</legend>
       <div class="grid grid-cols-3 sm:grid-cols-5 gap-3" role="radiogroup">
         {% for cat in categories %}
         <label class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] border-2 rounded-xl cursor-pointer transition-colors
@@ -27,7 +27,7 @@
 
     {# Title #}
     <div x-data="{ count: 0 }">
-      <label for="id_title" class="text-sm font-medium text-gray-700 mb-1 block">What do you need? *</label>
+      <label for="id_title" class="umi-label">What do you need? *</label>
       {{ form.title }}
       <span class="text-sm text-right block mt-1" :class="count > 200 ? 'text-red-500' : 'text-gray-400'" x-text="count + '/200'" x-init="count = $refs.title ? $refs.title.value.length : 0"></span>
       {% if form.title.errors %}<p class="text-sm text-red-600 mt-1">{{ form.title.errors.0 }}</p>{% endif %}
@@ -35,13 +35,13 @@
 
     {# Description #}
     <div>
-      <label for="id_description" class="text-sm font-medium text-gray-700 mb-1 block">Tell us more <span class="text-gray-400">(optional)</span></label>
+      <label for="id_description" class="umi-label">Tell us more <span class="text-gray-400">(optional)</span></label>
       {{ form.description }}
     </div>
 
     {# Urgency #}
     <fieldset>
-      <legend class="text-sm font-medium text-gray-700 mb-2">How urgent?</legend>
+      <legend class="umi-label">How urgent?</legend>
       <div class="flex flex-wrap gap-3" role="radiogroup">
         {% for value, label in form.fields.urgency.choices %}
         <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer min-h-[48px] transition-colors
@@ -60,7 +60,7 @@
     {# Neighbourhood with privacy guidance #}
     {% if community.neighborhood_mode != "hidden" %}
     <div class="space-y-1">
-      <label for="id_neighborhood" class="text-sm font-medium text-gray-700 mb-1 block">
+      <label for="id_neighborhood" class="umi-label">
         Area <span class="text-gray-400">({% if community.neighborhood_mode == "required" %}required{% else %}optional{% endif %})</span>
       </label>
       {{ form.neighborhood }}
@@ -75,7 +75,7 @@
 
     {# Contact preference #}
     <fieldset>
-      <legend class="text-sm font-medium text-gray-700 mb-2">How should the helper contact you?</legend>
+      <legend class="umi-label">How should the helper contact you?</legend>
       <div class="space-y-2">
         {% for value, label in form.fields.contact_pref.choices %}
         <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
