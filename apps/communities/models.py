@@ -116,6 +116,16 @@ class Member(models.Model):
     def is_admin(self):
         return self.role == "admin"
 
+    def contact_dict(self, pref):
+        """§8.2 contact shape: display name + only the channels `pref` opts into.
+        Shared by match contact-revelation and coordinator oversight on need/offer detail."""
+        info = {"display_name": self.display_name, "preference": pref}
+        if pref in ("email", "any") and self.user.email:
+            info["email"] = self.user.email
+        if pref in ("phone", "any") and self.user.phone:
+            info["phone"] = self.user.phone
+        return info
+
 
 class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

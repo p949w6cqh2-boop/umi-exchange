@@ -109,12 +109,9 @@ class Match(models.Model):
 
     @staticmethod
     def _contact_dict(member, pref):
-        info = {"display_name": member.display_name, "preference": pref}
-        if pref in ("email", "any") and member.user.email:
-            info["email"] = member.user.email
-        if pref in ("phone", "any") and member.user.phone:
-            info["phone"] = member.user.phone
-        return info
+        # Canonical §8.2 contact shape now lives on Member (shared with the
+        # coordinator oversight reveal on need/offer detail); thin alias here.
+        return member.contact_dict(pref)
 
     def get_contact_info_for(self, requesting_member):
         """

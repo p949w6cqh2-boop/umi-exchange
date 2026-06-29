@@ -45,8 +45,8 @@
     {% endif %}
   </div>
 
-  {# Contact info box: locked state (protocol Section 8.2) #}
-  {% include "components/_contact_info_box.html" with show_contact=False %}
+  {# Contact info box (§8.2): locked for members; revealed to coordinators (audited). #}
+  {% include "components/_contact_info_box.html" with show_contact=show_contact contact_info=contact_info %}
 
   {# Suggested offers #}
   {% if need.status == "open" %}

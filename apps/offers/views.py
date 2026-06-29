@@ -66,6 +66,19 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         ctx["member"] = member
         ctx["poster_badges"] = verified_badges_for([offer.offerer_id], member).get(offer.offerer_id, [])
         ctx["is_own_offer"] = member and offer.offerer == member
+        # §8.2: contact locked for ordinary members; coordinators get audited oversight.
+        contact_info = None
+        if member and member.is_coordinator and offer.offerer != member:
+            contact_info = offer.offerer.contact_dict(offer.contact_pref)
+            emit(
+                "offer.contact_disclosed",
+                offer,
+                user=self.request.user,
+                request=self.request,
+                details={"viewer_role": member.role},
+            )
+        ctx["contact_info"] = contact_info
+        ctx["show_contact"] = contact_info is not None
         ctx["matching_needs"] = Need.objects.filter(
             community=offer.community, category=offer.category, status="open"
         ).exclude(requester=member)[:5]

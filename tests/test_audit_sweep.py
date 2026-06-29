@@ -61,6 +61,7 @@ class TestLake1AuditSweep:
                 "contact_pref": "in_app",
                 "neighborhood": "",
             },
+            HTTP_X_REAL_IP="203.0.113.9",
         )
         assert resp.status_code in (200, 302)
         need = Need.objects.get(community=world["community"])
@@ -69,6 +70,7 @@ class TestLake1AuditSweep:
         assert row.resource_type == "need" and row.resource_id == need.id
         assert row.user_id == world["user"].id
         assert "ride to the clinic" not in str(row.details or "")  # no plaintext PII
+        assert len(row.ip_hash) == 64  # client IP captured + salted-SHA-256 hashed
 
     def test_offer_created(self, world, login):
         c = login(world["user"])
@@ -169,6 +171,107 @@ class TestLake1AuditSweep:
         assert nu.get().user_id == world["user"].id  # the accepting actor
         assert (nu.get().details or {}).get("status") == "matched"
         assert (ou.get().details or {}).get("status") == "matched"
+
+    def test_match_cancel_from_proposed_emits_no_updated(self, world, login):
+        """cancel-from-proposed leaves need/offer status untouched → no *.updated rows.
+        Guards the old-status comparison that prevents no-op audit rows."""
+        community, category = world["community"], world["category"]
+        offerer_user = UserFactory()
+        offerer = MemberFactory(user=offerer_user, community=community, role="member")
+        need = Need.objects.create(community=community, requester=world["member"], category=category, title="N")
+        offer = Offer.objects.create(community=community, offerer=offerer, category=category, title="O")
+        oc = login(offerer_user)
+        oc.post(
+            reverse("match-propose", kwargs={"slug": community.slug}),
+            {"need_id": str(need.id), "offer_id": str(offer.id)},
+        )
+        match = Match.objects.get(need=need)
+        resp = oc.post(
+            reverse("match-update", kwargs={"slug": community.slug, "pk": match.id}), {"status": "cancelled"}
+        )
+        assert resp.status_code in (200, 302)
+        need.refresh_from_db()
+        offer.refresh_from_db()
+        assert need.status == "open" and offer.status == "active"  # no cascade
+        assert rows("need.updated").count() == 0
+        assert rows("offer.updated").count() == 0
+
+    def test_need_contact_disclosed_to_coordinator(self, world, login):
+        poster = world["member"]
+        poster.user.email = "poster@example.test"
+        poster.user.save(update_fields=["email"])
+        need = Need.objects.create(
+            community=world["community"],
+            requester=poster,
+            category=world["category"],
+            title="N",
+            contact_pref="email",
+        )
+        coord_user = UserFactory()
+        MemberFactory(user=coord_user, community=world["community"], role="coordinator")
+        resp = login(coord_user).get(reverse("need-detail", kwargs={"slug": world["community"].slug, "pk": need.id}))
+        assert resp.status_code == 200
+        assert b"poster@example.test" in resp.content  # disclosed to the coordinator
+        cd = rows("need.contact_disclosed").filter(resource_id=need.id)
+        assert cd.count() == 1
+        assert cd.get().user_id == coord_user.id
+        assert "poster@example.test" not in str(cd.get().details or "")  # never the contact value itself
+
+    def test_need_detail_no_contact_or_event_for_ordinary_member(self, world, login):
+        poster = world["member"]
+        poster.user.email = "poster@example.test"
+        poster.user.save(update_fields=["email"])
+        need = Need.objects.create(
+            community=world["community"],
+            requester=poster,
+            category=world["category"],
+            title="N",
+            contact_pref="email",
+        )
+        other_user = UserFactory()
+        MemberFactory(user=other_user, community=world["community"], role="member")
+        resp = login(other_user).get(reverse("need-detail", kwargs={"slug": world["community"].slug, "pk": need.id}))
+        assert resp.status_code == 200
+        assert b"poster@example.test" not in resp.content  # §8.2 preserved for ordinary members
+        assert rows("need.contact_disclosed").count() == 0
+
+    def test_offer_contact_disclosed_to_coordinator(self, world, login):
+        poster = world["member"]
+        poster.user.email = "offerer@example.test"
+        poster.user.save(update_fields=["email"])
+        offer = Offer.objects.create(
+            community=world["community"],
+            offerer=poster,
+            category=world["category"],
+            title="O",
+            contact_pref="email",
+        )
+        coord_user = UserFactory()
+        MemberFactory(user=coord_user, community=world["community"], role="coordinator")
+        resp = login(coord_user).get(reverse("offer-detail", kwargs={"slug": world["community"].slug, "pk": offer.id}))
+        assert resp.status_code == 200
+        assert b"offerer@example.test" in resp.content
+        cd = rows("offer.contact_disclosed").filter(resource_id=offer.id)
+        assert cd.count() == 1 and cd.get().user_id == coord_user.id
+        assert "offerer@example.test" not in str(cd.get().details or "")
+
+    def test_offer_detail_no_contact_for_ordinary_member(self, world, login):
+        poster = world["member"]
+        poster.user.email = "offerer@example.test"
+        poster.user.save(update_fields=["email"])
+        offer = Offer.objects.create(
+            community=world["community"],
+            offerer=poster,
+            category=world["category"],
+            title="O",
+            contact_pref="email",
+        )
+        other_user = UserFactory()
+        MemberFactory(user=other_user, community=world["community"], role="member")
+        resp = login(other_user).get(reverse("offer-detail", kwargs={"slug": world["community"].slug, "pk": offer.id}))
+        assert resp.status_code == 200
+        assert b"offerer@example.test" not in resp.content
+        assert rows("offer.contact_disclosed").count() == 0
 
     def test_expiry_task_does_not_double_emit_need_updated(self, world):
         """System expiry already writes a legacy 'update' row — it must NOT also
