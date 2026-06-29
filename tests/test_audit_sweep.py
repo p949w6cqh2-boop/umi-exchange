@@ -292,6 +292,36 @@ class TestLake1AuditSweep:
         legacy = AuditLog.objects.filter(action="update", resource_type="need", resource_id=need.id)
         assert legacy.count() == 1 and legacy.get().user_id is None  # system actor
 
+    def test_community_code_reset_audited(self, world, login):
+        admin = MemberFactory(user=UserFactory(), community=world["community"], role="admin")
+        resp = login(admin.user).post(
+            reverse("community-settings", kwargs={"slug": world["community"].slug}),
+            {"action": "regenerate_join_code"},
+        )
+        assert resp.status_code in (200, 302)
+        cr = rows("community.code_reset").filter(resource_id=world["community"].id)
+        assert cr.count() == 1 and cr.get().user_id == admin.user_id
+
+    def test_community_theme_set_audited(self, world, login):
+        admin = MemberFactory(user=UserFactory(), community=world["community"], role="coordinator")
+        resp = login(admin.user).post(
+            reverse("community-settings", kwargs={"slug": world["community"].slug}),
+            {"action": "set_theme", "theme": "parish"},
+        )
+        assert resp.status_code in (200, 302)
+        assert rows("community.theme_set").filter(resource_id=world["community"].id).count() == 1
+
+    def test_community_settings_update_audited(self, world, login):
+        admin = MemberFactory(user=UserFactory(), community=world["community"], role="admin")
+        resp = login(admin.user).post(
+            reverse("community-settings", kwargs={"slug": world["community"].slug}),
+            {"name": "Renamed Parish", "description": "", "visibility": "public"},
+        )
+        assert resp.status_code in (200, 302)
+        cu = rows("community.updated").filter(resource_id=world["community"].id)
+        assert cu.count() == 1
+        assert "Renamed Parish" not in str(cu.get().details or "")  # community name not in details
+
     def test_append_only_still_rejects_update_and_delete(self):
         entry = AuditLog.objects.create(
             user=None, action="need.created", resource_type="need", resource_id=uuid.uuid4()

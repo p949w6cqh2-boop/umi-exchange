@@ -189,6 +189,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             new_code = generate_join_code()
             self.community.join_code = new_code
             self.community.save(update_fields=["join_code"])
+            emit("community.code_reset", self.community, user=request.user, request=request)
             messages.success(request, f"Join code regenerated: {new_code}")
             return redirect("community-settings", slug=self.community.slug)
 
@@ -208,12 +209,26 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                 settings.pop("theme_custom", None)
             self.community.settings = settings
             self.community.save(update_fields=["settings"])
+            emit(
+                "community.theme_set",
+                self.community,
+                user=request.user,
+                request=request,
+                details={"theme": settings["theme"]},
+            )
             messages.success(request, "Theme updated.")
             return redirect("community-settings", slug=self.community.slug)
 
         form = CommunitySettingsForm(request.POST, instance=self.community)
         if form.is_valid():
             form.save()
+            emit(
+                "community.updated",
+                self.community,
+                user=request.user,
+                request=request,
+                details={"visibility": self.community.visibility},
+            )
             messages.success(request, "Community settings updated.")
             return redirect("community-settings", slug=self.community.slug)
         else:
