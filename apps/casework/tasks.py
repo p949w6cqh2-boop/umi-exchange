@@ -13,6 +13,9 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.audit.services import emit
+from apps.common.state import TransitionConflict
+
 from .models import FollowUp
 from .notify import notify
 
@@ -59,6 +62,27 @@ def followup_overdue_digest():
     return sent
 
 
+def discard_stale_drafts():
+    """Discard case-note drafts untouched for >72h (design §3.11). Per-row via the
+    state machine (draft -> discarded) so each is audited and the model's delete()
+    guard is respected — never a bulk queryset.update() (skips the machine + audit).
+    System event (user=None), PII-free details. Idempotent: only acts on drafts
+    past the window, so re-runs are no-ops."""
+    from .models import CaseNote
+
+    cutoff = timezone.now() - timezone.timedelta(hours=72)
+    stale = CaseNote.objects.filter(status=CaseNote.STATUS_DRAFT, updated_at__lt=cutoff)
+    discarded = 0
+    for note in stale.iterator():
+        try:
+            note.transition_to(CaseNote.STATUS_DISCARDED)
+        except TransitionConflict:
+            continue  # raced (edited/finalized meanwhile) — leave for the next run
+        emit("note.draft_expired", note, user=None, details={"reason": "stale_draft_72h"})
+        discarded += 1
+    return f"Discarded {discarded} stale draft note(s)"
+
+
 def register_schedule():
     from django_q.models import Schedule
 
@@ -66,6 +90,14 @@ def register_schedule():
         name="casework-followup-digest",
         defaults={
             "func": "apps.casework.tasks.followup_overdue_digest",
+            "schedule_type": Schedule.DAILY,
+            "repeats": -1,
+        },
+    )
+    Schedule.objects.update_or_create(
+        name="casework-stale-draft-cleanup",
+        defaults={
+            "func": "apps.casework.tasks.discard_stale_drafts",
             "schedule_type": Schedule.DAILY,
             "repeats": -1,
         },
