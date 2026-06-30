@@ -16,13 +16,17 @@ services:
     volumes:
       - app_logs:/app/logs
     # Health monitoring: the app had no healthcheck (db does). Uses python (always
-    # in the image) so we don't depend on curl being present. /health/ is the LB probe.
+    # in the image) so we don't depend on curl. Sends X-Forwarded-Proto: https so
+    # SECURE_SSL_REDIRECT doesn't 301 the probe to TLS (prod trusts that header),
+    # and passes HEALTH_CHECK_TOKEN if one is configured. /health/ is the LB probe.
     healthcheck:
       test:
         - CMD-SHELL
         - >-
-          python -c "import sys,urllib.request;
-          sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/', timeout=5).status==200 else 1)"
+          python -c "import os,sys,urllib.request;
+          t=os.environ.get('HEALTH_CHECK_TOKEN','');
+          u='http://localhost:8000/health/'+('?token='+t if t else '');
+          sys.exit(0 if urllib.request.urlopen(urllib.request.Request(u, headers={'X-Forwarded-Proto':'https'}), timeout=5).status==200 else 1)"
       interval: 30s
       timeout: 6s
       retries: 3

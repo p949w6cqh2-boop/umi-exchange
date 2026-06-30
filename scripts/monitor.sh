@@ -25,17 +25,24 @@ alert() {
     local msg="[UMI monitor] $1"
     echo "$msg" >&2
     if [ -n "$ALERT_WEBHOOK_URL" ]; then
+        # JSON-escape backslashes and double-quotes so an odd char in a configured
+        # value (e.g. a path) can't emit invalid JSON to the webhook.
+        local esc=${msg//\\/\\\\}
+        esc=${esc//\"/\\\"}
         # Minimal JSON; works for Slack/Discord/Kuma push. Never fail the run on a flaky webhook.
         curl -fsS -m 10 -X POST -H 'Content-Type: application/json' \
-            --data "$(printf '{"text":"%s"}' "$msg")" "$ALERT_WEBHOOK_URL" >/dev/null 2>&1 || true
+            --data "{\"text\":\"$esc\"}" "$ALERT_WEBHOOK_URL" >/dev/null 2>&1 || true
     fi
 }
 
 problems=0
 
-# 1) Application health endpoint (2xx expected).
-if ! curl -fsS -m 10 -o /dev/null "$HEALTH_URL"; then
-    alert "HEALTH DOWN: $HEALTH_URL is not returning 2xx"
+# 1) Application health endpoint (2xx expected). Send X-Forwarded-Proto: https so
+#    SECURE_SSL_REDIRECT doesn't 301 the probe (prod trusts that header) — without it
+#    curl (no -L) treats the redirect as success and never sees a real 503.
+if ! curl -fsS -m 10 -o /dev/null -H 'X-Forwarded-Proto: https' "$HEALTH_URL"; then
+    # Strip any ?token=… so a configured health token can't leak into the alert.
+    alert "HEALTH DOWN: ${HEALTH_URL%%\?*} is not returning 2xx"
     problems=$((problems + 1))
 fi
 
@@ -43,14 +50,15 @@ fi
 if [ -n "$CERT_HOST" ] && command -v openssl > /dev/null 2>&1; then
     end_date=$(echo | openssl s_client -servername "${CERT_HOST%%:*}" -connect "$CERT_HOST" 2> /dev/null \
         | openssl x509 -noout -enddate 2> /dev/null | cut -d= -f2)
-    if [ -n "$end_date" ]; then
-        days_left=$(( ($(date -d "$end_date" +%s) - $(date +%s)) / 86400 ))
+    end_epoch=$(date -d "$end_date" +%s 2> /dev/null || echo "")
+    if [ -n "$end_date" ] && [ -n "$end_epoch" ]; then
+        days_left=$(( (end_epoch - $(date +%s)) / 86400 ))
         if [ "$days_left" -lt "$CERT_MIN_DAYS" ]; then
             alert "CERT EXPIRING: $CERT_HOST in ${days_left}d (threshold ${CERT_MIN_DAYS}d)"
             problems=$((problems + 1))
         fi
     else
-        alert "CERT CHECK FAILED: could not read certificate for $CERT_HOST"
+        alert "CERT CHECK FAILED: could not read a valid certificate end date for $CERT_HOST"
         problems=$((problems + 1))
     fi
 fi
