@@ -52,6 +52,13 @@
   <a href="{% url 'offer-create' community.slug %}" class="btn-secondary">Offer something instead</a>
 </div>
 
+{# Leave community — quiet, confirm before posting. #}
+<form method="post" action="{% url 'community-leave' community.slug %}" class="mt-6"
+      onsubmit="return confirm('Leave {{ community.name }}? You can rejoin later with the code.');">
+  {% csrf_token %}
+  <button type="submit" class="text-xs text-parish-ink/40 hover:text-red-600 min-h-[44px]">Leave this community</button>
+</form>
+
 {# Mobile FAB #}
 <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-20 sm:hidden">
   <div x-show="open" x-cloak class="flex flex-col gap-3 items-end mb-3">

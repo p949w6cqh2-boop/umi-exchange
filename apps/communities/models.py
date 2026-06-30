@@ -126,6 +126,18 @@ class Member(models.Model):
             info["phone"] = self.user.phone
         return info
 
+    @property
+    def is_last_active_admin(self):
+        """True if this is the only active admin — guards self-leave / demotion
+        that would orphan the community with no admin."""
+        if self.role != "admin" or not self.is_active:
+            return False
+        return (
+            not Member.objects.filter(community_id=self.community_id, role="admin", is_active=True)
+            .exclude(pk=self.pk)
+            .exists()
+        )
+
 
 class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
