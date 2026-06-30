@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 """Load + query-count benchmark for UMI Exchange.
 
-Reports, per endpoint: **DB queries / request** (an N+1 catcher — the count should
-stay flat as the dataset grows) and **p50 / p95 latency** under concurrency, against
-a SEEDED realistic dataset.
+Reports, per endpoint: **DB queries / request** (an N+1 catcher — a healthy page
+shows a small constant count, not ~1/item) and **p50 / p95 latency** under
+concurrency, against a SEEDED realistic dataset.
 
-Runs against a SCRATCH / dev / staging DB — it seeds data and issues load, so it
-REFUSES production settings unless --i-know-this-is-not-prod is passed. It cleans up
-the data it seeds.
+It seeds data, issues load, then DELETEs it, so as a safety gate it prints the
+*resolved* target DB and refuses to run unless --i-know-this-is-not-prod is passed
+(and refuses outright if the DB host matches $BENCH_PROD_HOST). The DB is chosen by
+DATABASE_URL independently of the settings module, so the gate checks the resolved
+connection, not the module name.
 
     DJANGO_SETTINGS_MODULE=config.settings.development \\
-    .venv/bin/python scripts/benchmark.py --seed 300 --requests 300 --concurrency 100
+    .venv/bin/python scripts/benchmark.py --seed 300 --requests 300 \\
+        --concurrency 100 --i-know-this-is-not-prod
 
 For *real* WSGI concurrency numbers, point DATABASE_URL at a staging Postgres (the
 in-process test client exercises the same view/ORM code; absolute latencies differ).
@@ -82,13 +85,18 @@ def seed(n):
 
 def cleanup():
     c = Community.objects.filter(slug=BENCH_SLUG).first()
-    if not c:
-        return
-    # Needs/Offers PROTECT their Category, so clear them before the Community
-    # delete cascades the Categories.
-    Need.objects.filter(community=c).delete()
-    Offer.objects.filter(community=c).delete()
-    c.delete()  # cascades members + categories
+    if c:
+        # Needs/Offers PROTECT their Category, so clear them before the Community
+        # delete cascades the Categories + Members.
+        Need.objects.filter(community=c).delete()
+        Offer.objects.filter(community=c).delete()
+        c.delete()  # cascades members + categories
+    # Member.user / Community.created_by are FKs *to* User, so the seeded users
+    # aren't reachable from the Community cascade — delete them by the bench
+    # username prefixes (also clears orphans left by a crashed run).
+    User = get_user_model()  # noqa: N806
+    User.objects.filter(username__startswith="bench-").delete()
+    User.objects.filter(username__startswith="bm-").delete()
 
 
 def _client(user):
@@ -109,8 +117,6 @@ def query_count(user, url):
 
 
 def load(user, url, requests_n, concurrency):
-    lat = []
-
     def one(_):
         c = _client(user)
         t0 = time.perf_counter()
@@ -133,18 +139,34 @@ def main():
     ap.add_argument("--i-know-this-is-not-prod", action="store_true")
     args = ap.parse_args()
 
-    if "production" in os.environ.get("DJANGO_SETTINGS_MODULE", "") and not args.i_know_this_is_not_prod:
-        sys.exit("REFUSING: production settings. This seeds data + issues load — point it at scratch/staging.")
+    # Prod safety: the DB is chosen by DATABASE_URL independently of the settings
+    # MODULE name, so gate on the *resolved* connection — not the module label —
+    # and show exactly which DB will be seeded + wiped before requiring the flag.
+    db = connection.settings_dict
+    target = f"{db.get('NAME')} @ {db.get('HOST') or 'local'}"
+    print(f"Target DB: {target} (engine: {db.get('ENGINE', '').rsplit('.', 1)[-1]})")
+    prod_host = os.environ.get("BENCH_PROD_HOST", "")
+    if prod_host and prod_host in str(db.get("HOST", "")):
+        sys.exit(f"REFUSING: target DB host matches BENCH_PROD_HOST ({prod_host}) — this seeds + DELETEs rows.")
+    if not args.i_know_this_is_not_prod:
+        sys.exit(
+            "REFUSING: this seeds data, issues load, then DELETEs it.\n"
+            f"  Target: {target}\n"
+            "  Re-run with --i-know-this-is-not-prod once you've confirmed that is a scratch/dev/staging DB."
+        )
 
     print(f"Seeding {args.seed} needs + {args.seed} offers …")
-    community, member, need = seed(args.seed)
-    user = member.user
-    endpoints = {
-        "community-feed": reverse("community-feed", kwargs={"slug": community.slug}),
-        "need-detail": reverse("need-detail", kwargs={"slug": community.slug, "pk": need.id}),
-        "community-dashboard": reverse("community-dashboard", kwargs={"slug": community.slug}),
-    }
     try:
+        community, member, need = seed(args.seed)
+        user = member.user
+        endpoints = {
+            "community-feed": reverse("community-feed", kwargs={"slug": community.slug}),
+            "need-detail": reverse("need-detail", kwargs={"slug": community.slug, "pk": need.id}),
+            "community-dashboard": reverse("community-dashboard", kwargs={"slug": community.slug}),
+        }
+        # Warm process-global caches (ContentType, etc.) so the first endpoint's
+        # query count isn't inflated by one-time lookups.
+        query_count(user, endpoints["community-feed"])
         print(
             f"\n{'endpoint':24} {'queries/req':>12} {'p50 ms':>9} {'p95 ms':>9}   "
             f"(load: {args.requests} req @ {args.concurrency} concurrent)"
@@ -155,8 +177,10 @@ def main():
             p50, p95 = load(user, url, args.requests, args.concurrency)
             flag = "  <-- N+1?" if q > 40 else ""
             print(f"{name:24} {q:>12} {p50:>9.1f} {p95:>9.1f}{flag}")
-        print("\nqueries/req should stay ~flat as --seed grows; a count that scales with the")
-        print("dataset is an N+1. Absolute ms are in-process (relative); use staging for SLA numbers.")
+        print("\nqueries/req = per-request count for a full (capped) page: feed paginate_by=20,")
+        print("need-detail slices [:5]. Healthy = a small constant; an N+1 shows as a count that")
+        print("tracks the rendered page size — seed >= one page to exercise it (counts don't grow")
+        print("past the cap by design). Absolute ms are in-process; point at staging for SLA numbers.")
     finally:
         cleanup()
         print("\nCleaned up seeded benchmark data.")
