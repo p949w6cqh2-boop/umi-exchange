@@ -19,6 +19,10 @@
 #   DR_BUCKET=umi-backups DR_ACCESS_KEY=… DR_SECRET_KEY=… bash scripts/dr_sim.sh
 set -euo pipefail
 
+# Run from the repo root so manage.py (the schema-health gate) is always found,
+# regardless of the caller's CWD.
+cd "$(dirname "$0")/.." || exit 1
+
 fail() { echo "DR-SIM ABORT: $1" >&2; exit 1; }
 log()  { echo "[$(date +%H:%M:%S)] dr-sim: $1"; }
 
@@ -49,7 +53,7 @@ export AWS_ACCESS_KEY_ID="$DR_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$DR_SECRET_KEY"
 
 log "finding latest backup in s3://$DR_BUCKET/umi-backups/ …"
 LATEST=$(aws s3 ls "s3://$DR_BUCKET/umi-backups/" --endpoint-url "$ENDPOINT" \
-    | awk '{print $4}' | grep -E '^umi-.*\.sql\.gz$' | sort | tail -1)
+    | awk '{print $4}' | { grep -E '^umi-.*\.sql\.gz$' || true; } | sort | tail -1)
 [ -n "$LATEST" ] || fail "no backups found in the bucket."
 log "latest: $LATEST"
 aws s3 cp "s3://$DR_BUCKET/umi-backups/$LATEST" "$WORK/$LATEST" --endpoint-url "$ENDPOINT" --only-show-errors \
@@ -73,14 +77,16 @@ done
 # Append-only audit table must exist and be readable — it's the integrity canary.
 AUDIT=$(psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM audit_auditlog;" 2> /dev/null || echo "ERR")
 
-# Health: the restored schema must satisfy Django's migration state (no drift).
-HEALTH="skipped"
+# Health: the restored schema must have no pending migrations (migrate --check).
 if [ -f manage.py ]; then
-    if DATABASE_URL="$DR_DATABASE_URL" python manage.py migrate --check > /dev/null 2>&1; then
+    if DATABASE_URL="$DR_DATABASE_URL" python3 manage.py migrate --check > /dev/null 2>&1; then
         HEALTH="ok (migrate --check: no pending migrations)"
     else
-        HEALTH="DRIFT (migrate --check reports pending migrations)"; ROWS_OK=0
+        HEALTH="FAIL (migrate --check reports pending migrations)"; ROWS_OK=0
     fi
+else
+    # Never report PASS without running the schema gate.
+    HEALTH="FAIL (manage.py not found — cannot verify schema health)"; ROWS_OK=0
 fi
 log "schema health: $HEALTH"
 
