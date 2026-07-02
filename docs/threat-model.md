@@ -80,8 +80,8 @@ This is a **standalone Django app, not self-propagating** — there is no worm/l
 
 **Must-fix before pilot**
 1. **Verify the prod DB role is NOT a Postgres superuser/owner** of `audit_auditlog` — otherwise the append-only `REVOKE` is silently bypassable. Document the role + confirm with `\du` / a check.
-2. **Add the systematic cross-community IDOR test** (enumerate every `<slug>/<pk>` view; assert a member of community A gets 404/403 on community B's object). Locks PR #9's fix against regression.
-3. **Add rate-limiting on `/join/`** code redemption (verified absent — community + household join don't throttle) and on the casework **reauth OTP** (`ReauthView` checks the password with no visible throttle; the global auth rate-limit middleware covers `/auth/*`, not casework reauth).
+2. **Add the systematic cross-community IDOR test** (enumerate every `<slug>/<pk>` view; assert a member of community A gets 404/403 on community B's object). Locks PR #9's fix against regression. *→ addressed in PR #34 (`tests/test_abuse_resistance.py`).*
+3. **Add rate-limiting on `/join/`** code redemption (verified absent — community + household join don't throttle). *→ addressed in PR #34 (10/hr per user).* **Correction (2026-07-02):** this item originally also claimed the casework reauth ("reauth OTP … no visible throttle") — that was wrong on both counts: `ReauthView` is **password** re-auth, not an OTP, and it **is** throttled (`rate_limit("cw-reauth", 5, 60, by="ip")`, apps/casework/views.py, since `8d0ac1d`). The `/join/` half of the finding stands.
 4. **Operational: mark DV/high-risk cases `restricted`.** Add a visible prompt/default so a coordinator-readable **standard** case never holds a survivor's safety-critical location. (Coordinators see all standard cases by design.)
 5. **Federation: verified not reachable** (DESIGNED-only; only a docstring mention) — keep it code-absent until it is separately threat-modeled.
 
