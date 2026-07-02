@@ -8,9 +8,11 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
 
+from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
 from apps.needs.models import Need
 from apps.offers.models import Offer
@@ -25,6 +27,11 @@ class LandingView(TemplateView):
     template_name = "pages/landing.html"
 
 
+# Join-code redemption is brute-forceable without a throttle (codes are 8-char
+# CSPRNG, but the space only protects if attempts are bounded). Per-user, not
+# per-IP: a parish onboarding event legitimately joins many members from one
+# NAT, while account creation is already IP-throttled upstream.
+@method_decorator(rate_limit("join", 10, 3600, by="user"), name="post")
 class JoinCommunityView(LoginRequiredMixin, FormView):
     template_name = "communities/join.html"
     form_class = JoinForm

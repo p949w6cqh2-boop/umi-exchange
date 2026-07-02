@@ -148,7 +148,9 @@ class MatchUpdateView(LoginRequiredMixin, View):
             # nullable `offer` as a LEFT OUTER JOIN, and Postgres refuses a bare
             # FOR UPDATE on the nullable side of an outer join. We only need to
             # lock the match itself here; the Need is locked separately below.
-            match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
+            match = get_object_or_404(
+                Match.objects.select_for_update(of=("self",)).select_related("need", "offer"), pk=pk
+            )
             need = Need.objects.select_for_update().get(pk=match.need_id)
             match.need = need  # operate on the freshly locked instance
 
