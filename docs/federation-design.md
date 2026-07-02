@@ -9,6 +9,9 @@
 >
 > Tags used throughout: **BUILT** (exists in code today, cited), **DESIGNED** (specified here,
 > unbuilt), **DECISION-NEEDED** (Jasiah must choose; recommended default given).
+>
+> **Decision log:** 2026-07-02 — Jasiah answered all 8 open questions (§13): **every recommended
+> default accepted.** Former DECISION-NEEDED items below are marked DECIDED with the chosen option.
 
 ## 0. Sources and citation discipline
 
@@ -149,7 +152,7 @@ retry hint. This is replay-protected, MITM-protected (TLS + digest binding), and
 protected (key pinned at human approval, §3.3). **New runtime dependency: `joserfc`** — justified
 under the no-new-deps rule as the only maintained JOSE implementation; single transitive dep
 (`cryptography`, already present). Fallback if rejected: raw Ed25519 via `cryptography` with a
-hand-rolled envelope — more code we own, same primitives (DECISION-NEEDED, default = joserfc).
+hand-rolled envelope — more code we own, same primitives. **DECIDED 2026-07-02: add `joserfc`.**
 
 ### 3.3 Handshake — human approval on both sides, always
 
@@ -284,11 +287,11 @@ crypto-shred, which IS guaranteed. The design **compensates** rather than preten
 | **Accept** | §8.2 payload BOTH directions: `Member.contact_dict(pref)` output only (`display_name`, `preference`, conditional `email`/`phone` — `apps/communities/models.py:119-127`), wrapped in a signed envelope; stored envelope-encrypted under receiver keys | anything beyond `contact_dict`; `on_behalf_of`; case data (Lake 2 NEVER federates in v1) |
 | **Fulfill / terminal** | status event + optional rating (coordinator-only field, `apps/matches/models.py` `rating`) — **numeric only, no notes** | `Match.notes` free text stays home |
 
-**DECISION-NEEDED (recommended default):** does `description` cross at proposal time? Default
-**no** — the proposing side sees title+category+urgency only, and the parties exchange specifics
-after accept via their revealed contact channel (matches how §8.2 works locally: the platform
-brokers introductions, not conversations). Alternative (description crosses, capped 2000 chars)
-increases utility and de-anonymization risk together.
+**DECIDED 2026-07-02 (default accepted): `description` does NOT cross at proposal time.** The
+proposing side sees title+category+urgency only; the parties exchange specifics after accept via
+their revealed contact channel (matches how §8.2 works locally: the platform brokers
+introductions, not conversations). The rejected alternative (description crosses, capped 2000
+chars) raised utility and de-anonymization risk together.
 
 ### 5.2 §8.2 across instances — the invariant, restated
 Identity and contact information cross the instance boundary **only** after a match reaches
@@ -397,7 +400,7 @@ Instance B (offer home; Bob's member          Instance A (need home = AUTHORITY;
   delivery or on its next poll. If a link dies mid-match (`revoked`), local coordinators are
   notified and the match is cancellable locally (normal §8.7 path).
 
-### 6.4 The proxy-member question — DECISION-NEEDED
+### 6.4 The proxy-member question — DECIDED 2026-07-02: option (a)
 `Match.proposed_by` is `FK(Member, CASCADE)` NOT NULL (`apps/matches/models.py`). A remote
 proposer has no local Member. Options:
 - **(a) Recommended:** per-link **system Member** (`role="member"`, `is_active=False`, user = a
@@ -406,19 +409,18 @@ proposer has no local Member. Options:
   real remote attribution.
 - (b) `proposed_by` nullable + `proposed_via_link` FK — cleaner semantics, but a schema change on
   a BUILT hot table and every `proposed_by` consumer needs a null path. STOP-worthy migration.
-Default: (a); revisit at Stage C review.
+**DECIDED: (a)** — no schema change to Match; revisit only if Stage C review surfaces a blocker.
 
 ---
 
-## 7. Self-match across instances — DECISION-NEEDED (do not silently drop §8.6)
+## 7. Self-match across instances — DECIDED 2026-07-02: blind token + backstop (§8.6 is not dropped at the boundary)
 
 **The tension:** §8.6 (BUILT, `apps/matches/views.py:52-61`) blocks self-matching by comparing
 Member **and** User identity — but §8.2 hides identity across instances until post-accept, and
 sovereign instances share no user table. Both checks are literally impossible pre-accept with the
 data federation is allowed to move.
 
-**Recommended: blind commitment token (default ON when derivable), post-accept detection as the
-backstop.**
+**DECIDED: blind commitment token (ON when derivable), post-accept detection as the backstop.**
 - At link establishment both sides derive a **pairing pepper** for the link:
   `HKDF(shared_info = sorted(instance_id_A, instance_id_B) + link_uuid)` — public inputs, but the
   token below never leaves signed channels, and the pepper's job is only to make tokens
@@ -497,7 +499,7 @@ outcomes ride the 200 envelope. **Versioning/capability negotiation:** path-vers
 capability → `403 {"error": "capability_unsupported"}`. v2 negotiation = intersection of
 advertised versions (DESIGN DECISION).
 
-### 9.3 Outbound client — DECISION-NEEDED
+### 9.3 Outbound client — DECIDED 2026-07-02: option (a), stdlib
 No outbound HTTP exists in the repo (§1). Options: **(a) Recommended:** stdlib
 `urllib.request` wrapped in one module (`apps/federation/client.py`) — explicit 10 s timeouts,
 1 MB response cap, TLS default verification, no redirects, retries owned by the django-q2 outbox
@@ -570,23 +572,27 @@ propagation. **v1 deferred:** directory, Lake-2/casework data (never in v1), mul
 sharing (never — pairwise only), attestation portability beyond a single match, federated search
 ranking, media.
 
-## 13. Open questions for Jasiah (each with recommended default)
+## 13. Open questions — ANSWERED (2026-07-02, Jasiah: all recommended defaults accepted)
 
-1. **joserfc dependency** (§3.2) — add it (default) or hand-roll Ed25519 envelope on
-   `cryptography`? Default: **add joserfc**.
-2. **Self-match blind token** (§7) — ship token+backstop (default) or backstop-only? Default:
-   **token + backstop**.
-3. **Description at proposal** (§5.1) — stays home (default) or crosses capped? Default: **stays**.
-4. **Proxy member vs nullable `proposed_by`** (§6.4) — default: **proxy member (a)**, no schema
-   change to Match.
-5. **Shadow TTL 7 d / contact-retention 72 h / unreachable-suspend 7 d** (§4.4, §11) — confirm
-   numbers. Defaults as stated.
-6. **Outbound client** (§9.3) — stdlib urllib module (default) or httpx?
-7. **Locality label** (§2.2) — free-text admin label (default) vs a controlled vocabulary
-   (diocese/deanery)? Default: **free text, admin-set, warned "coarse only"**.
-8. **Directory** (Stage E) — build at all in v1? Default: **defer entirely**.
+1. **joserfc dependency** (§3.2) — **DECIDED: add `joserfc`** (only maintained JOSE implementation;
+   sole transitive dep `cryptography` already pinned). Justify in `requirements.txt` comment.
+2. **Self-match blind token** (§7) — **DECIDED: token + backstop.** HMAC email-commitment crosses
+   at proposal when derivable; post-accept detection covers the no-email edge.
+3. **Description at proposal** (§5.1) — **DECIDED: stays home.** Title+category+urgency only until
+   accept.
+4. **Proxy member vs nullable `proposed_by`** (§6.4) — **DECIDED: proxy member (a).** No schema
+   change to Match; revisit only on a Stage C blocker.
+5. **Retention numbers** (§4.4, §11) — **CONFIRMED: shadow TTL 7 d · contact retention terminal
+   + 72 h · unreachable auto-suspend 7 d.**
+6. **Outbound client** (§9.3) — **DECIDED: stdlib `urllib.request` module** (`apps/federation/
+   client.py`; 10 s timeouts, 1 MB cap, no redirects, retries in the django-q2 outbox). No httpx.
+7. **Locality label** (§2.2) — **DECIDED: free-text admin label**, UI-warned "coarse only — never
+   an address". Controlled vocabulary (diocese/deanery) deferred.
+8. **Directory** (Stage E) — **DECIDED: deferred entirely from v1.** Pure pairwise P2P.
 
 ---
 
-*DESIGN ONLY. No code or migrations accompany this document. Next step on approval: Stage A
-implementation brief through the L8 lane (design → plan → TDD → gate → PR), per `agents.md`.*
+*DESIGN ONLY — decisions locked 2026-07-02; no code or migrations accompany this document. Next
+step: **Stage A implementation brief** through the L8 lane (plan → TDD → gate → PR), per
+`agents.md`; the ready-to-send prompt is saved in the brain's `capabilities/prompt-library.md`
+(P6). Stage A's migration still STOPs for approval before it ships, per the standing rule.*
