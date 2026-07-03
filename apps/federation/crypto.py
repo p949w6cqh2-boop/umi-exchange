@@ -265,6 +265,14 @@ def verify_consent_receipt(token: str, home_jwk: dict) -> dict:
         raise FederationAuthError("bad_receipt") from e
 
 
+def blind_token(pepper: bytes, email: str) -> str:
+    """§7 self-match token: HMAC of a normalized email under the link pepper.
+    Reveals one bit (equal ⇒ same human) and nothing else; per-link pepper stops
+    cross-link correlation. Both sides derive the same pepper from the pairing
+    code, so the need's home can compare a proposer's token to its requester's."""
+    return _b64url(hmac.new(bytes(pepper), email.strip().lower().encode("utf-8"), hashlib.sha256).digest())
+
+
 def derive_link_pepper(code: str, instance_id_a: str, instance_id_b: str) -> bytes:
     """Both sides derive the same 32-byte pepper from the shared one-time code;
     order of instance ids is irrelevant. Stored, never exported (§7)."""
