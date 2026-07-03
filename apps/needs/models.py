@@ -28,6 +28,11 @@ class Need(models.Model):
     neighborhood = models.CharField(max_length=100, blank=True)
     contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
     status = models.CharField(max_length=10, default="open", choices=STATUS_CHOICES)
+    # Federation (Stage B): per-record opt-in, default OFF. "federated" makes a
+    # REDACTED row discoverable to linked communities that carry an active
+    # consent; identity/contact/free-text never cross (see apps/federation).
+    SHARE_CHOICES = [("local", "This community only"), ("federated", "Discoverable by linked communities")]
+    share_scope = models.CharField(max_length=10, default="local", choices=SHARE_CHOICES)
     on_behalf_of = models.BinaryField(null=True, blank=True)
     # §12.2 — per-need DEK, wrapped by the master KEK (MultiFernet).
     # NULL + ciphertext present ⇒ legacy direct-KEK row (dual-read, D3).

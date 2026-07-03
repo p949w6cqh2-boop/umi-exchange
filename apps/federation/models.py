@@ -113,3 +113,50 @@ class FederationLink(StateMachineMixin, models.Model):
         from django.utils import timezone
 
         return bool(self.pairing_expires_at and self.pairing_expires_at < timezone.now())
+
+
+class FederatedShare(models.Model):
+    """One local record (Need or Offer) advertised to one link (Stage B, §8).
+    The row is redacted-by-construction — it holds no PII, only the alias
+    remote_uuid, the gating consent, and the signed consent receipt. Discovery
+    exposes only §2.2 fields derived from the linked record at serve time."""
+
+    STATUS_CHOICES = [("active", "Active"), ("revoked", "Revoked"), ("expired", "Expired")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    link = models.ForeignKey(FederationLink, on_delete=models.CASCADE, related_name="shares")
+    need = models.ForeignKey(
+        "needs.Need", on_delete=models.CASCADE, null=True, blank=True, related_name="federated_shares"
+    )
+    offer = models.ForeignKey(
+        "offers.Offer", on_delete=models.CASCADE, null=True, blank=True, related_name="federated_shares"
+    )
+    # The participant's consent gating this share (§4.1) — PROTECT so a consent
+    # backing a live share cannot be deleted out from under it.
+    consent = models.ForeignKey("consent.Consent", on_delete=models.PROTECT, related_name="federated_shares")
+    remote_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)  # unlinkable alias
+    receipt_jws = models.TextField(blank=True, default="")  # signed consent receipt (§4.2)
+    status = models.CharField(max_length=10, default="active", choices=STATUS_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "federation_share"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(need__isnull=False, offer__isnull=True) | models.Q(need__isnull=True, offer__isnull=False)
+                ),
+                name="federated_share_exactly_one_record",
+            ),
+            models.UniqueConstraint(fields=["link", "need"], name="uniq_share_link_need"),
+            models.UniqueConstraint(fields=["link", "offer"], name="uniq_share_link_offer"),
+        ]
+
+    def __str__(self):
+        return f"share {self.remote_uuid} → {self.link_id} ({self.status})"
+
+    @property
+    def record(self):
+        return self.need or self.offer

@@ -114,3 +114,19 @@ def peer(db, remote):
         label="Peer Parish",
         status="pending",
     )
+
+
+@pytest.fixture
+def active_link(world, peer):
+    """An active link from the local community to the (now active) peer."""
+    from apps.federation.models import FederationLink
+
+    peer.status = "active"
+    peer.save(update_fields=["status"])
+    return FederationLink.objects.create(
+        peer=peer,
+        community=world.community,
+        remote_community_uuid=uuid.uuid4(),
+        remote_community_label="Peer Board",
+        status="active",
+    )
