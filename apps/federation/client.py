@@ -108,3 +108,13 @@ def post_confirm(base_url: str, payload: dict, headers: dict) -> dict:
 
 def confirm_url(base_url: str) -> str:
     return base_url.rstrip("/") + "/federation/v1/handshake/confirm"
+
+
+def discovery_url(base_url: str) -> str:
+    return base_url.rstrip("/") + "/federation/v1/discovery"
+
+
+def get_discovery(base_url: str, headers: dict) -> dict:
+    """Signed GET of a peer's discovery feed. The caller builds the
+    X-UMI-Signature header (crypto.sign_request over method+url+empty body)."""
+    return _request("GET", discovery_url(base_url), None, headers)
