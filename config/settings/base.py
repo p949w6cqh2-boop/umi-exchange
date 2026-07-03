@@ -27,6 +27,11 @@ ENCRYPTION_KEYS = env.list("ENCRYPTION_KEYS", default=[])
 UMI_CONFORMANCE_LEVEL = env("UMI_CONFORMANCE_LEVEL", default="core")
 DEBUG = env.bool("DEBUG", default=False)
 
+# ── Federation (Stage A — docs/federation-design.md; default OFF at every level) ──
+FEDERATION_ENABLED = env.bool("FEDERATION_ENABLED", default=False)
+FEDERATION_PRIVATE_KEY = env("FEDERATION_PRIVATE_KEY", default="")  # Ed25519 private JWK (manage.py federation_keygen)
+FEDERATION_LOCALITY = env("FEDERATION_LOCALITY", default="")  # coarse label only — never an address
+
 
 # ── Apps ──────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -53,6 +58,7 @@ INSTALLED_APPS = [
     "apps.casework",
     "apps.tags",
     "apps.health",
+    "apps.federation",
 ]
 
 # Optional: Django-Q2 (for background tasks — not required for basic operation)

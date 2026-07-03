@@ -27,6 +27,18 @@ if not ENCRYPTION_KEYS and not ENCRYPTION_KEY:
         "ENCRYPTION_KEY must be set in production; an empty key silently disables encryption "
         "of sensitive fields."
     )
+if FEDERATION_ENABLED and not FEDERATION_PRIVATE_KEY:
+    raise ImproperlyConfigured(
+        "FEDERATION_ENABLED=True requires FEDERATION_PRIVATE_KEY (an Ed25519 private JWK; "
+        "generate one with `manage.py federation_keygen`). Refusing to start with an "
+        "unsigned federation identity."
+    )
+if FEDERATION_ENABLED and "locmem" in CACHES["default"]["BACKEND"].lower():
+    raise ImproperlyConfigured(
+        "FEDERATION_ENABLED=True requires a shared cache (set REDIS_URL). With the per-process "
+        "LocMemCache, the signed-request replay (jti) guard and rate limits are not atomic across "
+        "gunicorn workers — a replay landing on another worker would be accepted."
+    )
 
 # ── Security Headers ─────────────────────────────────
 SECURE_SSL_REDIRECT = True
