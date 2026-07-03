@@ -189,3 +189,34 @@ class ShadowListing(models.Model):
 
     def __str__(self):
         return f"shadow {self.kind}:{self.remote_uuid} ← {self.link_id}"
+
+
+class FederatedMatch(models.Model):
+    """Sidecar on a cross-instance match (Stage C, §6). On the need's home
+    (role='authority') it wraps the local authoritative Match; the mirror side
+    (role='mirror', Stage C2) tracks the peer's copy. Contact payloads exchanged
+    post-accept are envelope-encrypted under OUR keys (§5.3), never stored raw."""
+
+    ROLE_CHOICES = [("authority", "Authority"), ("mirror", "Mirror")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    match = models.OneToOneField(
+        "matches.Match", on_delete=models.CASCADE, null=True, blank=True, related_name="federated"
+    )
+    link = models.ForeignKey(FederationLink, on_delete=models.CASCADE, related_name="matches")
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    proposal_uuid = models.UUIDField()  # client-minted idempotency key (§6.3)
+    remote_match_uuid = models.UUIDField(null=True, blank=True)
+    # Post-accept contact (§5.3, Stage C2) — envelope-encrypted under our KEK.
+    contact_payload_enc = models.BinaryField(null=True, blank=True)
+    contact_payload_dek = models.BinaryField(null=True, blank=True, editable=False)
+    contact_expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "federation_match"
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["link", "proposal_uuid"], name="uniq_fedmatch_link_proposal")]
+
+    def __str__(self):
+        return f"fedmatch {self.proposal_uuid} ({self.role})"

@@ -28,7 +28,7 @@ from apps.common.state import TransitionConflict
 from apps.communities.models import Community, Member
 
 from . import client as client_mod
-from . import crypto
+from . import crypto, matching
 from .client import FederationClientError
 from .crypto import FederationAuthError
 from .discovery import redact
@@ -237,6 +237,48 @@ class ConsentRevocationsView(FederationGateMixin, View):
             shadow.delete()
             emit("fed.shadow_shredded", link, request=request, details={"remote_uuid": str(remote_uuid)})
             results.append({"remote_uuid": str(remote_uuid), "status": "shredded"})
+        return JsonResponse({"results": results})
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(rate_limit("fed-proposals", 30, 3600, by="ip"), name="post")
+class ProposalsView(FederationGateMixin, View):
+    """Signed inbound proposals (§6.2): a peer proposes against a Need we shared.
+    We are the need's home, so we create the AUTHORITATIVE Match under the §8.7
+    lock, preserve §8.6 via the blind token, and stay idempotent on
+    proposal_uuid. PII-free wire — the proposer is referenced only by a token."""
+
+    def post(self, request):
+        if len(request.body) > MAX_BODY_BYTES:
+            return JsonResponse({"error": "too_large"}, status=400)
+        try:
+            peer, _claims = crypto.verify_signed_request(request)
+        except FederationAuthError as e:
+            return JsonResponse({"error": e.code}, status=403)
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return JsonResponse({"error": "invalid JSON"}, status=400)
+
+        results = []
+        for item in (payload.get("proposals") or [])[:50]:
+            if not isinstance(item, dict):
+                results.append({"status": "error", "error": "invalid item"})
+                continue
+            try:
+                need_remote_uuid = uuid.UUID(str(item.get("need_remote_uuid", "")))
+                proposal_uuid = uuid.UUID(str(item.get("proposal_uuid", "")))
+            except (ValueError, TypeError):
+                results.append({"status": "error", "error": "invalid uuid"})
+                continue
+            result = matching.receive_proposal(
+                peer,
+                need_remote_uuid=need_remote_uuid,
+                proposal_uuid=proposal_uuid,
+                blind_token=item.get("blind_token"),
+            )
+            result["proposal_uuid"] = str(proposal_uuid)
+            results.append(result)
         return JsonResponse({"results": results})
 
 
