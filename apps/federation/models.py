@@ -160,3 +160,32 @@ class FederatedShare(models.Model):
     @property
     def record(self):
         return self.need or self.offer
+
+
+class ShadowListing(models.Model):
+    """An inbound redacted discovery row pulled from a peer (Stage B slice 2,
+    §2.2/§4.4). Holds NO PII by construction — only the coarse §2.2 fields and
+    a short TTL. Nothing here is treated as durable: it is refreshed on each
+    poll and shredded when it expires or disappears from the peer's feed."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    link = models.ForeignKey(FederationLink, on_delete=models.CASCADE, related_name="shadows")
+    kind = models.CharField(max_length=8)  # "need" | "offer"
+    remote_uuid = models.UUIDField()  # the peer's per-share alias
+    category = models.CharField(max_length=100, blank=True, default="")
+    urgency = models.CharField(max_length=10, blank=True, default="")
+    locality = models.CharField(max_length=100, blank=True, default="")
+    freshness = models.CharField(max_length=10, blank=True, default="")
+    radius_km = models.IntegerField(null=True, blank=True)
+    receipt_jws = models.TextField(blank=True, default="")
+    fetched_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "federation_shadow"
+        ordering = ["-fetched_at"]
+        constraints = [models.UniqueConstraint(fields=["link", "remote_uuid"], name="uniq_shadow_link_remote")]
+        indexes = [models.Index(fields=["expires_at"])]
+
+    def __str__(self):
+        return f"shadow {self.kind}:{self.remote_uuid} ← {self.link_id}"
