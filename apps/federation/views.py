@@ -14,6 +14,7 @@ from datetime import timedelta
 from django.conf import settings as dj_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -128,19 +129,17 @@ class HandshakeConfirmView(FederationGateMixin, View):
         except (ValueError, UnicodeDecodeError):
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
-        code = str(payload.get("code", ""))[:32]
-        candidate_hash = crypto.local_code_hash(code)
-        link = next(
-            (
-                candidate
-                for candidate in FederationLink.objects.select_related("community").filter(
-                    peer=peer, status="pending", requested_by_us=True
-                )
-                if crypto.codes_match(candidate.pairing_code_hash, candidate_hash)
-            ),
-            None,
+        # Normalize like the minting/entry sides (mint is uppercase; the admin
+        # form .upper()s) so a peer forwarding a raw lowercase entry still matches.
+        code = str(payload.get("code", "")).strip().upper()[:32]
+        # local_code_hash is deterministic (SECRET_KEY-salted, not per-link), so
+        # match the hash directly in the DB instead of scanning every pending link.
+        link = (
+            FederationLink.objects.select_related("community")
+            .filter(peer=peer, status="pending", requested_by_us=True, pairing_code_hash=crypto.local_code_hash(code))
+            .first()
         )
-        if link is None or (link.pairing_expires_at and link.pairing_expires_at < timezone.now()):
+        if link is None or not link.pairing_code_hash or link.is_pairing_expired():
             return JsonResponse({"error": "bad_pairing"}, status=403)
 
         remote_c = payload.get("community") or {}
@@ -277,8 +276,9 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
     def _approve(self, request, member, _action):
         peer = get_object_or_404(FederationPeer, pk=request.POST.get("peer_id"), status="pending")
         code = str(request.POST.get("code", "")).strip().upper()[:32]
-        expired = peer.pairing_expires_at and peer.pairing_expires_at < timezone.now()
-        if expired or not crypto.codes_match(peer.pairing_hash, crypto.remote_code_hash(code, peer.pairing_salt)):
+        if peer.is_pairing_expired() or not crypto.codes_match(
+            peer.pairing_hash, crypto.remote_code_hash(code, peer.pairing_salt)
+        ):
             messages.error(request, "Pairing code did not match (or expired). Nothing was approved.")
             return
         requested = (peer.requested_communities or [{}])[0]
@@ -286,17 +286,23 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             remote_uuid = uuid.UUID(str(requested.get("uuid", "")))
         except ValueError:
             remote_uuid = None
-        link = FederationLink.objects.create(
-            peer=peer,
-            community=self.community,
-            remote_community_uuid=remote_uuid,
-            remote_community_label=str(requested.get("label", ""))[:200],
-            requested_by_us=False,
-            approved_by=member,
-            approved_at=timezone.now(),
-            pairing_pepper=crypto.derive_link_pepper(code, crypto.my_instance_id(), peer.instance_id),
-        )
-        link.transition_to("active")
+        try:
+            link = FederationLink.objects.create(
+                peer=peer,
+                community=self.community,
+                remote_community_uuid=remote_uuid,
+                remote_community_label=str(requested.get("label", ""))[:200],
+                requested_by_us=False,
+                approved_by=member,
+                approved_at=timezone.now(),
+                pairing_pepper=crypto.derive_link_pepper(code, crypto.my_instance_id(), peer.instance_id),
+            )
+            link.transition_to("active")
+        except (IntegrityError, TransitionConflict):
+            # Concurrent double-approve of the same pending peer — the loser
+            # sees the link already handled rather than a 500.
+            messages.error(request, "That peer was already being approved. Nothing was changed.")
+            return
         payload = {"code": code, "community": {"uuid": str(self.community.id), "label": self.community.name}}
         signature = crypto.sign_request(
             "POST", client_mod.confirm_url(peer.base_url), json.dumps(payload).encode(), aud=peer.instance_id

@@ -4,6 +4,7 @@ import json
 import uuid
 
 import pytest
+from django.conf import settings
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
@@ -12,7 +13,8 @@ from apps.federation.models import FederationLink, FederationPeer
 
 pytestmark = [pytest.mark.django_db, pytest.mark.urls("apps.federation.tests.urls_enabled")]
 
-CONFIRM_URL = "http://testserver/federation/v1/handshake/confirm"
+# htu binds to our advertised SITE_URL, not the request Host header.
+CONFIRM_URL = settings.SITE_URL.rstrip("/") + "/federation/v1/handshake/confirm"
 
 
 def post_json(client, path, payload, **extra):
@@ -75,6 +77,17 @@ class TestInboundHandshake:
         assert resp.status_code == 400
         assert resp.json() == {"error": "bad_document"}
         assert not FederationPeer.objects.exists()
+
+    def test_colliding_base_url_does_not_500(self, client, fed_settings, remote, db):
+        # An attacker's valid self-signed doc that reuses an existing peer's
+        # base_url must not raise IntegrityError (base_url is no longer unique).
+        FederationPeer.objects.create(
+            base_url="https://peer.example", instance_id="someone-else-thumbprint", jwk={}, status="active"
+        )
+        _, payload = handshake_payload(remote)  # remote advertises https://peer.example too
+        resp = post_json(client, "/federation/v1/handshake", payload, HTTP_X_REAL_IP="10.1.1.7")
+        assert resp.status_code == 200
+        assert FederationPeer.objects.filter(instance_id=remote.instance_id).count() == 1
 
     def test_repeat_request_updates_not_duplicates(self, client, fed_settings, remote, db):
         for ip in ("10.1.1.5", "10.1.1.6"):
@@ -142,6 +155,15 @@ class TestConfirm:
         )
         body = {"code": self.code, "community": {"uuid": str(uuid.uuid4()), "label": "x"}}
         assert self._confirm(client, fed_settings, remote, body).status_code == 403
+
+    def test_lowercase_code_still_matches(self, client, fed_settings, remote, world, peer, pending_link):
+        # A peer forwarding the admin's raw lowercase entry must still match
+        # (confirm normalizes to uppercase, like minting and the approve form).
+        body = {"code": self.code.lower(), "community": {"uuid": str(uuid.uuid4()), "label": "Peer Board"}}
+        resp = self._confirm(client, fed_settings, remote, body)
+        assert resp.status_code == 200
+        pending_link.refresh_from_db()
+        assert pending_link.status == "active"
 
     def test_replay_403(self, client, fed_settings, remote, pending_link):
         raw_body = {"code": self.code, "community": {"uuid": str(uuid.uuid4()), "label": "Peer Board"}}

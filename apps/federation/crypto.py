@@ -10,6 +10,7 @@ nonce cache).
 """
 
 import base64
+import functools
 import hashlib
 import hmac
 import json
@@ -55,6 +56,17 @@ def generate_private_jwk() -> dict:
     return OKPKey.generate_key("Ed25519").as_dict(private=True)
 
 
+@functools.lru_cache(maxsize=8)
+def _import_key(raw: str) -> OKPKey:
+    """Parse the instance private JWK once per distinct key material. Keyed on
+    the raw string so prod (one static key) parses once for the process, while
+    the test suite (a fresh key per test) still resolves correctly."""
+    try:
+        return OKPKey.import_key(json.loads(raw))
+    except (ValueError, TypeError) as e:
+        raise ImproperlyConfigured(f"FEDERATION_PRIVATE_KEY is not a valid Ed25519 JWK: {e}") from e
+
+
 def load_instance_key() -> OKPKey:
     raw = getattr(settings, "FEDERATION_PRIVATE_KEY", "")
     if not raw:
@@ -62,10 +74,7 @@ def load_instance_key() -> OKPKey:
             "FEDERATION_PRIVATE_KEY is required when federation is enabled "
             "(generate one with `manage.py federation_keygen`)."
         )
-    try:
-        return OKPKey.import_key(json.loads(raw))
-    except (ValueError, TypeError) as e:
-        raise ImproperlyConfigured(f"FEDERATION_PRIVATE_KEY is not a valid Ed25519 JWK: {e}") from e
+    return _import_key(raw)
 
 
 def jwk_thumbprint(jwk: dict) -> str:
@@ -187,7 +196,11 @@ def verify_signed_request(request):
         raise _reject("bad_iat")
     if claims.get("htm") != request.method:
         raise _reject("bad_htm")
-    if claims.get("htu") != request.build_absolute_uri(request.path):
+    # Bind to our ADVERTISED URL (SITE_URL = the base_url in our instance doc),
+    # not build_absolute_uri: behind a reverse proxy the inbound Host/scheme can
+    # differ from what the peer signed against, which would reject every valid
+    # request. The peer signs htu = <our base_url> + path.
+    if claims.get("htu") != settings.SITE_URL.rstrip("/") + request.path:
         raise _reject("bad_htu")
     if claims.get("digest") != request_body_digest(request.body):
         raise _reject("bad_digest")

@@ -18,7 +18,10 @@ class FederationPeer(models.Model):
     STATUS_CHOICES = [("pending", "Pending"), ("active", "Active"), ("blocked", "Blocked")]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    base_url = models.URLField(max_length=200, unique=True)
+    # Identity is the instance_id (thumbprint); base_url is peer-supplied and
+    # advisory, so it is NOT unique — a self-signed doc must never be able to
+    # collide on someone else's URL and 500 the handshake.
+    base_url = models.URLField(max_length=200, blank=True, default="")
     instance_id = models.CharField(max_length=64, unique=True)  # RFC 7638 JWK thumbprint
     jwk = models.JSONField(default=dict)  # pinned public key (OKP/Ed25519)
     label = models.CharField(max_length=200, blank=True, default="")
@@ -47,6 +50,11 @@ class FederationPeer(models.Model):
 
     def __str__(self):
         return f"{self.label or self.base_url} ({self.status})"
+
+    def is_pairing_expired(self):
+        from django.utils import timezone
+
+        return bool(self.pairing_expires_at and self.pairing_expires_at < timezone.now())
 
 
 class FederationLink(StateMachineMixin, models.Model):
@@ -100,3 +108,8 @@ class FederationLink(StateMachineMixin, models.Model):
 
     def __str__(self):
         return f"{self.community.slug} ↔ {self.peer.base_url} ({self.status})"
+
+    def is_pairing_expired(self):
+        from django.utils import timezone
+
+        return bool(self.pairing_expires_at and self.pairing_expires_at < timezone.now())

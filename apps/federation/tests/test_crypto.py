@@ -5,6 +5,7 @@ import time
 import uuid
 
 import pytest
+from django.conf import settings
 from django.test import RequestFactory
 
 from apps.federation import crypto
@@ -14,7 +15,8 @@ from .conftest import body_digest, rfc7638_thumbprint
 
 pytestmark = pytest.mark.django_db
 
-URL = "http://testserver/federation/v1/handshake/confirm"
+# htu is bound to our advertised SITE_URL (not the Host header), so sign against it.
+URL = settings.SITE_URL.rstrip("/") + "/federation/v1/handshake/confirm"
 
 
 def _request(body: bytes, signature: str | None):
@@ -116,6 +118,17 @@ class TestSignedRequests:
         sig = remote.sign("POST", URL, b'{"a":1}', fed_settings.instance_id)
         with pytest.raises(FederationAuthError) as e:
             crypto.verify_signed_request(_request(b'{"a":2}', sig))
+        assert e.value.code == "bad_signature"
+
+    def test_htu_bound_to_site_url_not_host_header(self, fed_settings, remote, peer):
+        # A signature whose htu is built from the (proxy) Host header rather than
+        # our advertised SITE_URL must be rejected — this is the binding target.
+        body = b"{}"
+        sig = remote.sign(
+            "POST", "http://evil-proxy-host/federation/v1/handshake/confirm", body, fed_settings.instance_id
+        )
+        with pytest.raises(FederationAuthError) as e:
+            crypto.verify_signed_request(_request(body, sig))
         assert e.value.code == "bad_signature"
 
     def test_tampered_signature_rejected(self, fed_settings, remote, peer):

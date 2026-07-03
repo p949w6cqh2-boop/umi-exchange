@@ -1,13 +1,17 @@
 """
 Minimal outbound HTTP client for federation (decision §9.3: stdlib only).
-Strict timeouts, 1 MB response cap, https enforced outside DEBUG, no retries
+Strict timeouts, 1 MB response cap, https enforced outside DEBUG, redirects
+refused, and non-public destinations rejected (SSRF hardening). No retries
 here — retry policy belongs to the callers (Stage C moves it into a
 django-q2 outbox).
 """
 
+import ipaddress
 import json
+import socket
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 
 from django.conf import settings
 
@@ -19,9 +23,49 @@ class FederationClientError(Exception):
     pass
 
 
-def _request(method: str, url: str, body: bytes | None = None, headers: dict | None = None):
-    if not url.startswith("https://") and not settings.DEBUG:
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuse to follow redirects: a peer could 30x us to http://, to an
+    internal host, or to cloud metadata, defeating the checks in
+    _validate_public_url (which only sees the original URL)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_opener = urllib.request.build_opener(_NoRedirectHandler)
+
+
+def _validate_public_url(url: str) -> None:
+    """Enforce https (outside DEBUG) and reject hosts that resolve to
+    loopback/link-local/reserved/multicast addresses — the cloud-metadata and
+    localhost SSRF sinks. Private ranges (RFC1918, CGNAT 100.64/10) are allowed:
+    parish-to-parish federation over a LAN or Tailscale is a legitimate topology.
+    NOTE: getaddrinfo here and the socket in urlopen re-resolve independently
+    (a TOCTOU window); acceptable for an admin-gated Stage-A surface — a future
+    hardening can pin the resolved address."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise FederationClientError("unsupported URL scheme")
+    if parsed.scheme != "https" and not settings.DEBUG:
         raise FederationClientError("federation peers must be https")
+    host = parsed.hostname
+    if not host:
+        raise FederationClientError("peer URL has no host")
+    if settings.DEBUG:
+        return  # local dev/tests may target localhost
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    try:
+        infos = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+    except OSError as e:
+        raise FederationClientError(f"could not resolve peer host: {str(e)[:100]}") from e
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            raise FederationClientError("peer resolves to a non-public address")
+
+
+def _request(method: str, url: str, body: bytes | None = None, headers: dict | None = None):
+    _validate_public_url(url)
     req = urllib.request.Request(  # noqa: S310
         url,
         data=body,
@@ -29,8 +73,8 @@ def _request(method: str, url: str, body: bytes | None = None, headers: dict | N
         headers={"Accept": "application/json", "Content-Type": "application/json", **(headers or {})},
     )
     try:
-        # Scheme is constrained to https above (http only under DEBUG for tests).
-        with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:  # nosec B310
+        # Scheme validated above; redirects refused by _opener.
+        with _opener.open(req, timeout=TIMEOUT_SECONDS) as resp:  # nosec B310
             raw = resp.read(MAX_RESPONSE_BYTES + 1)
     except urllib.error.HTTPError as e:
         raise FederationClientError(f"peer returned HTTP {e.code}") from e
