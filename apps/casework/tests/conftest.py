@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.casework.middleware import SESSION_KEY
+from apps.casework.middleware import SESSION_KEY, SESSION_USER_KEY
 from apps.casework.models import CaseFile
 from apps.communities.models import Community, Member
 from apps.consent.models import Consent
@@ -104,6 +104,7 @@ def auth(client):
         if stamp:
             s = client.session
             s[SESSION_KEY] = time.time()
+            s[SESSION_USER_KEY] = user.pk
             s.save()
         return client
 

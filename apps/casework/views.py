@@ -6,6 +6,7 @@ goes through transition_to() and maps TransitionConflict → HTTP 409.
 
 import json
 import time
+import uuid
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction
@@ -593,10 +594,31 @@ class SyncView(CommunityMixin, View):
             results.append(self._one(request, slug, item))
         return JsonResponse({"results": results})
 
+    @staticmethod
+    def _bounded_int(raw, hi):
+        """(value, ok). None when absent/empty; ok=False for wrong-type,
+        negative, or out-of-range (would DataError on Postgres)."""
+        if raw in (None, ""):
+            return None, True
+        try:
+            v = int(raw)
+        except (ValueError, TypeError):
+            return None, False
+        return (v, True) if 0 <= v <= hi else (None, False)
+
     def _one(self, request, slug, item):
-        cu = item.get("client_uuid")
-        if not cu:
+        if not isinstance(item, dict):
+            return {"client_uuid": None, "status": "error", "error": "invalid item"}
+        raw_cu = item.get("client_uuid")
+        if not raw_cu:
             return {"client_uuid": None, "status": "error", "error": "client_uuid required"}
+        # Validate the uuid BEFORE any DB lookup: a non-empty malformed value
+        # (e.g. "garbage", a number) would otherwise raise inside the ORM filter
+        # and 500 the whole batch of sensitive visit notes.
+        try:
+            cu = str(uuid.UUID(str(raw_cu)))
+        except (ValueError, TypeError, AttributeError):
+            return {"client_uuid": None, "status": "error", "error": "invalid client_uuid"}
         existing = CaseNote.objects.filter(client_uuid=cu).first()
         if existing:
             return {"client_uuid": cu, "status": "duplicate", "note_id": str(existing.pk)}
@@ -611,25 +633,38 @@ class SyncView(CommunityMixin, View):
         if self._consent_frozen(case):
             return {"client_uuid": cu, "status": "error", "error": "consent_revoked"}
 
-        body = (item.get("body") or "").strip()
-        if not body:
+        body = item.get("body")
+        if not isinstance(body, str) or not body.strip():
             return {"client_uuid": cu, "status": "error", "error": "body required"}
-        occurred = parse_datetime((item.get("occurred_at") or "").replace("Z", "+00:00"))
-        if occurred is None:
+        body = body.strip()
+        # occurred_at: absent → now() (client didn't capture a time); present but
+        # unparseable/wrong-type → per-item error, NEVER a silent now() that would
+        # corrupt the legal timestamp, mis-order the export, and defeat dup-detection.
+        raw_occurred = item.get("occurred_at")
+        if raw_occurred in (None, ""):
             occurred = timezone.now()
-        elif timezone.is_naive(occurred):
-            occurred = timezone.make_aware(occurred)
+        elif not isinstance(raw_occurred, str):
+            return {"client_uuid": cu, "status": "error", "error": "invalid occurred_at"}
+        else:
+            occurred = parse_datetime(raw_occurred.replace("Z", "+00:00"))
+            if occurred is None:
+                return {"client_uuid": cu, "status": "error", "error": "invalid occurred_at"}
+            if timezone.is_naive(occurred):
+                occurred = timezone.make_aware(occurred)
         kind = item.get("kind") if item.get("kind") in dict(CaseNote.KIND_CHOICES) else "visit"
         allowed_actions = {a for a, _ in CaseNote.ACTIONS}
-        actions = [a for a in (item.get("actions") or []) if a in allowed_actions]
-        try:
-            duration = int(item["duration_minutes"]) if item.get("duration_minutes") else None
-        except (ValueError, TypeError):
-            duration = None
-        try:
-            aid_cents = int(item["aid_value_cents"]) if item.get("aid_value_cents") not in (None, "") else None
-        except (ValueError, TypeError):
-            aid_cents = None
+        raw_actions = item.get("actions")
+        actions = (
+            [a for a in raw_actions if isinstance(a, str) and a in allowed_actions]
+            if isinstance(raw_actions, list)
+            else []
+        )
+        duration, ok = self._bounded_int(item.get("duration_minutes"), 32767)
+        if not ok:
+            return {"client_uuid": cu, "status": "error", "error": "invalid duration_minutes"}
+        aid_cents, ok = self._bounded_int(item.get("aid_value_cents"), 2_147_483_647)
+        if not ok:
+            return {"client_uuid": cu, "status": "error", "error": "invalid aid_value_cents"}
 
         note = CaseNote(
             case=case,
@@ -711,13 +746,20 @@ class FollowUpStatusView(CommunityMixin, View):
         fu = get_object_or_404(
             FollowUp.objects.select_related("case", "assigned_to"), pk=pk, case__community=self.community
         )
-        allowed = (
+        # Current case access is required IN ADDITION to identity: a grant can be
+        # revoked or expire after a follow-up is assigned, and the HTMX partial
+        # below renders the sensitive FollowUp.detail. Mirror MyFollowUpsView's
+        # re-check so a stale assignee can never pull a restricted case's PII.
+        has_access = access.case_access(self.membership, fu.case) > access.NONE
+        allowed = has_access and (
             fu.assigned_to_id == self.membership.id
             or fu.created_by_id == self.membership.id
             or access.is_admin(self.membership)
         )
         if not allowed:
-            return _forbidden("Only the assignee, creator, or an admin can update this follow-up.")
+            return _forbidden(
+                "Only the assignee, creator, or an admin with current case access can update this follow-up."
+            )
         new = request.POST.get("status", "")
         if new not in ("done", "cancelled"):
             return HttpResponse("Unknown status.", status=400)

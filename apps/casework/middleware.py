@@ -16,6 +16,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 SESSION_KEY = "casework_auth_at"
+SESSION_USER_KEY = "casework_auth_uid"  # bind the stamp to the user who earned it
 MAX_AGE_SECONDS = 4 * 60 * 60
 
 EXEMPT_URL_NAMES = {"reauth", "sw", "visit-manifest"}
@@ -38,7 +39,12 @@ class SensitiveSessionMiddleware:
         if match and match.namespace == "casework" and request.user.is_authenticated:
             if match.url_name not in EXEMPT_URL_NAMES:
                 ts = request.session.get(SESSION_KEY)
-                if not ts or (time.time() - ts) > MAX_AGE_SECONDS:
+                uid = request.session.get(SESSION_USER_KEY)
+                # Require a fresh stamp AND that it belongs to THIS user, so a
+                # stale stamp left in a reused session can never satisfy another
+                # user's gate (defense-in-depth beyond Django's logout flush).
+                fresh = bool(ts) and (time.time() - ts) <= MAX_AGE_SECONDS and uid == request.user.pk
+                if not fresh:
                     if match.url_name == "sync":
                         return JsonResponse({"reauth": True}, status=403)
                     reauth = reverse("casework:reauth", kwargs={"slug": match.kwargs.get("slug")})
@@ -48,3 +54,4 @@ class SensitiveSessionMiddleware:
 
 def mark_authenticated(request):
     request.session[SESSION_KEY] = time.time()
+    request.session[SESSION_USER_KEY] = request.user.pk
