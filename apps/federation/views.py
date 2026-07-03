@@ -32,7 +32,7 @@ from . import crypto
 from .client import FederationClientError
 from .crypto import FederationAuthError
 from .discovery import redact
-from .models import FederatedShare, FederationLink, FederationPeer
+from .models import FederatedShare, FederationLink, FederationPeer, ShadowListing
 
 MAX_BODY_BYTES = 10_000
 PAIRING_TTL = timedelta(hours=24)
@@ -194,6 +194,50 @@ class DiscoveryView(FederationGateMixin, View):
         listings = [redact(s) for s in shares]
         emit("fed.discovery_served", peer, request=request, details={"count": len(listings)})
         return JsonResponse({"listings": listings})
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(rate_limit("fed-revocations", 60, 3600, by="ip"), name="post")
+class ConsentRevocationsView(FederationGateMixin, View):
+    """Signed inbound delete-requests (§4.3): a peer asks us to shred our shadow
+    of a share it revoked. We SHOULD honor it (cooperative erasure) — the shadow
+    is a non-PII cache row, so we just delete it and audit both events."""
+
+    def post(self, request):
+        if len(request.body) > MAX_BODY_BYTES:
+            return JsonResponse({"error": "too_large"}, status=400)
+        try:
+            peer, _claims = crypto.verify_signed_request(request)
+        except FederationAuthError as e:
+            return JsonResponse({"error": e.code}, status=403)
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return JsonResponse({"error": "invalid JSON"}, status=400)
+
+        results = []
+        for item in (payload.get("revocations") or [])[:50]:
+            if not isinstance(item, dict):
+                results.append({"status": "error", "error": "invalid item"})
+                continue
+            try:
+                remote_uuid = uuid.UUID(str(item.get("remote_uuid", "")))
+            except (ValueError, TypeError):
+                results.append({"status": "error", "error": "invalid remote_uuid"})
+                continue
+            # Match only shadows sourced from THIS peer (the verified sender).
+            shadow = (
+                ShadowListing.objects.filter(link__peer=peer, remote_uuid=remote_uuid).select_related("link").first()
+            )
+            if shadow is None:
+                results.append({"remote_uuid": str(remote_uuid), "status": "unknown"})
+                continue
+            link = shadow.link
+            emit("fed.consent_revoke_received", link, request=request, details={"remote_uuid": str(remote_uuid)})
+            shadow.delete()
+            emit("fed.shadow_shredded", link, request=request, details={"remote_uuid": str(remote_uuid)})
+            results.append({"remote_uuid": str(remote_uuid), "status": "shredded"})
+        return JsonResponse({"results": results})
 
 
 # ── Community-admin UI (§3.3 human approval) ─────────

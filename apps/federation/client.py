@@ -118,3 +118,12 @@ def get_discovery(base_url: str, headers: dict) -> dict:
     """Signed GET of a peer's discovery feed. The caller builds the
     X-UMI-Signature header (crypto.sign_request over method+url+empty body)."""
     return _request("GET", discovery_url(base_url), None, headers)
+
+
+def revocations_url(base_url: str) -> str:
+    return base_url.rstrip("/") + "/federation/v1/consent/revocations"
+
+
+def post_revocation(base_url: str, payload: dict, headers: dict) -> dict:
+    """Signed POST of a share delete-request (§4.3)."""
+    return _request("POST", revocations_url(base_url), json.dumps(payload).encode(), headers)
