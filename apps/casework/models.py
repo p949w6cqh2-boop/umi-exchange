@@ -182,6 +182,7 @@ class CaseNote(StateMachineMixin, models.Model):
         "matches.Match", null=True, blank=True, on_delete=models.SET_NULL, related_name="case_notes"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)  # last-touched → drives the "stale draft" window
 
     class Meta:
         db_table = "casework_case_note"
