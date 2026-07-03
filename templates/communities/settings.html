@@ -116,7 +116,21 @@
       {% for m in members %}
       <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
         <span class="text-sm text-gray-900">{{ m.display_name }}</span>
+        {% if is_admin %}
+        <form method="post" class="flex items-center gap-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="change_role">
+          <input type="hidden" name="member_id" value="{{ m.id }}">
+          <select name="role" class="text-xs border border-gray-300 rounded px-2 py-1" aria-label="Role for {{ m.display_name }}">
+            {% for value, label in role_choices %}
+            <option value="{{ value }}" {% if m.role == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="text-xs font-medium text-umi-primary hover:underline min-h-[44px]">Save</button>
+        </form>
+        {% else %}
         <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{{ m.get_role_display }}</span>
+        {% endif %}
       </div>
       {% endfor %}
     </div>

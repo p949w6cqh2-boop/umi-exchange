@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ community.name }} · Federation{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+  <header>
+    <h1 class="font-serif text-2xl">Federation</h1>
+    <p class="text-sm opacity-80 mt-1">
+      Links are pairwise and human-approved on both sides. Nothing is shared in Stage A — links only.
+    </p>
+    <p class="text-xs mt-2">This instance's key thumbprint (read it aloud when pairing):
+      <code class="break-all">{{ instance_id }}</code></p>
+  </header>
+
+  <section>
+    <h2 class="font-serif text-lg mb-2">Request a link</h2>
+    <form method="post" class="flex gap-2 items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="initiate">
+      <label class="block flex-1">
+        <span class="block text-sm font-medium text-gray-700 mb-1">Peer instance URL</span>
+        <input type="url" name="base_url" required placeholder="https://peer.example" class="w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-blue-500">
+      </label>
+      <button type="submit" class="inline-flex items-center justify-center btn-primary transition-colors">Fetch &amp; request</button>
+    </form>
+    <p class="text-xs opacity-70 mt-1">You'll get a one-time pairing code to read to the peer's admin.</p>
+  </section>
+
+  {% if inbound_peers %}
+  <section>
+    <h2 class="font-serif text-lg mb-2">Inbound requests</h2>
+    <ul class="space-y-3">
+      {% for p in inbound_peers %}
+      <li class="border rounded p-3">
+        <div class="text-sm"><strong>{{ p.base_url }}</strong>{% if p.locality %} · {{ p.locality }}{% endif %}</div>
+        <div class="text-xs opacity-70 break-all">thumbprint: {{ p.instance_id }}</div>
+        {% for rc in p.requested_communities %}<div class="text-xs">requesting for: {{ rc.label }}</div>{% endfor %}
+        <form method="post" class="flex gap-2 items-end mt-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve">
+          <input type="hidden" name="peer_id" value="{{ p.pk }}">
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 mb-1">Pairing code (from their admin)</span>
+            <input type="text" name="code" required maxlength="32" class="border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-blue-500" autocomplete="off">
+          </label>
+          <button type="submit" class="inline-flex items-center justify-center btn-primary transition-colors">Verify &amp; approve</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section>
+    <h2 class="font-serif text-lg mb-2">Links</h2>
+    {% if links %}
+    <table class="w-full text-sm">
+      <thead><tr class="text-left opacity-70"><th class="py-1">Peer</th><th>Remote community</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for link in links %}
+        <tr class="border-t">
+          <td class="py-2">{{ link.peer.base_url }}</td>
+          <td>{{ link.remote_community_label|default:"—" }}</td>
+          <td>{{ link.get_status_display }}</td>
+          <td class="text-right">
+            <form method="post" class="inline">{% csrf_token %}
+              <input type="hidden" name="link_id" value="{{ link.pk }}">
+              {% if link.status == "active" %}
+                <button name="action" value="suspend" class="underline text-sm">Suspend</button>
+              {% elif link.status == "suspended" %}
+                <button name="action" value="resume" class="underline text-sm">Resume</button>
+              {% endif %}
+              {% if link.status != "revoked" %}
+                <button name="action" value="revoke" class="underline text-sm ml-2">Revoke</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="text-sm opacity-70">No links yet.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -21,6 +21,18 @@ urlpatterns = [
     path("technology/", include("apps.communities.urls_tech")),
 ]
 
+# Federation surface exists only when explicitly enabled (design: default OFF;
+# flag off ⇒ routes absent, matching the threat model's containment posture).
+if settings.FEDERATION_ENABLED:
+    urlpatterns += [
+        path(".well-known/umi-federation", include("apps.federation.urls_wellknown")),
+        path("federation/v1/", include(("apps.federation.urls", "federation"), namespace="federation")),
+        path(
+            "c/<slug:slug>/federation/",
+            include(("apps.federation.urls_admin", "federation_admin"), namespace="federation_admin"),
+        ),
+    ]
+
 # Conditional 2FA URLs (only if django-two-factor-auth is installed)
 if getattr(settings, "ENABLE_2FA", False):
     try:

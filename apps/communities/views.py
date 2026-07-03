@@ -8,9 +8,11 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
 
+from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
 from apps.needs.models import Need
 from apps.offers.models import Offer
@@ -25,6 +27,11 @@ class LandingView(TemplateView):
     template_name = "pages/landing.html"
 
 
+# Join-code redemption is brute-forceable without a throttle (codes are 8-char
+# CSPRNG, but the space only protects if attempts are bounded). Per-user, not
+# per-IP: a parish onboarding event legitimately joins many members from one
+# NAT, while account creation is already IP-throttled upstream.
+@method_decorator(rate_limit("join", 10, 3600, by="user"), name="post")
 class JoinCommunityView(LoginRequiredMixin, FormView):
     template_name = "communities/join.html"
     form_class = JoinForm
@@ -55,6 +62,24 @@ class JoinCommunityView(LoginRequiredMixin, FormView):
         emit("member.joined", member, user=self.request.user, request=self.request, details={"role": member.role})
         messages.success(self.request, f"Welcome to {community.name}!")
         return redirect("community-feed", slug=community.slug)
+
+
+class LeaveCommunityView(LoginRequiredMixin, View):
+    """POST: the requesting member leaves a community. Soft (is_active=False) so
+    history/audit/FK references survive (keyring: archive > delete). The last
+    active admin cannot leave — they'd orphan the community."""
+
+    def post(self, request, slug):
+        community = get_object_or_404(Community, slug=slug)
+        member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
+        if member.is_last_active_admin:
+            messages.error(request, "Make someone else an admin before you leave this community.")
+            return redirect("community-feed", slug=slug)
+        member.is_active = False
+        member.save(update_fields=["is_active"])
+        emit("member.left", member, user=request.user, request=request, details={"role": member.role})
+        messages.success(request, f"You have left {community.name}.")
+        return redirect("landing")
 
 
 class CommunityCreateView(LoginRequiredMixin, CreateView):
@@ -177,6 +202,8 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         ctx["members"] = self.community.members.filter(is_active=True).select_related("user")
         ctx["categories"] = self.community.categories.all()
         ctx["themes"] = THEMES
+        ctx["is_admin"] = self.member.is_admin
+        ctx["role_choices"] = Member.ROLE_CHOICES
         ctx["current_theme"] = (self.community.settings or {}).get("theme", THEME_DEFAULT)
         ctx["theme_custom"] = (self.community.settings or {}).get("theme_custom", {})
         if "form" not in ctx:
@@ -217,6 +244,34 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                 details={"theme": settings["theme"]},
             )
             messages.success(request, "Theme updated.")
+            return redirect("community-settings", slug=self.community.slug)
+
+        if action == "change_role":
+            # Least privilege: only admins change roles (coordinators manage content).
+            if not self.member.is_admin:
+                messages.error(request, "Only admins can change member roles.")
+                return redirect("community-settings", slug=self.community.slug)
+            # Same-community lookup prevents cross-community IDOR.
+            target = self.community.members.filter(id=request.POST.get("member_id"), is_active=True).first()
+            new_role = request.POST.get("role")
+            if not target or new_role not in dict(Member.ROLE_CHOICES):
+                messages.error(request, "Invalid member or role.")
+                return redirect("community-settings", slug=self.community.slug)
+            if target.is_last_active_admin and new_role != "admin":
+                messages.error(request, "The community must keep at least one admin.")
+                return redirect("community-settings", slug=self.community.slug)
+            old_role = target.role
+            if new_role != old_role:
+                target.role = new_role
+                target.save(update_fields=["role"])
+                emit(
+                    "member.role_changed",
+                    target,
+                    user=request.user,
+                    request=request,
+                    details={"from": old_role, "to": new_role},
+                )
+            messages.success(request, f"{target.display_name}'s role updated.")
             return redirect("community-settings", slug=self.community.slug)
 
         form = CommunitySettingsForm(request.POST, instance=self.community)
