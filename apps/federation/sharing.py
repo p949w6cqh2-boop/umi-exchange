@@ -6,12 +6,15 @@ Consent.covers() (§10.2). No PII is stored on the share row; a signed consent
 receipt (§4.2) is attached for the receiver to verify.
 """
 
+import json
+
 from django.db import transaction
 from django.utils import timezone
 
 from apps.audit.services import emit
 from apps.consent.models import Consent
 
+from . import client as client_mod
 from . import crypto
 from .models import FederatedShare
 
@@ -85,12 +88,46 @@ def share_record(record, link, *, actor_user):
 
 
 def revoke_share(share, *, actor_user):
-    """Stop advertising a share (local side of §4.3). Slice-2 adds the signed
-    delete-request to the peer; here it disappears from discovery immediately."""
+    """Stop advertising a share and send the peer a signed delete-request (§4.3).
+    The share leaves our discovery feed immediately; the delete-request asks the
+    peer to shred its shadow now rather than wait for TTL/tombstone. Best-effort:
+    a dead peer drops it on its next poll anyway (tombstone)."""
     if share.status != "active":
         return share
     share.status = "revoked"
     share.revoked_at = timezone.now()
     share.save(update_fields=["status", "revoked_at"])
     emit("fed.share_revoked", share, user=actor_user, details={"link": str(share.link_id)})
+    _send_revocation(share)
     return share
+
+
+def _send_revocation(share):
+    """Notify the peer to shred its shadow of this share. Cross-instance erasure
+    is COOPERATIVE, not guaranteed (§4.3) — we ask; the peer SHOULD honor it, and
+    the record has already left our feed regardless."""
+    link = share.link
+    kind = "need" if share.need_id else "offer"
+    payload = {
+        "revocations": [
+            {"remote_uuid": str(share.remote_uuid), "record": f"{kind}:{share.remote_uuid}", "reason": "revoked"}
+        ]
+    }
+    url = client_mod.revocations_url(link.peer.base_url)
+    signature = crypto.sign_request("POST", url, json.dumps(payload).encode(), aud=link.peer.instance_id)
+    try:
+        client_mod.post_revocation(link.peer.base_url, payload, {"X-UMI-Signature": signature})
+        emit("fed.consent_revoke_sent", share, details={"link": str(link.pk)})
+    except client_mod.FederationClientError as e:
+        # The peer will tombstone the row on its next poll; no local blocking.
+        emit("fed.peer_unreachable", link, details={"peer": link.peer.instance_id, "error": str(e)[:100]})
+
+
+def revoke_shares_for_consent(consent, *, actor_user):
+    """Revoke every active federated share gated by a consent — the 'revoke at
+    home → sharing stops + notify peer' trigger (§4.3). Returns the count."""
+    n = 0
+    for share in FederatedShare.objects.filter(consent=consent, status="active").select_related("link__peer"):
+        revoke_share(share, actor_user=actor_user)
+        n += 1
+    return n
