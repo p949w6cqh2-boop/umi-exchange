@@ -12,6 +12,7 @@ psycopg[binary]>=3.1
 gunicorn>=22.0
 whitenoise>=6.6
 qrcode[pil]>=7.4
+joserfc>=1.7  # federation JWS signing (PR #35 §3.2, decision locked 2026-07-02): Ed25519; sole transitive dep = cryptography
 
 # Production: monitoring + security
 sentry-sdk[django]>=2.0
