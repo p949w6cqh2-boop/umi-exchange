@@ -12,5 +12,10 @@ STORAGES = {"staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.Stati
 # ── Override cache to in-memory (no Redis required for dev/test) ──
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-# ── Disable rate limiting in dev/test (it depends on cache backend) ──
+# ── Rate limiting in dev/test ──
+# RATELIMIT_ENABLE (no D) is the THIRD-PARTY django_ratelimit flag; False here
+# disables its login/register decorators in dev. The in-house fixed-window
+# limiter (apps/accounts/ratelimit.py) reads RATELIMIT_ENABLED (with a D) and is
+# deliberately left ON in dev/test — the throttle tests (join/tags/casework/
+# federation) rely on it. LocMemCache keeps it per-process and harmless locally.
 RATELIMIT_ENABLE = False
