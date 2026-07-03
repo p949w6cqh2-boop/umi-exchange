@@ -2,8 +2,10 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, FormView
 
+from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
 
 from .forms import HouseholdCreateForm, HouseholdJoinForm
@@ -25,6 +27,9 @@ class HouseholdCreateView(LoginRequiredMixin, CreateView):
         return response
 
 
+# Same brute-force guard as community join: household codes are redeemed by
+# code alone, so bound the attempts per user.
+@method_decorator(rate_limit("hh-join", 10, 3600, by="user"), name="post")
 class HouseholdJoinView(LoginRequiredMixin, FormView):
     form_class = HouseholdJoinForm
     template_name = "households/join.html"
