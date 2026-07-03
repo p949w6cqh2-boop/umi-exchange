@@ -9,7 +9,7 @@
   <form method="post" class="space-y-6">
     {% csrf_token %}
     <fieldset>
-      <legend class="text-sm font-medium text-gray-700 mb-2">What can you help with?</legend>
+      <legend class="umi-label">What can you help with?</legend>
       <div class="grid grid-cols-3 sm:grid-cols-5 gap-3" role="radiogroup">
         {% for cat in categories %}
         <label class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] border-2 rounded-xl cursor-pointer transition-colors hover:border-gray-300 hover:bg-gray-50 has-[:checked]:border-[var(--umi-primary)] has-[:checked]:bg-[#E8F2F1]">
@@ -21,16 +21,16 @@
       </div>
     </fieldset>
     <div>
-      <label for="id_title" class="text-sm font-medium text-gray-700 mb-1 block">What can you offer? *</label>
+      <label for="id_title" class="umi-label">What can you offer? *</label>
       {{ form.title }}
       {% if form.title.errors %}<p class="text-sm text-red-600 mt-1">{{ form.title.errors.0 }}</p>{% endif %}
     </div>
     <div>
-      <label for="id_description" class="text-sm font-medium text-gray-700 mb-1 block">Description <span class="text-gray-400">(optional)</span></label>
+      <label for="id_description" class="umi-label">Description <span class="text-gray-400">(optional)</span></label>
       {{ form.description }}
     </div>
     <fieldset>
-      <legend class="text-sm font-medium text-gray-700 mb-2">How should the person contact you?</legend>
+      <legend class="umi-label">How should the person contact you?</legend>
       <div class="space-y-2">
         {% for value, label in form.fields.contact_pref.choices %}
         <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
