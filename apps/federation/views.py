@@ -31,7 +31,8 @@ from . import client as client_mod
 from . import crypto
 from .client import FederationClientError
 from .crypto import FederationAuthError
-from .models import FederationLink, FederationPeer
+from .discovery import redact
+from .models import FederatedShare, FederationLink, FederationPeer
 
 MAX_BODY_BYTES = 10_000
 PAIRING_TTL = timedelta(hours=24)
@@ -173,6 +174,26 @@ class HandshakeConfirmView(FederationGateMixin, View):
         return JsonResponse(
             {"status": "active", "community": {"uuid": str(link.community.id), "label": link.community.name}}
         )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(rate_limit("fed-discovery", 60, 3600, by="ip"), name="get")
+class DiscoveryView(FederationGateMixin, View):
+    """Signed GET (§2.1 pull): returns REDACTED rows (§2.2) for every active
+    share on an active link to the requesting peer. No PII — redact() is the
+    single gate on what crosses. An unreachable peer just polls again later."""
+
+    def get(self, request):
+        try:
+            peer, _claims = crypto.verify_signed_request(request)
+        except FederationAuthError as e:
+            return JsonResponse({"error": e.code}, status=403)
+        shares = FederatedShare.objects.filter(link__peer=peer, link__status="active", status="active").select_related(
+            "link__community", "need__category", "offer__category"
+        )
+        listings = [redact(s) for s in shares]
+        emit("fed.discovery_served", peer, request=request, details={"count": len(listings)})
+        return JsonResponse({"listings": listings})
 
 
 # ── Community-admin UI (§3.3 human approval) ─────────

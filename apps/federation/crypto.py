@@ -233,6 +233,38 @@ def codes_match(expected_hash: str, candidate_hash: str) -> bool:
     return bool(expected_hash) and hmac.compare_digest(expected_hash, candidate_hash)
 
 
+def build_consent_receipt(
+    *, consent_id, record_ref: str, scope, granted_at: str, expires_at, peer_instance_id: str
+) -> str:
+    """Signed consent receipt (§4.2): travels with a shared record so the
+    receiver can verify what was consented, and the home side can prove what it
+    granted. Signed with our instance key; PII-free (ids + scope enums only)."""
+    payload = {
+        "receipt_id": _b64url(secrets.token_bytes(16)),
+        "consent_id": str(consent_id),
+        "record": record_ref,  # "need:<remote_uuid>" | "offer:<remote_uuid>"
+        "scope": list(scope),
+        "granted_at": granted_at,
+        "expires_at": expires_at,
+        "home": my_instance_id(),
+        "peer": peer_instance_id,
+    }
+    return jws.serialize_compact(
+        {"alg": "Ed25519"}, json.dumps(payload).encode(), load_instance_key(), algorithms=["Ed25519"]
+    )
+
+
+def verify_consent_receipt(token: str, home_jwk: dict) -> dict:
+    """Verify a receipt against the sharing instance's published public JWK."""
+    if not token or len(token) > MAX_TOKEN_BYTES or token.count(".") != 2:
+        raise FederationAuthError("bad_receipt")
+    try:
+        obj = jws.deserialize_compact(token, OKPKey.import_key(home_jwk), algorithms=["Ed25519"])
+        return json.loads(obj.payload)
+    except Exception as e:
+        raise FederationAuthError("bad_receipt") from e
+
+
 def derive_link_pepper(code: str, instance_id_a: str, instance_id_b: str) -> bytes:
     """Both sides derive the same 32-byte pepper from the shared one-time code;
     order of instance ids is irrelevant. Stored, never exported (§7)."""
