@@ -153,6 +153,11 @@ class MatchUpdateView(LoginRequiredMixin, View):
             )
             need = Need.objects.select_for_update().get(pk=match.need_id)
             match.need = need  # operate on the freshly locked instance
+            # Lock the offer too (separately, for the same nullable-outer-join
+            # reason as the match): an accept commits the offer, so two matches
+            # sharing one offer must serialize on it — see the accept guard below.
+            if match.offer_id is not None:
+                match.offer = Offer.objects.select_for_update().get(pk=match.offer_id)
 
             # Cross-community IDOR guard: the match must belong to the
             # community identified by the URL slug.  Without this, a
@@ -174,6 +179,13 @@ class MatchUpdateView(LoginRequiredMixin, View):
             # Double-accept guard (Section 8.7): the need must still be open to accept.
             if new_status == "accepted" and need.status != "open":
                 return _reject(request, slug, pk, "This need has already been matched.", 409)
+
+            # Offer over-commitment guard (Section 8.7 for the offer): an offer is
+            # single-use — once accepted against one need it must not be accepted
+            # against another. Checked under the offer's row lock so concurrent
+            # accepts of two matches sharing one offer cannot both pass.
+            if new_status == "accepted" and match.offer is not None and match.offer.status != "active":
+                return _reject(request, slug, pk, "That offer has already been matched.", 409)
 
             # Persist an optional note alongside the status change (saved by
             # transition_to()'s final save()). Blank input leaves notes intact.
