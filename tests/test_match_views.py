@@ -43,6 +43,34 @@ def _client_for(member):
     return client
 
 
+@pytest.mark.django_db
+def test_accept_does_not_double_commit_one_offer():
+    """§8.7 for the OFFER: an active offer accepted against one need must not be
+    acceptable against a second need — the accept guard checks the offer's
+    availability, not only the need's."""
+    community = CommunityFactory()
+    category = CategoryFactory(community=community)
+    requester_a = MemberFactory(community=community)
+    requester_b = MemberFactory(community=community)
+    offerer = MemberFactory(community=community)
+    need_a = NeedFactory(community=community, requester=requester_a, category=category, status="open")
+    need_b = NeedFactory(community=community, requester=requester_b, category=category, status="open")
+    offer = OfferFactory(community=community, offerer=offerer, category=category)  # status "active"
+    match_a = MatchFactory(need=need_a, offer=offer, proposed_by=offerer, status="proposed")
+    match_b = MatchFactory(need=need_b, offer=offer, proposed_by=offerer, status="proposed")
+
+    r1 = _client_for(requester_a).post(_update_url(community, match_a), {"status": "accepted"})
+    assert r1.status_code in (200, 302)
+    offer.refresh_from_db()
+    assert offer.status == "matched"
+
+    # The same offer must not be committable to a second need.
+    r2 = _client_for(requester_b).post(_update_url(community, match_b), {"status": "accepted"})
+    assert r2.status_code == 409
+    match_b.refresh_from_db()
+    assert match_b.status == "proposed"
+
+
 def _update_url(community, match):
     return reverse("match-update", kwargs={"slug": community.slug, "pk": match.id})
 
