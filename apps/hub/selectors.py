@@ -4,7 +4,6 @@ from django.db.models import Q
 
 from apps.communities.models import Member
 from apps.matches.models import Match
-from apps.notifications.models import Notification
 from apps.tags.models import MemberTag
 
 OPEN_MATCH_STATUSES = ("proposed", "accepted")
@@ -41,8 +40,13 @@ def open_matches_for(member):
 
 
 def recent_notifications(user):
-    """The user's most recent notifications. User-global (no community FK)."""
-    return list(Notification.objects.filter(recipient=user).order_by("-created_at")[:RECENT_NOTIFICATIONS_CAP])
+    """The user's most recent notifications. User-global (no community FK).
+
+    Uses the ``notifications`` related_name on ``Notification.recipient``;
+    ordering stays explicit so the panel doesn't silently follow a future
+    change to the model's default ordering.
+    """
+    return list(user.notifications.order_by("-created_at")[:RECENT_NOTIFICATIONS_CAP])
 
 
 def own_tags(member):
