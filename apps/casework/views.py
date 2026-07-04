@@ -211,13 +211,16 @@ class CaseCreateView(CommunityMixin, View):
                 sensitivity=d["sensitivity"],
                 consent=consent,
                 emergency_opened=emergency,
-                emergency_justification=(d["emergency_justification"].strip() if emergency else ""),
                 primary_needs=d["primary_needs"],
                 intake_date=d["intake_date"],
                 physical_ref=d["physical_ref"].strip(),
             )
             if d["summary"]:
                 case.summary = d["summary"]
+            if emergency:
+                # Encrypt at rest via the property (mirrors summary); never a
+                # plaintext column, and never logged (see the emit below).
+                case.emergency_justification = d["emergency_justification"].strip()
             case.save()
 
             if emergency:
@@ -226,7 +229,10 @@ class CaseCreateView(CommunityMixin, View):
                     case,
                     user=request.user,
                     request=request,
-                    details={"justification": case.emergency_justification[:500]},
+                    # H-1: record only THAT a justification was provided — the
+                    # text is DV-safety narrative and must stay out of the
+                    # append-only, unshreddable audit log.
+                    details={"justification_provided": True},
                 )
             else:
                 audit.emit(

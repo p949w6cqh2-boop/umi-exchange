@@ -46,7 +46,10 @@ class CaseFile(StateMachineMixin, models.Model):
         "consent.Consent", null=True, blank=True, on_delete=models.PROTECT, related_name="case_files"
     )
     emergency_opened = models.BooleanField(default=False)
-    emergency_justification = models.TextField(blank=True, default="")
+    # Acute DV-safety narrative — envelope-encrypted at rest exactly like
+    # summary/body/detail (H-1). Read/write only via the property below.
+    emergency_justification_enc = models.BinaryField(null=True, blank=True)  # 🔒
+    emergency_justification_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
 
     primary_needs = models.JSONField(default=list, blank=True)
     intake_date = models.DateField(default=timezone.localdate)
@@ -100,6 +103,32 @@ class CaseFile(StateMachineMixin, models.Model):
             self.summary_enc_dek = None
             return
         self.summary_enc, self.summary_enc_dek = crypto.envelope_encrypt_str(str(value))
+
+    @property
+    def emergency_justification(self) -> str | None:
+        # Same envelope-only contract as summary: ciphertext without a DEK is a
+        # hard error, not a silent read.
+        if not self.emergency_justification_enc:
+            return None
+        if not self.emergency_justification_enc_dek:
+            raise ValueError(
+                f"{type(self).__name__}.emergency_justification has ciphertext but no DEK — run the "
+                "0006 emergency_justification backfill and check `casework_envelope_status`."
+            )
+        return crypto.envelope_decrypt_str(self.emergency_justification_enc, self.emergency_justification_enc_dek)
+
+    @emergency_justification.setter
+    def emergency_justification(self, value):
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError(
+                "emergency_justification takes PLAINTEXT — a write site is passing pre-encrypted bytes; "
+                "remove its inline crypto."
+            )
+        if value in (None, ""):
+            self.emergency_justification_enc = None
+            self.emergency_justification_enc_dek = None
+            return
+        self.emergency_justification_enc, self.emergency_justification_enc_dek = crypto.envelope_encrypt_str(str(value))
 
     @property
     def short_code(self) -> str:
