@@ -1,9 +1,19 @@
 # Replace with your domain
 :80 {
-    reverse_proxy app:8000
+    # header_up X-Real-IP {remote_host}: Caddy REPLACES this header on every
+    # request, so a client cannot spoof it. Django trusts X-Real-IP for
+    # rate-limiting and salted audit-log IP hashing (see client_ip()).
+    # EDGE-PROXY ASSUMPTION: only safe while Caddy is the edge. Behind a CDN or
+    # another LB, {remote_host} is that intermediary — derive the client IP from
+    # the CDN's trusted forwarded header instead, or the spoof hole reopens.
+    reverse_proxy app:8000 {
+        header_up X-Real-IP {remote_host}
+    }
 }
 
 # For HTTPS with a real domain, use:
 # yourdomain.org {
-#     reverse_proxy app:8000
+#     reverse_proxy app:8000 {
+#         header_up X-Real-IP {remote_host}
+#     }
 # }

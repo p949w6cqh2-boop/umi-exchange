@@ -50,7 +50,37 @@ else
     warn "ggshield is not installed." "Install ggshield for automated secret scanning: pip install ggshield"
 fi
 
-# 5. Antigravity IDE
+# 5. X-Real-IP spoof-resistance (rate-limit / audit IP-trust foundation)
+# The app trusts X-Real-IP for per-IP rate-limiting AND salted audit-log IP
+# hashing. That is ONLY safe if the edge proxy (Caddy) overwrites the header so
+# a client cannot forge it. This class is not unit-testable in isolation — it
+# depends on live proxy config — so we assert it black-box against the running
+# site: fire more login POSTs than the per-IP limit, each carrying a DIFFERENT
+# forged X-Real-IP. If the forgery were trusted, every request would land in its
+# own bucket and NONE would be throttled; correct config collapses them onto the
+# one real connecting IP, so at least one 429 must appear.
+TARGET_URL="${1:-${SITE_URL:-https://localhost}}"
+LOGIN_URL="${TARGET_URL%/}/auth/login/"
+if curl -sk -o /dev/null --max-time 5 "$TARGET_URL" 2>/dev/null; then
+    spoof_429=0
+    for i in $(seq 1 8); do
+        code=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 5 \
+            -X POST "$LOGIN_URL" \
+            -H "X-Real-IP: 203.0.113.$i" \
+            --data "login=probe-$i&password=wrong" 2>/dev/null || echo "000")
+        [ "$code" = "429" ] && spoof_429=$((spoof_429 + 1))
+    done
+    if [ "$spoof_429" -gt 0 ]; then
+        pass "X-Real-IP spoofing does not bypass rate limiting ($spoof_429/8 rotated-IP requests throttled)."
+    else
+        fail "X-Real-IP appears client-spoofable — 8 forged-IP login POSTs, zero throttled." \
+             "Confirm Caddy sets 'header_up X-Real-IP {remote_host}' (docker/Caddyfile.prod) and RATELIMIT is enabled. A client-trusted X-Real-IP defeats login throttles and forges audit-log source IPs."
+    fi
+else
+    warn "Skipped X-Real-IP spoof check — $TARGET_URL unreachable." "Run against the live host: bash scripts/security_check.sh https://your-domain"
+fi
+
+# 6. Antigravity IDE
 echo ""
 echo -e "${YELLOW}Manual Check Required: Antigravity IDE Approval Settings${NC}"
 echo "Have you verified that your Antigravity IDE has approval thresholds set to MANUAL for:"

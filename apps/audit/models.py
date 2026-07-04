@@ -3,8 +3,6 @@ Audit log — append-only, hashed IPs, non-deletable.
 UMI Protocol Section 8.3: all state-changing operations MUST be logged.
 """
 
-import hashlib
-
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -41,13 +39,21 @@ class AuditLog(models.Model):
 
     @classmethod
     def log(cls, user, action, resource_type, resource_id, details=None, request=None):
-        """Create an audit entry. IP is SHA-256 hashed with the secret key as salt."""
-        ip_hash = ""
-        if request:
-            ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR", ""))
-            if ip:
-                salted = f"{ip}:{settings.SECRET_KEY}"
-                ip_hash = hashlib.sha256(salted.encode()).hexdigest()
+        """Create an audit entry. IP is SHA-256 hashed with the secret key as salt.
+
+        IP extraction + hashing is delegated to ``services.ip_hash`` so this path
+        and ``services.emit`` share ONE source of IP truth (``client_ip``, which
+        trims the trusted X-Real-IP and falls back to REMOTE_ADDR). Previously
+        this method re-derived the IP inline without the trim, so the same real
+        IP could hash two different ways depending on which path logged it.
+        """
+        # Match services.emit's hard cap (§10.1): fail loud, never silently
+        # truncate or let Postgres raise DataError on the varchar(32) column.
+        if len(action) > 32:
+            raise ValueError(f"audit action too long (>32): {action!r}")
+
+        # Lazy import: services imports this module, so a top-level import cycles.
+        from apps.audit.services import ip_hash
 
         cls.objects.create(
             user=user,
@@ -55,5 +61,5 @@ class AuditLog(models.Model):
             resource_type=resource_type,
             resource_id=resource_id,
             details=details,
-            ip_hash=ip_hash,
+            ip_hash=ip_hash(request),
         )

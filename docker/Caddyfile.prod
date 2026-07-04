@@ -1,8 +1,19 @@
 # Replace {$DOMAIN} with your actual domain, or set DOMAIN env var.
 # For initial setup without a domain, use :80 instead.
 {$DOMAIN:localhost} {
-    # Reverse proxy to Django
-    reverse_proxy app:8000
+    # Reverse proxy to Django.
+    # header_up X-Real-IP {remote_host} makes X-Real-IP trustworthy: Caddy
+    # REPLACES (not appends) this header on every request, so a client-supplied
+    # X-Real-IP is overwritten with the real connecting IP. Django trusts this
+    # header for rate-limiting AND salted audit-log IP hashing.
+    # EDGE-PROXY ASSUMPTION: this is only safe while Caddy is the EDGE. If a CDN
+    # or another load balancer sits in front of Caddy, {remote_host} is THAT
+    # intermediary's IP, not the client's — re-opening the spoof hole. Behind a
+    # CDN, derive the client IP from the trusted forwarded header the CDN sets
+    # instead (and keep the app's single-source-of-IP-truth in client_ip()).
+    reverse_proxy app:8000 {
+        header_up X-Real-IP {remote_host}
+    }
 
     # Compression
     encode gzip zstd
@@ -26,9 +37,12 @@
         header Cache-Control "public, max-age=31536000, immutable"
     }
 
-    # Health check (no auth required)
+    # Health check (no auth required). Same X-Real-IP replacement as the main
+    # block — the health probe path must not be an X-Real-IP spoofing bypass.
     handle /health/* {
-        reverse_proxy app:8000
+        reverse_proxy app:8000 {
+            header_up X-Real-IP {remote_host}
+        }
     }
 
     # Security.txt
