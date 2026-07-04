@@ -45,6 +45,16 @@ def test_summary_detail_round_trip(world):
     assert FollowUp.objects.get(pk=fu.pk).detail == "Ask about the deposit."
 
 
+def test_emergency_justification_round_trips_encrypted(world):
+    # H-1: emergency_justification carries acute DV-safety narrative and must be
+    # envelope-encrypted at rest, exactly like summary/body/detail.
+    world.case.emergency_justification = "Hiding at her sister's on Elm St."
+    world.case.save(update_fields=["emergency_justification_enc", "emergency_justification_enc_dek"])
+    reloaded = CaseFile.objects.get(pk=world.case.pk)
+    assert reloaded.emergency_justification == "Hiding at her sister's on Elm St."
+    assert b"Elm" not in bytes(reloaded.emergency_justification_enc)  # ciphertext at rest
+
+
 # ---- audit events -----------------------------------------------------------
 def _actions(resource):
     return list(AuditLog.objects.filter(resource_id=resource.pk).values_list("action", flat=True))
@@ -82,7 +92,10 @@ def test_emergency_open_is_flagged_and_audited(world, auth, u):
     case = CaseFile.objects.exclude(pk=world.case.pk).get()
     assert case.emergency_opened and case.consent_id is None
     row = AuditLog.objects.get(action="case.opened_emergency", resource_id=case.pk)
-    assert "stranded" in row.details["justification"]
+    # H-1: the append-only, unshreddable audit log must NOT carry the plaintext
+    # emergency justification (acute DV narrative) — only a redaction marker.
+    assert row.details == {"justification_provided": True}
+    assert "stranded" not in str(row.details)
 
 
 def test_case_viewed_is_throttled_per_session(world, auth, u):

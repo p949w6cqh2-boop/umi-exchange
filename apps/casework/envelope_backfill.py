@@ -23,6 +23,13 @@ FIELD_MAP = [
     ("WarmHandoff", "summary_enc", "summary_enc_dek"),
 ]
 
+# Fields that went straight from PLAINTEXT → envelope (never direct-KEK), so
+# they are NOT part of the direct-KEK↔envelope loop above (feeding them to it
+# would break the 0004 migration, which predates their columns). Censused only.
+CENSUS_ONLY_FIELDS = [
+    ("CaseFile", "emergency_justification_enc", "emergency_justification_enc_dek"),
+]
+
 
 def _iterate_pending(model, ct, dek, reverse):
     """Yield locked batches still needing conversion. Forward: ciphertext
@@ -72,6 +79,58 @@ def forward_func(apps, schema_editor=None):
                 model_name,
                 failed,
             )
+
+
+def backfill_emergency_justification(apps, schema_editor=None):
+    """Plaintext CaseFile.emergency_justification → envelope encryption (H-1).
+
+    Separate from forward_func/FIELD_MAP: that path is direct-KEK→envelope; this
+    field was never direct-KEK, it's plaintext→envelope. Reads the still-present
+    plaintext column (dropped in the following migration) and writes the
+    enc/dek columns. Idempotent/resumable — the selector (non-empty plaintext +
+    NULL ciphertext) shrinks with every row, since envelope_encrypt_str of a
+    non-empty value always yields a non-NULL ciphertext."""
+    from apps.people import crypto
+
+    model = apps.get_model("casework", "CaseFile")
+    ct, dek = "emergency_justification_enc", "emergency_justification_enc_dek"
+    converted = 0
+    while True:
+        with transaction.atomic():
+            rows = list(
+                model.objects.exclude(emergency_justification="")
+                .filter(**{f"{ct}__isnull": True})
+                .select_for_update(skip_locked=True)
+                .only("pk", "emergency_justification")[:BATCH_SIZE]
+            )
+            if not rows:
+                break
+            for obj in rows:
+                ct_val, dek_val = crypto.envelope_encrypt_str(obj.emergency_justification)
+                model.objects.filter(pk=obj.pk).update(**{ct: ct_val, dek: dek_val})
+                converted += 1
+    logger.info("emergency_justification backfill: converted=%d", converted)
+
+
+def reverse_emergency_justification(apps, schema_editor=None):
+    """Envelope → plaintext, for unapplying the H-1 backfill (runs after the
+    plaintext column is re-added by reversing the later drop migration)."""
+    from apps.people import crypto
+
+    model = apps.get_model("casework", "CaseFile")
+    ct, dek = "emergency_justification_enc", "emergency_justification_enc_dek"
+    while True:
+        with transaction.atomic():
+            rows = list(
+                model.objects.filter(**{f"{dek}__isnull": False})
+                .select_for_update(skip_locked=True)
+                .only("pk", ct, dek)[:BATCH_SIZE]
+            )
+            if not rows:
+                break
+            for obj in rows:
+                plain = crypto.envelope_decrypt_str(getattr(obj, ct), getattr(obj, dek))
+                model.objects.filter(pk=obj.pk).update(emergency_justification=plain or "", **{ct: None, dek: None})
 
 
 def reverse_func(apps, schema_editor=None):

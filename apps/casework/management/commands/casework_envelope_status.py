@@ -11,7 +11,7 @@ legacy=0 and unreadable=0.
 from django.apps import apps as django_apps
 from django.core.management.base import BaseCommand
 
-from apps.casework.envelope_backfill import FIELD_MAP
+from apps.casework.envelope_backfill import CENSUS_ONLY_FIELDS, FIELD_MAP
 
 
 class Command(BaseCommand):
@@ -21,7 +21,7 @@ class Command(BaseCommand):
         from apps.people import crypto
 
         all_clear = True
-        for model_name, ct, dek in FIELD_MAP:
+        for model_name, ct, dek in FIELD_MAP + CENSUS_ONLY_FIELDS:
             model = django_apps.get_model("casework", model_name)
             empty = legacy = envelope = unreadable = 0
             for obj in model.objects.only("pk", ct, dek).iterator():
