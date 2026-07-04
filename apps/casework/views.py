@@ -87,6 +87,27 @@ class CommunityMixin(LoginRequiredMixin):
             .order_by("prio", "-updated_at")
         )
 
+    def own_visit_cases(self):
+        """Cases the member has a CONCRETE tie to — assigned, opened, or an
+        active contributor grant. Deliberately narrower than
+        contributable_cases(): it omits the community-wide "all standard cases"
+        that coordinators otherwise get, so the reauth-exempt offline manifest
+        can't be used to enumerate the whole caseload (M-5). Applies uniformly,
+        admins included — the manifest is an offline enumeration surface, and
+        online capture still uses the full contributable_cases() list."""
+        m = self.membership
+        now = timezone.now()
+        grant_q = Q(grants__member=m, grants__role="contributor", grants__revoked_at__isnull=True) & (
+            Q(grants__expires_at__isnull=True) | Q(grants__expires_at__gt=now)
+        )
+        return (
+            CaseFile.objects.filter(community=self.community, status__in=("open", "monitoring"))
+            .filter(Q(assigned_to=m) | Q(opened_by=m) | grant_q)
+            .select_related("subject_person")
+            .distinct()
+            .order_by("-updated_at")
+        )
+
     def _consent_frozen(self, case) -> bool:
         """Revocation freeze (§3.6): consent was given but is no longer
         active → no new notes, no export. Emergency cases are exempt
@@ -431,6 +452,11 @@ class NoteFinalizeView(CommunityMixin, View):
     def post(self, request, slug, pk, note_id):
         case = self.get_case(pk)
         note = get_object_or_404(CaseNote, pk=note_id, case=case)
+        # Re-check case access at finalize time, not just authorship: a grant
+        # revoked (or the case reclassified restricted) after drafting must stop
+        # the note being committed on a stale session. Mirrors NoteCreate/Amend.
+        if access.case_access(self.membership, case) < access.CONTRIBUTOR:
+            return _forbidden("You no longer have contributor access to this case.")
         if note.author_id != self.membership.id:
             return _forbidden("Only the author can finalize a draft.")
         try:
@@ -503,6 +529,10 @@ class NoteDiscardView(CommunityMixin, View):
     def post(self, request, slug, pk, note_id):
         case = self.get_case(pk)
         note = get_object_or_404(CaseNote, pk=note_id, case=case)
+        # Same case-access re-check as finalize: a de-authorized author must not
+        # be able to discard (hide) a draft after their access was pulled.
+        if access.case_access(self.membership, case) < access.CONTRIBUTOR:
+            return _forbidden("You no longer have contributor access to this case.")
         if note.author_id != self.membership.id:
             return _forbidden("Only the author can discard a draft.")
         try:
@@ -562,9 +592,12 @@ class VisitManifestView(CommunityMixin, View):
     never bodies (design §3.6, deliberate deviation from the manual)."""
 
     def get(self, request, slug):
+        # own_visit_cases(), not contributable_cases(): this endpoint is
+        # reauth-exempt, so it must not enumerate community-wide standard cases
+        # a coordinator has no concrete tie to (M-5 — minimal disclosure).
         cases = [
             {"id": str(c.id), "code": c.short_code, "initials": c.subject_person.initials}
-            for c in self.contributable_cases()[:50]
+            for c in self.own_visit_cases()[:50]
         ]
         resp = JsonResponse({"cases": cases})
         resp["Cache-Control"] = "private, max-age=0"
@@ -574,9 +607,17 @@ class VisitManifestView(CommunityMixin, View):
 class ServiceWorkerView(CommunityMixin, TemplateView):
     """Serves the SW from /c/<slug>/cases/visit/sw.js so its scope is
     naturally limited to the visit routes — it can never cache the rest
-    of the app."""
+    of the app. Served as JavaScript: a SW delivered as text/html will not
+    register in browsers."""
 
     template_name = "casework/sw.js"
+    content_type = "application/javascript"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["community"] = self.community
+        return ctx
+
     content_type = "text/javascript"
 
 
