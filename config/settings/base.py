@@ -213,6 +213,15 @@ EMAIL_SUBJECT_PREFIX = env("EMAIL_SUBJECT_PREFIX", default="[UMI] ")
 RATELIMIT_USE_CACHE = "default"
 # Paths the AuthRateLimitMiddleware throttles (POST). Empty = inert.
 RATELIMIT_AUTH_PATHS = ("/auth/login/", "/auth/register/")
+# Third-party django_ratelimit (RegisterView/UMILoginView key="ip") must read
+# the SAME trusted IP the rest of the app uses, not REMOTE_ADDR — behind Caddy
+# REMOTE_ADDR is the proxy's constant docker-net address, so every user would
+# share one throttle bucket. A dotted path resolves to a callable that Django
+# calls with the request: we point it at client_ip() itself (one source of IP
+# truth), which reads the Caddy-set X-Real-IP and falls back to REMOTE_ADDR —
+# so it never raises ImproperlyConfigured when the header is absent (a bare
+# "HTTP_X_REAL_IP" string key would 500 on any request that skipped Caddy).
+RATELIMIT_IP_META_KEY = "apps.accounts.ratelimit.client_ip"
 
 # ── Health Check ──────────────────────────────────────
 HEALTH_CHECK_TOKEN = env("HEALTH_CHECK_TOKEN", default="")
