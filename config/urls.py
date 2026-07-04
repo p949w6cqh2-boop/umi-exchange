@@ -12,6 +12,7 @@ urlpatterns = [
     path("health/", include("apps.health.urls")),
     path("auth/", include("apps.accounts.urls")),
     path("join/", include("apps.households.urls_join")),
+    path("hub/", include("apps.hub.urls")),
     path("c/<slug:slug>/cases/", include(("apps.casework.urls", "casework"), namespace="casework")),
     path("c/<slug:slug>/tags/", include(("apps.tags.urls", "tags"), namespace="tags")),
     path("c/", include("apps.communities.urls")),

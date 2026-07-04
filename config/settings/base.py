@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "apps.tags",
     "apps.health",
     "apps.federation",
+    "apps.hub",
 ]
 
 # Optional: Django-Q2 (for background tasks — not required for basic operation)
@@ -112,7 +113,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ── Auth ──────────────────────────────────────────────
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/auth/login/"
-LOGIN_REDIRECT_URL = "/join/"
+LOGIN_REDIRECT_URL = "/hub/"
 LOGOUT_REDIRECT_URL = "/"
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
