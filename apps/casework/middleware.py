@@ -43,7 +43,7 @@ class SensitiveSessionMiddleware:
                 # Require a fresh stamp AND that it belongs to THIS user, so a
                 # stale stamp left in a reused session can never satisfy another
                 # user's gate (defense-in-depth beyond Django's logout flush).
-                fresh = bool(ts) and (time.time() - ts) <= MAX_AGE_SECONDS and uid == request.user.pk
+                fresh = bool(ts) and (time.time() - ts) <= MAX_AGE_SECONDS and uid == str(request.user.pk)
                 if not fresh:
                     if match.url_name == "sync":
                         return JsonResponse({"reauth": True}, status=403)
@@ -54,4 +54,8 @@ class SensitiveSessionMiddleware:
 
 def mark_authenticated(request):
     request.session[SESSION_KEY] = time.time()
-    request.session[SESSION_USER_KEY] = request.user.pk
+    # str(): the user pk is a UUID — the JSON session serializer (DB/file
+    # sessions, i.e. any Redis-less deploy) cannot encode a raw UUID and
+    # would 500 the re-auth POST at session save. CI's Redis cache sessions
+    # pickle, which masked this. Store the portable form everywhere.
+    request.session[SESSION_USER_KEY] = str(request.user.pk)
