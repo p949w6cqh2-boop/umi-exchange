@@ -53,8 +53,15 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None)
     """Handle one inbound proposal. Idempotent on (link, proposal_uuid)."""
     from apps.needs.models import Need
 
+    # link__status="active" is load-bearing: revoking/suspending a link only
+    # flips FederationLink.status (no cascade to its shares), so without this a
+    # revoked link's still-"active" share would keep accepting proposals — the
+    # exact containment the threat model relies on ("revoke link → immediate
+    # 403"). Mirrors DiscoveryView's already-correct share query.
     share = (
-        FederatedShare.objects.filter(link__peer=peer, remote_uuid=need_remote_uuid, status="active")
+        FederatedShare.objects.filter(
+            link__peer=peer, link__status="active", remote_uuid=need_remote_uuid, status="active"
+        )
         .select_related("need", "link")
         .first()
     )
