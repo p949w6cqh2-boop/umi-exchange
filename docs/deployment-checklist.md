@@ -44,6 +44,16 @@ docker compose -f docker/docker-compose.prod.yml exec app python manage.py colle
 
 # Restrict audit log permissions
 docker compose -f docker/docker-compose.prod.yml exec app python manage.py restrict_audit_permissions
+
+# Register background-job schedules (django-q2). Without this the recurring
+# sweeps never run: need expiry (§4.1), match-proposal expiry (§10.6), the
+# follow-up digest + stale-draft cleanup (§3.11). Idempotent (update_or_create).
+docker compose -f docker/docker-compose.prod.yml exec app python manage.py shell -c "\
+from apps.needs.tasks import register_schedule as _n; _n(); \
+from apps.matches.tasks import register_schedule as _m; _m(); \
+from apps.casework.tasks import register_schedule as _c; _c()"
+# Federation's sweep is registered separately, only when FEDERATION_ENABLED=1
+# (apps.federation.tasks.register_schedule) — see the federation runbook.
 ```
 
 ## Post-Deployment

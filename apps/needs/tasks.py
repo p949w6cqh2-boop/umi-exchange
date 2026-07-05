@@ -2,6 +2,9 @@
 Need expiration task — runs hourly via Django-Q2.
 UMI Protocol Section 4.1: Needs past expiration with no accepted match are expired.
 CRITICAL: Needs with at least one accepted match MUST NOT expire.
+
+Register once (mirrors apps/casework, apps/matches, apps/federation):
+    python manage.py shell -c "from apps.needs.tasks import register_schedule; register_schedule()"
 """
 
 from django.utils import timezone
@@ -48,3 +51,20 @@ def expire_stale_needs():
         count += 1
 
     return f"Expired {count} needs"
+
+
+def register_schedule():
+    """Register the hourly need-expiry sweep (H-3). expire_stale_needs existed
+    and was tested but nothing scheduled it, unlike every sibling task module —
+    so no deployment ran it and past-due needs stayed 'open' forever. HOURLY
+    matches the module docstring's stated cadence."""
+    from django_q.models import Schedule
+
+    Schedule.objects.update_or_create(
+        name="needs-expire-stale",
+        defaults={
+            "func": "apps.needs.tasks.expire_stale_needs",
+            "schedule_type": Schedule.HOURLY,
+            "repeats": -1,
+        },
+    )

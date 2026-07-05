@@ -185,6 +185,64 @@ class TestSelfMatchPrevention:
         assert response.status_code == 400
         assert Match.objects.filter(need=need).count() == 0
 
+    def test_plain_member_cannot_propose_offer_they_do_not_own(self):
+        """H-2: a NON-coordinator third party may not bind someone else's offer
+        to a match. A plain member who is neither the requester nor the offer's
+        owner is rejected, and no Match row created. (Coordinators are the
+        exception — see test_coordinator_can_broker_offer_they_do_not_own.)"""
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        offerer = MemberFactory(community=community)
+        proposer = MemberFactory(community=community)  # plain member, neither party
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+        offer = OfferFactory(community=community, offerer=offerer, category=category)
+
+        client = _client_for(proposer)
+        response = client.post(_propose_url(community), {"need_id": str(need.id), "offer_id": str(offer.id)})
+
+        assert response.status_code == 400
+        assert Match.objects.filter(need=need).count() == 0
+
+    def test_offerer_can_propose_their_own_offer(self):
+        """Regression: the legitimate offer-bearing propose — the offerer
+        offering their own offer against another member's need — still works."""
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        offerer = MemberFactory(community=community)
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+        offer = OfferFactory(community=community, offerer=offerer, category=category)
+
+        client = _client_for(offerer)
+        response = client.post(_propose_url(community), {"need_id": str(need.id), "offer_id": str(offer.id)})
+
+        assert response.status_code == 302
+        assert Match.objects.filter(need=need, offer=offer, proposed_by=offerer).count() == 1
+
+    def test_coordinator_can_broker_offer_they_do_not_own(self):
+        """Subsidiarity (Jasiah's call): a coordinator MAY broker a match with a
+        member's offer they don't own — and the offerer is signaled so they keep
+        the right to accept or decline (the consent that makes brokering
+        *assist*, not *substitution*)."""
+        from apps.notifications.models import Notification
+
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        offerer = MemberFactory(community=community)
+        coordinator = MemberFactory(community=community, role="coordinator")
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+        offer = OfferFactory(community=community, offerer=offerer, category=category)
+
+        client = _client_for(coordinator)
+        response = client.post(_propose_url(community), {"need_id": str(need.id), "offer_id": str(offer.id)})
+
+        assert response.status_code == 302
+        assert Match.objects.filter(need=need, offer=offer, proposed_by=coordinator).count() == 1
+        # The offerer is signaled — the subsidiarity safeguard: they can decline.
+        assert Notification.objects.filter(recipient=offerer.user, type="match_proposed").exists()
+
 
 @pytest.mark.django_db
 class TestOfferLessMatch:
