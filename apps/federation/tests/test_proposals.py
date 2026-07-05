@@ -118,6 +118,31 @@ def test_different_blind_token_is_allowed(shared_need):
     assert _receive(share, blind_token=token)["status"] == "created"
 
 
+def test_proposal_rejected_after_link_revoked(shared_need):
+    """C2: revoking the link must immediately stop the peer creating further
+    matches. receive_proposal's share lookup must scope by link status (as
+    DiscoveryView already does), else a revoked link's still-'active' share keeps
+    accepting proposals while the admin UI and audit log say 'revoked'."""
+    need, share = shared_need
+    assert _receive(share)["status"] == "created"  # baseline works while active
+
+    share.link.transition_to("revoked")  # admin clicks Revoke
+
+    res = _receive(share)  # a fresh proposal (new uuid) from the same peer
+    assert res == {"status": "rejected", "reason": "not_shared"}
+    assert Match.objects.count() == 1  # only the pre-revocation match survives
+
+
+def test_proposal_rejected_after_link_suspended(shared_need):
+    """A suspended link likewise stops accepting inbound proposals."""
+    need, share = shared_need
+    share.link.transition_to("suspended")
+
+    res = _receive(share)
+    assert res == {"status": "rejected", "reason": "not_shared"}
+    assert not Match.objects.exists()
+
+
 @pytest.mark.urls("apps.federation.tests.urls_enabled")
 def test_proposals_endpoint_signed(client, fed_settings, remote, shared_need):
     need, share = shared_need
