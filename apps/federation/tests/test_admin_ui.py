@@ -16,6 +16,36 @@ def page(world):
     return reverse("federation_admin:settings", kwargs={"slug": world.community.slug})
 
 
+def _live_share(world, link):
+    """A live FederatedShare on `link` (minimal — no crypto), for cascade tests."""
+    from django.utils import timezone
+
+    from apps.communities.models import Category
+    from apps.consent.models import Consent
+    from apps.federation.models import FederatedShare
+    from apps.needs.models import Need
+
+    cat = Category.objects.create(community=world.community, name="Food")
+    need = Need.objects.create(
+        community=world.community,
+        requester=world.plain,
+        category=cat,
+        title="x",
+        urgency="high",
+        expires_at=timezone.now() + timezone.timedelta(days=7),
+    )
+    consent = Consent.objects.create(
+        participant=world.plain_u,
+        granted_to="Peer",
+        grantee_type="community",
+        grantee_id=uuid.uuid4(),
+        scope=["federated_share"],
+        purpose="fed",
+        method="digital",
+    )
+    return FederatedShare.objects.create(link=link, need=need, consent=consent, status="active")
+
+
 @pytest.fixture
 def active_link(world, peer):
     link = FederationLink.objects.create(peer=peer, community=world.community, requested_by_us=True)
@@ -53,6 +83,29 @@ class TestActions:
         active_link.refresh_from_db()
         assert active_link.status == "revoked"
         assert AuditLog.objects.filter(action="fed.link_revoked", user=world.admin_u).exists()
+
+    def test_revoke_cascades_live_shares_to_revoked(self, client, fed_settings, world, active_link):
+        """C2 defense-in-depth: revoking a link also revokes its live shares, so
+        they can't be served/matched even if a call site forgets link__status."""
+        share = _live_share(world, active_link)
+        client.force_login(world.admin_u)
+
+        client.post(page(world), {"action": "revoke", "link_id": str(active_link.pk)})
+
+        share.refresh_from_db()
+        assert share.status == "revoked"
+        assert share.revoked_at is not None
+
+    def test_suspend_leaves_shares_active(self, client, fed_settings, world, active_link):
+        """Suspend is a temporary pause — the link__status gate stops serving,
+        and resume restores the shares, so their status is deliberately left."""
+        share = _live_share(world, active_link)
+        client.force_login(world.admin_u)
+
+        client.post(page(world), {"action": "suspend", "link_id": str(active_link.pk)})
+
+        share.refresh_from_db()
+        assert share.status == "active"
 
     def test_initiate_creates_pending_link_and_shows_code(self, client, fed_settings, world, remote, monkeypatch):
         monkeypatch.setattr(

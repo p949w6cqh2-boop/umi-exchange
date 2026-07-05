@@ -120,6 +120,26 @@ class TestSignedRequests:
             crypto.verify_signed_request(_request(b'{"a":2}', sig))
         assert e.value.code == "bad_signature"
 
+    def test_signed_get_with_query_string_verifies(self, fed_settings, remote, peer):
+        # L-2: htu binds the full path+query, so a legitimately-signed query verifies.
+        path = "/federation/v1/discovery?since=2026-W27&cursor=abc"
+        url = settings.SITE_URL.rstrip("/") + path
+        sig = remote.sign("GET", url, b"", fed_settings.instance_id)
+        req = RequestFactory().get(path, HTTP_X_UMI_SIGNATURE=sig)
+        got_peer, _claims = crypto.verify_signed_request(req)
+        assert got_peer.pk == peer.pk
+
+    def test_tampered_query_string_rejected(self, fed_settings, remote, peer):
+        # A signature is bound to the query it was signed for — changing it → bad_htu.
+        signed = "/federation/v1/discovery?since=2026-W27"
+        sig = remote.sign("GET", settings.SITE_URL.rstrip("/") + signed, b"", fed_settings.instance_id)
+        req = RequestFactory().get("/federation/v1/discovery?since=2026-W28", HTTP_X_UMI_SIGNATURE=sig)
+        with pytest.raises(FederationAuthError) as e:
+            crypto.verify_signed_request(req)
+        # htu mismatch surfaces as the generic "bad_signature" code (the audit
+        # reason is "bad_htu") — same as test_htu_bound_to_site_url_not_host_header.
+        assert e.value.code == "bad_signature"
+
     def test_htu_bound_to_site_url_not_host_header(self, fed_settings, remote, peer):
         # A signature whose htu is built from the (proxy) Host header rather than
         # our advertised SITE_URL must be rejected — this is the binding target.

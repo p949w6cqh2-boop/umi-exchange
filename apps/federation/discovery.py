@@ -28,6 +28,11 @@ def redact(share) -> dict:
         "category": rec.category.name,
         "locality": community_locality(share.link.community),
         "freshness": _week_bucket(rec.created_at),
+        # Signed consent receipt (§4.2): lets the receiver verify we attest the
+        # subject consented before it persists a shadow. Non-PII (a JWS over
+        # coarse metadata). M-3: previously omitted, so receivers had nothing to
+        # verify and ShadowListing.receipt_jws stayed empty.
+        "receipt_jws": share.receipt_jws,
     }
     if share.need_id:
         row["urgency"] = rec.urgency

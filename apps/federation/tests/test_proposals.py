@@ -143,6 +143,56 @@ def test_proposal_rejected_after_link_suspended(shared_need):
     assert not Match.objects.exists()
 
 
+def test_proposals_capped_per_need_per_link(shared_need):
+    """M-4: one link can't flood a single Need — non-terminal proposals are
+    capped (default 3, product-tunable via the constant)."""
+    from apps.federation.matching import MAX_OPEN_PROPOSALS_PER_NEED_PER_LINK
+
+    need, share = shared_need
+    cap = MAX_OPEN_PROPOSALS_PER_NEED_PER_LINK
+    for _ in range(cap):
+        assert _receive(share)["status"] == "created"
+
+    res = _receive(share)  # the (cap+1)-th from the same link
+    assert res == {"status": "rejected", "reason": "too_many_open"}
+    assert Match.objects.count() == cap
+
+
+def test_per_peer_cap_isolated_by_instance(fed_settings, monkeypatch):
+    """M-2: the post-auth cap buckets by peer instance_id, so two peers (even on
+    one source IP) don't throttle each other; one peer's own bucket enforces."""
+    from types import SimpleNamespace
+
+    from apps.federation import views
+
+    monkeypatch.setitem(views.FED_PEER_HOURLY_CAPS, "proposals", 1)
+    a = SimpleNamespace(instance_id=f"peer-A-{uuid.uuid4()}")
+    b = SimpleNamespace(instance_id=f"peer-B-{uuid.uuid4()}")
+
+    assert views._peer_over_cap("proposals", a) is False  # A, 1st: under cap
+    assert views._peer_over_cap("proposals", a) is True  # A, 2nd: over its cap
+    assert views._peer_over_cap("proposals", b) is False  # B: own bucket, unaffected
+
+
+@pytest.mark.urls("apps.federation.tests.urls_enabled")
+def test_proposals_endpoint_per_peer_throttle(client, fed_settings, remote, shared_need, monkeypatch):
+    """The view returns 429 once a peer exceeds its per-peer cap (same IP)."""
+    from apps.federation import views
+
+    monkeypatch.setitem(views.FED_PEER_HOURLY_CAPS, "proposals", 1)
+    _need, share = shared_need
+
+    def _post():
+        body = json.dumps(
+            {"proposals": [{"need_remote_uuid": str(share.remote_uuid), "proposal_uuid": str(uuid.uuid4())}]}
+        ).encode()
+        sig = remote.sign("POST", _proposals_url(), body, fed_settings.instance_id)
+        return client.post(PROPOSALS_PATH, data=body, content_type="application/json", HTTP_X_UMI_SIGNATURE=sig)
+
+    assert _post().status_code == 200  # 1st under cap
+    assert _post().status_code == 429  # 2nd over the per-peer cap
+
+
 @pytest.mark.urls("apps.federation.tests.urls_enabled")
 def test_proposals_endpoint_signed(client, fed_settings, remote, shared_need):
     need, share = shared_need

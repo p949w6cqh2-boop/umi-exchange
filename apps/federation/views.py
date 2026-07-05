@@ -14,7 +14,7 @@ from datetime import timedelta
 from django.conf import settings as dj_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -22,6 +22,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
+from apps.accounts.ratelimit import check as ratelimit_check
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
 from apps.common.state import TransitionConflict
@@ -36,6 +37,21 @@ from .models import FederatedShare, FederationLink, FederationPeer, ShadowListin
 
 MAX_BODY_BYTES = 10_000
 PAIRING_TTL = timedelta(hours=24)
+
+# M-2: §11 per-PEER wire caps (per hour). The by="ip" decorators are a cheap
+# pre-auth flood guard; these are the real per-peer ceilings, checked INSIDE each
+# view AFTER verify_signed_request resolves the peer (the peer identity isn't
+# known before the view runs, and re-verifying in the decorator would consume the
+# jti nonce twice and break replay protection). Named so the mechanism is testable.
+FED_PEER_HOURLY_CAPS = {"discovery": 60, "proposals": 30, "revocations": 60}
+
+
+def _peer_over_cap(endpoint, peer) -> bool:
+    """True if this peer has exceeded its per-hour cap for `endpoint`."""
+    allowed, _remaining, _reset = ratelimit_check(
+        f"fed-{endpoint}:{peer.instance_id}", FED_PEER_HOURLY_CAPS[endpoint], 3600
+    )
+    return not allowed
 
 
 class FederationGateMixin:
@@ -188,6 +204,8 @@ class DiscoveryView(FederationGateMixin, View):
             peer, _claims = crypto.verify_signed_request(request)
         except FederationAuthError as e:
             return JsonResponse({"error": e.code}, status=403)
+        if _peer_over_cap("discovery", peer):
+            return JsonResponse({"error": "rate_limited"}, status=429)
         shares = FederatedShare.objects.filter(link__peer=peer, link__status="active", status="active").select_related(
             "link__community", "need__category", "offer__category"
         )
@@ -210,6 +228,8 @@ class ConsentRevocationsView(FederationGateMixin, View):
             peer, _claims = crypto.verify_signed_request(request)
         except FederationAuthError as e:
             return JsonResponse({"error": e.code}, status=403)
+        if _peer_over_cap("revocations", peer):
+            return JsonResponse({"error": "rate_limited"}, status=429)
         try:
             payload = json.loads(request.body.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
@@ -255,6 +275,8 @@ class ProposalsView(FederationGateMixin, View):
             peer, _claims = crypto.verify_signed_request(request)
         except FederationAuthError as e:
             return JsonResponse({"error": e.code}, status=403)
+        if _peer_over_cap("proposals", peer):
+            return JsonResponse({"error": "rate_limited"}, status=429)
         try:
             payload = json.loads(request.body.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
@@ -440,7 +462,17 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
         target, audit_action = self.TRANSITION_ACTIONS[action]
         link = get_object_or_404(FederationLink, pk=request.POST.get("link_id"), community=self.community)
         try:
-            link.transition_to(target)
+            with transaction.atomic():
+                link.transition_to(target)
+                # Revoke is terminal: cascade the link's live shares to revoked in
+                # the SAME transaction, so they can never be served or matched
+                # again even by a future call site that forgets the link__status
+                # gate (defense in depth beyond DiscoveryView / receive_proposal).
+                # Suspend is a temporary pause — the link__status="active" gate
+                # already stops serving while suspended, and resume restores the
+                # still-active shares, so suspend deliberately leaves them.
+                if target == "revoked":
+                    link.shares.filter(status="active").update(status="revoked", revoked_at=timezone.now())
         except TransitionConflict as e:
             messages.error(request, str(e.message))
             return
