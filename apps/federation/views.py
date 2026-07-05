@@ -14,7 +14,9 @@ from datetime import timedelta
 from django.conf import settings as dj_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -122,6 +124,9 @@ class HandshakeView(FederationGateMixin, View):
         peer.requested_communities = [
             {"uuid": str(community.get("uuid", ""))[:36], "label": str(community.get("label", ""))[:200]}
         ]
+        # M-1: the local community the requester wants to link to (OUR slug), so
+        # the pending list can be scoped to that community's admins.
+        peer.target_community_slug = str(payload.get("target_community", ""))[:64]
         peer.save()
         emit("fed.link_requested", peer, request=request, details={"origin": "inbound"})
         return JsonResponse({"status": "pending"})
@@ -344,11 +349,19 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
         return redirect("federation_admin:settings", slug=slug)
 
     def _context(self):
+        # M-1: scope pending inbound requests to THIS community — a peer that
+        # named a target community only shows to that community's admins. Empty
+        # target (unspecified/legacy) still shows to all (backward-compat).
+        inbound = (
+            FederationPeer.objects.filter(status="pending")
+            .exclude(pairing_hash="")
+            .filter(Q(target_community_slug=self.community.slug) | Q(target_community_slug=""))
+        )
         return {
             "community": self.community,
             "instance_id": crypto.my_instance_id(),
             "links": FederationLink.objects.filter(community=self.community).select_related("peer"),
-            "inbound_peers": FederationPeer.objects.filter(status="pending").exclude(pairing_hash=""),
+            "inbound_peers": inbound,
         }
 
     def _initiate(self, request, member, _action):
@@ -390,6 +403,9 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
                     "document": crypto.build_instance_document(),
                     "pairing": {"salt": salt, "hash": crypto.remote_code_hash(code, salt)},
                     "community": {"uuid": str(self.community.id), "label": self.community.name},
+                    # M-1: name the peer's community we're targeting (their slug),
+                    # so their pending list scopes to that community's admins.
+                    "target_community": str(request.POST.get("target_community", "")).strip()[:64],
                 },
             )
         except FederationClientError as e:
@@ -409,6 +425,11 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             peer.pairing_hash, crypto.remote_code_hash(code, peer.pairing_salt)
         ):
             messages.error(request, "Pairing code did not match (or expired). Nothing was approved.")
+            return
+        # M-1: refuse to bind a peer to a community it did not target (empty
+        # target = unspecified/legacy, allowed for backward-compat).
+        if peer.target_community_slug and peer.target_community_slug != self.community.slug:
+            messages.error(request, "This request was addressed to a different community.")
             return
         requested = (peer.requested_communities or [{}])[0]
         try:
@@ -473,6 +494,21 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
                 # still-active shares, so suspend deliberately leaves them.
                 if target == "revoked":
                     link.shares.filter(status="active").update(status="revoked", revoked_at=timezone.now())
+                    # Cancel in-flight authoritative Matches created via this link:
+                    # once the peer is cut, a federated match can't proceed, so we
+                    # tear them down (not just stop new proposals). transition_to
+                    # cascades the Need/Offer back to open/active.
+                    for fm in link.matches.select_related("match").filter(match__status__in=("proposed", "accepted")):
+                        try:
+                            fm.match.transition_to("cancelled")
+                        except ValidationError:
+                            continue  # raced to a terminal state; nothing to cancel
+                        emit(
+                            "fed.match_cancelled_on_revoke",
+                            fm,
+                            user=request.user,
+                            details={"match": str(fm.match_id)},
+                        )
         except TransitionConflict as e:
             messages.error(request, str(e.message))
             return
