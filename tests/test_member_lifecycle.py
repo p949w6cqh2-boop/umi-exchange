@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from apps.audit.models import AuditLog
 from apps.communities.models import Member
-from tests.factories import CommunityFactory, MemberFactory
+from tests.factories import CommunityFactory, MemberFactory, UserFactory
 
 
 @pytest.fixture
@@ -49,6 +49,46 @@ class TestMemberLeave:
         only_admin.refresh_from_db()
         assert only_admin.is_active is True  # blocked — would orphan the community
         assert rows("member.left").count() == 0
+
+
+@pytest.mark.django_db
+class TestMemberRejoin:
+    def test_rejoin_reactivates_inactive_member(self, login):
+        """A member who left and rejoins with a valid code must be reactivated,
+        not told 'already a member' and left stuck on a 404 feed (Member is
+        unique per (user, community), so the stale is_active=False row can't be
+        replaced — it must be reactivated)."""
+        comm = CommunityFactory()
+        MemberFactory(community=comm, role="admin")  # community keeps an admin
+        user = UserFactory()
+        code = comm.join_code
+        client = login(user)
+
+        client.post(reverse("community-join"), {"join_code": code})
+        assert Member.objects.get(user=user, community=comm).is_active is True
+
+        client.post(reverse("community-leave", kwargs={"slug": comm.slug}))
+        assert Member.objects.get(user=user, community=comm).is_active is False
+
+        client.post(reverse("community-join"), {"join_code": code})
+        assert Member.objects.get(user=user, community=comm).is_active is True  # reactivated
+
+        # Feed access is restored (it requires an active membership).
+        resp = client.get(reverse("community-feed", kwargs={"slug": comm.slug}))
+        assert resp.status_code == 200
+
+    def test_rejoin_does_not_duplicate_membership(self, login):
+        comm = CommunityFactory()
+        MemberFactory(community=comm, role="admin")
+        user = UserFactory()
+        code = comm.join_code
+        client = login(user)
+
+        client.post(reverse("community-join"), {"join_code": code})
+        client.post(reverse("community-leave", kwargs={"slug": comm.slug}))
+        client.post(reverse("community-join"), {"join_code": code})
+
+        assert Member.objects.filter(user=user, community=comm).count() == 1
 
 
 @pytest.mark.django_db

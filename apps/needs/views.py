@@ -2,6 +2,7 @@
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView
@@ -107,6 +108,15 @@ class NeedDeleteView(LoginRequiredMixin, DeleteView):
     model = Need
 
     def form_valid(self, form):
+        # Block deletion while a Match is live (proposed/accepted): the cascade
+        # would destroy the Match and strand the counterpart Offer in "matched"
+        # forever, with no reset path and no notification. Cancel the match first.
+        if self.object.matches.filter(status__in=("proposed", "accepted")).exists():
+            return HttpResponse(
+                "This need has an active match. Cancel the match before deleting it.",
+                status=409,
+                content_type="text/plain",
+            )
         # self.object is loaded in post() before deletion — emit while its pk still exists.
         emit(
             "need.deleted",

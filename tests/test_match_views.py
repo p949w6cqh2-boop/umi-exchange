@@ -185,6 +185,40 @@ class TestSelfMatchPrevention:
         assert response.status_code == 400
         assert Match.objects.filter(need=need).count() == 0
 
+    def test_cannot_propose_offer_you_do_not_own(self):
+        """H-2: a third party may not bind someone else's offer to a match. A
+        member who is neither the need's requester nor the offer's owner must be
+        rejected, and no Match row created."""
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        offerer = MemberFactory(community=community)
+        proposer = MemberFactory(community=community)  # neither party
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+        offer = OfferFactory(community=community, offerer=offerer, category=category)
+
+        client = _client_for(proposer)
+        response = client.post(_propose_url(community), {"need_id": str(need.id), "offer_id": str(offer.id)})
+
+        assert response.status_code == 400
+        assert Match.objects.filter(need=need).count() == 0
+
+    def test_offerer_can_propose_their_own_offer(self):
+        """Regression: the legitimate offer-bearing propose — the offerer
+        offering their own offer against another member's need — still works."""
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        offerer = MemberFactory(community=community)
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
+        offer = OfferFactory(community=community, offerer=offerer, category=category)
+
+        client = _client_for(offerer)
+        response = client.post(_propose_url(community), {"need_id": str(need.id), "offer_id": str(offer.id)})
+
+        assert response.status_code == 302
+        assert Match.objects.filter(need=need, offer=offer, proposed_by=offerer).count() == 1
+
 
 @pytest.mark.django_db
 class TestOfferLessMatch:

@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView
@@ -89,6 +90,15 @@ class OfferDeleteView(LoginRequiredMixin, DeleteView):
     model = Offer
 
     def form_valid(self, form):
+        # Block deletion while a Match is live (proposed/accepted): deleting the
+        # offer nulls the Match's offer (SET_NULL) and strands the counterpart
+        # Need in "matched" forever. Cancel the match first.
+        if self.object.matches.filter(status__in=("proposed", "accepted")).exists():
+            return HttpResponse(
+                "This offer has an active match. Cancel the match before deleting it.",
+                status=409,
+                content_type="text/plain",
+            )
         emit(
             "offer.deleted",
             self.object,

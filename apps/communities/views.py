@@ -51,8 +51,26 @@ class JoinCommunityView(LoginRequiredMixin, FormView):
             form.add_error("join_code", "This code does not match any community. Please check and try again.")
             return self.form_invalid(form)
 
-        if Member.objects.filter(user=self.request.user, community=community).exists():
-            messages.info(self.request, "You are already a member of this community.")
+        existing = Member.objects.filter(user=self.request.user, community=community).first()
+        if existing is not None:
+            if not existing.is_active:
+                # Returning member: reactivate the archived row (Member is unique
+                # per (user, community), so a stale is_active=False row can't be
+                # replaced — and feed access requires is_active=True, so without
+                # this the returning member is told "already a member" and then
+                # 404s on the feed). Role/display_name are preserved as archived.
+                existing.is_active = True
+                existing.save(update_fields=["is_active"])
+                emit(
+                    "member.joined",
+                    existing,
+                    user=self.request.user,
+                    request=self.request,
+                    details={"role": existing.role, "rejoined": True},
+                )
+                messages.success(self.request, f"Welcome back to {community.name}!")
+            else:
+                messages.info(self.request, "You are already a member of this community.")
             return redirect("community-feed", slug=community.slug)
 
         display_name = form.cleaned_data.get("display_name") or self.request.user.username
