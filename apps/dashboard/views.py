@@ -16,6 +16,21 @@ from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.offers.models import Offer
 
+# Characters that make Excel/Sheets/LibreOffice treat a cell as a formula.
+_CSV_FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_safe(value):
+    """Neutralize spreadsheet (CSV) formula injection: prefix a leading
+    apostrophe when a cell would otherwise start with a formula-trigger char, so
+    a member-controlled value like ``=HYPERLINK(...)`` can't execute when a
+    coordinator opens the export. Reversible — a legitimate value starting with
+    ``-``/``=`` is preserved, just apostrophe-led. Machine-generated cells
+    (UUIDs, status enums, ISO timestamps) never start with a trigger char, so
+    they don't need wrapping."""
+    s = "" if value is None else str(value)
+    return "'" + s if s and s[0] in _CSV_FORMULA_TRIGGERS else s
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard/index.html"
@@ -136,23 +151,26 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
         writer = csv.writer(response)
 
         if export_type == "matches":
+            # nosemgrep: python.django.security.injection.csv-writer-injection.csv-writer-injection
             writer.writerow(["Match ID", "Need", "Status", "Proposed By", "Proposed At", "Accepted At", "Fulfilled At"])
             matches = (
                 Match.objects.filter(need__community=c).select_related("need", "proposed_by").order_by("-proposed_at")
             )
             for m in matches:
+                # nosemgrep: python.django.security.injection.csv-writer-injection.csv-writer-injection
                 writer.writerow(
                     [
                         str(m.id),
-                        m.need.title,
+                        _csv_safe(m.need.title),
                         m.status,
-                        m.proposed_by.display_name,
+                        _csv_safe(m.proposed_by.display_name),
                         m.proposed_at.isoformat(),
                         m.accepted_at.isoformat() if m.accepted_at else "",
                         m.fulfilled_at.isoformat() if m.fulfilled_at else "",
                     ]
                 )
         else:
+            # nosemgrep: python.django.security.injection.csv-writer-injection.csv-writer-injection
             writer.writerow(
                 [
                     "Need ID",
@@ -167,15 +185,16 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
                 ]
             )
             for n in Need.objects.filter(community=c).select_related("category", "requester").order_by("-created_at"):
+                # nosemgrep: python.django.security.injection.csv-writer-injection.csv-writer-injection
                 writer.writerow(
                     [
                         str(n.id),
-                        n.title,
-                        n.category.name,
+                        _csv_safe(n.title),
+                        _csv_safe(n.category.name),
                         n.urgency,
                         n.status,
-                        n.requester.display_name,
-                        n.neighborhood,
+                        _csv_safe(n.requester.display_name),
+                        _csv_safe(n.neighborhood),
                         n.created_at.isoformat(),
                         n.expires_at.isoformat(),
                     ]
