@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third-party (required)
     "django_htmx",
+    "csp",
     # Project apps
     "apps.accounts",
     "apps.households",
@@ -88,6 +89,9 @@ except ImportError:
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # CSP header emitter — right after SecurityMiddleware (django-csp docs) so it
+    # runs early enough to set the header/nonce on every response.
+    "csp.middleware.CSPMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -106,6 +110,38 @@ if ENABLE_2FA:
         MIDDLEWARE.index("django.contrib.auth.middleware.AuthenticationMiddleware") + 1,
         "django_otp.middleware.OTPMiddleware",
     )
+
+# ── Content Security Policy (django-csp 4.x — dict-only config) ──────────────
+# Defined at base level so it is ENFORCED and TESTED in every environment: a
+# prod-only policy is exactly what silently no-op'd before (untested until prod,
+# and it never emitted at all).
+#
+# script-src carries 'unsafe-inline' + 'unsafe-eval' because the app currently
+# needs them: several inline <script> blocks (the app-wide toast system in
+# base.html, htmx/alpine CDN fallbacks, tag pages) and Alpine.js, which
+# evaluates x-* expressions via the Function constructor. The original policy
+# ('self' + unpkg only) never emitted, so this incompatibility was invisible;
+# enforcing it verbatim blocks the toast system and breaks Alpine (verified in a
+# real browser). Loosening script-src to the app's reality lets the OTHER eight
+# directives (frame-ancestors, base-uri, form-action, default-src, …) actually
+# enforce and protect NOW. TIGHTENING script-src back to 'self'+unpkg is the
+# tracked hardening follow-up: externalize the inline scripts / add per-response
+# nonces (request.csp_nonce) and adopt Alpine's @alpinejs/csp build.
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ["'self'"],
+        # 'unsafe-inline' (inline <script> blocks) + 'unsafe-eval' (Alpine's
+        # Function()-based expression eval). Re-tighten via nonces — see above.
+        "script-src": ["'self'", "https://unpkg.com", "'unsafe-inline'", "'unsafe-eval'"],
+        "style-src": ["'self'", "'unsafe-inline'"],  # Tailwind inline styles
+        "img-src": ["'self'", "data:"],  # data: for inline QR codes
+        "font-src": ["'self'"],
+        "connect-src": ["'self'"],  # HTMX XHR
+        "frame-ancestors": ["'none'"],
+        "base-uri": ["'self'"],
+        "form-action": ["'self'"],
+    }
+}
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"

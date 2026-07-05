@@ -58,25 +58,10 @@ USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
 # ── Content Security Policy ──────────────────────────
-# Tight CSP that allows HTMX, Alpine.js (CDN), and inline styles for Tailwind
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = (
-    "'self'",
-    "https://unpkg.com",
-)  # HTMX + Alpine CDN
-CSP_STYLE_SRC = (
-    "'self'",
-    "'unsafe-inline'",
-)  # Tailwind inline styles
-CSP_IMG_SRC = (
-    "'self'",
-    "data:",
-)  # data: for QR code inline images
-CSP_FONT_SRC = ("'self'",)
-CSP_CONNECT_SRC = ("'self'",)  # HTMX XHR requests
-CSP_FRAME_ANCESTORS = ("'none'",)
-CSP_BASE_URI = ("'self'",)
-CSP_FORM_ACTION = ("'self'",)
+# The policy now lives in base.py as CONTENT_SECURITY_POLICY (django-csp 4.x
+# dict), enforced in every environment. The old flat CSP_* settings here were
+# dead in django-csp 4.x (dict-only) — removed so the app's own outdated-config
+# system check passes.
 
 # ── Sentry (optional: only active if SENTRY_DSN is set) ──
 SENTRY_DSN = env("SENTRY_DSN", default="")
