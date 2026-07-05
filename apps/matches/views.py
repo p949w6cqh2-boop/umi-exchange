@@ -60,14 +60,14 @@ class MatchProposeView(LoginRequiredMixin, View):
         ):
             return _reject(request, slug, need_id, "An offer cannot be matched to its owner's own need.", 400)
 
-        # H-2: a member may only propose an OFFER THEY OWN. Without this, any
-        # member could bind a stranger's offer to a match; on accept the offer
-        # would flip to "matched" and its owner's contact would be disclosed —
-        # all with zero action from the offerer. Offer-less direct-volunteer
-        # proposals (offer is None) stay allowed. NOTE: this deliberately does
-        # NOT let coordinators matchmake on others' behalf — that's an open
-        # product question (see the PR); default is strict own-offer.
-        if offer is not None and offer.offerer_id != member.id:
+        # H-2: a member may only propose an OFFER THEY OWN — UNLESS they are a
+        # coordinator/admin brokering the match on a member's behalf.
+        # Subsidiarity: the coordinator *assists*, but the offerer keeps agency —
+        # a brokered proposal signals the offerer (below), who can accept or
+        # decline. Without one of these paths, a stranger could bind an offer and
+        # disclose its owner's contact on accept, with zero action from them.
+        # Offer-less direct-volunteer proposals (offer is None) stay allowed.
+        if offer is not None and offer.offerer_id != member.id and not member.is_coordinator:
             return _reject(request, slug, need_id, "You can only propose an offer you own.", 400)
 
         # The offer, when supplied, must still be available (offer-less
@@ -94,6 +94,19 @@ class MatchProposeView(LoginRequiredMixin, View):
             "View the match to accept or decline.",
             link=f"/c/{slug}/matches/{match.id}/",
         )
+
+        # Coordinator-brokered match: the offerer did not propose their own offer,
+        # so signal them explicitly. This is the consent safeguard that keeps
+        # brokering subsidiarity (assist) rather than substitution — the offerer
+        # can still accept or decline the match.
+        if offer is not None and offer.offerer_id != member.id:
+            NotificationAdapter.send(
+                offer.offerer.user,
+                "match_proposed",
+                f"{member.display_name} proposed your offer '{offer.title}' for a match",
+                "Review the match — you can accept or decline.",
+                link=f"/c/{slug}/matches/{match.id}/",
+            )
 
         messages.success(request, "Match proposed! Both parties will be notified.")
         return redirect("match-detail", slug=slug, pk=match.id)
