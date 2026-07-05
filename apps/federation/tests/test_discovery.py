@@ -64,7 +64,7 @@ def test_discovery_returns_only_redacted_rows(client, fed_settings, remote, acti
     assert len(listings) == 1
     row = listings[0]
     # §2.2 shape only.
-    assert set(row) == {"kind", "remote_uuid", "category", "locality", "freshness", "urgency"}
+    assert set(row) == {"kind", "remote_uuid", "category", "locality", "freshness", "urgency", "receipt_jws"}
     assert row["kind"] == "need"
     assert row["category"] == "Food"
     # NOTHING identifying crossed.
@@ -139,6 +139,6 @@ def test_offer_redaction_shape(client, fed_settings, remote, active_link, world)
     sharing.share_record(offer, active_link, actor_user=world.admin_u)
     sig = remote.sign("GET", _site_url(), b"", fed_settings.instance_id)
     row = client.get(DISCOVERY_URL_PATH, HTTP_X_UMI_SIGNATURE=sig).json()["listings"][0]
-    assert set(row) == {"kind", "remote_uuid", "category", "locality", "freshness", "radius_km"}
+    assert set(row) == {"kind", "remote_uuid", "category", "locality", "freshness", "radius_km", "receipt_jws"}
     assert row["kind"] == "offer"
     assert row["radius_km"] == 10

@@ -16,6 +16,48 @@ def page(world):
     return reverse("federation_admin:settings", kwargs={"slug": world.community.slug})
 
 
+def _live_share(world, link):
+    """A live FederatedShare on `link` (minimal — no crypto), for cascade tests."""
+    from django.utils import timezone
+
+    from apps.communities.models import Category
+    from apps.consent.models import Consent
+    from apps.federation.models import FederatedShare
+    from apps.needs.models import Need
+
+    cat = Category.objects.create(community=world.community, name="Food")
+    need = Need.objects.create(
+        community=world.community,
+        requester=world.plain,
+        category=cat,
+        title="x",
+        urgency="high",
+        expires_at=timezone.now() + timezone.timedelta(days=7),
+    )
+    consent = Consent.objects.create(
+        participant=world.plain_u,
+        granted_to="Peer",
+        grantee_type="community",
+        grantee_id=uuid.uuid4(),
+        scope=["federated_share"],
+        purpose="fed",
+        method="digital",
+    )
+    return FederatedShare.objects.create(link=link, need=need, consent=consent, status="active")
+
+
+def _inflight_fed_match(world, link, status="proposed"):
+    """An in-flight authoritative FederatedMatch (+ underlying Match) on `link`."""
+    from apps.federation.matching import get_proxy_member
+    from apps.federation.models import FederatedMatch
+    from apps.matches.models import Match
+
+    need = _live_share(world, link).need
+    match = Match.objects.create(need=need, offer=None, proposed_by=get_proxy_member(link), status=status)
+    FederatedMatch.objects.create(match=match, link=link, role="authority", proposal_uuid=uuid.uuid4())
+    return match
+
+
 @pytest.fixture
 def active_link(world, peer):
     link = FederationLink.objects.create(peer=peer, community=world.community, requested_by_us=True)
@@ -53,6 +95,42 @@ class TestActions:
         active_link.refresh_from_db()
         assert active_link.status == "revoked"
         assert AuditLog.objects.filter(action="fed.link_revoked", user=world.admin_u).exists()
+
+    def test_revoke_cascades_live_shares_to_revoked(self, client, fed_settings, world, active_link):
+        """C2 defense-in-depth: revoking a link also revokes its live shares, so
+        they can't be served/matched even if a call site forgets link__status."""
+        share = _live_share(world, active_link)
+        client.force_login(world.admin_u)
+
+        client.post(page(world), {"action": "revoke", "link_id": str(active_link.pk)})
+
+        share.refresh_from_db()
+        assert share.status == "revoked"
+        assert share.revoked_at is not None
+
+    def test_suspend_leaves_shares_active(self, client, fed_settings, world, active_link):
+        """Suspend is a temporary pause — the link__status gate stops serving,
+        and resume restores the shares, so their status is deliberately left."""
+        share = _live_share(world, active_link)
+        client.force_login(world.admin_u)
+
+        client.post(page(world), {"action": "suspend", "link_id": str(active_link.pk)})
+
+        share.refresh_from_db()
+        assert share.status == "active"
+
+    def test_revoke_cancels_inflight_matches(self, client, fed_settings, world, active_link):
+        """Revoking a link tears down its in-flight authoritative matches — once
+        the peer is cut, a federated match can't proceed."""
+        match = _inflight_fed_match(world, active_link)
+        assert match.status == "proposed"
+        client.force_login(world.admin_u)
+
+        client.post(page(world), {"action": "revoke", "link_id": str(active_link.pk)})
+
+        match.refresh_from_db()
+        assert match.status == "cancelled"
+        assert AuditLog.objects.filter(action="fed.match_cancelled_on_revoke").exists()
 
     def test_initiate_creates_pending_link_and_shows_code(self, client, fed_settings, world, remote, monkeypatch):
         monkeypatch.setattr(
@@ -125,4 +203,55 @@ class TestActions:
         )
         client.force_login(world.admin_u)
         client.post(page(world), {"action": "approve", "peer_id": str(peer.pk), "code": "WRONGCODE000"})
+        assert not FederationLink.objects.filter(peer=peer).exists()
+
+    def test_inbound_list_scoped_to_target_community(self, fed_settings, world):
+        """M-1: a pending peer that named a target community only appears to that
+        community's admins; untargeted (legacy) still appears to all."""
+        from apps.federation.models import FederationPeer
+        from apps.federation.views import FederationSettingsView
+
+        def _pending(instance_id, target):
+            return FederationPeer.objects.create(
+                instance_id=instance_id,
+                jwk={},
+                status="pending",
+                pairing_hash="h",
+                pairing_salt="s",
+                target_community_slug=target,
+            )
+
+        _pending("id-mine", world.community.slug)
+        _pending("id-other", "some-other-community")
+        _pending("id-untargeted", "")
+
+        view = FederationSettingsView()
+        view.community = world.community
+        shown = set(view._context()["inbound_peers"].values_list("instance_id", flat=True))
+
+        assert "id-mine" in shown
+        assert "id-untargeted" in shown  # legacy/unspecified still visible
+        assert "id-other" not in shown  # scoped out
+
+    def test_approve_rejects_peer_addressed_to_another_community(self, client, fed_settings, world, remote):
+        """M-1: an admin can't bind a peer that explicitly targeted a different community."""
+        from apps.federation import crypto
+        from apps.federation.models import FederationPeer
+
+        code = crypto.mint_pairing_code()
+        salt = uuid.uuid4().hex
+        peer = FederationPeer.objects.create(
+            instance_id=remote.instance_id,
+            jwk=remote.jwk,
+            status="pending",
+            pairing_salt=salt,
+            pairing_hash=crypto.remote_code_hash(code, salt),
+            target_community_slug="a-different-community",  # NOT world.community
+            requested_communities=[{"uuid": str(uuid.uuid4()), "label": "Their Board"}],
+        )
+        client.force_login(world.admin_u)
+        client.post(page(world), {"action": "approve", "peer_id": str(peer.pk), "code": code})
+
+        peer.refresh_from_db()
+        assert peer.status == "pending"  # not approved
         assert not FederationLink.objects.filter(peer=peer).exists()

@@ -199,8 +199,11 @@ def verify_signed_request(request):
     # Bind to our ADVERTISED URL (SITE_URL = the base_url in our instance doc),
     # not build_absolute_uri: behind a reverse proxy the inbound Host/scheme can
     # differ from what the peer signed against, which would reject every valid
-    # request. The peer signs htu = <our base_url> + path.
-    if claims.get("htu") != settings.SITE_URL.rstrip("/") + request.path:
+    # request. The peer signs htu = <our base_url> + path+query. L-2: use
+    # get_full_path() (path INCLUDING query string), not request.path — otherwise
+    # a signature would be valid for any query params, which the §9.2 discovery
+    # pagination (?since=&cursor=) must not allow.
+    if claims.get("htu") != settings.SITE_URL.rstrip("/") + request.get_full_path():
         raise _reject("bad_htu")
     if claims.get("digest") != request_body_digest(request.body):
         raise _reject("bad_digest")
