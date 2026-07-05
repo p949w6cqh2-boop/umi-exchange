@@ -279,3 +279,28 @@ def derive_link_pepper(code: str, instance_id_a: str, instance_id_b: str) -> byt
     info = "umi-fed-pepper:" + ":".join(sorted([instance_id_a, instance_id_b]))
     hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=info.encode())
     return hkdf.derive(code.encode())
+
+
+def sign_match_state(match_uuid: str, status: str) -> str:
+    """Signed authoritative match state (§6.3 re-sync): the mirror can trust
+    the snapshot end-to-end, not just the transport."""
+    payload = {"match_uuid": str(match_uuid), "status": status, "iat": int(time.time())}
+    return jws.serialize_compact(
+        {"alg": "Ed25519"}, json.dumps(payload).encode(), load_instance_key(), algorithms=["Ed25519"]
+    )
+
+
+def verify_match_state(token: str, authority_jwk: dict) -> dict:
+    """Verify a signed match state against the authority's pinned JWK. The iat
+    freshness window stops a captured old snapshot rolling a mirror back."""
+    if not token or len(token) > MAX_TOKEN_BYTES or token.count(".") != 2:
+        raise FederationAuthError("bad_state")
+    try:
+        obj = jws.deserialize_compact(token, OKPKey.import_key(authority_jwk), algorithms=["Ed25519"])
+        payload = json.loads(obj.payload)
+    except Exception as e:
+        raise FederationAuthError("bad_state") from e
+    iat = payload.get("iat")
+    if not isinstance(iat, int) or abs(time.time() - iat) > SKEW_SECONDS:
+        raise FederationAuthError("bad_state")
+    return payload

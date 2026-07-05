@@ -34,6 +34,25 @@ def sweep_expired_shadows() -> int:
     return deleted
 
 
+def deliver_pending_events() -> int:
+    """Stage C2 outbox pump (§6.3): deliver due match events with backoff.
+    No-op when federation is off — nothing leaves the instance."""
+    if not getattr(settings, "FEDERATION_ENABLED", False):
+        return 0
+    from .outbox import deliver_due_events
+
+    return deliver_due_events()
+
+
+def sweep_expired_contacts() -> int:
+    """Shred exchanged contact payloads past their post-terminal grace (§4.4).
+    Deliberately NOT flag-gated: retention is a privacy guarantee and must
+    still run if federation is switched off with payloads at rest."""
+    from .outbox import sweep_expired_contacts as _sweep
+
+    return _sweep()
+
+
 def register_schedule():
     from django_q.models import Schedule
 
@@ -50,6 +69,23 @@ def register_schedule():
         name="federation-sweep-shadows",
         defaults={
             "func": "apps.federation.tasks.sweep_expired_shadows",
+            "schedule_type": Schedule.DAILY,
+            "repeats": -1,
+        },
+    )
+    Schedule.objects.update_or_create(
+        name="federation-deliver-events",
+        defaults={
+            "func": "apps.federation.tasks.deliver_pending_events",
+            "schedule_type": Schedule.MINUTES,
+            "minutes": 1,
+            "repeats": -1,
+        },
+    )
+    Schedule.objects.update_or_create(
+        name="federation-sweep-contacts",
+        defaults={
+            "func": "apps.federation.tasks.sweep_expired_contacts",
             "schedule_type": Schedule.DAILY,
             "repeats": -1,
         },

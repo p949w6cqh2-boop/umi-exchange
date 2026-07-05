@@ -5,6 +5,8 @@ from .views import (
     DiscoveryView,
     HandshakeConfirmView,
     HandshakeView,
+    MatchEventsView,
+    MatchSyncView,
     ProposalsView,
 )
 
@@ -16,4 +18,6 @@ urlpatterns = [
     path("discovery", DiscoveryView.as_view(), name="discovery"),
     path("consent/revocations", ConsentRevocationsView.as_view(), name="consent-revocations"),
     path("proposals", ProposalsView.as_view(), name="proposals"),
+    path("matches/<uuid:match_uuid>/events", MatchEventsView.as_view(), name="match-events"),
+    path("matches/<uuid:match_uuid>", MatchSyncView.as_view(), name="match-sync"),
 ]

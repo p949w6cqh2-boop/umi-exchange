@@ -95,3 +95,58 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None)
 
     emit("fed.proposal_received", fmatch, details={"link": str(link.pk)})
     return {"status": "created", "match_uuid": str(match.id)}
+
+
+class _CancelConflictError(Exception):
+    def __init__(self, state):
+        self.state = state
+        super().__init__(state)
+
+
+def apply_cancel_request(fmatch, *, event_uuid):
+    """Mirror → authority (§6.2 step 9): the responder withdrew (or the §7
+    backstop fired on their side). Applied under the §8.7 lock; the outcome
+    echoes back to the mirror as a `cancelled` event via the outbox. A match
+    already terminal answers `conflict` + the authoritative state."""
+    from apps.matches.models import Match
+    from apps.needs.models import Need
+
+    from . import outbox
+    from .models import FederationEvent
+
+    if FederationEvent.objects.filter(link=fmatch.link, event_uuid=event_uuid).exists():
+        return {"status": "duplicate"}
+    try:
+        with transaction.atomic():
+            FederationEvent.objects.create(
+                link=fmatch.link,
+                direction="in",
+                event_uuid=event_uuid,
+                kind="cancel_requested",
+                state="applied",
+                payload={"match_uuid": str(fmatch.match_id)},
+            )
+            match = Match.objects.select_for_update(of=("self",)).select_related("need").get(pk=fmatch.match_id)
+            match.need = Need.objects.select_for_update().get(pk=match.need_id)
+            if match.status not in ("proposed", "accepted"):
+                raise _CancelConflictError(match.status)  # rolls the event row back too
+            match.transition_to("cancelled")
+    except IntegrityError:
+        return {"status": "duplicate"}
+    except _CancelConflictError as conflict:
+        return {"status": "conflict", "authoritative_state": conflict.state}
+    emit("fed.match_event_received", fmatch, details={"event": "cancel_requested", "link": str(fmatch.link_id)})
+    outbox.queue_match_event(match, "cancelled", fmatch=fmatch)
+    return {"status": "applied"}
+
+
+def remote_contact_for(match):
+    """The stored §8.2 dict of the remote counterpart for an authority-side
+    federated match (or None). Flag-gated; decrypts via the model property —
+    reveal audiences stay exactly the local §8.2 gate's business."""
+    from django.conf import settings
+
+    if not getattr(settings, "FEDERATION_ENABLED", False):
+        return None
+    fmatch = FederatedMatch.objects.filter(match=match, role="authority").first()
+    return fmatch.contact_payload if fmatch else None

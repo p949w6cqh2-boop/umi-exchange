@@ -28,11 +28,11 @@ from apps.common.state import TransitionConflict
 from apps.communities.models import Community, Member
 
 from . import client as client_mod
-from . import crypto, matching
+from . import crypto, matching, mirror
 from .client import FederationClientError
 from .crypto import FederationAuthError
 from .discovery import redact
-from .models import FederatedShare, FederationLink, FederationPeer, ShadowListing
+from .models import FederatedMatch, FederatedShare, FederationLink, FederationPeer, ShadowListing
 
 MAX_BODY_BYTES = 10_000
 PAIRING_TTL = timedelta(hours=24)
@@ -280,6 +280,93 @@ class ProposalsView(FederationGateMixin, View):
             result["proposal_uuid"] = str(proposal_uuid)
             results.append(result)
         return JsonResponse({"results": results})
+
+
+def _resolve_event_fmatch(peer, match_uuid):
+    """The FederatedMatch this wire uuid addresses, for the verified sender
+    only: our authoritative match's own uuid, or a mirror keyed by the
+    authority's uuid. Suspended/revoked links resolve nothing (§3.3)."""
+    from django.db.models import Q
+
+    return (
+        FederatedMatch.objects.filter(link__peer=peer, link__status="active")
+        .filter(Q(role="authority", match__pk=match_uuid) | Q(role="mirror", remote_match_uuid=match_uuid))
+        .select_related("link__peer", "link__community", "match__need__requester__user", "offer__offerer__user")
+        .first()
+    )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(rate_limit("fed-events", 120, 3600, by="ip"), name="post")
+class MatchEventsView(FederationGateMixin, View):
+    """Signed match lifecycle events (§6.2 steps 6-9, §6.3). The authority
+    sends accepted/terminal events to the mirror (accepted carries the §8.2
+    contact both ways); the mirror may only REQUEST a cancel — the need's
+    home keeps the lock (§6.1). Per-item envelope, idempotent on event_uuid."""
+
+    def post(self, request, match_uuid):
+        if len(request.body) > MAX_BODY_BYTES:
+            return JsonResponse({"error": "too_large"}, status=400)
+        try:
+            peer, _claims = crypto.verify_signed_request(request)
+        except FederationAuthError as e:
+            return JsonResponse({"error": e.code}, status=403)
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return JsonResponse({"error": "invalid JSON"}, status=400)
+
+        fmatch = _resolve_event_fmatch(peer, match_uuid)
+        if fmatch is None:
+            return JsonResponse({"error": "unknown_match"}, status=404)
+
+        results = []
+        for item in (payload.get("events") or [])[:50]:
+            if not isinstance(item, dict):
+                results.append({"status": "error", "error": "invalid item"})
+                continue
+            try:
+                event_uuid = uuid.UUID(str(item.get("event_uuid", "")))
+            except (ValueError, TypeError):
+                results.append({"status": "error", "error": "invalid event_uuid"})
+                continue
+            kind = str(item.get("event", ""))[:32]
+            if fmatch.role == "authority":
+                # A peer never drives OUR match state (§6.1) — it may only ask.
+                if kind == "cancel_requested":
+                    result = matching.apply_cancel_request(fmatch, event_uuid=event_uuid)
+                else:
+                    result = {"status": "error", "error": "invalid_event"}
+            else:
+                contact = item.get("contact") if isinstance(item.get("contact"), dict) else None
+                result = mirror.apply_match_event(fmatch, event_uuid=event_uuid, kind=kind, contact=contact)
+            result["event_uuid"] = str(event_uuid)
+            results.append(result)
+        return JsonResponse({"results": results})
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(rate_limit("fed-sync", 120, 3600, by="ip"), name="get")
+class MatchSyncView(FederationGateMixin, View):
+    """Signed authoritative match state for mirror re-sync (§6.3). Answers
+    only the peer on the match's own active link, and only for matches we
+    hold authority over; the JWS lets the mirror trust the snapshot itself."""
+
+    def get(self, request, match_uuid):
+        try:
+            peer, _claims = crypto.verify_signed_request(request)
+        except FederationAuthError as e:
+            return JsonResponse({"error": e.code}, status=403)
+        fmatch = (
+            FederatedMatch.objects.filter(
+                link__peer=peer, link__status="active", role="authority", match__pk=match_uuid
+            )
+            .select_related("match")
+            .first()
+        )
+        if fmatch is None:
+            return JsonResponse({"error": "unknown_match"}, status=404)
+        return JsonResponse({"match": crypto.sign_match_state(str(fmatch.match_id), fmatch.match.status)})
 
 
 # ── Community-admin UI (§3.3 human approval) ─────────
