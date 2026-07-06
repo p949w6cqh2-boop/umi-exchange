@@ -104,7 +104,7 @@ def auth(client):
         if stamp:
             s = client.session
             s[SESSION_KEY] = time.time()
-            s[SESSION_USER_KEY] = user.pk
+            s[SESSION_USER_KEY] = str(user.pk)
             s.save()
         return client
 
