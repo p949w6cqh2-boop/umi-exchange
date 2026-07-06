@@ -154,3 +154,12 @@ def match_url(base_url: str, match_uuid: str) -> str:
 def get_match(base_url: str, match_uuid: str, headers: dict) -> dict:
     """Signed GET of the authority's signed match state (§6.3 re-sync)."""
     return _request("GET", match_url(base_url, match_uuid), None, headers)
+
+
+def attestations_url(base_url: str) -> str:
+    return base_url.rstrip("/") + "/federation/v1/attestations/query"
+
+
+def post_attestations(base_url: str, payload: dict, headers: dict) -> dict:
+    """Signed §5.4 attestation query to the party's home instance."""
+    return _request("POST", attestations_url(base_url), json.dumps(payload).encode(), headers)

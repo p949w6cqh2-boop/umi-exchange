@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AttestationsQueryView,
     ConsentRevocationsView,
     DiscoveryView,
     HandshakeConfirmView,
@@ -20,4 +21,5 @@ urlpatterns = [
     path("proposals", ProposalsView.as_view(), name="proposals"),
     path("matches/<uuid:match_uuid>/events", MatchEventsView.as_view(), name="match-events"),
     path("matches/<uuid:match_uuid>", MatchSyncView.as_view(), name="match-sync"),
+    path("attestations/query", AttestationsQueryView.as_view(), name="attestations-query"),
 ]

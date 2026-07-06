@@ -15,6 +15,7 @@ from django.db import IntegrityError, transaction
 from apps.audit.services import emit
 from apps.communities.models import Member
 
+from . import client as client_mod
 from . import crypto
 from .models import FederatedMatch, FederatedShare
 
@@ -170,3 +171,88 @@ def remote_contact_for(match):
         return None
     fmatch = FederatedMatch.objects.filter(match=match, role="authority").first()
     return fmatch.contact_payload if fmatch else None
+
+
+def serve_attestation_query(peer, *, match_uuid, tag_slug):
+    """§5.4, serving side: answer whether OUR party on this federated match
+    holds the tag verified. Derived from the BUILT MemberTag machine; pending/
+    rejected/revoked/absent all read "none" (claim nothing); self-claimed is
+    labelled exactly that. evidence_note never leaves this instance."""
+    from django.db.models import Q
+
+    from apps.tags.models import MemberTag, Tag
+
+    from . import crypto as fed_crypto
+
+    fmatch = (
+        FederatedMatch.objects.filter(link__peer=peer, link__status="active")
+        .filter(Q(role="authority", match__pk=match_uuid) | Q(role="mirror", remote_match_uuid=match_uuid))
+        .select_related("link", "offer__offerer", "match__need__requester")
+        .first()
+    )
+    if fmatch is None:
+        return {"status": "unknown_match"}
+    if fmatch.role == "mirror":
+        member = fmatch.offer.offerer if fmatch.offer_id else None
+    else:
+        member = fmatch.match.need.requester
+    if member is None:
+        return {"status": "unknown_match"}
+
+    tag = Tag.objects.filter(community_id=fmatch.link.community_id, slug=str(tag_slug)[:50]).first()
+    mt = MemberTag.objects.filter(member=member, tag=tag).first() if tag else None
+    if mt is not None and mt.status == "verified":
+        status = "verified"
+    elif mt is not None and mt.status == "self_claimed":
+        status = "self_claimed"
+    else:
+        status = "none"  # pending/rejected/revoked/absent claim nothing
+    token = fed_crypto.build_attestation(
+        tag_slug=str(tag_slug)[:50],
+        status=status,
+        tier=tag.tier if tag else "",
+        verified_at=mt.verified_at.isoformat() if mt is not None and mt.verified_at and status == "verified" else None,
+        match_uuid=match_uuid,
+        peer_instance_id=peer.instance_id,
+    )
+    emit(
+        "fed.attestation_served",
+        fmatch,
+        details={"tag": str(tag_slug)[:50], "status": status, "link": str(fmatch.link_id)},
+    )
+    return {"status": status, "attestation": token}
+
+
+def request_attestation(fmatch, tag_slug):
+    """§5.4, asking side: query the party's home and VERIFY the returned
+    claim (pinned key, audience, TTL, tag + match binding). Returns a dict
+    with status verified/self_claimed/none/unsupported/unavailable."""
+    import json as _json
+
+    from . import crypto as fed_crypto
+
+    peer = fmatch.link.peer
+    if "attestation" not in (peer.capabilities or []):
+        return {"status": "unsupported"}
+    match_uuid = str(fmatch.match_id if fmatch.role == "authority" else fmatch.remote_match_uuid)
+    payload = {"queries": [{"match_uuid": match_uuid, "tag": str(tag_slug)[:50]}]}
+    url = client_mod.attestations_url(peer.base_url)
+    signature = fed_crypto.sign_request("POST", url, _json.dumps(payload).encode(), aud=peer.instance_id)
+    try:
+        resp = client_mod.post_attestations(peer.base_url, payload, {"X-UMI-Signature": signature})
+    except client_mod.FederationClientError:
+        return {"status": "unavailable"}
+    results = resp.get("results") if isinstance(resp, dict) else None
+    first = results[0] if isinstance(results, list) and results and isinstance(results[0], dict) else {}
+    token = first.get("attestation")
+    try:
+        claims = fed_crypto.verify_attestation(str(token or ""), peer.jwk, aud=fed_crypto.my_instance_id())
+    except fed_crypto.FederationAuthError:
+        return {"status": "unavailable"}
+    if claims.get("tag") != str(tag_slug)[:50] or claims.get("match_uuid") != match_uuid:
+        return {"status": "unavailable"}  # claim not about what we asked
+    return {
+        "status": str(claims.get("status", "none")),
+        "tier": str(claims.get("tier", "")),
+        "verified_at": claims.get("verified_at"),
+    }

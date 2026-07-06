@@ -102,7 +102,7 @@ def build_instance_document() -> str:
         "instance_id": jwk_thumbprint(pub),
         "base_url": settings.SITE_URL,
         "jwk": pub,
-        "capabilities": [],  # Stage A advertises no data capabilities
+        "capabilities": list(getattr(settings, "FEDERATION_CAPABILITIES", [])),
         "software": {"name": "umi-exchange"},
         "locality": getattr(settings, "FEDERATION_LOCALITY", ""),
         "contact": "",
@@ -306,4 +306,47 @@ def verify_match_state(token: str, authority_jwk: dict) -> dict:
     iat = payload.get("iat")
     if not isinstance(iat, int) or abs(time.time() - iat) > SKEW_SECONDS:
         raise FederationAuthError("bad_state")
+    return payload
+
+
+ATTESTATION_TTL_SECONDS = 24 * 3600  # §5.4: ephemeral, never a portable credential
+
+
+def build_attestation(*, tag_slug, status, tier, verified_at, match_uuid, peer_instance_id) -> str:
+    """Signed §5.4 claim about ONE match's party: tag status only, bound to
+    the match id, 24h TTL. Reveals nothing else about the member."""
+    now = int(time.time())
+    payload = {
+        "tag": tag_slug,
+        "status": status,
+        "tier": tier,
+        "verified_at": verified_at,
+        "match_uuid": str(match_uuid),
+        "home": my_instance_id(),
+        "aud": peer_instance_id,
+        "iat": now,
+        "exp": now + ATTESTATION_TTL_SECONDS,
+    }
+    return jws.serialize_compact(
+        {"alg": "Ed25519"}, json.dumps(payload).encode(), load_instance_key(), algorithms=["Ed25519"]
+    )
+
+
+def verify_attestation(token: str, home_jwk: dict, *, aud: str) -> dict:
+    """Verify a §5.4 claim against the issuing home's pinned JWK: signature,
+    audience, and the 24h expiry (an old claim proves nothing)."""
+    if not token or len(token) > MAX_TOKEN_BYTES or token.count(".") != 2:
+        raise FederationAuthError("bad_attestation")
+    try:
+        obj = jws.deserialize_compact(token, OKPKey.import_key(home_jwk), algorithms=["Ed25519"])
+        payload = json.loads(obj.payload)
+    except Exception as e:
+        raise FederationAuthError("bad_attestation") from e
+    now = time.time()
+    exp = payload.get("exp")
+    iat = payload.get("iat")
+    if not isinstance(exp, int) or not isinstance(iat, int) or exp < now or iat > now + SKEW_SECONDS:
+        raise FederationAuthError("bad_attestation")
+    if aud and payload.get("aud") != aud:
+        raise FederationAuthError("bad_attestation")
     return payload
