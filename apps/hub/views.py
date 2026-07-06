@@ -55,4 +55,50 @@ class HubView(LoginRequiredMixin, TemplateView):
         ctx["open_matches"] = selectors.open_matches_for(self.member)
         ctx["notifications"] = selectors.recent_notifications(self.request.user)
         ctx["member_tags"] = selectors.own_tags(self.member)
+        # The Pulse (hub v2): witnessed generosity + immediate agency.
+        ctx["pulse"] = selectors.pulse_events(self.community)
+        ctx["spotlight"] = selectors.spotlight_need(self.member)
+        ctx["cycle"] = 0
+        ctx["season_impact"] = selectors.season_impact(self.member)
+        ctx["week_stats"] = selectors.week_stats(self.community)
+        return ctx
+
+
+class HubPartialView(LoginRequiredMixin, TemplateView):
+    """Base for the hub's live HTMX partials: member-gated, community-scoped."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
+        self.member = get_object_or_404(Member, user=request.user, community=self.community, is_active=True)
+        return super().dispatch(request, *args, **kwargs)
+
+
+class HubPulseView(HubPartialView):
+    """The living stream — polled by the hub every minute."""
+
+    template_name = "hub/_pulse.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["community"] = self.community
+        ctx["pulse"] = selectors.pulse_events(self.community)
+        return ctx
+
+
+class HubSpotlightView(HubPartialView):
+    """One ask, right now — 'show me another' cycles the queue."""
+
+    template_name = "hub/_spotlight.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        try:
+            cycle = max(0, int(self.request.GET.get("cycle", 0)))
+        except (TypeError, ValueError):
+            cycle = 0
+        ctx["community"] = self.community
+        ctx["spotlight"] = selectors.spotlight_need(self.member, cycle=cycle)
+        ctx["cycle"] = cycle
         return ctx
