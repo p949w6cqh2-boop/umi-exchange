@@ -106,6 +106,14 @@ On the **offer-side** instance, after the next 15-minute poll (or
 
 ## 6. Watch during the launch
 
+Two Stage E commands back this section (run inside the app container):
+`manage.py federation_status [--json]` — links (active/unreachable/suspended), outbox depth +
+oldest pending age, retention debt (contacts in grace / overdue for shred), live shadows; warns on
+each problem. `manage.py federation_envelope_status` — envelope census of the federation payload
+columns; **run it before and after every KEK rotation** (`rotate_keks` covers the federation DEKs).
+`scripts/monitor.sh` probes `/.well-known/umi-federation` when `FEDERATION_WELLKNOWN_URL` is set;
+point an Uptime Kuma keyword monitor at the same URL (keyword: `umi_federation`).
+
 - `fed.sig_rejected` (reason `bad_iat` → NTP; `bad_htu` → SITE_URL/proxy mismatch).
 - `fed.peer_unreachable` — backoff runs 1 min → 4 h; after 7 days unreachable the link
   **auto-suspends** (`fed.link_suspended`, coordinators notified; Resume is one click and resets
