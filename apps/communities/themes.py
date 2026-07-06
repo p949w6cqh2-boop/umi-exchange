@@ -1,9 +1,10 @@
-"""Per-community visual themes (UMI "hella options").
+"""Per-community visual themes (UMI "hella options") — design system v2.
 
-A community picks a preset theme (or overrides individual colors) and the whole
-look re-skins: page background + gradient, cards, buttons, borders, accents.
-All themes are LIGHT (dark warm ink on a light tint) so contrast/legibility is
-safe across the board — only the hues change.
+v2 discipline: the SURFACES are brand-fixed (stone paper, true-white cards,
+espresso ink, warm hairlines) so the product always reads as one product; a
+community's theme changes only its ACCENT pair (primary + accent). All accents
+are desaturated to sit with the neutrals, and every pairing keeps white-on-
+primary ≥ WCAG AA at button sizes.
 
 Stored on Community.settings:
     settings["theme"]        -> a key in THEMES (default "parish")
@@ -14,120 +15,34 @@ Resolved into CSS custom properties consumed by base.html / input.css.
 
 THEME_DEFAULT = "parish"
 
-# Each theme supplies the full var set. ink stays dark everywhere for legibility.
+# One surface system for every theme — the product's constant ground.
+_SURFACES = {
+    "bg": "#F6F4EE",
+    "bg_soft": "#EDEAE2",
+    "card": "#FFFFFF",
+    "border": "#E5E1D6",
+    "ink": "#1F1C18",
+}
+
+
+def _theme(label, primary, primary_hover, accent):
+    theme = {"label": label, "primary": primary, "primary_hover": primary_hover, "accent": accent}
+    theme.update(_SURFACES)
+    return theme
+
+
+# Each theme supplies the full var set; surfaces are shared by design.
 THEMES = {
-    "parish": {
-        # Community Hub (Direction D): warm "town well" — water-teal gathering color,
-        # gold kept as the warm accent, cream paper with a barely-cool surface tint.
-        "label": "Parish — warm teal",
-        "primary": "#0F6B73",
-        "primary_hover": "#0B585F",
-        "accent": "#C49A3C",
-        "bg": "#FDFBF7",
-        "bg_soft": "#EFF1EE",
-        "card": "#F6F8F5",
-        "border": "#DDE6E2",
-        "ink": "#2C2A29",
-    },
-    "kinfolk": {
-        "label": "Kinfolk — amber & earth",
-        "primary": "#B5651D",
-        "primary_hover": "#8F4E13",
-        "accent": "#C49A3C",
-        "bg": "#FBF6EF",
-        "bg_soft": "#F3E9DA",
-        "card": "#FBF4E9",
-        "border": "#E7DAC6",
-        "ink": "#2B2622",
-    },
-    "sankofa": {
-        "label": "Sankofa — green & gold",
-        "primary": "#1B5E20",
-        "primary_hover": "#154A19",
-        "accent": "#E0A100",
-        "bg": "#FBF7F0",
-        "bg_soft": "#F1ECDE",
-        "card": "#FAF6EC",
-        "border": "#E4Dcc8",
-        "ink": "#241F1A",
-    },
-    "forest": {
-        "label": "Forest — deep green",
-        "primary": "#1F4D3A",
-        "primary_hover": "#173B2D",
-        "accent": "#C49A3C",
-        "bg": "#F5F8F4",
-        "bg_soft": "#E8F0E9",
-        "card": "#F6FAF6",
-        "border": "#DCE7DD",
-        "ink": "#222826",
-    },
-    "ocean": {
-        "label": "Ocean — teal & sand",
-        "primary": "#146C7E",
-        "primary_hover": "#0F5462",
-        "accent": "#C9A24B",
-        "bg": "#F4FAFB",
-        "bg_soft": "#E3F1F3",
-        "card": "#F4FBFC",
-        "border": "#D3E6E9",
-        "ink": "#1E2A2C",
-    },
-    "royal": {
-        "label": "Royal — purple & gold",
-        "primary": "#5B3A8C",
-        "primary_hover": "#472D6E",
-        "accent": "#C49A3C",
-        "bg": "#FAF7FC",
-        "bg_soft": "#EFE8F5",
-        "card": "#FAF6FD",
-        "border": "#E2D8EC",
-        "ink": "#262130",
-    },
-    "rose": {
-        "label": "Rose — warm pink",
-        "primary": "#9D3B5E",
-        "primary_hover": "#7E2F4B",
-        "accent": "#C49A3C",
-        "bg": "#FDF6F8",
-        "bg_soft": "#F6E6EC",
-        "card": "#FDF5F8",
-        "border": "#EED6DE",
-        "ink": "#2C2226",
-    },
-    "clay": {
-        "label": "Clay — terracotta",
-        "primary": "#A4471F",
-        "primary_hover": "#833818",
-        "accent": "#5E8C61",
-        "bg": "#FBF5F0",
-        "bg_soft": "#F2E4DA",
-        "card": "#FBF4EE",
-        "border": "#E8D6C8",
-        "ink": "#2B2320",
-    },
-    "slate": {
-        "label": "Slate — calm blue-grey",
-        "primary": "#3F5168",
-        "primary_hover": "#314052",
-        "accent": "#C49A3C",
-        "bg": "#F6F8FA",
-        "bg_soft": "#E8EDF2",
-        "card": "#F7F9FB",
-        "border": "#DCE3EA",
-        "ink": "#222730",
-    },
-    "midnight": {
-        "label": "Midnight — ink & gold",
-        "primary": "#22304A",
-        "primary_hover": "#1A2638",
-        "accent": "#C9A24B",
-        "bg": "#F5F6F8",
-        "bg_soft": "#E7EAEF",
-        "card": "#F6F7F9",
-        "border": "#D8DDE5",
-        "ink": "#1E232B",
-    },
+    "parish": _theme("Parish — evergreen", "#275D4C", "#1C4739", "#9C7A3C"),
+    "kinfolk": _theme("Kinfolk — hearth amber", "#8F5A2B", "#734720", "#4E6E58"),
+    "sankofa": _theme("Sankofa — green & gold", "#2F5D33", "#244A28", "#A88434"),
+    "forest": _theme("Forest — deep pine", "#1F4D3A", "#173B2D", "#8A7248"),
+    "ocean": _theme("Ocean — harbour teal", "#20606C", "#184C56", "#9C7A3C"),
+    "royal": _theme("Royal — vestment purple", "#54407C", "#423263", "#A88434"),
+    "rose": _theme("Rose — dried rose", "#8C4157", "#703345", "#9C7A3C"),
+    "clay": _theme("Clay — terracotta", "#94512E", "#784124", "#4E6E58"),
+    "slate": _theme("Slate — quiet blue-grey", "#44546A", "#364457", "#9C7A3C"),
+    "midnight": _theme("Midnight — ink & bronze", "#2A3A54", "#212E43", "#A88434"),
 }
 
 # Which keys a community may override individually.

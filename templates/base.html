@@ -5,27 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ community.name|default:"UMI Exchange" }}{% endblock %}</title>
   {% load static %}
+  <link rel="preload" href="{% static 'fonts/newsreader-var.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/schibsted-var.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
   <link rel="stylesheet" href="{% static 'css/animations.css' %}">
   <style>
     :root {
-      --umi-primary: {{ umi_theme.primary|default:"#0F6B73" }};
-      --umi-primary-hover: {{ umi_theme.primary_hover|default:"#0B585F" }};
-      --umi-accent: {{ umi_theme.accent|default:"#C49A3C" }};
-      --umi-bg: {{ umi_theme.bg|default:"#FDFBF7" }};
-      --umi-bg-soft: {{ umi_theme.bg_soft|default:"#EFF1EE" }};
-      --umi-card: {{ umi_theme.card|default:"#F6F8F5" }};
-      --umi-border: {{ umi_theme.border|default:"#DDE6E2" }};
-      --umi-text: {{ umi_theme.ink|default:"#2C2A29" }};
-      --umi-need-accent: {{ umi_theme.primary|default:"#0F6B73" }};
-      --umi-offer-accent: {{ umi_theme.accent|default:"#C49A3C" }};
+      --umi-primary: {{ umi_theme.primary|default:"#275D4C" }};
+      --umi-primary-hover: {{ umi_theme.primary_hover|default:"#1C4739" }};
+      --umi-accent: {{ umi_theme.accent|default:"#9C7A3C" }};
+      --umi-bg: {{ umi_theme.bg|default:"#F6F4EE" }};
+      --umi-bg-soft: {{ umi_theme.bg_soft|default:"#EDEAE2" }};
+      --umi-card: {{ umi_theme.card|default:"#FFFFFF" }};
+      --umi-border: {{ umi_theme.border|default:"#E5E1D6" }};
+      --umi-text: {{ umi_theme.ink|default:"#1F1C18" }};
+      --umi-need-accent: {{ umi_theme.primary|default:"#275D4C" }};
+      --umi-offer-accent: {{ umi_theme.accent|default:"#9C7A3C" }};
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
     /* Keep form fields legible against the warm background */
     input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]), textarea, select {
-      color: #2C2A29 !important;
+      color: #1F1C18 !important;
       background-color: #ffffff !important;
     }
   </style>
@@ -42,11 +44,16 @@
     <div class="umi-container py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         {% if community %}
-          <a href="{% url 'community-feed' community.slug %}" class="font-serif text-xl text-parish-ink hover:text-umi-primary">
-            {{ community.name }}
+          <a href="{% url 'community-feed' community.slug %}"
+             class="group inline-flex items-baseline gap-2.5 focus-ring rounded-lg">
+            <span class="w-2 h-2 rounded-[3px] bg-[var(--umi-primary)] self-center transition-transform duration-300 ease-physical group-hover:rotate-45" aria-hidden="true"></span>
+            <span class="font-serif text-[1.35rem] font-semibold tracking-tight text-parish-ink">{{ community.name }}</span>
           </a>
         {% else %}
-          <a href="{% url 'landing' %}" class="font-serif text-xl text-parish-ink">UMI Exchange</a>
+          <a href="{% url 'landing' %}" class="group inline-flex items-baseline gap-2.5 focus-ring rounded-lg">
+            <span class="w-2 h-2 rounded-[3px] bg-[var(--umi-primary)] self-center transition-transform duration-300 ease-physical group-hover:rotate-45" aria-hidden="true"></span>
+            <span class="font-serif text-[1.35rem] font-semibold tracking-tight text-parish-ink">UMI Exchange</span>
+          </a>
         {% endif %}
       </div>
       <div class="flex items-center gap-4">
@@ -86,8 +93,8 @@
             </div>
           </form>
         {% else %}
-          <a href="{% url 'login' %}" class="text-sm text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center">Sign In</a>
-          <a href="{% url 'community-join' %}" class="bg-[var(--umi-primary)] hover:bg-[var(--umi-primary-hover)] text-white text-sm font-medium px-4 py-2 rounded-full min-h-[44px] flex items-center">Join</a>
+          <a href="{% url 'login' %}" class="text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center focus-ring rounded-lg px-2">Sign in</a>
+          <a href="{% url 'community-join' %}" class="btn-primary text-sm !min-h-[42px] !px-5 !py-2">Join a community</a>
         {% endif %}
       </div>
     </div>
@@ -109,12 +116,21 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="bg-[var(--umi-text)] text-[var(--umi-bg)] py-6 mt-8">
-    <div class="umi-container flex flex-col sm:flex-row items-center justify-between gap-2">
-      <span class="text-xs">&copy; 2026 UMI Exchange</span>
-      <a href="https://umi-protocol.org/spec/v0.1" class="inline-flex items-center gap-1.5 text-xs hover:underline transition-colors">
-        &#9889; Built on UMI Protocol v0.1 &mdash; Build your own
-      </a>
+  <footer class="bg-[#191613] text-[#EDEAE2] mt-16">
+    <div class="umi-container py-10">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+        <div>
+          <span class="inline-flex items-baseline gap-2.5">
+            <span class="w-2 h-2 rounded-[3px] bg-[var(--umi-accent)] self-center" aria-hidden="true"></span>
+            <span class="font-serif text-2xl font-medium tracking-tight">UMI Exchange</span>
+          </span>
+          <p class="text-sm text-[#EDEAE2]/55 mt-2 max-w-sm">Neighbours asking, neighbours answering &mdash; matched with care, private by default.</p>
+        </div>
+        <div class="text-xs text-[#EDEAE2]/45 sm:text-right space-y-1.5">
+          <p><a href="https://umi-protocol.org/spec/v0.1" class="hover:text-[#EDEAE2] transition-colors duration-300">Built on the UMI Protocol v0.1 &mdash; build your own</a></p>
+          <p>&copy; 2026 UMI Exchange</p>
+        </div>
+      </div>
     </div>
   </footer>
 
@@ -125,9 +141,9 @@
   <script>
     (function () {
       function styleFor(type) {
-        if (type === "success") return "bg-emerald-50 border border-emerald-200 text-emerald-800";
-        if (type === "error") return "bg-red-50 border border-red-200 text-red-800";
-        return "bg-blue-50 border border-blue-200 text-blue-800";
+        if (type === "success") return "bg-white border border-[var(--umi-border)] text-parish-ink shadow-lift border-l-4 !border-l-[var(--umi-primary)]";
+        if (type === "error") return "bg-white border border-red-200 text-red-800 shadow-lift border-l-4 !border-l-red-500";
+        return "bg-white border border-[var(--umi-border)] text-parish-ink shadow-lift border-l-4 !border-l-[var(--umi-accent)]";
       }
       function dismiss(t) {
         if (t.dataset.leaving) return;
