@@ -5,6 +5,7 @@ from .views import (
     FederatedMatchesView,
     FederatedOfferPickerView,
     FederatedProposeView,
+    FederatedShareToggleView,
     FederationSettingsView,
 )
 
@@ -16,4 +17,5 @@ urlpatterns = [
     path("listings/<uuid:shadow_id>/offers", FederatedOfferPickerView.as_view(), name="listing-offers"),
     path("listings/<uuid:shadow_id>/propose", FederatedProposeView.as_view(), name="listing-propose"),
     path("matches", FederatedMatchesView.as_view(), name="matches"),
+    path("share", FederatedShareToggleView.as_view(), name="share-toggle"),
 ]

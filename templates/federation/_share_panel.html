@@ -1,0 +1,38 @@
+{# Owner-only §4.1 surface: sharing IS the digital consent capture. #}
+{% if share_panel %}
+<div class="umi-card mt-4">
+  <p class="umi-kicker">Share beyond this community</p>
+  <p class="text-sm text-parish-ink/70 mt-1">
+    Make this visible to linked communities. Only the outline travels &mdash; category, urgency,
+    general area &mdash; never your name or contact details, until a match you accept.
+  </p>
+  <ul class="mt-4 space-y-2">
+    {% for row in share_panel.rows %}
+    <li class="flex flex-wrap items-center justify-between gap-3">
+      <span class="flex items-center gap-2 text-base text-parish-ink">
+        {{ row.link.remote_community_label|default:row.link.peer.base_url }}
+        {% if row.share %}<span class="umi-pill">Shared</span>{% endif %}
+      </span>
+      <form method="post" action="{% url 'federation_admin:share-toggle' community.slug %}">
+        {% csrf_token %}
+        <input type="hidden" name="kind" value="{{ share_panel.kind }}">
+        <input type="hidden" name="record_id" value="{{ share_panel.record.pk }}">
+        <input type="hidden" name="link_id" value="{{ row.link.pk }}">
+        {% if row.share %}
+        <input type="hidden" name="action" value="unshare">
+        <button type="submit" class="btn-secondary text-sm min-h-[44px]">Stop sharing</button>
+        {% else %}
+        <input type="hidden" name="action" value="share">
+        <button type="submit" class="btn-primary text-sm min-h-[44px]"
+                aria-label="Share with {{ row.link.remote_community_label|default:'the linked community' }}">Share</button>
+        {% endif %}
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="text-xs text-parish-ink/55 mt-3">
+    Sharing records your consent; you can stop sharing here or revoke the consent itself from your
+    consent page at any time.
+  </p>
+</div>
+{% endif %}

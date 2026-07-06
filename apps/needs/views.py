@@ -88,6 +88,11 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
             )
         ctx["contact_info"] = contact_info
         ctx["show_contact"] = contact_info is not None
+        # Federation (§2.3/§4.1): the owner's share-beyond-this-community
+        # panel — None (hidden) unless flag on + owner + an active link.
+        from apps.federation.sharing import share_panel
+
+        ctx["share_panel"] = share_panel(need, member)
         # Suggested offers: same category, active
         if ctx["is_own_need"]:
             ctx["suggested_offers"] = (

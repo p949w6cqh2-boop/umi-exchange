@@ -25,6 +25,8 @@
   </div>
 
   {# Contact info box (§8.2): locked for members; revealed to coordinators (audited). #}
+  {% include "federation/_share_panel.html" %}
+
   {% include "components/_contact_info_box.html" with show_contact=show_contact contact_info=contact_info %}
 
   {% if offer.status == "active" %}

@@ -418,7 +418,7 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
         if member is None:
             messages.error(request, "Only community admins can manage federation.")
             return redirect("community-feed", slug=slug)
-        return render(request, self.template_name, self._context())
+        return render(request, self.template_name, self._context(request))
 
     def post(self, request, slug):
         member = self._admin_member(request, slug)
@@ -439,7 +439,7 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             handler(request, member, action)
         return redirect("federation_admin:settings", slug=slug)
 
-    def _context(self):
+    def _context(self, request=None):
         # M-1: scope pending inbound requests to THIS community — a peer that
         # named a target community only shows to that community's admins. Empty
         # target (unspecified/legacy) still shows to all (backward-compat).
@@ -448,8 +448,19 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             .exclude(pairing_hash="")
             .filter(Q(target_community_slug=self.community.slug) | Q(target_community_slug=""))
         )
+        # Pinned one-time pairing codes for links this admin just initiated
+        # (session-popped: rendered exactly once, on this page, not a toast).
+        pairing_reveals = []
+        if request is not None:
+            for link in FederationLink.objects.filter(
+                community=self.community, status="pending", requested_by_us=True
+            ).select_related("peer"):
+                code = request.session.pop(f"fed_pairing_code_{link.pk}", None)
+                if code:
+                    pairing_reveals.append({"link": link, "code": code})
         return {
             "community": self.community,
+            "pairing_reveals": pairing_reveals,
             "instance_id": crypto.my_instance_id(),
             "links": FederationLink.objects.filter(community=self.community).select_related("peer"),
             "inbound_peers": inbound,
@@ -480,13 +491,17 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             return
         code = crypto.mint_pairing_code()
         salt = uuid.uuid4().hex
-        FederationLink.objects.create(
+        link = FederationLink.objects.create(
             peer=peer,
             community=self.community,
             requested_by_us=True,
             pairing_code_hash=crypto.local_code_hash(code),
             pairing_expires_at=timezone.now() + PAIRING_TTL,
         )
+        # Pin the one-time code to the settings page (session-popped there)
+        # instead of a vanishing toast — the dark-launch rehearsal nearly
+        # lost it mid-ceremony.
+        request.session[f"fed_pairing_code_{link.pk}"] = code
         try:
             client_mod.post_handshake(
                 base_url,
@@ -503,11 +518,7 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             messages.error(request, f"Handshake request failed: {e}")
             return
         emit("fed.link_requested", peer, user=request.user, request=request, details={"origin": "outbound"})
-        messages.success(
-            request,
-            f"Link requested. Read the peer admin your key thumbprint ({crypto.my_instance_id()}) and this "
-            f"one-time pairing code: {code} — it is shown only once and expires in 24 hours.",
-        )
+        messages.success(request, "Link requested — the one-time pairing code is pinned below.")
 
     def _approve(self, request, member, _action):
         peer = get_object_or_404(FederationPeer, pk=request.POST.get("peer_id"), status="pending")
@@ -772,3 +783,74 @@ class FederatedMatchesView(LoginRequiredMixin, FederationGateMixin, View):
                 "oversight_rows": oversight_rows,
             },
         )
+
+
+class FederatedShareToggleView(LoginRequiredMixin, FederationGateMixin, View):
+    """POST: the owner shares/unshares one record on one link (§2.3/§4.1).
+    Sharing IS the digital consent capture — one action creates (or reuses)
+    the covering Consent, mints the FederatedShare + signed receipt, and
+    flips the record's share_scope. Unsharing revokes the share and sends
+    the peer a signed delete-request (§4.3); the consent itself stays the
+    member's to revoke from their consent page."""
+
+    def post(self, request, slug):
+        from apps.needs.models import Need
+        from apps.offers.models import Offer
+
+        from . import sharing as sharing_mod
+
+        community, member = _active_member_or_none(request, slug)
+        if member is None:
+            raise Http404
+        kind = request.POST.get("kind")
+        model = {"need": Need, "offer": Offer}.get(kind)
+        if model is None:
+            return JsonResponse({"error": "invalid kind"}, status=400)
+        record = get_object_or_404(model, pk=request.POST.get("record_id"), community=community)
+        owner_user_id = record.requester.user_id if kind == "need" else record.offerer.user_id
+        if owner_user_id != request.user.id:
+            raise Http404  # only the person whose record it is may share it
+        link = get_object_or_404(FederationLink, pk=request.POST.get("link_id"), community=community)
+        action = request.POST.get("action")
+
+        if action == "share":
+            if link.status != "active":
+                messages.error(request, "That community link isn't active right now.")
+            else:
+                consent = sharing_mod.find_share_consent(record, link)
+                if consent is None:
+                    from apps.consent.models import Consent
+
+                    Consent.objects.create(
+                        participant=request.user,
+                        granted_to=link.remote_community_label or link.peer.label or "Linked community",
+                        grantee_type="community",
+                        grantee_id=link.remote_community_uuid,
+                        scope=[sharing_mod.FEDERATED_SHARE_SCOPE],
+                        purpose="Share this ask/offer with the linked community",
+                        method="digital",
+                    )
+                try:
+                    sharing_mod.share_record(record, link, actor_user=request.user)
+                except sharing_mod.ShareError as e:
+                    messages.error(request, f"Couldn't share: {e}")
+                else:
+                    messages.success(
+                        request,
+                        f"Shared with {link.remote_community_label or 'the linked community'}. Only the outline "
+                        "travels — never your name or contact details, until a match is accepted.",
+                    )
+        elif action == "unshare":
+            field = {"need": "need", "offer": "offer"}[kind]
+            share = FederatedShare.objects.filter(link=link, status="active", **{field: record}).first()
+            if share is not None:
+                sharing_mod.revoke_share(share, actor_user=request.user)
+                if not FederatedShare.objects.filter(status="active", **{field: record}).exists():
+                    record.share_scope = "local"
+                    record.save(update_fields=["share_scope", "updated_at"])
+            messages.info(request, "No longer shared. The linked community has been asked to drop its copy.")
+        else:
+            return JsonResponse({"error": "invalid action"}, status=400)
+
+        detail = "need-detail" if kind == "need" else "offer-detail"
+        return redirect(detail, slug=slug, pk=record.pk)

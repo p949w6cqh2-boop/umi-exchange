@@ -11,6 +11,18 @@
       <code class="break-all">{{ instance_id }}</code></p>
   </header>
 
+  {% for reveal in pairing_reveals %}
+  <section class="umi-card" aria-label="One-time pairing code">
+    <p class="umi-kicker">Pairing code &mdash; shown only once</p>
+    <p class="font-mono text-3xl tracking-widest mt-2 select-all" data-pairing-code="{{ reveal.code }}">{{ reveal.code }}</p>
+    <p class="text-sm text-parish-ink/70 mt-3">
+      Phone the admin at <strong>{{ reveal.link.peer.base_url }}</strong> now: read them this code and
+      your key thumbprint above, and have them read theirs back. The code expires in 24 hours and
+      will not be shown again &mdash; write it down before leaving this page.
+    </p>
+  </section>
+  {% endfor %}
+
   <section>
     <h2 class="font-serif text-lg mb-2">Request a link</h2>
     <form method="post" class="flex gap-2 items-end">
