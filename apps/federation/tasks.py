@@ -53,6 +53,40 @@ def sweep_expired_contacts() -> int:
     return _sweep()
 
 
+def auto_suspend_unreachable_links() -> int:
+    """§11: a link whose peer has been continuously unreachable for 7 days is
+    suspended (operator pause, keys kept) — coordinators are told; resume is
+    one click in the admin UI once the peer returns."""
+    if not getattr(settings, "FEDERATION_ENABLED", False):
+        return 0
+    from datetime import timedelta
+
+    from apps.audit.services import emit
+    from apps.common.state import TransitionConflict
+
+    from .models import FederationLink
+    from .outbox import notify_coordinators
+
+    cutoff = timezone.now() - timedelta(days=7)
+    suspended = 0
+    for link in FederationLink.objects.filter(status="active", unreachable_since__lt=cutoff).select_related(
+        "community", "peer"
+    ):
+        try:
+            link.transition_to("suspended")
+        except TransitionConflict:
+            continue  # raced with an admin action — their call wins
+        emit("fed.link_suspended", link, details={"reason": "auto_unreachable", "peer": link.peer.instance_id})
+        notify_coordinators(
+            link.community,
+            "Federation link suspended",
+            f"The link to {link.remote_community_label or link.peer.base_url} was suspended automatically "
+            "after 7 days unreachable. Resume it from Federation settings when the peer returns.",
+        )
+        suspended += 1
+    return suspended
+
+
 def register_schedule():
     from django_q.models import Schedule
 
@@ -86,6 +120,14 @@ def register_schedule():
         name="federation-sweep-contacts",
         defaults={
             "func": "apps.federation.tasks.sweep_expired_contacts",
+            "schedule_type": Schedule.DAILY,
+            "repeats": -1,
+        },
+    )
+    Schedule.objects.update_or_create(
+        name="federation-auto-suspend",
+        defaults={
+            "func": "apps.federation.tasks.auto_suspend_unreachable_links",
             "schedule_type": Schedule.DAILY,
             "repeats": -1,
         },

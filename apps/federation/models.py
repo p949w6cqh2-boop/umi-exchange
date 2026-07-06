@@ -105,6 +105,9 @@ class FederationLink(StateMachineMixin, models.Model):
     )
     approved_at = models.DateTimeField(null=True, blank=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
+    # §11: set on the first outbound failure of an episode, cleared on any
+    # outbound success; a daily sweep auto-suspends links unreachable > 7 d.
+    unreachable_since = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

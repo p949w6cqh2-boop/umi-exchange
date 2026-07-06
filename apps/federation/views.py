@@ -45,7 +45,7 @@ PAIRING_TTL = timedelta(hours=24)
 # view AFTER verify_signed_request resolves the peer (the peer identity isn't
 # known before the view runs, and re-verifying in the decorator would consume the
 # jti nonce twice and break replay protection). Named so the mechanism is testable.
-FED_PEER_HOURLY_CAPS = {"discovery": 60, "proposals": 30, "revocations": 60}
+FED_PEER_HOURLY_CAPS = {"discovery": 60, "proposals": 30, "revocations": 60, "events": 120, "sync": 120}
 
 
 def _peer_over_cap(endpoint, peer) -> bool:
@@ -343,6 +343,8 @@ class MatchEventsView(FederationGateMixin, View):
         except (ValueError, UnicodeDecodeError):
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
+        if _peer_over_cap("events", peer):
+            return JsonResponse({"error": "rate_limited"}, status=429)
         fmatch = _resolve_event_fmatch(peer, match_uuid)
         if fmatch is None:
             return JsonResponse({"error": "unknown_match"}, status=404)
@@ -384,6 +386,8 @@ class MatchSyncView(FederationGateMixin, View):
             peer, _claims = crypto.verify_signed_request(request)
         except FederationAuthError as e:
             return JsonResponse({"error": e.code}, status=403)
+        if _peer_over_cap("sync", peer):
+            return JsonResponse({"error": "rate_limited"}, status=429)
         fmatch = (
             FederatedMatch.objects.filter(
                 link__peer=peer, link__status="active", role="authority", match__pk=match_uuid
@@ -572,6 +576,12 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
         try:
             with transaction.atomic():
                 link.transition_to(target)
+                if target == "active" and link.unreachable_since is not None:
+                    # A resumed link starts a clean episode — otherwise the
+                    # §11 daily sweep would re-suspend it before the next
+                    # successful contact clears the old timestamp.
+                    link.unreachable_since = None
+                    link.save(update_fields=["unreachable_since"])
                 # Revoke is terminal: cascade the link's live shares to revoked in
                 # the SAME transaction, so they can never be served or matched
                 # again even by a future call site that forgets the link__status
@@ -601,3 +611,164 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             return
         emit(audit_action, link, user=request.user, request=request, details={"action": action})
         messages.success(request, f"Link {target}.")
+
+
+# ── Member-facing federation UI (Stage C slice 3) ─────
+
+
+def _active_member_or_none(request, slug):
+    community = get_object_or_404(Community, slug=slug, is_active=True)
+    member = Member.objects.filter(user=request.user, community=community, is_active=True).first()
+    return community, member
+
+
+class FederatedListingsView(LoginRequiredMixin, FederationGateMixin, View):
+    """The board beyond this community (§6.2 step 1): every live need shadow
+    pulled from active links, redacted-by-construction — category, urgency,
+    locality, freshness. No identity, no free text, ever (§2.2)."""
+
+    template_name = "federation/listings.html"
+
+    def get(self, request, slug):
+        community, member = _active_member_or_none(request, slug)
+        if member is None:
+            messages.error(request, "Join this community to see its shared board.")
+            return redirect("community-feed", slug=slug)
+        shadows = (
+            ShadowListing.objects.filter(
+                link__community=community, link__status="active", kind="need", expires_at__gt=timezone.now()
+            )
+            .select_related("link__peer")
+            .order_by("-fetched_at")
+        )
+        from apps.offers.models import Offer
+
+        my_open_offers = Offer.objects.filter(community=community, offerer=member, status="active").count()
+        return render(
+            request,
+            self.template_name,
+            {
+                "community": community,
+                "member": member,
+                "shadows": shadows,
+                "my_open_offers": my_open_offers,
+            },
+        )
+
+
+class FederatedOfferPickerView(LoginRequiredMixin, FederationGateMixin, View):
+    """HTMX partial: the member's own open offers to send against a peer's
+    ask. Agency stays with the offerer — only their offers appear (H-2)."""
+
+    template_name = "federation/_offer_picker.html"
+
+    def get(self, request, slug, shadow_id):
+        community, member = _active_member_or_none(request, slug)
+        if member is None:
+            raise Http404
+        shadow = get_object_or_404(
+            ShadowListing, pk=shadow_id, link__community=community, link__status="active", kind="need"
+        )
+        from apps.offers.models import Offer
+
+        offers = Offer.objects.filter(community=community, offerer=member, status="active").select_related("category")
+        return render(request, self.template_name, {"community": community, "shadow": shadow, "offers": offers})
+
+
+# ProposalError reasons → warm, non-technical copy. Unknown reasons fall back.
+PROPOSE_ERROR_COPY = {
+    "gone": "That ask has already been answered or withdrawn on their side.",
+    "not_shared": "That ask is no longer shared with this community.",
+    "self_match": "This looks like it may be your own ask on the linked community — it can't be matched to itself.",
+    "too_many_open": "That ask already has several offers waiting. Maybe try another one.",
+    "peer unreachable": "Their community can't be reached right now, so your offer wasn't sent. Try again later.",
+    "link is not active": "This community link isn't active right now.",
+}
+
+
+class FederatedProposeView(LoginRequiredMixin, FederationGateMixin, View):
+    """POST: send one of my offers against a peer's ask (§6.2 step 2) via
+    mirror.send_proposal. Ownership/link/offer-state rules live in the
+    service; this view translates outcomes into human words."""
+
+    def post(self, request, slug, shadow_id):
+        from apps.offers.models import Offer
+
+        community, member = _active_member_or_none(request, slug)
+        if member is None:
+            raise Http404
+        shadow = get_object_or_404(
+            ShadowListing, pk=shadow_id, link__community=community, link__status="active", kind="need"
+        )
+        offer = get_object_or_404(Offer, pk=request.POST.get("offer_id"), community=community)
+        try:
+            mirror.send_proposal(shadow, offer, actor_user=request.user)
+        except mirror.ProposalError as e:
+            messages.error(request, PROPOSE_ERROR_COPY.get(str(e), "That offer couldn't be sent right now."))
+        else:
+            messages.success(
+                request,
+                f"Your offer went to {shadow.link.remote_community_label or 'the linked community'}. "
+                "If they accept, contact details are shared both ways.",
+            )
+        return redirect("federation_admin:listings", slug=slug)
+
+
+class FederatedMatchesView(LoginRequiredMixin, FederationGateMixin, View):
+    """Across-communities tracking: members follow their own offers abroad
+    (mirror side) and see the requester's §8.2 dict once accepted; community
+    coordinators oversee ALL federated activity on their links — the same
+    oversight §8.2 grants them locally. Every reveal is audited."""
+
+    template_name = "federation/matches.html"
+
+    STATUS_COPY = {
+        "proposed": "Waiting for their community",
+        "accepted": "Accepted — contact shared",
+        "fulfilled": "Fulfilled",
+        "unfulfilled": "Not fulfilled",
+        "cancelled": "Cancelled",
+        "expired": "Expired",
+    }
+
+    def get(self, request, slug):
+        from apps.audit.models import AuditLog
+
+        community, member = _active_member_or_none(request, slug)
+        if member is None:
+            messages.error(request, "Join this community to see its shared board.")
+            return redirect("community-feed", slug=slug)
+
+        base = FederatedMatch.objects.filter(link__community=community).select_related(
+            "link__peer", "offer__category", "offer__offerer", "match__need"
+        )
+        mine = base.filter(role="mirror", offer__offerer=member).order_by("-created_at")
+        oversight = base.order_by("-created_at") if member.is_coordinator else []
+
+        def row(fm, *, reveal):
+            status = fm.mirror_status if fm.role == "mirror" else fm.match.status
+            contact = None
+            if reveal and fm.role == "mirror" and status in ("accepted", "fulfilled"):
+                contact = fm.contact_payload
+                if contact:
+                    AuditLog.log(request.user, "read", "match_contact", fm.pk, request=request)
+            return {
+                "fm": fm,
+                "status": status,
+                "status_copy": self.STATUS_COPY.get(status, status),
+                "contact": contact,
+            }
+
+        my_rows = [row(fm, reveal=True) for fm in mine]
+        seen = {r["fm"].pk for r in my_rows}
+        oversight_rows = [row(fm, reveal=member.is_coordinator) for fm in oversight if fm.pk not in seen]
+        return render(
+            request,
+            self.template_name,
+            {
+                "community": community,
+                "member": member,
+                "my_rows": my_rows,
+                "oversight_rows": oversight_rows,
+            },
+        )
