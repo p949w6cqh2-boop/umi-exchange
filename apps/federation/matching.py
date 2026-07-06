@@ -7,6 +7,8 @@ sidecar. §8.6 self-matching is preserved across the boundary by a blind token
 no schema change to Match.
 """
 
+import hmac
+
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
@@ -15,6 +17,11 @@ from apps.communities.models import Member
 
 from . import crypto
 from .models import FederatedMatch, FederatedShare
+
+# M-4: max concurrent non-terminal (proposed/accepted) proposals against one
+# Need from one link. Mechanism is the guard below; the NUMBER is a product call
+# (§11 suggests 3) — flagged for Jasiah, not silently authoritative.
+MAX_OPEN_PROPOSALS_PER_NEED_PER_LINK = 3
 
 
 def get_proxy_member(link):
@@ -46,7 +53,10 @@ def _is_requester_self_match(need, link, incoming_token) -> bool:
     email = getattr(need.requester.user, "email", "") or ""
     if not email:
         return False
-    return crypto.blind_token(bytes(link.pairing_pepper), email) == str(incoming_token)
+    # Constant-time (L-1): consistent with crypto.codes_match. The equality bit
+    # is disclosed by design (the response says "self_match"), but compare in
+    # constant time anyway so the comparison itself leaks nothing.
+    return hmac.compare_digest(crypto.blind_token(bytes(link.pairing_pepper), email), str(incoming_token))
 
 
 def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None) -> dict:
@@ -82,6 +92,13 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None)
                 return {"status": "rejected", "reason": "gone"}
             if _is_requester_self_match(need, link, blind_token):
                 return {"status": "rejected", "reason": "self_match"}
+            # M-4: cap concurrent non-terminal proposals per (need, link) so one
+            # peer can't flood a single Need with authoritative Matches.
+            open_count = FederatedMatch.objects.filter(
+                link=link, match__need=need, match__status__in=("proposed", "accepted")
+            ).count()
+            if open_count >= MAX_OPEN_PROPOSALS_PER_NEED_PER_LINK:
+                return {"status": "rejected", "reason": "too_many_open"}
             match = Match.objects.create(need=need, offer=None, proposed_by=get_proxy_member(link))
             fmatch = FederatedMatch.objects.create(
                 match=match, link=link, role="authority", proposal_uuid=proposal_uuid

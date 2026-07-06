@@ -1,9 +1,11 @@
 """Inbound discovery poller + TTL sweep (Stage B slice 2)."""
 
+import json
 import uuid
 
 import pytest
 from django.utils import timezone
+from joserfc import jws
 
 from apps.audit.models import AuditLog
 from apps.federation import polling, tasks
@@ -13,13 +15,21 @@ from apps.federation.models import ShadowListing
 pytestmark = pytest.mark.django_db
 
 
-def _row(kind="need", **kw):
+def _receipt(remote, record="need:x"):
+    """A consent receipt JWS signed by the peer's key (what redact() now sends
+    and poll_link() now verifies, M-3)."""
+    payload = {"record": record, "scope": ["federated_share"], "home": remote.instance_id}
+    return jws.serialize_compact({"alg": "Ed25519"}, json.dumps(payload).encode(), remote.key, algorithms=["Ed25519"])
+
+
+def _row(remote, kind="need", **kw):
     r = {
         "kind": kind,
         "remote_uuid": str(uuid.uuid4()),
         "category": "Food",
         "locality": "Testville",
         "freshness": "2026-W27",
+        "receipt_jws": _receipt(remote),
     }
     r["urgency" if kind == "need" else "radius_km"] = "high" if kind == "need" else 10
     r.update(kw)
@@ -32,8 +42,8 @@ def _mock_feed(monkeypatch, listings):
     )
 
 
-def test_poll_upserts_shadows(fed_settings, active_link, monkeypatch):
-    rows = [_row(), _row(kind="offer")]
+def test_poll_upserts_shadows(fed_settings, active_link, remote, monkeypatch):
+    rows = [_row(remote), _row(remote, kind="offer")]
     _mock_feed(monkeypatch, rows)
     assert polling.poll_link(active_link) == 2
     s = ShadowListing.objects.get(remote_uuid=rows[0]["remote_uuid"])
@@ -43,18 +53,18 @@ def test_poll_upserts_shadows(fed_settings, active_link, monkeypatch):
     assert o.kind == "offer" and o.radius_km == 10
 
 
-def test_poll_tombstones_rows_that_left_the_feed(fed_settings, active_link, monkeypatch):
-    r1 = _row()
+def test_poll_tombstones_rows_that_left_the_feed(fed_settings, active_link, remote, monkeypatch):
+    r1 = _row(remote)
     _mock_feed(monkeypatch, [r1])
     polling.poll_link(active_link)
-    r2 = _row()
+    r2 = _row(remote)
     _mock_feed(monkeypatch, [r2])
     polling.poll_link(active_link)
     assert {str(x.remote_uuid) for x in ShadowListing.objects.all()} == {r2["remote_uuid"]}
 
 
-def test_poll_updates_existing_in_place(fed_settings, active_link, monkeypatch):
-    r = _row(urgency="low")
+def test_poll_updates_existing_in_place(fed_settings, active_link, remote, monkeypatch):
+    r = _row(remote, urgency="low")
     _mock_feed(monkeypatch, [r])
     polling.poll_link(active_link)
     r["urgency"] = "critical"
@@ -74,26 +84,50 @@ def test_poll_unreachable_peer_is_audited_not_fatal(fed_settings, active_link, m
     assert AuditLog.objects.filter(action="fed.peer_unreachable", resource_type="federationlink").exists()
 
 
-def test_poll_ignores_malformed_rows(fed_settings, active_link, monkeypatch):
+def test_poll_ignores_malformed_rows(fed_settings, active_link, remote, monkeypatch):
     _mock_feed(
         monkeypatch,
         [
             {"kind": "bogus", "remote_uuid": str(uuid.uuid4())},
             {"kind": "need", "remote_uuid": "not-a-uuid"},
             "not a dict",
-            _row(),
+            _row(remote),
         ],
     )
     assert polling.poll_link(active_link) == 1
     assert ShadowListing.objects.count() == 1
 
 
-def test_sweep_deletes_expired_shadows(fed_settings, active_link, monkeypatch):
-    _mock_feed(monkeypatch, [_row()])
+def test_sweep_deletes_expired_shadows(fed_settings, active_link, remote, monkeypatch):
+    _mock_feed(monkeypatch, [_row(remote)])
     polling.poll_link(active_link)
     ShadowListing.objects.update(expires_at=timezone.now() - timezone.timedelta(days=1))
     assert tasks.sweep_expired_shadows() == 1
     assert not ShadowListing.objects.exists()
+
+
+def test_poll_rejects_missing_receipt(fed_settings, active_link, remote, monkeypatch):
+    """M-3: a row without a consent receipt is not persisted (can't prove the
+    share was consented) and the rejection is audited."""
+    row = _row(remote)
+    row["receipt_jws"] = ""
+    _mock_feed(monkeypatch, [row])
+
+    assert polling.poll_link(active_link) == 0
+    assert not ShadowListing.objects.exists()
+    assert AuditLog.objects.filter(action="fed.receipt_invalid").exists()
+
+
+def test_poll_rejects_tampered_receipt(fed_settings, active_link, remote, monkeypatch):
+    """A receipt whose signature doesn't verify against the peer's key is rejected."""
+    row = _row(remote)
+    head, pay, sig = row["receipt_jws"].split(".")
+    row["receipt_jws"] = f"{head}.{pay}.{('A' if sig[0] != 'A' else 'B')}{sig[1:]}"
+    _mock_feed(monkeypatch, [row])
+
+    assert polling.poll_link(active_link) == 0
+    assert not ShadowListing.objects.exists()
+    assert AuditLog.objects.filter(action="fed.receipt_invalid").exists()
 
 
 def test_poll_all_is_noop_when_disabled(settings, active_link):
@@ -101,7 +135,7 @@ def test_poll_all_is_noop_when_disabled(settings, active_link):
     assert tasks.poll_all_active_links() == 0
 
 
-def test_poll_all_polls_active_links(fed_settings, active_link, monkeypatch):
-    _mock_feed(monkeypatch, [_row()])
+def test_poll_all_polls_active_links(fed_settings, active_link, remote, monkeypatch):
+    _mock_feed(monkeypatch, [_row(remote)])
     assert tasks.poll_all_active_links() == 1
     assert ShadowListing.objects.filter(link=active_link).count() == 1

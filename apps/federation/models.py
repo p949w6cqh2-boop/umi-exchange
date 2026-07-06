@@ -34,6 +34,13 @@ class FederationPeer(models.Model):
     pairing_hash = models.CharField(max_length=64, blank=True, default="")
     pairing_expires_at = models.DateTimeField(null=True, blank=True)
     requested_communities = models.JSONField(default=list, blank=True)  # [{"uuid","label"}] — labels only, no PII
+    # M-1: which of OUR communities the requester wants to link to (our slug,
+    # carried in the inbound handshake). Scopes the pending-inbound list to that
+    # community's admins, so an instance serving several communities doesn't leak
+    # every pending handshake to every admin. Empty = unspecified (legacy /
+    # untargeted) — shown to all admins for backward-compat; the pairing code
+    # remains the real gate either way.
+    target_community_slug = models.CharField(max_length=64, blank=True, default="")
     approved_by = models.ForeignKey(
         "communities.Member",
         on_delete=models.SET_NULL,

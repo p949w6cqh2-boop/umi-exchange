@@ -44,6 +44,16 @@ def poll_link(link) -> int:
             remote_uuid = uuid.UUID(str(row.get("remote_uuid", "")))
         except (ValueError, TypeError):
             continue
+        # M-3: verify the signed consent receipt (§4.2) against the peer's
+        # published key BEFORE persisting a shadow. A missing/tampered receipt
+        # means we can't prove the share was consented — skip it (and let the
+        # tombstone below drop any stale shadow for this uuid).
+        receipt = str(row.get("receipt_jws", ""))
+        try:
+            crypto.verify_consent_receipt(receipt, link.peer.jwk)
+        except crypto.FederationAuthError:
+            emit("fed.receipt_invalid", link, details={"remote_uuid": str(remote_uuid)})
+            continue
         seen.add(remote_uuid)
         radius = row.get("radius_km")
         ShadowListing.objects.update_or_create(
@@ -56,6 +66,7 @@ def poll_link(link) -> int:
                 "locality": str(row.get("locality", ""))[:100],
                 "freshness": str(row.get("freshness", ""))[:10],
                 "radius_km": radius if isinstance(radius, int) and not isinstance(radius, bool) else None,
+                "receipt_jws": receipt,
                 "expires_at": now + SHADOW_TTL,
             },
         )

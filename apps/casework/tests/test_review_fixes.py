@@ -183,7 +183,7 @@ def test_stamp_from_another_user_is_rejected(world, auth):
     client = auth(world.coord_u, stamp=False)
     s = client.session
     s[SESSION_KEY] = time.time()  # fresh…
-    s[SESSION_USER_KEY] = world.admin_u.pk  # …but earned by a different user
+    s[SESSION_USER_KEY] = str(world.admin_u.pk)  # …but earned by a different user
     s.save()
     resp = client.get(reverse("casework:detail", kwargs={"slug": world.community.slug, "pk": world.case.pk}))
     assert resp.status_code == 302
