@@ -80,6 +80,10 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
             )
         ctx["contact_info"] = contact_info
         ctx["show_contact"] = contact_info is not None
+        # Federation (§2.3/§4.1): the owner's share panel.
+        from apps.federation.sharing import share_panel
+
+        ctx["share_panel"] = share_panel(offer, member)
         ctx["matching_needs"] = Need.objects.filter(
             community=offer.community, category=offer.category, status="open"
         ).exclude(requester=member)[:5]

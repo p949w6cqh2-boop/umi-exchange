@@ -131,3 +131,32 @@ def revoke_shares_for_consent(consent, *, actor_user):
         revoke_share(share, actor_user=actor_user)
         n += 1
     return n
+
+
+def share_panel(record, member):
+    """Context for the owner's 'Share beyond this community' panel on a
+    need/offer detail page, or None when the panel is hidden (flag off, not
+    the owner, or no active links). The panel is the §4.1 consent-capture
+    surface: one action = digital Consent + FederatedShare + signed receipt."""
+    from django.conf import settings
+
+    from .models import FederationLink
+
+    if not getattr(settings, "FEDERATION_ENABLED", False) or member is None:
+        return None
+    is_need = hasattr(record, "requester_id")
+    owner_user_id = record.requester.user_id if is_need else record.offerer.user_id
+    if owner_user_id != member.user_id:
+        return None
+    links = list(
+        FederationLink.objects.filter(community_id=record.community_id, status="active").select_related("peer")
+    )
+    if not links:
+        return None
+    field = "need" if is_need else "offer"
+    shares = {s.link_id: s for s in FederatedShare.objects.filter(status="active", **{field: record})}
+    return {
+        "record": record,
+        "kind": field,
+        "rows": [{"link": link, "share": shares.get(link.pk)} for link in links],
+    }
