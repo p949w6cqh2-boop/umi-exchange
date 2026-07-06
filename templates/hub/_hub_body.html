@@ -1,3 +1,6 @@
+{% comment %}Hub v2 — "The Pulse": witnessed generosity + immediate agency.
+   Order: who/where → one ask right now → the living stream → your corner →
+   the week's collective strip. Polled partials keep it breathing.{% endcomment %}
 <section class="umi-container hub" aria-labelledby="hub-heading">
   {% if communities|length > 1 %}
   <nav class="umi-switcher" aria-label="Your communities">
@@ -15,56 +18,108 @@
     </ul>
   </nav>
   {% endif %}
-  <h1 id="hub-heading" class="umi-h1">{{ community.name }}</h1>
-  <p class="umi-muted">Welcome back, {{ member.display_name }}.</p>
 
-  <section class="umi-card" aria-labelledby="hub-actions-h">
-    <h2 id="hub-actions-h" class="umi-h2">Quick actions</h2>
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <span class="umi-kicker">{{ community.name }}</span>
+      <h1 id="hub-heading" class="umi-h1 mt-1.5">Welcome back, {{ member.display_name }}.</h1>
+      {% if season_impact %}
+      <p class="text-sm text-parish-ink/60 mt-2">
+        Through you this season: <span class="font-semibold text-umi-primary tabular">{{ season_impact }}</span>
+        neighbour{{ season_impact|pluralize }} helped.
+      </p>
+      {% endif %}
+    </div>
     <nav class="umi-actions" aria-label="Quick actions">
       <a class="umi-pill" href="{% url 'need-create' slug=community.slug %}">Post a need</a>
       <a class="umi-pill" href="{% url 'offer-create' slug=community.slug %}">Post an offer</a>
       <a class="umi-pill" href="{% url 'community-feed' slug=community.slug %}">Browse the feed</a>
     </nav>
+  </header>
+
+  {# One ask, right now #}
+  <div id="hub-spotlight" class="umi-rise" style="--rise-delay: 80ms">
+    {% include "hub/_spotlight.html" %}
+  </div>
+
+  {# The living stream — refreshes itself every minute #}
+  <section class="umi-card umi-rise" style="--rise-delay: 160ms" aria-labelledby="hub-pulse-h">
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <h2 id="hub-pulse-h" class="umi-h2 !mb-0">The pulse</h2>
+      <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-parish-ink/45">
+        <span class="w-1.5 h-1.5 rounded-full bg-[var(--umi-primary)] animate-pulse" aria-hidden="true"></span> live
+      </span>
+    </div>
+    <div hx-get="{% url 'hub:pulse' slug=community.slug %}" hx-trigger="every 60s" hx-swap="innerHTML">
+      {% include "hub/_pulse.html" %}
+    </div>
   </section>
 
-  <section class="umi-card" aria-labelledby="hub-matches-h">
-    <h2 id="hub-matches-h" class="umi-h2">Your open matches</h2>
-    {% if open_matches %}
-      <ul class="umi-list">
-        {% for match in open_matches %}
-          <li><a href="{{ match.need.get_absolute_url }}">{{ match.need.title }}</a>
-            <span class="umi-badge">{{ match.get_status_display }}</span></li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="umi-empty">No open matches right now.</p>
-    {% endif %}
+  {# Your corner #}
+  <section class="umi-card umi-rise" style="--rise-delay: 240ms" aria-labelledby="hub-corner-h">
+    <h2 id="hub-corner-h" class="umi-h2">Your corner</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 mt-1">
+      <div>
+        <h3 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wider mb-2.5">Open matches</h3>
+        {% if open_matches %}
+          <ul class="space-y-2">
+            {% for match in open_matches %}
+              <li class="flex items-center justify-between gap-2 text-[15px]">
+                <a href="{{ match.need.get_absolute_url }}" class="truncate hover:text-umi-primary font-medium">{{ match.need.title }}</a>
+                <span class="umi-pill shrink-0">{{ match.get_status_display }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-parish-ink/50">None right now.</p>
+        {% endif %}
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wider mb-2.5">Notifications</h3>
+        {% if notifications %}
+          <ul class="space-y-2">
+            {% for n in notifications|slice:":5" %}
+              <li class="text-[15px] truncate">{% if n.link %}<a href="{{ n.link }}" class="hover:text-umi-primary">{{ n.title }}</a>{% else %}{{ n.title }}{% endif %}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-parish-ink/50">Nothing new.</p>
+        {% endif %}
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wider mb-2.5">Your tags</h3>
+        {% if member_tags %}
+          <ul class="flex flex-wrap gap-1.5">
+            {% for mt in member_tags %}
+              <li>{% include "tags/_badge.html" with mt=mt %}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-parish-ink/50">
+            None yet &mdash; <a href="{% url 'tags:my-tags' community.slug %}" class="text-umi-primary hover:underline">claim one</a>.
+          </p>
+        {% endif %}
+      </div>
+    </div>
   </section>
 
-  <section class="umi-card" aria-labelledby="hub-notifs-h">
-    <h2 id="hub-notifs-h" class="umi-h2">Recent notifications</h2>
-    <p class="umi-muted umi-small">Across all your communities.</p>
-    {% if notifications %}
-      <ul class="umi-list">
-        {% for n in notifications %}
-          <li>{% if n.link %}<a href="{{ n.link }}">{{ n.title }}</a>{% else %}{{ n.title }}{% endif %}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="umi-empty">Nothing new.</p>
-    {% endif %}
-  </section>
-
-  <section class="umi-card" aria-labelledby="hub-tags-h">
-    <h2 id="hub-tags-h" class="umi-h2">Your tags &amp; verification</h2>
-    {% if member_tags %}
-      <ul class="umi-tags">
-        {% for mt in member_tags %}
-          <li>{% include "tags/_badge.html" with mt=mt %}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="umi-empty">You haven't claimed any tags yet.</p>
-    {% endif %}
+  {# This week — collective pride, not scores #}
+  <section class="umi-rise" style="--rise-delay: 320ms" aria-labelledby="hub-week-h">
+    <h2 id="hub-week-h" class="sr-only">This week</h2>
+    <div class="grid grid-cols-3 gap-3">
+      <div class="umi-card !p-4 md:!p-5 text-center">
+        <p class="font-serif text-3xl md:text-4xl font-semibold tabular text-parish-ink">{{ week_stats.hands_raised }}</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/50 mt-1">Hands raised</p>
+      </div>
+      <div class="umi-card !p-4 md:!p-5 text-center">
+        <p class="font-serif text-3xl md:text-4xl font-semibold tabular text-umi-primary">{{ week_stats.asks_answered }}</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/50 mt-1">Asks answered</p>
+      </div>
+      <div class="umi-card !p-4 md:!p-5 text-center">
+        <p class="font-serif text-3xl md:text-4xl font-semibold tabular text-emerald-700">{{ week_stats.fulfilled }}</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/50 mt-1">Fulfilled</p>
+      </div>
+    </div>
+    <p class="text-center text-xs text-parish-ink/45 mt-3">This week, all of {{ community.name }} together.</p>
   </section>
 </section>

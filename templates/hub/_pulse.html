@@ -1,0 +1,42 @@
+{# The living stream: witnessed generosity, every entry with its verb. #}
+{% if pulse %}
+<ul class="divide-y divide-[var(--umi-border)]">
+  {% for e in pulse %}
+  <li class="py-3.5 flex items-start gap-3.5 umi-fade">
+    <span class="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0
+      {% if e.kind == 'need_posted' %}bg-[var(--umi-primary)]
+      {% elif e.kind == 'offer_posted' %}bg-[var(--umi-accent)]
+      {% elif e.kind == 'ask_answered' %}bg-[var(--umi-primary)] ring-4 ring-[var(--umi-primary-soft,#e8efe9)]
+      {% elif e.kind == 'need_fulfilled' %}bg-emerald-600
+      {% else %}bg-parish-border{% endif %}" aria-hidden="true"></span>
+    <div class="min-w-0 flex-1">
+      <p class="text-[15px] text-parish-ink leading-snug">
+        {% if e.kind == 'need_posted' %}
+          <span class="font-semibold">{{ e.actor }}</span> put an ask on the board &mdash;
+          <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
+        {% elif e.kind == 'offer_posted' %}
+          <span class="font-semibold">{{ e.actor }}</span> offered &mdash;
+          <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
+        {% elif e.kind == 'ask_answered' %}
+          A neighbour stepped up for
+          <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
+        {% elif e.kind == 'need_fulfilled' %}
+          <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
+          &mdash; <span class="text-emerald-700 font-semibold">fulfilled</span>
+        {% elif e.kind == 'member_joined' %}
+          <span class="font-semibold">{{ e.actor }}</span> joined the community
+        {% endif %}
+      </p>
+      <p class="text-xs text-parish-ink/45 mt-0.5">{{ e.when|timesince }} ago</p>
+    </div>
+    {% if e.kind == 'need_posted' %}
+    <a href="{{ e.url }}" class="shrink-0 text-[13px] font-semibold text-umi-primary hover:text-umi-primary-hover min-h-[44px] inline-flex items-center px-1 focus-ring rounded-lg">Help</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm text-parish-ink/55 py-6 text-center">
+  Quiet so far &mdash; the pulse picks up as neighbours start asking and offering.
+</p>
+{% endif %}
