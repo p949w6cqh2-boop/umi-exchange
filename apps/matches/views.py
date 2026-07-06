@@ -143,6 +143,19 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         ctx["contact_info"] = match.get_contact_info_for(member)
         ctx["show_contact"] = ctx["contact_info"] is not None
 
+        # Federation (Stage C2): on a federated match the proxy member carries
+        # no channels — the counterpart's exchanged §8.2 dict lives on the
+        # sidecar. Same audience, same accepted/fulfilled gate as above.
+        if ctx["show_contact"] and (ctx["is_requester"] or ctx["is_coordinator"]):
+            from apps.federation.matching import remote_contact_for
+
+            remote = remote_contact_for(match)
+            if remote:
+                if ctx["is_requester"]:
+                    ctx["contact_info"] = remote
+                elif "parties" in ctx["contact_info"]:
+                    ctx["contact_info"]["parties"].append(remote)
+
         # Audit every contact-info disclosure (Section 8.3): record who accessed
         # whose contact details and when, so reveals leave an immutable trail.
         if ctx["show_contact"] and member:
@@ -222,6 +235,13 @@ class MatchUpdateView(LoginRequiredMixin, View):
                 match.transition_to(new_status)
             except ValidationError as e:
                 return _reject(request, slug, pk, str(e.message), 409)
+
+            # Federation (Stage C2): queue the peer event INSIDE the
+            # transaction so it commits (or rolls back) with the transition —
+            # no-op for local matches or when the flag is off.
+            from apps.federation.outbox import queue_match_event
+
+            queue_match_event(match, new_status)
 
         # Audit log
         details = {"status": new_status}

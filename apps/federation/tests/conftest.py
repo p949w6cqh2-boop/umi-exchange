@@ -130,3 +130,57 @@ def active_link(world, peer):
         remote_community_label="Peer Board",
         status="active",
     )
+
+
+@pytest.fixture
+def authority_match(fed_settings, active_link, world):
+    """Stage C2 shared fixture: a shared Need + an inbound proposal accepted by
+    the production path, yielding the authority-side Match + FederatedMatch."""
+    import uuid as _uuid
+
+    from django.utils import timezone
+
+    from apps.communities.models import Category
+    from apps.consent.models import Consent
+    from apps.federation import matching, sharing
+    from apps.federation.models import FederatedMatch
+    from apps.matches.models import Match
+    from apps.needs.models import Need
+
+    active_link.pairing_pepper = b"0" * 32
+    active_link.save(update_fields=["pairing_pepper"])
+    world.plain_u.email = "maria@example.test"
+    world.plain_u.save(update_fields=["email"])
+    cat = Category.objects.create(community=world.community, name="Food")
+    need = Need.objects.create(
+        community=world.community,
+        requester=world.plain,
+        category=cat,
+        title="groceries",
+        urgency="high",
+        contact_pref="email",
+        expires_at=timezone.now() + timezone.timedelta(days=7),
+    )
+    Consent.objects.create(
+        participant=world.plain_u,
+        granted_to="Peer",
+        grantee_type="community",
+        grantee_id=active_link.remote_community_uuid,
+        scope=["federated_share"],
+        purpose="fed",
+        method="digital",
+    )
+    share = sharing.share_record(need, active_link, actor_user=world.admin_u)
+    res = matching.receive_proposal(active_link.peer, need_remote_uuid=share.remote_uuid, proposal_uuid=_uuid.uuid4())
+    match = Match.objects.get(pk=res["match_uuid"])
+    fmatch = FederatedMatch.objects.get(match=match)
+    return SimpleNamespace(need=need, share=share, match=match, fmatch=fmatch, link=active_link)
+
+
+@pytest.fixture(autouse=True)
+def _encryption_key(settings):
+    """Stage C2 stores contact payloads envelope-encrypted — every federation
+    test gets a fresh KEK (the apps/people conftest recipe)."""
+    from cryptography.fernet import Fernet
+
+    settings.ENCRYPTION_KEY = Fernet.generate_key().decode()

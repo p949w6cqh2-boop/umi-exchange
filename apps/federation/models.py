@@ -214,6 +214,14 @@ class FederatedMatch(models.Model):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     proposal_uuid = models.UUIDField()  # client-minted idempotency key (§6.3)
     remote_match_uuid = models.UUIDField(null=True, blank=True)
+    # Mirror side (Stage C2): the peer is the authority; this tracks its state
+    # (converges via events + re-sync, §6.3) and anchors the local Offer whose
+    # owner proposed — real attribution without touching the Match schema.
+    mirror_status = models.CharField(max_length=12, blank=True, default="")
+    remote_need_uuid = models.UUIDField(null=True, blank=True)  # the peer's share alias we proposed against
+    offer = models.ForeignKey(
+        "offers.Offer", on_delete=models.SET_NULL, null=True, blank=True, related_name="federated_matches"
+    )
     # Post-accept contact (§5.3, Stage C2) — envelope-encrypted under our KEK.
     contact_payload_enc = models.BinaryField(null=True, blank=True)
     contact_payload_dek = models.BinaryField(null=True, blank=True, editable=False)
@@ -227,3 +235,86 @@ class FederatedMatch(models.Model):
 
     def __str__(self):
         return f"fedmatch {self.proposal_uuid} ({self.role})"
+
+    @property
+    def contact_payload(self):
+        """Plaintext §8.2 contact dict — the ONLY way code reads/writes it.
+        Stored envelope-encrypted under OUR keys (§5.3); None once shredded."""
+        from apps.people import crypto
+
+        if not self.contact_payload_enc:
+            return None
+        return crypto.envelope_decrypt_json(self.contact_payload_enc, self.contact_payload_dek)
+
+    @contact_payload.setter
+    def contact_payload(self, value):
+        from apps.people import crypto
+
+        self.contact_payload_enc, self.contact_payload_dek = crypto.envelope_encrypt_json(value)
+
+    def shred_contact(self):
+        """§4.4 retention: null ciphertext + wrapped DEK (the crypto-shred recipe)."""
+        self.contact_payload_enc = None
+        self.contact_payload_dek = None
+        self.save(update_fields=["contact_payload_enc", "contact_payload_dek"])
+
+
+class FederationEvent(models.Model):
+    """Outbox/inbox row (Stage C2, §6.3/§8): `out` rows are queued match events
+    delivered with retry/backoff by apps.federation.outbox; `in` rows record
+    applied event_uuids so replays return "duplicate". Contact-bearing payloads
+    ride envelope-encrypted (payload_enc/payload_dek) and are shredded on ack —
+    the plain `payload` JSON column never holds PII."""
+
+    DIRECTION_CHOICES = [("out", "Outbound"), ("in", "Inbound")]
+    STATE_CHOICES = [
+        ("pending", "Pending"),
+        ("sent", "Sent"),
+        ("acked", "Acked"),
+        ("failed", "Failed"),
+        ("applied", "Applied"),
+        ("duplicate", "Duplicate"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    link = models.ForeignKey(FederationLink, on_delete=models.CASCADE, related_name="events")
+    direction = models.CharField(max_length=3, choices=DIRECTION_CHOICES)
+    event_uuid = models.UUIDField()  # idempotency key (§6.3 — the client_uuid contract)
+    kind = models.CharField(max_length=32)
+    payload = models.JSONField(default=dict, blank=True)  # PII-free (ids/enums only)
+    payload_enc = models.BinaryField(null=True, blank=True)
+    payload_dek = models.BinaryField(null=True, blank=True, editable=False)
+    state = models.CharField(max_length=10, default="pending", choices=STATE_CHOICES)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "federation_event"
+        ordering = ["created_at"]
+        constraints = [models.UniqueConstraint(fields=["link", "event_uuid"], name="uniq_fedevent_link_uuid")]
+        indexes = [models.Index(fields=["direction", "state", "next_attempt_at"])]
+
+    def __str__(self):
+        return f"fedevent {self.kind} {self.direction} ({self.state})"
+
+    @property
+    def secret_payload(self):
+        """Plaintext sensitive payload part (contact dicts) — envelope-encrypted
+        at rest, shredded on ack. None once shredded / never set."""
+        from apps.people import crypto
+
+        if not self.payload_enc:
+            return None
+        return crypto.envelope_decrypt_json(self.payload_enc, self.payload_dek)
+
+    @secret_payload.setter
+    def secret_payload(self, value):
+        from apps.people import crypto
+
+        self.payload_enc, self.payload_dek = crypto.envelope_encrypt_json(value)
+
+    def shred_payload(self):
+        self.payload_enc = None
+        self.payload_dek = None
+        self.save(update_fields=["payload_enc", "payload_dek"])

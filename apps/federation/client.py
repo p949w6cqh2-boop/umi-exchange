@@ -127,3 +127,30 @@ def revocations_url(base_url: str) -> str:
 def post_revocation(base_url: str, payload: dict, headers: dict) -> dict:
     """Signed POST of a share delete-request (§4.3)."""
     return _request("POST", revocations_url(base_url), json.dumps(payload).encode(), headers)
+
+
+def proposals_url(base_url: str) -> str:
+    return base_url.rstrip("/") + "/federation/v1/proposals"
+
+
+def post_proposals(base_url: str, payload: dict, headers: dict) -> dict:
+    """Signed POST of outbound proposals (§6.2 step 2, mirror side)."""
+    return _request("POST", proposals_url(base_url), json.dumps(payload).encode(), headers)
+
+
+def match_events_url(base_url: str, match_uuid: str) -> str:
+    return base_url.rstrip("/") + f"/federation/v1/matches/{match_uuid}/events"
+
+
+def post_match_events(base_url: str, match_uuid: str, payload: dict, headers: dict) -> dict:
+    """Signed POST of match lifecycle events (§6.2 steps 6-9)."""
+    return _request("POST", match_events_url(base_url, match_uuid), json.dumps(payload).encode(), headers)
+
+
+def match_url(base_url: str, match_uuid: str) -> str:
+    return base_url.rstrip("/") + f"/federation/v1/matches/{match_uuid}"
+
+
+def get_match(base_url: str, match_uuid: str, headers: dict) -> dict:
+    """Signed GET of the authority's signed match state (§6.3 re-sync)."""
+    return _request("GET", match_url(base_url, match_uuid), None, headers)
