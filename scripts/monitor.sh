@@ -15,6 +15,9 @@
 set -uo pipefail
 
 HEALTH_URL="${HEALTH_URL:-http://localhost:8000/health/}"
+# Optional (Stage E): set to the instance's public well-known URL to watch the
+# federation surface, e.g. https://exchange.example/.well-known/umi-federation
+FEDERATION_WELLKNOWN_URL="${FEDERATION_WELLKNOWN_URL:-}"
 CERT_HOST="${CERT_HOST:-}"            # host:443 for TLS expiry, e.g. exchange.example.org:443
 CERT_MIN_DAYS="${CERT_MIN_DAYS:-14}"
 DISK_PATH="${DISK_PATH:-/}"
@@ -63,7 +66,18 @@ if [ -n "$CERT_HOST" ] && command -v openssl > /dev/null 2>&1; then
     fi
 fi
 
-# 3) Host disk usage.
+# 3) Federation surface (Stage E, optional): the signed instance document must
+#    serve when federation is enabled. Deep counts (outbox depth, retention debt)
+#    come from `manage.py federation_status --json` inside the app container —
+#    wire that into Kuma as a push/keyword monitor per the dark-launch runbook.
+if [ -n "$FEDERATION_WELLKNOWN_URL" ]; then
+    if ! curl -fsS -m 10 -H 'X-Forwarded-Proto: https' "$FEDERATION_WELLKNOWN_URL" | grep -q '"umi_federation"'; then
+        alert "FEDERATION DOWN: $FEDERATION_WELLKNOWN_URL not serving the instance document"
+        problems=$((problems + 1))
+    fi
+fi
+
+# 4) Host disk usage.
 used_pct=$(df --output=pcent "$DISK_PATH" 2> /dev/null | tail -1 | tr -dc '0-9')
 if [ -n "$used_pct" ] && [ "$used_pct" -ge "$DISK_MAX_PCT" ]; then
     alert "DISK HIGH: $DISK_PATH at ${used_pct}% (threshold ${DISK_MAX_PCT}%)"
@@ -71,7 +85,7 @@ if [ -n "$used_pct" ] && [ "$used_pct" -ge "$DISK_MAX_PCT" ]; then
 fi
 
 if [ "$problems" -eq 0 ]; then
-    echo "[$(date)] monitor OK — health, cert, disk all within thresholds."
+    echo "[$(date)] monitor OK — health, cert, disk (and federation, if configured) all within thresholds."
 fi
 # Exit 0 always: cron alerting is via the webhook/stderr, not the exit code.
 exit 0
