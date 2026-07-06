@@ -1,0 +1,37 @@
+{# HTMX partial: pick one of MY open offers to send against a peer's ask. #}
+{% if offers %}
+<form method="post" action="{% url 'federation_admin:listing-propose' community.slug shadow.pk %}"
+      class="umi-fade rounded-xl bg-parish-bg p-4 space-y-3">
+  {% csrf_token %}
+  <p class="umi-kicker">Send one of your offers</p>
+  <div class="space-y-2" role="radiogroup" aria-label="Your open offers">
+    {% for offer in offers %}
+    <label class="flex items-center gap-3 rounded-lg bg-parish-card p-3 min-h-[44px] cursor-pointer
+                  border border-gray-300 hover:border-gray-400 transition-colors">
+      <input type="radio" name="offer_id" value="{{ offer.pk }}" required
+             class="accent-[var(--umi-primary)] w-4 h-4" {% if forloop.first %}checked{% endif %}>
+      <span class="flex-1">
+        <span class="block text-base font-medium text-parish-ink">{{ offer.title }}</span>
+        <span class="block text-xs text-parish-ink/60 mt-0.5">{{ offer.category.icon }} {{ offer.category.name }}</span>
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+  <div class="flex gap-2 pt-1">
+    <button type="submit" class="btn-primary flex-1 min-h-[44px]">Send this offer</button>
+    <button type="button" class="btn-secondary min-h-[44px]"
+            onclick="this.closest('[id^=picker-]').innerHTML=''"
+            aria-label="Close the offer picker">Not now</button>
+  </div>
+  <p class="text-xs text-parish-ink/55">
+    They'll see your offer's title and category — nothing else until a match is accepted.
+  </p>
+</form>
+{% else %}
+<div class="umi-fade rounded-xl bg-parish-bg p-4 text-center">
+  <p class="text-sm text-parish-ink/70">You have no open offers to send yet.</p>
+  <a href="{% url 'offer-create' community.slug %}" class="btn-secondary inline-flex mt-3 min-h-[44px]">
+    Post an offer first
+  </a>
+</div>
+{% endif %}

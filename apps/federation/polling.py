@@ -13,7 +13,7 @@ from django.utils import timezone
 from apps.audit.services import emit
 
 from . import client as client_mod
-from . import crypto
+from . import crypto, outbox
 from .models import ShadowListing
 
 SHADOW_TTL = timedelta(days=7)  # §4.4 default
@@ -29,7 +29,9 @@ def poll_link(link) -> int:
         data = client_mod.get_discovery(link.peer.base_url, {"X-UMI-Signature": signature})
     except client_mod.FederationClientError as e:
         emit("fed.peer_unreachable", link, details={"peer": link.peer.instance_id, "error": str(e)[:100]})
+        outbox.mark_link_unreachable(link)
         return 0
+    outbox.mark_link_reachable(link)
 
     listings = data.get("listings") if isinstance(data, dict) else None
     if not isinstance(listings, list):

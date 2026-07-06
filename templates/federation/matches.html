@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ community.name }} · Across communities{% endblock %}
+{% block content %}
+
+<header class="mb-10">
+  <span class="umi-kicker">{{ community.name }}</span>
+  <h1 class="umi-display mt-2">Across communities</h1>
+  <div class="umi-rule mt-3" aria-hidden="true"></div>
+  <p class="text-base text-parish-ink/70 mt-4 max-w-2xl">
+    Offers you've sent to linked communities, and where each one stands.
+    Contact details appear here only after the other side accepts.
+  </p>
+</header>
+
+<div class="mb-8">
+  <a href="{% url 'federation_admin:listings' community.slug %}"
+     class="inline-flex items-center gap-1.5 text-sm text-parish-ink/60 hover:text-parish-ink focus-ring rounded-lg min-h-[44px] px-2 -ml-2">
+    <span aria-hidden="true">&larr;</span> Beyond this community
+  </a>
+</div>
+
+<section aria-labelledby="mine-heading">
+  <h2 id="mine-heading" class="text-xl font-serif font-semibold text-parish-ink mb-4">Your offers abroad</h2>
+  {% if my_rows %}
+  <div class="space-y-4">
+    {% for row in my_rows %}
+    <article class="umi-card umi-offer-card umi-fade" aria-label="Your offer {{ row.fm.offer.title }}">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-serif font-semibold text-parish-ink">{{ row.fm.offer.title }}</h3>
+          <div class="flex items-center gap-2 mt-1 text-sm text-parish-ink/55 flex-wrap">
+            <span>to {{ row.fm.link.remote_community_label|default:"a linked community" }}</span>
+            <span>&middot;</span>
+            <span>sent {{ row.fm.created_at|timesince }} ago</span>
+          </div>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-parish-ink/70 umi-pill">
+          <span class="w-2 h-2 rounded-full
+            {% if row.status == 'proposed' %}bg-parish-gold
+            {% elif row.status == 'accepted' %}bg-umi-primary
+            {% elif row.status == 'fulfilled' %}bg-emerald-600
+            {% else %}bg-gray-400{% endif %}" aria-hidden="true"></span>
+          {{ row.status_copy }}
+        </span>
+      </div>
+
+      {% if row.contact %}
+      {# §8.2 reveal — the one place the other person's details appear. #}
+      <div class="umi-card mt-4 bg-parish-bg">
+        <p class="umi-kicker">Shared with you on accept</p>
+        <p class="text-lg font-serif font-semibold text-parish-ink mt-1">{{ row.contact.display_name }}</p>
+        <div class="mt-2 space-y-1 text-base">
+          {% if row.contact.email %}
+          <p><a href="mailto:{{ row.contact.email }}" class="text-umi-primary hover:underline focus-ring rounded">{{ row.contact.email }}</a></p>
+          {% endif %}
+          {% if row.contact.phone %}
+          <p><a href="tel:{{ row.contact.phone }}" class="text-umi-primary hover:underline focus-ring rounded">{{ row.contact.phone }}</a></p>
+          {% endif %}
+          {% if not row.contact.email and not row.contact.phone %}
+          <p class="text-sm text-parish-ink/70">They prefer to be reached through their own community's coordinators.</p>
+          {% endif %}
+        </div>
+        <p class="text-xs text-parish-ink/55 mt-3">Reach out kindly and arrange the rest together.</p>
+      </div>
+      {% elif row.status == 'proposed' %}
+      <p class="text-sm text-parish-ink/55 mt-3">
+        Their community reviews the ask on their side — you'll see contact details here if it's accepted.
+      </p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="umi-card umi-fade text-center py-10">
+    <h3 class="text-lg font-serif font-semibold text-parish-ink">No offers across communities yet</h3>
+    <p class="text-base text-parish-ink/70 mt-2 max-w-md mx-auto">
+      Browse the board beyond this community and send one of your offers where it's needed.
+    </p>
+    <a href="{% url 'federation_admin:listings' community.slug %}" class="btn-primary inline-flex mt-6">
+      Beyond this community
+    </a>
+  </div>
+  {% endif %}
+</section>
+
+{% if member.is_coordinator %}
+<section aria-labelledby="oversight-heading" class="mt-12">
+  <h2 id="oversight-heading" class="text-xl font-serif font-semibold text-parish-ink mb-1">All federated activity</h2>
+  <p class="text-sm text-parish-ink/55 mb-4">Coordinator view — every cross-community match on this community's links.</p>
+  {% if oversight_rows %}
+  <ul class="umi-card divide-y divide-gray-200 p-0">
+    {% for row in oversight_rows %}
+    <li class="flex flex-wrap items-center justify-between gap-3 p-4">
+      <div class="min-w-0">
+        <p class="text-base font-medium text-parish-ink truncate">
+          {% if row.fm.role == 'authority' %}
+            Ask here: &ldquo;{{ row.fm.match.need.title }}&rdquo; &mdash; offer from {{ row.fm.link.remote_community_label|default:"a linked community" }}
+          {% else %}
+            Offer &ldquo;{{ row.fm.offer.title|default:"(withdrawn)" }}&rdquo; &rarr; {{ row.fm.link.remote_community_label|default:"a linked community" }}
+          {% endif %}
+        </p>
+        <p class="text-xs text-parish-ink/55 mt-0.5">{{ row.fm.created_at|timesince }} ago</p>
+        {% if row.contact %}
+        <p class="text-xs text-parish-ink/70 mt-1">
+          Shared contact: {{ row.contact.display_name }}{% if row.contact.email %} &middot; {{ row.contact.email }}{% endif %}{% if row.contact.phone %} &middot; {{ row.contact.phone }}{% endif %}
+        </p>
+        {% endif %}
+      </div>
+      <span class="umi-pill">{{ row.status_copy }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% elif my_rows %}
+  <p class="text-sm text-parish-ink/55">Nothing beyond your own offers above.</p>
+  {% else %}
+  <p class="text-sm text-parish-ink/55">Nothing yet — activity appears as soon as a match crosses a link.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

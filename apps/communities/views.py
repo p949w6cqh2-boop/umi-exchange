@@ -184,6 +184,17 @@ class FeedView(LoginRequiredMixin, ListView):
         ctx["member"] = self.member
         ctx["categories"] = self.community.categories.filter(is_active=True)
         self._attach_poster_badges(ctx.get("items", []))
+        # Federation (Stage C3): surface the cross-community board only when
+        # the flag is on AND this community holds a live link (no query when off).
+        from django.conf import settings as dj_settings
+
+        ctx["federation_links_active"] = False
+        if getattr(dj_settings, "FEDERATION_ENABLED", False):
+            from apps.federation.models import FederationLink
+
+            ctx["federation_links_active"] = FederationLink.objects.filter(
+                community=self.community, status="active"
+            ).exists()
         return ctx
 
     def _attach_poster_badges(self, items):

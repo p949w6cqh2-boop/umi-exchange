@@ -42,6 +42,16 @@
   </button>
 </div>
 
+{% if federation_links_active %}
+{# Federation (Stage C3): quiet doorway to the shared board — only when a live link exists. #}
+<div class="mb-8 -mt-2">
+  <a href="{% url 'federation_admin:listings' community.slug %}"
+     class="inline-flex items-center gap-1.5 text-sm text-umi-primary hover:underline focus-ring rounded-lg min-h-[44px]">
+    Beyond this community <span aria-hidden="true">&rarr;</span>
+  </a>
+</div>
+{% endif %}
+
 {# Feed Results #}
 <div id="feed-results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   {% include "communities/_feed_results.html" %}

@@ -91,6 +91,20 @@ def queue_cancel_request(fmatch):
     )
 
 
+def mark_link_unreachable(link):
+    """§11: stamp the start of an unreachable episode (idempotent)."""
+    if link.unreachable_since is None:
+        link.unreachable_since = timezone.now()
+        link.save(update_fields=["unreachable_since"])
+
+
+def mark_link_reachable(link):
+    """§11: any outbound success ends the episode."""
+    if link.unreachable_since is not None:
+        link.unreachable_since = None
+        link.save(update_fields=["unreachable_since"])
+
+
 # ── delivery (django-q2 entrypoint lives in tasks.py) ─
 
 
@@ -160,6 +174,7 @@ def _deliver_one(ev, now) -> bool:
 
     # `duplicate` also carries the contact when the mirror already applied our
     # accepted event but our earlier ack was lost mid-crash (§6.3 idempotency).
+    mark_link_reachable(ev.link)
     if ev.kind == "accepted" and isinstance(first.get("contact"), dict):
         _apply_responder_contact(ev, match_uuid, first["contact"])
     ev.state = "acked"
@@ -200,6 +215,7 @@ def _record_failure(ev, now, reason: str):
             ev.link,
             details={"peer": ev.link.peer.instance_id, "error": reason[:100], "gave_up": gave_up},
         )
+    mark_link_unreachable(ev.link)
 
 
 # ── §8.2 responder contact + §7 backstop (authority) ─
