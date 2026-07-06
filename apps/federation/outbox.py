@@ -64,6 +64,11 @@ def queue_match_event(match, event, *, fmatch=None):
     if event == "accepted":
         need = match.need
         ev.secret_payload = {"contact": need.requester.contact_dict(need.contact_pref)}
+    elif fmatch.contact_expires_at is None:
+        # Terminal: start the §4.4 grace on the stored counterpart contact,
+        # or it would never be swept.
+        fmatch.contact_expires_at = timezone.now() + timedelta(hours=CONTACT_GRACE_HOURS)
+        fmatch.save(update_fields=["contact_expires_at"])
     ev.save()
     return ev
 
@@ -74,6 +79,8 @@ def queue_cancel_request(fmatch):
     under its own lock and echoes a `cancelled` event back."""
     if not getattr(settings, "FEDERATION_ENABLED", False):
         return None
+    if fmatch.remote_match_uuid is None:
+        return None  # nothing to address — a row would only retry into 404s
     return FederationEvent.objects.create(
         link=fmatch.link,
         direction="out",
@@ -151,7 +158,9 @@ def _deliver_one(ev, now) -> bool:
         _record_failure(ev, now, f"peer_status:{status}")
         return False
 
-    if ev.kind == "accepted" and status == "applied" and isinstance(first.get("contact"), dict):
+    # `duplicate` also carries the contact when the mirror already applied our
+    # accepted event but our earlier ack was lost mid-crash (§6.3 idempotency).
+    if ev.kind == "accepted" and isinstance(first.get("contact"), dict):
         _apply_responder_contact(ev, match_uuid, first["contact"])
     ev.state = "acked"
     ev.payload_enc = None
@@ -260,7 +269,9 @@ def _cancel_match_locally(match):
             locked.transition_to("cancelled")
         except ValidationError:
             return  # already terminal — nothing to cancel
-    queue_match_event(locked, "cancelled")
+        # Inside the transaction: the cancel event commits WITH the transition,
+        # or neither does — a crash can't leave the mirror unaware forever.
+        queue_match_event(locked, "cancelled")
 
 
 def notify_coordinators(community, title, body):

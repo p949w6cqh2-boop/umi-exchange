@@ -129,7 +129,7 @@ def apply_match_event(fmatch, *, event_uuid, kind, contact=None):
     if kind not in ("accepted",) + MIRROR_TERMINAL:
         return {"status": "error", "error": "invalid_event"}
     if FederationEvent.objects.filter(link=fmatch.link, event_uuid=event_uuid).exists():
-        return {"status": "duplicate"}
+        return _duplicate_result(fmatch, kind)
     if kind not in Match.VALID_TRANSITIONS.get(fmatch.mirror_status, []):
         _try_resync(fmatch)
         return {"status": "conflict", "state": fmatch.mirror_status}
@@ -145,40 +145,92 @@ def apply_match_event(fmatch, *, event_uuid, kind, contact=None):
             )
             result = _apply_mirror_state(fmatch, kind, contact)
     except IntegrityError:
-        return {"status": "duplicate"}
+        return _duplicate_result(fmatch, kind)
     emit("fed.match_event_received", fmatch, details={"event": kind, "link": str(fmatch.link_id)})
     return result
 
 
-def _apply_mirror_state(fmatch, new_status, contact=None):
-    """Set the mirror's state + the §8.2/§4.4 side effects. Shared by the
-    event path and re-sync (which carries no contact)."""
+def _duplicate_result(fmatch, kind):
+    """§6.3 replay answer. For a replayed `accepted` whose original reply may
+    have been lost mid-crash, re-attach the responder dict — same verified
+    peer, same match, same §8.2 audience; the dict is deterministic."""
+    result = {"status": "duplicate"}
+    offer = fmatch.offer
+    if (
+        kind == "accepted"
+        and offer is not None
+        and fmatch.mirror_status in ("accepted", "fulfilled")
+        and offer.status in ("matched", "fulfilled")
+    ):
+        result["contact"] = offer.offerer.contact_dict(offer.contact_pref)
+    return result
+
+
+def _offer_held_elsewhere(fmatch, offer) -> bool:
+    """True if a DIFFERENT live match is holding this offer — its `matched`
+    status is not ours to release."""
+    from apps.matches.models import Match
+
+    if Match.objects.filter(offer=offer, status="accepted").exists():
+        return True
+    return (
+        FederatedMatch.objects.filter(offer=offer, role="mirror", mirror_status="accepted")
+        .exclude(pk=fmatch.pk)
+        .exists()
+    )
+
+
+def _apply_mirror_state(fmatch, new_status, contact=None, *, include_contact=True):
+    """Set the mirror's state + the §8.2/§4.4 side effects, under the offer's
+    row lock (caller supplies the transaction). Shared by the event path and
+    re-sync — re-sync passes include_contact=False: a snapshot moves no
+    contact, so nothing may be stored, released, or audited as disclosed."""
+    from apps.offers.models import Offer
+
     from . import outbox
 
     result = {"status": "applied"}
-    offer = fmatch.offer
+    offer = None
+    if fmatch.offer_id is not None:
+        # §8.7 across the boundary: serialize with local accepts of this offer.
+        offer = Offer.objects.select_for_update().get(pk=fmatch.offer_id)
+        fmatch.offer = offer
     if new_status == "accepted":
         clean = outbox.sanitize_contact(contact) if isinstance(contact, dict) else {}
-        if offer is not None and clean and outbox.contact_matches_user(clean, offer.offerer.user):
-            # §7 backstop, mirror side: same human — never store or release
-            # contact; ask the authority to cancel via the outbox.
-            emit("fed.selfmatch_detected", fmatch, details={"side": "mirror", "link": str(fmatch.link_id)})
+        selfmatch = offer is not None and clean and outbox.contact_matches_user(clean, offer.offerer.user)
+        # Accepted applies exactly once (atomic + idempotency), so a non-active
+        # offer here always means someone ELSE holds it now (§8.7).
+        unavailable = offer is None or offer.status != "active"
+        if selfmatch or unavailable:
+            # Never exchange: the same human on both sides (§7 backstop), or
+            # the offer was committed/withdrawn locally in the meantime (§8.7)
+            # — ask the authority to cancel; contact neither stored nor sent.
+            if selfmatch:
+                emit("fed.selfmatch_detected", fmatch, details={"side": "mirror", "link": str(fmatch.link_id)})
+            reason = "self_match" if selfmatch else "offer_unavailable"
             outbox.queue_cancel_request(fmatch)
             outbox.notify_coordinators(
                 fmatch.link.community,
                 "Federated match flagged",
-                "A cross-community match was flagged: the requester appears to be the same "
-                "person as the responder (§8.6). A cancel was requested automatically.",
+                "A cross-community match accept could not complete "
+                f"({'same person on both sides — §8.6' if selfmatch else 'the offer is no longer available'}). "
+                "A cancel was requested automatically.",
             )
+            result["reason"] = reason
         else:
-            if clean:
+            if clean and include_contact:
                 fmatch.contact_payload = clean
                 emit("fed.contact_disclosed", fmatch, details={"direction": "inbound", "link": str(fmatch.link_id)})
             if offer is not None:
-                # §8.2 both directions: our responder's dict rides the reply,
-                # released only against this verified accepted event.
-                result["contact"] = offer.offerer.contact_dict(offer.contact_pref)
-                emit("fed.contact_disclosed", fmatch, details={"direction": "outbound", "link": str(fmatch.link_id)})
+                if include_contact:
+                    # §8.2 both directions: our responder's dict rides the
+                    # reply, released only against this verified accepted event.
+                    result["contact"] = offer.offerer.contact_dict(offer.contact_pref)
+                    emit(
+                        "fed.contact_disclosed",
+                        fmatch,
+                        details={"direction": "outbound", "link": str(fmatch.link_id)},
+                    )
                 if offer.status == "active":
                     # single-use across the boundary (the §8.7 offer guard)
                     offer.status = "matched"
@@ -189,7 +241,7 @@ def _apply_mirror_state(fmatch, new_status, contact=None):
         fmatch.mirror_status = new_status
         fmatch.contact_expires_at = timezone.now() + timezone.timedelta(hours=outbox.CONTACT_GRACE_HOURS)
         fmatch.save(update_fields=["mirror_status", "contact_expires_at"])
-        if offer is not None and offer.status == "matched":
+        if offer is not None and offer.status == "matched" and not _offer_held_elsewhere(fmatch, offer):
             offer.status = "fulfilled" if new_status == "fulfilled" else "active"
             offer.save(update_fields=["status", "updated_at"])
     return result
@@ -221,7 +273,8 @@ def resync_mirror(fmatch):
         return None
     if status in ("proposed", fmatch.mirror_status):
         return status  # already converged (or nothing to apply)
-    _apply_mirror_state(fmatch, status, contact=None)
+    with transaction.atomic():  # _apply_mirror_state locks the offer row
+        _apply_mirror_state(fmatch, status, contact=None, include_contact=False)
     emit("fed.match_event_received", fmatch, details={"event": f"resync:{status}"[:32], "link": str(link.pk)})
     return status
 

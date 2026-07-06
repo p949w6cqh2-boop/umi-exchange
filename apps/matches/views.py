@@ -236,6 +236,13 @@ class MatchUpdateView(LoginRequiredMixin, View):
             except ValidationError as e:
                 return _reject(request, slug, pk, str(e.message), 409)
 
+            # Federation (Stage C2): queue the peer event INSIDE the
+            # transaction so it commits (or rolls back) with the transition —
+            # no-op for local matches or when the flag is off.
+            from apps.federation.outbox import queue_match_event
+
+            queue_match_event(match, new_status)
+
         # Audit log
         details = {"status": new_status}
         if notes:
@@ -254,12 +261,6 @@ class MatchUpdateView(LoginRequiredMixin, View):
                 request=request,
                 details={"status": match.offer.status},
             )
-
-        # Federation (Stage C2): mirror the outcome to the peer when this match
-        # is federated — no-op for local matches or when the flag is off.
-        from apps.federation.outbox import queue_match_event
-
-        queue_match_event(match, new_status)
 
         # Notifications — inform the counterpart participant(s); never the actor.
         if new_status == "accepted":

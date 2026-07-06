@@ -131,12 +131,15 @@ def apply_cancel_request(fmatch, *, event_uuid):
             if match.status not in ("proposed", "accepted"):
                 raise _CancelConflictError(match.status)  # rolls the event row back too
             match.transition_to("cancelled")
+            # Inside the transaction: the echo commits with the cancel, so a
+            # crash can't strand the mirror waiting for an event that never
+            # queued (§6.2 step 9).
+            outbox.queue_match_event(match, "cancelled", fmatch=fmatch)
     except IntegrityError:
         return {"status": "duplicate"}
     except _CancelConflictError as conflict:
         return {"status": "conflict", "authoritative_state": conflict.state}
     emit("fed.match_event_received", fmatch, details={"event": "cancel_requested", "link": str(fmatch.link_id)})
-    outbox.queue_match_event(match, "cancelled", fmatch=fmatch)
     return {"status": "applied"}
 
 

@@ -59,13 +59,14 @@ def expire_stale_proposals() -> int:
                 match.status = "expired"
                 match.save(update_fields=["status"])
 
+                # Federation (Stage C2): the peer event commits with the
+                # expiry (a lost event would strand the mirror) — no-op for
+                # local matches or when the flag is off.
+                from apps.federation.outbox import queue_match_event
+
+                queue_match_event(match, "expired")
+
             emit("match.expired", match, details={"after_days": days})
-
-            # Federation (Stage C2): tell the peer its mirror expired — no-op
-            # for local matches or when the flag is off.
-            from apps.federation.outbox import queue_match_event
-
-            queue_match_event(match, "expired")
 
             proposer = getattr(match.proposed_by, "user", None)
             if proposer is not None:

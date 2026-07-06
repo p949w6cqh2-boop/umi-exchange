@@ -289,3 +289,121 @@ def test_resync_rejects_tampered_state(mirror_fmatch, remote, monkeypatch):
     assert mirror_mod.resync_mirror(mirror_fmatch.fmatch) is None
     mirror_fmatch.fmatch.refresh_from_db()
     assert mirror_fmatch.fmatch.mirror_status == "proposed"  # untouched
+
+
+# ── self-review hardening (F1-F7) ───────────────────────────────
+
+
+def test_authority_terminal_starts_contact_grace(authority_match, client, world):
+    """F1: the authority's stored responder contact must enter the §4.4
+    grace window when the match goes terminal, or it lives forever."""
+    authority_match.match.transition_to("accepted")
+    fm = authority_match.fmatch
+    fm.contact_payload = {"display_name": "Bob", "preference": "in_app"}
+    fm.save(update_fields=["contact_payload_enc", "contact_payload_dek"])
+    client.force_login(world.plain_u)
+    client.post(f"/c/{world.community.slug}/matches/{authority_match.match.id}/update/", {"status": "fulfilled"})
+    fm.refresh_from_db()
+    assert fm.contact_expires_at is not None
+    assert fm.contact_expires_at > timezone.now() + timedelta(hours=71)
+
+
+@pytest.mark.urls("apps.federation.tests.urls_enabled")
+def test_accept_on_locally_committed_offer_requests_cancel(client, fed_settings, remote, mirror_fmatch):
+    """F2: the offer was matched locally between proposal and accept — the
+    mirror must not exchange contact; it cancel-requests instead (§8.7)."""
+    mirror_fmatch.offer.status = "matched"
+    mirror_fmatch.offer.save(update_fields=["status"])
+    resp = _post_events(
+        client,
+        remote,
+        fed_settings,
+        mirror_fmatch.fmatch.remote_match_uuid,
+        [{"event_uuid": str(uuid.uuid4()), "event": "accepted", "contact": ACCEPT_CONTACT}],
+    )
+    item = resp.json()["results"][0]
+    assert item["status"] == "applied"
+    assert "contact" not in item
+    fm = mirror_fmatch.fmatch
+    fm.refresh_from_db()
+    assert fm.contact_payload is None
+    assert FederationEvent.objects.filter(direction="out", kind="cancel_requested").exists()
+
+
+@pytest.mark.urls("apps.federation.tests.urls_enabled")
+def test_terminal_does_not_release_offer_held_by_local_match(client, fed_settings, remote, mirror_fmatch, world):
+    """F3: a terminal federated event must not free an offer that a LOCAL
+    accepted match is holding."""
+    from django.utils import timezone as tz
+
+    from apps.matches.models import Match
+    from apps.needs.models import Need
+
+    mirror_fmatch.offer.status = "matched"
+    mirror_fmatch.offer.save(update_fields=["status"])
+    need = Need.objects.create(
+        community=world.community,
+        requester=world.admin,
+        category=mirror_fmatch.offer.category,
+        title="local need",
+        expires_at=tz.now() + timedelta(days=7),
+    )
+    Match.objects.create(need=need, offer=mirror_fmatch.offer, proposed_by=world.plain, status="accepted")
+    mirror_fmatch.fmatch.mirror_status = "accepted"
+    mirror_fmatch.fmatch.save(update_fields=["mirror_status"])
+
+    _post_events(
+        client,
+        remote,
+        fed_settings,
+        mirror_fmatch.fmatch.remote_match_uuid,
+        [{"event_uuid": str(uuid.uuid4()), "event": "cancelled"}],
+    )
+    mirror_fmatch.offer.refresh_from_db()
+    assert mirror_fmatch.offer.status == "matched"  # still held by the local match
+
+
+@pytest.mark.urls("apps.federation.tests.urls_enabled")
+def test_duplicate_accepted_reply_carries_contact_again(client, fed_settings, remote, mirror_fmatch):
+    """F6: the authority crashed between our applied reply and storing the
+    contact — its retry (duplicate) must still carry the responder dict."""
+    eid = str(uuid.uuid4())
+    events = [{"event_uuid": eid, "event": "accepted", "contact": ACCEPT_CONTACT}]
+    _post_events(client, remote, fed_settings, mirror_fmatch.fmatch.remote_match_uuid, events)
+    second = _post_events(client, remote, fed_settings, mirror_fmatch.fmatch.remote_match_uuid, events)
+    item = second.json()["results"][0]
+    assert item["status"] == "duplicate"
+    assert item["contact"]["email"] == "bob@example.test"
+
+
+def test_resync_to_accepted_discloses_nothing(mirror_fmatch, remote, monkeypatch):
+    """F4: converging to `accepted` via re-sync moves no contact — it must
+    not emit fed.contact_disclosed (the audit would record a reveal that
+    never happened)."""
+    from apps.federation import mirror as mirror_mod
+
+    state = {
+        "match_uuid": str(mirror_fmatch.fmatch.remote_match_uuid),
+        "status": "accepted",
+        "iat": int(time.time()),
+    }
+    token = jws.serialize_compact({"alg": "Ed25519"}, json.dumps(state).encode(), remote.key, algorithms=["Ed25519"])
+    monkeypatch.setattr(
+        "apps.federation.mirror.client_mod.get_match", lambda base_url, match_uuid, headers: {"match": token}
+    )
+    assert mirror_mod.resync_mirror(mirror_fmatch.fmatch) == "accepted"
+    assert not AuditLog.objects.filter(action="fed.contact_disclosed").exists()
+    mirror_fmatch.offer.refresh_from_db()
+    assert mirror_fmatch.offer.status == "matched"  # the commitment still applies
+
+
+def test_queue_cancel_request_without_remote_uuid_is_noop(mirror_fmatch):
+    """F7: no remote match uuid → nothing to address; a queued row would
+    just poison the outbox with 404 retries."""
+    from apps.federation import outbox
+
+    fm = mirror_fmatch.fmatch
+    fm.remote_match_uuid = None
+    fm.save(update_fields=["remote_match_uuid"])
+    assert outbox.queue_cancel_request(fm) is None
+    assert not FederationEvent.objects.filter(kind="cancel_requested").exists()
