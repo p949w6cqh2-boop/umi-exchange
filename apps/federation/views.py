@@ -45,7 +45,7 @@ PAIRING_TTL = timedelta(hours=24)
 # view AFTER verify_signed_request resolves the peer (the peer identity isn't
 # known before the view runs, and re-verifying in the decorator would consume the
 # jti nonce twice and break replay protection). Named so the mechanism is testable.
-FED_PEER_HOURLY_CAPS = {"discovery": 60, "proposals": 30, "revocations": 60, "events": 120, "sync": 120}
+FED_PEER_HOURLY_CAPS = {"discovery": 60, "proposals": 30, "revocations": 60, "events": 120, "sync": 120, "attest": 60}
 
 
 def _peer_over_cap(endpoint, peer) -> bool:
@@ -773,6 +773,11 @@ class FederatedMatchesView(LoginRequiredMixin, FederationGateMixin, View):
         my_rows = [row(fm, reveal=True) for fm in mine]
         seen = {r["fm"].pk for r in my_rows}
         oversight_rows = [row(fm, reveal=member.is_coordinator) for fm in oversight if fm.pk not in seen]
+        verifiable_tags = []
+        if member.is_coordinator:
+            from apps.tags.models import Tag
+
+            verifiable_tags = list(Tag.objects.filter(community=community).exclude(tier="self_serve").order_by("label"))
         return render(
             request,
             self.template_name,
@@ -781,6 +786,7 @@ class FederatedMatchesView(LoginRequiredMixin, FederationGateMixin, View):
                 "member": member,
                 "my_rows": my_rows,
                 "oversight_rows": oversight_rows,
+                "verifiable_tags": verifiable_tags,
             },
         )
 
@@ -854,3 +860,66 @@ class FederatedShareToggleView(LoginRequiredMixin, FederationGateMixin, View):
 
         detail = "need-detail" if kind == "need" else "offer-detail"
         return redirect(detail, slug=slug, pk=record.pk)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(rate_limit("fed-attest", 60, 3600, by="ip"), name="post")
+class AttestationsQueryView(FederationGateMixin, View):
+    """Signed §5.4 queries: is this match's party's tag verified? Capability-
+    gated (withdrawing "attestation" from FEDERATION_CAPABILITIES is the
+    per-feature rollback); per-item envelope; answers are signed, match-bound,
+    24h-TTL claims — never portable credentials."""
+
+    def post(self, request):
+        if len(request.body) > MAX_BODY_BYTES:
+            return JsonResponse({"error": "too_large"}, status=400)
+        try:
+            peer, _claims = crypto.verify_signed_request(request)
+        except FederationAuthError as e:
+            return JsonResponse({"error": e.code}, status=403)
+        if "attestation" not in getattr(dj_settings, "FEDERATION_CAPABILITIES", []):
+            return JsonResponse({"error": "capability_unsupported"}, status=403)
+        if _peer_over_cap("attest", peer):
+            return JsonResponse({"error": "rate_limited"}, status=429)
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return JsonResponse({"error": "invalid JSON"}, status=400)
+
+        results = []
+        for item in (payload.get("queries") or [])[:50]:
+            if not isinstance(item, dict):
+                results.append({"status": "error", "error": "invalid item"})
+                continue
+            try:
+                match_uuid = uuid.UUID(str(item.get("match_uuid", "")))
+            except (ValueError, TypeError):
+                results.append({"status": "error", "error": "invalid match_uuid"})
+                continue
+            tag_slug = str(item.get("tag", ""))[:50]
+            result = matching.serve_attestation_query(peer, match_uuid=match_uuid, tag_slug=tag_slug)
+            result["match_uuid"] = str(match_uuid)
+            result["tag"] = tag_slug
+            results.append(result)
+        return JsonResponse({"results": results})
+
+
+class FederatedAttestView(LoginRequiredMixin, FederationGateMixin, View):
+    """Coordinator-only HTMX control: live-ask the peer whether the remote
+    party's tag is verified. Result renders inline; nothing is stored —
+    §5.4 claims are ephemeral and match-bound by design."""
+
+    template_name = "federation/_attestation_result.html"
+
+    def get(self, request, slug, fmatch_id):
+        community, member = _active_member_or_none(request, slug)
+        if member is None or not member.is_coordinator:
+            raise Http404
+        fmatch = get_object_or_404(
+            FederatedMatch.objects.select_related("link__peer"), pk=fmatch_id, link__community=community
+        )
+        tag_slug = str(request.GET.get("tag", ""))[:50]
+        if not tag_slug:
+            return JsonResponse({"error": "tag required"}, status=400)
+        result = matching.request_attestation(fmatch, tag_slug)
+        return render(request, self.template_name, {"result": result, "tag": tag_slug})

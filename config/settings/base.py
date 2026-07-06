@@ -31,6 +31,9 @@ DEBUG = env.bool("DEBUG", default=False)
 FEDERATION_ENABLED = env.bool("FEDERATION_ENABLED", default=False)
 FEDERATION_PRIVATE_KEY = env("FEDERATION_PRIVATE_KEY", default="")  # Ed25519 private JWK (manage.py federation_keygen)
 FEDERATION_LOCALITY = env("FEDERATION_LOCALITY", default="")  # coarse label only — never an address
+# §12 capabilities: withdrawing one from the doc is a per-feature rollback
+# (peers stop asking). Stage D ships attestation on by default.
+FEDERATION_CAPABILITIES = env.list("FEDERATION_CAPABILITIES", default=["discovery", "match", "attestation"])
 
 
 # ── Apps ──────────────────────────────────────────────

@@ -105,6 +105,19 @@
           Shared contact: {{ row.contact.display_name }}{% if row.contact.email %} &middot; {{ row.contact.email }}{% endif %}{% if row.contact.phone %} &middot; {{ row.contact.phone }}{% endif %}
         </p>
         {% endif %}
+        {% if verifiable_tags %}
+        {# §5.4: live-ask the peer about the REMOTE party's tag. Ephemeral, match-bound. #}
+        <form class="flex items-center gap-2 mt-2"
+              hx-get="{% url 'federation_admin:attest' community.slug row.fm.pk %}"
+              hx-target="#attest-{{ row.fm.pk }}" hx-swap="innerHTML">
+          <select name="tag" class="border border-gray-300 rounded-lg px-2 py-1 text-xs min-h-[36px] bg-parish-card"
+                  aria-label="Tag to verify with their community">
+            {% for tag in verifiable_tags %}<option value="{{ tag.slug }}">{{ tag.label }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="btn-secondary text-xs umi-spin-on-request">Ask their community</button>
+          <span id="attest-{{ row.fm.pk }}" aria-live="polite"></span>
+        </form>
+        {% endif %}
       </div>
       <span class="umi-pill">{{ row.status_copy }}</span>
     </li>
