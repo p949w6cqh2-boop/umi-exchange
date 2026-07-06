@@ -2,169 +2,315 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── UMI Community Hub atmosphere — design tokens ─────────────────────────
-   Warm "town well": water-teal gathering color, gold warm accent, cream paper
-   with a barely-cool surface tint. Override --umi-primary / --umi-accent per
-   community via base.html. */
+/* ── UMI design system v2 — "The Commons" ─────────────────────────────────
+   Editorial-luxury product language: warm stone paper, true white cards,
+   espresso ink, ONE committed evergreen accent (bronze is functional offer
+   coding only), Newsreader display over Schibsted Grotesk, layered espresso-
+   tinted shadows, film grain, calm spring motion. Per-community themes still
+   override --umi-primary / --umi-accent via base.html. */
+
+/* Self-hosted variable fonts (latin, OFL) — no external requests, CSP-safe. */
+@font-face {
+  font-family: "Newsreader";
+  src: url("../fonts/newsreader-var.woff2") format("woff2");
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("../fonts/schibsted-var.woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --umi-primary: #0f6b73;        /* water-teal (gathering color) */
-  --umi-primary-hover: #0b585f;
-  --umi-accent: #c49a3c;         /* soft gold */
-  --umi-bg: #fdfbf7;             /* warm off-white paper */
-  --umi-bg-soft: #eff1ee;        /* barely-cool soft surface */
-  --umi-text: #2c2a29;           /* warm dark brown */
-  --umi-text-soft: #6b6358;      /* muted warm grey */
-  --umi-card: #f6f8f5;           /* barely-cool card */
-  --umi-border: #dde6e2;         /* barely-cool border */
-  --umi-need-accent: #0f6b73;    /* needs → teal left border */
-  --umi-offer-accent: #c49a3c;   /* offers → gold left border */
+  --umi-primary: #275d4c;        /* evergreen — the one accent */
+  --umi-primary-hover: #1c4739;
+  --umi-primary-soft: #e8efe9;   /* whisper of the accent for tints */
+  --umi-accent: #9c7a3c;         /* muted bronze — offers only, never decoration */
+  --umi-bg: #f6f4ee;             /* warm stone paper */
+  --umi-bg-soft: #edeae2;        /* deeper stone (wells, shells) */
+  --umi-card: #ffffff;           /* true white — real elevation on stone */
+  --umi-border: #e5e1d6;         /* warm hairline, same family as the paper */
+  --umi-text: #1f1c18;           /* espresso ink */
+  --umi-text-soft: #6f6759;      /* warm muted */
+  --umi-need-accent: var(--umi-primary);
+  --umi-offer-accent: var(--umi-accent);
+  /* Layered, espresso-tinted elevation (never gray-black). */
+  --umi-shadow-xs: 0 1px 2px rgba(31, 28, 24, 0.05);
+  --umi-shadow-sm: 0 1px 2px rgba(31, 28, 24, 0.05), 0 4px 12px -4px rgba(31, 28, 24, 0.08);
+  --umi-shadow-md: 0 1px 2px rgba(31, 28, 24, 0.05), 0 12px 32px -12px rgba(31, 28, 24, 0.16);
+  --umi-shadow-lg: 0 2px 4px rgba(31, 28, 24, 0.05), 0 24px 64px -16px rgba(31, 28, 24, 0.22);
+  --umi-ease: cubic-bezier(0.32, 0.72, 0, 1); /* heavy, physical */
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     background-color: var(--umi-bg);
-    /* window light from the top centre + a faint bulletin-paper grain (themed via --umi-border) */
-    background-image:
-      radial-gradient(120% 60% at 50% -10%, #ffffff 0%, var(--umi-bg) 55%, var(--umi-bg-soft) 100%),
-      radial-gradient(var(--umi-border) 0.5px, transparent 0.5px);
-    background-size: auto, 22px 22px;
-    background-attachment: fixed, fixed;
+    /* one quiet window-light from above — no dot grids, no competing washes */
+    background-image: radial-gradient(90% 48% at 50% -12%, #fffdf8 0%, var(--umi-bg) 60%);
+    background-attachment: fixed;
     color: var(--umi-text);
-    line-height: 1.6;
+    line-height: 1.65;
+    font-feature-settings: "ss01" on;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Film grain — fixed, pointer-safe, breaks digital flatness. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: theme("fontFamily.serif");
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
     color: var(--umi-text);
   }
-  /* Bare links lean on the green accent (styled buttons set their own colour). */
-  a:not([class]) {
-    color: var(--umi-primary);
+  h1, h2 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  ::selection {
+    background-color: var(--umi-primary);
+    color: #fff;
   }
+  a:not([class]) { color: var(--umi-primary); }
+  /* Numbers line up in data rows. */
+  td, .tabular { font-variant-numeric: tabular-nums; }
 }
 
 @layer components {
-  /* Intimate, readable content column. Edge-to-edge on the smallest screens. */
+  /* Readable app column; landing sections widen with their own classes. */
   .umi-container {
     @apply mx-auto w-full px-4 sm:px-6;
     max-width: 960px;
   }
 
-  /* Bulletin-insert card: neutral warm surface, hairline border, soft lift. */
+  /* ── Cards: true white on stone, hairline, layered lift ── */
   .umi-card {
-    @apply rounded-xl p-6 md:p-7 shadow-pew transition-shadow duration-300;
+    @apply rounded-2xl p-6 md:p-7;
     background-color: var(--umi-card);
     border: 1px solid var(--umi-border);
+    box-shadow: var(--umi-shadow-sm);
+    transition: box-shadow 300ms var(--umi-ease), transform 300ms var(--umi-ease), border-color 300ms var(--umi-ease);
   }
   .umi-card-hover:hover {
-    box-shadow: 0 8px 24px rgba(44, 42, 41, 0.10);
-    transform: scale(1.01);              /* gated globally by prefers-reduced-motion */
+    box-shadow: var(--umi-shadow-md);
+    transform: translateY(-2px);
+    border-color: #d8d3c4;
   }
-  .umi-need-card { border-left: 5px solid var(--umi-need-accent); }
-  .umi-offer-card { border-left: 5px solid var(--umi-offer-accent); }
+  .umi-card-hover:active { transform: translateY(0) scale(0.995); }
+  .umi-need-card { box-shadow: inset 3px 0 0 var(--umi-need-accent), var(--umi-shadow-sm); }
+  .umi-need-card:hover { box-shadow: inset 3px 0 0 var(--umi-need-accent), var(--umi-shadow-md); }
+  .umi-offer-card { box-shadow: inset 3px 0 0 var(--umi-offer-accent), var(--umi-shadow-sm); }
+  .umi-offer-card:hover { box-shadow: inset 3px 0 0 var(--umi-offer-accent), var(--umi-shadow-md); }
 
-  /* Pill buttons — soft and welcoming. */
+  /* Double-bezel shell: content sits in a machined tray (hero moments,
+     contact reveals, auth panels). Inner element should be .umi-card. */
+  .umi-shell {
+    @apply rounded-[1.5rem] p-1.5;
+    background-color: var(--umi-bg-soft);
+    border: 1px solid rgba(31, 28, 24, 0.06);
+  }
+  .umi-shell > .umi-card { @apply rounded-[calc(1.5rem-0.375rem)]; box-shadow: var(--umi-shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.8); }
+
+  /* ── Buttons: physical, one accent ── */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium text-white transition shadow-sm hover:shadow-md;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 min-h-[48px] font-semibold text-white;
     background-color: var(--umi-primary);
+    letter-spacing: -0.01em;
+    box-shadow: var(--umi-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    transition: background-color 250ms var(--umi-ease), box-shadow 250ms var(--umi-ease), transform 250ms var(--umi-ease);
   }
-  .btn-primary:hover { background-color: var(--umi-primary-hover); }
+  .btn-primary:hover {
+    background-color: var(--umi-primary-hover);
+    box-shadow: var(--umi-shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: translateY(0) scale(0.98); }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 min-h-[48px] font-medium transition hover:shadow-sm;
-    background-color: transparent;
-    border: 1px solid var(--umi-primary);
-    color: var(--umi-primary);
-  }
-  .btn-secondary:hover { background-color: rgba(15, 107, 115, 0.06); }
-  /* Gold accent button (var-driven) — secondary CTAs, empty-state actions. */
-  .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 min-h-[48px] font-medium transition shadow-sm hover:shadow-md;
-    background-color: var(--umi-accent);
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 min-h-[48px] font-semibold;
+    background-color: var(--umi-card);
+    border: 1px solid var(--umi-border);
     color: var(--umi-text);
+    letter-spacing: -0.01em;
+    box-shadow: var(--umi-shadow-xs);
+    transition: border-color 250ms var(--umi-ease), box-shadow 250ms var(--umi-ease), transform 250ms var(--umi-ease), color 250ms var(--umi-ease);
   }
-  .btn-accent:hover { filter: brightness(0.95); }
+  .btn-secondary:hover {
+    border-color: var(--umi-primary);
+    color: var(--umi-primary);
+    box-shadow: var(--umi-shadow-sm);
+    transform: translateY(-1px);
+  }
+  .btn-secondary:active { transform: translateY(0) scale(0.98); }
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 min-h-[48px] font-semibold;
+    background-color: var(--umi-accent);
+    color: #fff;
+    box-shadow: var(--umi-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transition: filter 250ms var(--umi-ease), transform 250ms var(--umi-ease);
+  }
+  .btn-accent:hover { filter: brightness(0.94); transform: translateY(-1px); }
+  .btn-accent:active { transform: translateY(0) scale(0.98); }
 
-  /* Category pill — quiet themed chip. */
+  /* Quiet chip — square-ish flag, not a pill balloon. */
   .umi-pill {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase;
+    letter-spacing: 0.12em;
     background-color: var(--umi-bg-soft);
     color: var(--umi-text-soft);
+    border: 1px solid rgba(31, 28, 24, 0.05);
   }
 
-  /* Tactile form controls. */
+  /* ── Forms: calm, precise ── */
   .umi-input {
-    @apply w-full px-4 py-3 rounded-lg transition focus-ring;
-    background-color: #ffffff;
-    border: 2px solid var(--umi-border);
+    @apply w-full px-4 py-3 rounded-xl transition;
+    background-color: var(--umi-card);
+    border: 1.5px solid var(--umi-border);
     color: var(--umi-text);
+    box-shadow: var(--umi-shadow-xs);
+    transition: border-color 200ms var(--umi-ease), box-shadow 200ms var(--umi-ease);
   }
-  .umi-input:focus { outline: none; border-color: var(--umi-primary); }
-  .umi-label { @apply block text-sm font-semibold mb-2; color: var(--umi-text-soft); }
+  .umi-input:focus {
+    outline: none;
+    border-color: var(--umi-primary);
+    box-shadow: 0 0 0 4px var(--umi-primary-soft), var(--umi-shadow-xs);
+  }
+  .umi-input::placeholder { color: #a49b8c; }
+  .umi-label {
+    @apply block text-sm font-semibold mb-2;
+    color: var(--umi-text);
+    letter-spacing: -0.005em;
+  }
 
-  /* Modal panel + match-timeline markers. */
   .umi-modal-panel {
     @apply w-full max-w-lg rounded-2xl overflow-hidden;
     background-color: var(--umi-card);
     border: 1px solid var(--umi-border);
-    box-shadow: 0 20px 50px rgba(44, 42, 41, 0.25);
+    box-shadow: var(--umi-shadow-lg);
   }
   .umi-timeline-dot {
     @apply w-8 h-8 rounded-full flex items-center justify-center mr-3 border-2;
-    border-color: var(--umi-border); background-color: var(--umi-bg-soft); color: var(--umi-text-soft);
+    border-color: var(--umi-border); background-color: var(--umi-card); color: var(--umi-text-soft);
+    font-variant-numeric: tabular-nums;
   }
   .umi-timeline-active { background-color: var(--umi-primary); border-color: var(--umi-primary); color: #fff; }
 
-  /* Calm, translucent header. */
+  /* Floating chrome — detached, blurred, hairline. */
   .umi-header {
-    background-color: rgba(253, 251, 247, 0.8);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    border-bottom: 1px solid var(--umi-border);
+    background-color: rgba(255, 255, 255, 0.82);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border-bottom: 1px solid rgba(31, 28, 24, 0.07);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
   }
 
-  /* ── Editorial noticeboard type & rhythm ──────────────────────────────────
-     Oversized serif mastheads, a short accent rule, a small kicker, and roomy
-     section spacing — the "noticeboard, not an app" feel. */
+  /* ── Editorial voice ── */
   .umi-masthead {
-    @apply font-serif font-semibold tracking-tight;
-    font-size: clamp(2.75rem, 7vw, 4.5rem);
-    line-height: 1.03;
+    @apply font-serif;
+    font-weight: 500;
+    font-size: clamp(3rem, 7.5vw, 5.25rem);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
     color: var(--umi-text);
   }
   .umi-display {
-    @apply font-serif font-semibold tracking-tight;
-    font-size: clamp(1.75rem, 4vw, 2.5rem);
-    line-height: 1.12;
+    @apply font-serif;
+    font-weight: 560;
+    font-size: clamp(1.9rem, 4vw, 2.75rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
     color: var(--umi-text);
   }
   .umi-kicker {
-    @apply inline-block text-xs font-semibold uppercase;
-    letter-spacing: 0.18em;
+    @apply inline-flex items-center gap-2 text-[11px] font-bold uppercase;
+    letter-spacing: 0.22em;
     color: var(--umi-primary);
+  }
+  .umi-eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase;
+    letter-spacing: 0.22em;
+    color: var(--umi-primary);
+    background-color: var(--umi-card);
+    border: 1px solid var(--umi-border);
+    box-shadow: var(--umi-shadow-xs);
   }
   .umi-rule {
     @apply block rounded-full;
-    width: 3rem;
-    height: 4px;
+    width: 2.5rem;
+    height: 2px;
     background-color: var(--umi-primary);
   }
-  .umi-section {
-    @apply py-12 md:py-20;
+  .umi-section { @apply py-16 md:py-28; }
+
+  /* Prose measure for body copy. */
+  .umi-measure { max-width: 62ch; }
+
+  /* ── Hub (member home) — classes used by templates/hub ── */
+  .hub > * + * { margin-top: 1.25rem; }
+  .umi-h1 {
+    @apply font-serif;
+    font-weight: 560;
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
   }
+  .umi-h2 {
+    @apply font-serif text-xl font-semibold tracking-tight mb-3;
+  }
+  .umi-muted { color: var(--umi-text-soft); }
+  .umi-switcher ul { @apply flex flex-wrap gap-2 mb-6; }
+  .umi-switcher a {
+    @apply inline-flex items-center rounded-full px-4 py-2 min-h-[40px] text-sm font-semibold transition;
+    background-color: var(--umi-card);
+    border: 1px solid var(--umi-border);
+    color: var(--umi-text-soft);
+    transition: color 250ms var(--umi-ease), border-color 250ms var(--umi-ease), background-color 250ms var(--umi-ease);
+  }
+  .umi-switcher a:hover { color: var(--umi-text); border-color: var(--umi-primary); }
+  .umi-switcher a[aria-current="page"] {
+    background-color: var(--umi-primary);
+    border-color: var(--umi-primary);
+    color: #fff;
+  }
+  .umi-actions { @apply flex flex-wrap gap-2.5 mt-1; }
+  .umi-actions .umi-pill {
+    @apply min-h-[44px] px-4 text-[13px] normal-case tracking-normal font-semibold rounded-full;
+    background-color: var(--umi-card);
+    color: var(--umi-text);
+    border: 1px solid var(--umi-border);
+    transition: border-color 250ms var(--umi-ease), color 250ms var(--umi-ease), transform 250ms var(--umi-ease);
+  }
+  .umi-actions .umi-pill:hover { border-color: var(--umi-primary); color: var(--umi-primary); transform: translateY(-1px); }
 }
 
-/* ── Micro-interactions — gentle fades only, no movement ─────────────────── */
+/* ── Motion: heavy fades with a breath of rise; stagger via --rise-delay ── */
 @keyframes umi-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes umi-fade-out { from { opacity: 1; } to { opacity: 0; } }
-.umi-fade { animation: umi-fade-in 200ms ease both; }
-.umi-crossfade-out { animation: umi-fade-out 200ms ease both; }
+@keyframes umi-rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.umi-fade { animation: umi-fade-in 300ms var(--umi-ease) both; }
+.umi-crossfade-out { animation: umi-fade-out 200ms var(--umi-ease) both; }
+.umi-rise { animation: umi-rise-in 650ms var(--umi-ease) both; animation-delay: var(--rise-delay, 0ms); }
 
 @media (prefers-reduced-motion: reduce) {
-  .umi-fade, .umi-crossfade-out { animation: none !important; }
+  html { scroll-behavior: auto; }
+  .umi-fade, .umi-crossfade-out, .umi-rise { animation: none !important; }
+  .umi-card, .umi-card-hover, .btn-primary, .btn-secondary, .btn-accent { transition: none !important; transform: none !important; }
 }
 
-/* Focus indicators — WCAG 2.1 AA compliant (green, to match the palette) */
+/* Focus indicators — WCAG 2.1 AA (evergreen ring on every surface). */
 @layer utilities {
   .focus-ring {
     @apply focus-visible:ring-2 focus-visible:ring-offset-2;

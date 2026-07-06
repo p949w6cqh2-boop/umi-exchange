@@ -12,11 +12,11 @@ from .conftest import CommunityFactory, MemberFactory
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# Direction D — "Community Hub" re-tint (founder-approved 2026-06-27).
-# See docs/community-hub-direction-D.md. Parish green → water-teal.
-DIRECTION_D_PRIMARY = "#0F6B73"
-DIRECTION_D_PRIMARY_HOVER = "#0B585F"
-GOLD_ACCENT = "#C49A3C"
+# Design system v2 — "The Commons" (full redesign, 2026-07-06).
+# One committed evergreen accent; bronze is functional offer-coding only.
+DIRECTION_D_PRIMARY = "#275D4C"
+DIRECTION_D_PRIMARY_HOVER = "#1C4739"
+GOLD_ACCENT = "#9C7A3C"
 
 
 def _luminance(hex_color):
@@ -93,20 +93,20 @@ class TestThemeResolution:
 
 
 class TestDirectionDPalette:
-    """Community Hub re-tint: default theme is water-teal, gold kept, AA-safe, sources in sync."""
+    """Design v2 canon: default theme is evergreen, bronze demoted to offer coding, AA-safe, sources in sync."""
 
-    def test_default_theme_is_water_teal(self):
+    def test_default_theme_is_evergreen(self):
         t = resolve_theme(None)
         assert t["primary"].lower() == DIRECTION_D_PRIMARY.lower()
         assert t["primary_hover"].lower() == DIRECTION_D_PRIMARY_HOVER.lower()
 
     def test_default_theme_keeps_gold_accent(self):
-        # reads parish, not generic-SaaS: gold stays the warm accent
+        # bronze stays the functional offer accent (never decoration)
         assert resolve_theme(None)["accent"].lower() == GOLD_ACCENT.lower()
 
     @pytest.mark.django_db
     def test_per_community_override_still_wins(self):
-        # theming-safe: a community's own primary still beats the new teal default
+        # theming-safe: a community's own primary still beats the evergreen default
         c = CommunityFactory()
         c.settings = {"theme_custom": {"primary": "#aa0000"}}
         c.save()
@@ -130,7 +130,10 @@ class TestDirectionDPalette:
 
         assert _input_css_root("primary") == primary, "input.css --umi-primary drifted"
         assert _input_css_root("primary-hover") == hover, "input.css --umi-primary-hover drifted"
-        assert _input_css_root("need-accent") == primary, "input.css need-accent should follow primary"
+        css_text = (REPO_ROOT / "static" / "css" / "input.css").read_text()
+        assert _input_css_root("need-accent") == primary or "--umi-need-accent: var(--umi-primary)" in css_text, (
+            "input.css need-accent should follow primary"
+        )
 
         assert _tailwind_parish("green") == primary, "tailwind parish.green drifted"
         assert _tailwind_parish("greendark") == hover, "tailwind parish.greendark drifted"
@@ -157,9 +160,9 @@ class TestWarmNeutralRamp:
         assert _tailwind_gray("200") == "#e6ded5", "gray.200 should be warm border, not TW #E5E7EB"
         assert _tailwind_gray("50") == "#faf7f1", "gray.50 should be warm light, not TW #F9FAFB"
 
-    def test_warm_ink_passes_aa_on_cream(self):
-        assert _contrast("#2C2A29", "#FDFBF7") >= 4.5  # warm ink on cream paper
-        assert _contrast("#6B6358", "#FDFBF7") >= 4.5  # warm muted text still readable
+    def test_warm_ink_passes_aa_on_stone(self):
+        assert _contrast("#1F1C18", "#F6F4EE") >= 4.5  # espresso ink on stone paper
+        assert _contrast("#6F6759", "#F6F4EE") >= 4.5  # warm muted text still readable
 
 
 @pytest.mark.django_db
