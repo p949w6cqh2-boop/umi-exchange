@@ -1,25 +1,71 @@
 {% extends "base.html" %}
-{% block title %}Join a Community{% endblock %}
+{% block title %}Find your community{% endblock %}
 {% block content %}
-<div class="max-w-md mx-auto mt-8 md:mt-16">
-  <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8 text-center">
-    <h1 class="text-xl font-semibold text-gray-900 mb-6">Join a Community</h1>
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
-      <div>
-        <label for="{{ form.join_code.id_for_label }}" class="text-sm font-medium text-gray-700 mb-1 block">Enter your join code:</label>
-        {{ form.join_code }}
-        {% if form.join_code.errors %}<p class="text-sm text-red-600 mt-1">{{ form.join_code.errors.0 }}</p>{% endif %}
+
+{# Two doors, equal weight: join a board that exists, or start your own.
+   This is also the post-sign-in landing for members of no community yet. #}
+<div class="max-w-4xl mx-auto mt-8 md:mt-16">
+  <header class="text-center mb-10 umi-rise">
+    <span class="umi-eyebrow">Welcome to UMI Exchange</span>
+    <h1 class="umi-display mt-5">Find your community</h1>
+    <p class="text-parish-ink/65 mt-3 max-w-md mx-auto">
+      Every board belongs to a real community &mdash; a parish, a conference, a
+      neighbourhood. Step into one, or open your own.
+    </p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+
+    {# Door one — join with a code #}
+    <div class="umi-shell umi-rise" style="--rise-delay: 100ms">
+      <div class="umi-card h-full flex flex-col !p-7 md:!p-8">
+        <span class="umi-kicker">I have a code</span>
+        <h2 class="font-serif text-2xl font-semibold tracking-tight mt-2">Join a community</h2>
+        <p class="text-sm text-parish-ink/60 mt-2 mb-6">
+          Your coordinator gives you an invite code &mdash; usually on the notice
+          sheet, or just ask them.
+        </p>
+        <form method="post" class="space-y-5 mt-auto">
+          {% csrf_token %}
+          <div>
+            <label for="{{ form.join_code.id_for_label }}" class="umi-label">Invite code</label>
+            {{ form.join_code }}
+            {% if form.join_code.errors %}<p class="text-sm text-red-600 mt-1.5">{{ form.join_code.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.display_name.id_for_label }}" class="umi-label">Your name on the board</label>
+            {{ form.display_name }}
+            {% if form.display_name.errors %}<p class="text-sm text-red-600 mt-1.5">{{ form.display_name.errors.0 }}</p>{% endif %}
+          </div>
+          <button type="submit" class="w-full btn-primary">Join</button>
+        </form>
       </div>
-      <div>
-        <label for="{{ form.display_name.id_for_label }}" class="text-sm font-medium text-gray-700 mb-1 block">Choose a display name:</label>
-        {{ form.display_name }}
+    </div>
+
+    {# Door two — start one (first-class, not a footnote) #}
+    <div class="umi-shell umi-rise" style="--rise-delay: 200ms">
+      <div class="umi-card h-full flex flex-col !p-7 md:!p-8">
+        <span class="umi-kicker">There isn't one yet</span>
+        <h2 class="font-serif text-2xl font-semibold tracking-tight mt-2">Start a community</h2>
+        <p class="text-sm text-parish-ink/60 mt-2">
+          Name your board, and you're its first admin. You'll get an invite code
+          to hand to your parish &mdash; it takes about two minutes.
+        </p>
+        <ul class="text-sm text-parish-ink/70 mt-5 space-y-2.5">
+          <li class="flex gap-2.5"><span class="text-[var(--umi-primary)]" aria-hidden="true">&#10003;</span> Your own notice-board, your own rules</li>
+          <li class="flex gap-2.5"><span class="text-[var(--umi-primary)]" aria-hidden="true">&#10003;</span> Invite members with one code</li>
+          <li class="flex gap-2.5"><span class="text-[var(--umi-primary)]" aria-hidden="true">&#10003;</span> Pick your community's colours</li>
+        </ul>
+        <div class="mt-auto pt-6">
+          <a href="{% url 'community-create' %}" class="w-full btn-secondary hover:!border-[var(--umi-primary)]">Start a community</a>
+        </div>
       </div>
-      <button type="submit" class="w-full btn-primary mt-6">
-        Join Community
-      </button>
-    </form>
-    <p class="text-sm text-gray-500 mt-6">Or <a href="{% url 'community-create' %}" class="text-blue-600 hover:text-blue-800">create a new community</a></p>
+    </div>
   </div>
+
+  <p class="text-xs text-parish-ink/50 text-center mt-10">
+    Not sure which? Joining is instant once you have a code &mdash; and you can
+    belong to more than one community.
+  </p>
 </div>
 {% endblock %}
