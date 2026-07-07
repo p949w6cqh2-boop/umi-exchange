@@ -20,6 +20,7 @@ urlpatterns = [
     path("consent/", include("apps.consent.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("technology/", include("apps.communities.urls_tech")),
+    path("", include("apps.communities.urls_mission")),
 ]
 
 # Federation surface exists only when explicitly enabled (design: default OFF;

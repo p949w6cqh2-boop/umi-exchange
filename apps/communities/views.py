@@ -349,6 +349,24 @@ class JoinCodeQRView(LoginRequiredMixin, View):
         )
 
 
+class AboutView(TemplateView):
+    """Public: the founder's story + mission (Lake 0's soul, plain-text)."""
+
+    template_name = "pages/about.html"
+
+
+class BeliefsView(TemplateView):
+    """Public: what we believe — CST foundation, the vision, faithful citizenship."""
+
+    template_name = "pages/beliefs.html"
+
+
+class WhyUmiView(TemplateView):
+    """Public: an honest, factual comparison — mutual aid vs case-management referral."""
+
+    template_name = "pages/why_umi.html"
+
+
 class TechnologyView(TemplateView):
     template_name = "pages/technology.html"
 
