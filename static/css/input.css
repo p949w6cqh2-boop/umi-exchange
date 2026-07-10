@@ -366,3 +366,13 @@
 
 /* Alpine.js x-cloak: hide elements until Alpine initializes */
 [x-cloak] { display: none !important; }
+
+/* Phase 2 "Member's Day" — scene washes + empty-state vignettes */
+.umi-scene-wash {
+  position: absolute; right: -1.5rem; top: 50%; transform: translateY(-50%);
+  width: 15rem; opacity: 0.14; pointer-events: none; display: none;
+  -webkit-mask-image: linear-gradient(to left, black 55%, transparent);
+  mask-image: linear-gradient(to left, black 55%, transparent);
+}
+@media (min-width: 768px) { .umi-scene-wash { display: block; } }
+.umi-vignette { max-width: 11rem; margin: 0 auto 0.75rem; opacity: 0.85; }

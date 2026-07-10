@@ -19,8 +19,11 @@
   </nav>
   {% endif %}
 
-  <header class="flex flex-wrap items-end justify-between gap-4">
-    <div>
+  <header class="relative flex flex-wrap items-end justify-between gap-4 overflow-hidden">
+    <div class="umi-scene-wash text-parish-ink" aria-hidden="true">
+      {% include "illustrations/_well.html" %}
+    </div>
+    <div class="relative">
       <span class="umi-kicker">{{ community.name }}</span>
       <h1 id="hub-heading" class="umi-h1 mt-1.5">Welcome back, {{ member.display_name }}.</h1>
       {% if season_impact %}
