@@ -87,3 +87,24 @@ Branch `feature/visual-overhaul-2` → PR → STOP before merge (keyring).
 Casework (work tool — speed over art, PII restraint), federation surfaces (Wellspring-treated in
 Stage C3), dashboard/notifications/tags/settings/auth (phase 3 candidates), any engagement
 mechanics (anti-manipulation stance from Hub v2 stands).
+
+---
+
+# Phase 3 addendum — "The Utility Room" (2026-07-10, same session)
+
+Jasiah: "continue the visual overhaul" after phase 2 merged (#64). Remaining logged-in
+utility surfaces join the token idiom. DESIGN DEFAULTS applied per the standing
+open-questions protocol (quiet treatment — utility rooms don't get scenes):
+
+- `dashboard/index.html`, `accounts/settings.html`, `communities/settings.html`,
+  `notifications/list.html`, `consent/list.html`, `households/{create,join}.html`:
+  every legacy `gray-*`/`blue-*` utility → parish-ink/token equivalents; raw
+  `bg-white rounded-*border` cards → `umi-card`; headings → serif; form labels → `umi-label`.
+- Empty states reuse the existing `_empty_state.html` church illustration
+  (notifications + consent) — no new scenes; the utility room stays quiet.
+- Notifications unread marker: thick `border-l-4` stripe replaced with the pulse
+  dot idiom (impeccable side-tab finding — fixed, not suppressed).
+- Community settings theme section was already tokened — untouched.
+- Tests: `tests/test_utility_room.py` — palette guards (`text-gray-`, `bg-gray-`,
+  `text-blue-6`, `border-l-blue-`) + render 200 across all seven pages.
+- Out of scope still: casework, federation, auth pages (already clean), emails.

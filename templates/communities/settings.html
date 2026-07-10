@@ -3,19 +3,19 @@
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-8">
   <div class="flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-gray-900">{{ community.name }} — Settings</h1>
-    <a href="{% url 'community-feed' community.slug %}" class="text-sm text-blue-600 hover:text-blue-800">&larr; Back to feed</a>
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">{{ community.name }} — Settings</h1>
+    <a href="{% url 'community-feed' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to feed</a>
   </div>
 
   {# Join Code + QR — FIX: clipboard via Alpine.js data binding, not inline onclick #}
-  <div class="bg-white rounded-xl border border-gray-200 p-6"
+  <div class="umi-card"
        x-data="{ copied: false, code: '{{ community.join_code|escapejs }}' }">
-    <h2 class="text-lg font-semibold text-gray-900">Join Code</h2>
+    <h2 class="font-serif text-lg font-semibold text-parish-ink">Join Code</h2>
     <div class="mt-4 flex items-center gap-4">
-      <code class="text-2xl font-mono tracking-[0.3em] bg-gray-100 px-4 py-2 rounded-lg select-all"
+      <code class="text-2xl font-mono tracking-[0.3em] bg-parish-soft px-4 py-2 rounded-lg select-all"
             x-text="code"></code>
       <button @click="navigator.clipboard.writeText(code); copied = true; setTimeout(() => copied = false, 2000)"
-              class="text-sm text-blue-600 hover:text-blue-800 min-h-[44px]"
+              class="text-sm text-umi-primary hover:text-umi-primary-hover min-h-[44px]"
               :aria-label="copied ? 'Copied!' : 'Copy join code'">
         <span x-show="!copied">Copy code</span>
         <span x-show="copied" x-cloak class="text-emerald-600">Copied!</span>
@@ -23,15 +23,15 @@
     </div>
     {# No-JS fallback: the code is visible in the <code> tag and can be manually selected #}
     <noscript>
-      <p class="text-xs text-gray-400 mt-2">Select the code above and copy it manually.</p>
+      <p class="text-xs text-parish-ink/45 mt-2">Select the code above and copy it manually.</p>
     </noscript>
 
     <div class="mt-6">
-      <p class="text-sm text-gray-600 mb-2">Print or share this QR code:</p>
+      <p class="text-sm text-parish-ink/60 mb-2">Print or share this QR code:</p>
       <img src="{% url 'join-code-qr' community.slug %}" alt="QR code to join {{ community.name }}"
-           class="w-48 h-48 border border-gray-200 rounded-lg">
+           class="w-48 h-48 border border-[var(--umi-border)] rounded-lg">
       <a href="{% url 'join-code-qr' community.slug %}" download="{{ community.slug }}-join-qr.png"
-         class="mt-2 inline-block text-sm text-blue-600 hover:text-blue-800">Download QR code</a>
+         class="mt-2 inline-block text-sm text-umi-primary hover:text-umi-primary-hover">Download QR code</a>
       <form method="post" class="mt-4">
         {% csrf_token %}
         <input type="hidden" name="action" value="regenerate_join_code">
@@ -44,24 +44,24 @@
   </div>
 
   {# Community Details Form #}
-  <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+  <form method="post" class="umi-card space-y-4">
     {% csrf_token %}
-    <h2 class="text-lg font-semibold text-gray-900">Community Details</h2>
+    <h2 class="font-serif text-lg font-semibold text-parish-ink">Community Details</h2>
 
     <div>
-      <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">Community Name</label>
+      <label for="id_name" class="umi-label">Community Name</label>
       {{ form.name }}
       {% if form.name.errors %}<p class="text-sm text-red-600 mt-1">{{ form.name.errors.0 }}</p>{% endif %}
     </div>
 
     <div>
-      <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+      <label for="id_description" class="umi-label">Description</label>
       {{ form.description }}
       {% if form.description.errors %}<p class="text-sm text-red-600 mt-1">{{ form.description.errors.0 }}</p>{% endif %}
     </div>
 
     <div>
-      <label for="id_visibility" class="block text-sm font-medium text-gray-700 mb-1">Visibility</label>
+      <label for="id_visibility" class="umi-label">Visibility</label>
       {{ form.visibility }}
       {% if form.visibility.errors %}<p class="text-sm text-red-600 mt-1">{{ form.visibility.errors.0 }}</p>{% endif %}
     </div>
@@ -110,18 +110,18 @@
   </form>
 
   {# Members #}
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Members ({{ members.count }})</h2>
+  <div class="umi-card">
+    <h2 class="font-serif text-lg font-semibold text-parish-ink">Members ({{ members.count }})</h2>
     <div class="mt-4 space-y-2">
       {% for m in members %}
-      <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-        <span class="text-sm text-gray-900">{{ m.display_name }}</span>
+      <div class="flex items-center justify-between py-2 border-b border-[var(--umi-border)] last:border-0">
+        <span class="text-sm text-parish-ink">{{ m.display_name }}</span>
         {% if is_admin %}
         <form method="post" class="flex items-center gap-2">
           {% csrf_token %}
           <input type="hidden" name="action" value="change_role">
           <input type="hidden" name="member_id" value="{{ m.id }}">
-          <select name="role" class="text-xs border border-gray-300 rounded px-2 py-1" aria-label="Role for {{ m.display_name }}">
+          <select name="role" class="text-xs border border-parish-border rounded px-2 py-1" aria-label="Role for {{ m.display_name }}">
             {% for value, label in role_choices %}
             <option value="{{ value }}" {% if m.role == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
@@ -129,7 +129,7 @@
           <button type="submit" class="text-xs font-medium text-umi-primary hover:underline min-h-[44px]">Save</button>
         </form>
         {% else %}
-        <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{{ m.get_role_display }}</span>
+        <span class="text-xs text-parish-ink/45 bg-parish-soft px-2 py-0.5 rounded">{{ m.get_role_display }}</span>
         {% endif %}
       </div>
       {% endfor %}
@@ -137,11 +137,11 @@
   </div>
 
   {# Categories #}
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Categories</h2>
+  <div class="umi-card">
+    <h2 class="font-serif text-lg font-semibold text-parish-ink">Categories</h2>
     <div class="mt-4 flex flex-wrap gap-2">
       {% for cat in categories %}
-      <span class="inline-flex items-center gap-1 bg-gray-100 text-sm text-gray-700 px-3 py-1 rounded-lg">
+      <span class="inline-flex items-center gap-1 bg-parish-soft text-sm text-parish-ink/80 px-3 py-1 rounded-lg">
         {{ cat.icon }} {{ cat.name }}
       </span>
       {% endfor %}
