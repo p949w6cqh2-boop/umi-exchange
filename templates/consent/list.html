@@ -2,16 +2,16 @@
 {% block title %}My Consents{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-6">
-  <h1 class="text-xl font-semibold text-gray-900">My Consents</h1>
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">My Consents</h1>
 
   {% if consents %}
-  <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+  <div class="umi-card !p-0 divide-y divide-[var(--umi-border)] overflow-hidden">
     {% for c in consents %}
     <div class="p-4 flex items-center justify-between">
       <div>
-        <p class="text-sm font-medium text-gray-900">{{ c.granted_to }}</p>
-        <p class="text-xs text-gray-500">{{ c.purpose }}</p>
-        <p class="text-xs text-gray-400 mt-0.5">
+        <p class="text-sm font-medium text-parish-ink">{{ c.granted_to }}</p>
+        <p class="text-xs text-parish-ink/55">{{ c.purpose }}</p>
+        <p class="text-xs text-parish-ink/45 mt-0.5">
           Scope: {{ c.scope|join:", " }} &middot;
           {% if c.status == "active" %}
           <span class="text-emerald-600 font-medium">Active</span>
@@ -33,8 +33,8 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
-    <p class="text-sm text-gray-500">No consent records.</p>
+  <div class="umi-card !p-8">
+    {% include "components/_empty_state.html" with message="No consent records." illustration=True %}
   </div>
   {% endif %}
 </div>

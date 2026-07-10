@@ -3,24 +3,27 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <div class="flex items-center justify-between py-4">
-    <h1 class="text-xl font-semibold text-gray-900">Notifications</h1>
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Notifications</h1>
     <form method="post" action="{% url 'notifications-mark-read' %}">
       {% csrf_token %}
-      <button type="submit" class="text-sm text-blue-600 hover:text-blue-800 min-h-[44px]">Mark all read</button>
+      <button type="submit" class="text-sm text-umi-primary hover:text-umi-primary-hover min-h-[44px]">Mark all read</button>
     </form>
   </div>
   <div class="space-y-3">
     {% for n in notifications %}
-    <div class="bg-white rounded-lg border border-gray-200 p-4 {% if not n.is_read %}border-l-4 border-l-blue-400{% endif %}">
-      <p class="text-base text-gray-900 font-medium">{{ n.title }}</p>
-      <p class="text-sm text-gray-600 mt-1">{{ n.body }}</p>
+    <div class="umi-card !p-4">
+      <p class="text-base text-parish-ink font-medium flex items-center gap-2">
+        {% if not n.is_read %}<span class="w-2 h-2 rounded-full bg-[var(--umi-primary)] shrink-0" aria-hidden="true"></span>{% endif %}
+        {{ n.title }}
+      </p>
+      <p class="text-sm text-parish-ink/60 mt-1">{{ n.body }}</p>
       <div class="flex items-center justify-between mt-2">
-        <span class="text-xs text-gray-400">{{ n.created_at|timesince }} ago</span>
-        {% if n.link %}<a href="{{ n.link }}" class="text-xs text-blue-600 hover:text-blue-800">View &rarr;</a>{% endif %}
+        <span class="text-xs text-parish-ink/45">{{ n.created_at|timesince }} ago</span>
+        {% if n.link %}<a href="{{ n.link }}" class="text-xs text-umi-primary hover:text-umi-primary-hover">View &rarr;</a>{% endif %}
       </div>
     </div>
     {% empty %}
-    {% include "components/_empty_state.html" with message="No notifications yet." %}
+    {% include "components/_empty_state.html" with message="No notifications yet." illustration=True %}
     {% endfor %}
   </div>
 </div>

@@ -4,12 +4,12 @@
 {% block content %}
 <div class="max-w-7xl mx-auto">
   <div class="flex items-center justify-between py-4">
-    <h1 class="text-xl font-semibold text-gray-900">Dashboard</h1>
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Dashboard</h1>
     <div class="flex items-center gap-3">
-      <a href="{% url 'dashboard-export' community.slug %}?type=needs" class="text-sm text-blue-600 hover:text-blue-800 min-h-[44px] flex items-center" aria-label="Export needs CSV">Export Needs</a>
-      <a href="{% url 'dashboard-export' community.slug %}?type=matches" class="text-sm text-blue-600 hover:text-blue-800 min-h-[44px] flex items-center" aria-label="Export matches CSV">Export Matches</a>
+      <a href="{% url 'dashboard-export' community.slug %}?type=needs" class="text-sm text-umi-primary hover:text-umi-primary-hover min-h-[44px] flex items-center" aria-label="Export needs CSV">Export Needs</a>
+      <a href="{% url 'dashboard-export' community.slug %}?type=matches" class="text-sm text-umi-primary hover:text-umi-primary-hover min-h-[44px] flex items-center" aria-label="Export matches CSV">Export Matches</a>
       <select name="period" hx-get="{% url 'community-dashboard' community.slug %}" hx-target="#dashboard-content" hx-swap="innerHTML"
-              class="border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px]">
+              class="border border-parish-border rounded-lg px-3 py-2 text-base min-h-[44px]">
         <option value="week">This Week</option><option value="month" selected>This Month</option>
         <option value="quarter">This Quarter</option><option value="year">This Year</option>
       </select>
@@ -20,30 +20,30 @@
     {# Metric cards #}
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {% for label, value in metrics %}
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <p class="text-sm text-gray-500 font-medium">{{ label }}</p>
-        <p class="text-3xl font-bold text-gray-900 mt-1">{{ value }}</p>
+      <div class="umi-card !p-4">
+        <p class="text-sm text-parish-ink/55 font-medium">{{ label }}</p>
+        <p class="text-3xl font-bold text-parish-ink mt-1">{{ value }}</p>
       </div>
       {% endfor %}
     </div>
 
     {# Stale needs #}
     <div class="mt-8">
-      <h2 class="text-lg font-semibold text-gray-900">Stale Needs (7+ days, no matches)</h2>
+      <h2 class="font-serif text-lg font-semibold text-parish-ink">Stale Needs (7+ days, no matches)</h2>
       {% if stale_needs %}
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto mt-4">
+      <div class="umi-card !p-0 overflow-x-auto mt-4">
         <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <thead class="bg-parish-soft text-left text-xs font-medium text-parish-ink/55 uppercase tracking-wider">
             <tr><th class="px-4 py-3">Title</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Urgency</th><th class="px-4 py-3">Days Open</th><th class="px-4 py-3">Action</th></tr>
           </thead>
           <tbody>
             {% for need in stale_needs %}
-            <tr class="border-t border-gray-100">
-              <td class="px-4 py-3 font-medium text-gray-900">{{ need.title }}</td>
+            <tr class="border-t border-[var(--umi-border)]">
+              <td class="px-4 py-3 font-medium text-parish-ink">{{ need.title }}</td>
               <td class="px-4 py-3">{{ need.category.name }}</td>
               <td class="px-4 py-3"><span class="text-xs font-medium px-2 py-0.5 rounded-full {% if need.urgency == 'critical' %}bg-red-100 text-red-800{% else %}bg-amber-100 text-amber-800{% endif %}">{{ need.get_urgency_display }}</span></td>
               <td class="px-4 py-3 {% if need.created_at|timesince > '14' %}text-red-600 font-medium{% endif %}">{{ need.created_at|timesince }}</td>
-              <td class="px-4 py-3"><a href="{% url 'need-detail' community.slug need.id %}" class="text-blue-600 hover:text-blue-800 text-sm">View</a></td>
+              <td class="px-4 py-3"><a href="{% url 'need-detail' community.slug need.id %}" class="text-umi-primary hover:text-umi-primary-hover text-sm">View</a></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -55,9 +55,9 @@
     </div>
 
     {# Household / Member count #}
-    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h2 class="text-lg font-semibold text-gray-900">Community Size</h2>
-      <p class="text-sm text-gray-600 mt-2">{{ household_count }} households &middot; {{ member_count }} members</p>
+    <div class="mt-8 umi-card !p-0 p-6">
+      <h2 class="font-serif text-lg font-semibold text-parish-ink">Community Size</h2>
+      <p class="text-sm text-parish-ink/60 mt-2">{{ household_count }} households &middot; {{ member_count }} members</p>
     </div>
   </div>
 </div>

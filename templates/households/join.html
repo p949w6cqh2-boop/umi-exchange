@@ -2,13 +2,13 @@
 {% block title %}Join a Household{% endblock %}
 {% block content %}
 <div class="max-w-md mx-auto mt-8">
-  <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-    <h1 class="text-xl font-semibold text-gray-900 mb-4">Join a Household</h1>
-    <p class="text-sm text-gray-600 mb-6">Enter the household code shared by a family member.</p>
+  <div class="umi-card">
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-4">Join a Household</h1>
+    <p class="text-sm text-parish-ink/60 mb-6">Enter the household code shared by a family member.</p>
     <form method="post" class="space-y-4">
       {% csrf_token %}
       <div>
-        <label for="id_household_code" class="text-sm font-medium text-gray-700 mb-1 block">Household code</label>
+        <label for="id_household_code" class="umi-label">Household code</label>
         {{ form.household_code }}
         {% if form.household_code.errors %}<p class="text-sm text-red-600 mt-1">{{ form.household_code.errors.0 }}</p>{% endif %}
       </div>
