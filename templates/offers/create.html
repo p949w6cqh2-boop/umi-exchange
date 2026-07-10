@@ -3,8 +3,8 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <div class="flex items-center gap-3 py-4">
-    <a href="{% url 'community-feed' community.slug %}" class="text-gray-500 hover:text-gray-700 min-h-[44px] flex items-center">&larr;</a>
-    <h1 class="font-serif text-2xl font-semibold text-gray-900">Post an offer</h1>
+    <a href="{% url 'community-feed' community.slug %}" class="text-parish-ink/55 hover:text-parish-ink min-h-[44px] flex items-center">&larr;</a>
+    <h1 class="font-serif text-2xl font-semibold text-parish-ink">Post an offer</h1>
   </div>
   <form method="post" class="space-y-6">
     {% csrf_token %}
@@ -12,7 +12,7 @@
       <legend class="umi-label">What can you help with?</legend>
       <div class="grid grid-cols-3 sm:grid-cols-5 gap-3" role="radiogroup">
         {% for cat in categories %}
-        <label class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] border-2 rounded-xl cursor-pointer transition-colors hover:border-gray-300 hover:bg-gray-50 has-[:checked]:border-[var(--umi-primary)] has-[:checked]:bg-[#E8F2F1]">
+        <label class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] border-2 rounded-xl cursor-pointer transition-colors hover:border-parish-border hover:bg-parish-soft has-[:checked]:border-[var(--umi-primary)] has-[:checked]:bg-[#E8F2F1]">
           <input type="radio" name="category" value="{{ cat.id }}" class="sr-only" {% if forloop.first %}checked{% endif %}>
           <span class="text-2xl">{{ cat.icon }}</span>
           <span class="text-xs text-center mt-1">{{ cat.name }}</span>
@@ -26,7 +26,7 @@
       {% if form.title.errors %}<p class="text-sm text-red-600 mt-1">{{ form.title.errors.0 }}</p>{% endif %}
     </div>
     <div>
-      <label for="id_description" class="umi-label">Description <span class="text-gray-400">(optional)</span></label>
+      <label for="id_description" class="umi-label">Description <span class="text-parish-ink/45">(optional)</span></label>
       {{ form.description }}
     </div>
     <fieldset>
@@ -35,7 +35,7 @@
         {% for value, label in form.fields.contact_pref.choices %}
         <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
           <input type="radio" name="contact_pref" value="{{ value }}" {% if value == "in_app" %}checked{% endif %} class="w-4 h-4 accent-[var(--umi-primary)]">
-          <span class="text-base text-gray-700">{{ label }}</span>
+          <span class="text-base text-parish-ink/80">{{ label }}</span>
         </label>
         {% endfor %}
       </div>

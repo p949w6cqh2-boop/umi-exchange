@@ -1,7 +1,7 @@
 {# Urgency selector: horizontal radio group with colour-coded pills. #}
 {# Usage: {% include "components/_urgency_selector.html" with choices=form.fields.urgency.choices selected="medium" %} #}
 <fieldset>
-  <legend class="text-sm font-medium text-gray-700 mb-2">{{ legend|default:"How urgent?" }}</legend>
+  <legend class="umi-label !mb-2">{{ legend|default:"How urgent?" }}</legend>
   <div class="flex flex-wrap gap-3" role="radiogroup">
     {% for value, label in choices %}
     <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer min-h-[48px] transition-colors
