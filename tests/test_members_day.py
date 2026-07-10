@@ -38,9 +38,7 @@ def member_client(client, member):
 
 class TestHubCrown:
     def test_hub_masthead_carries_well_wash(self, member_client, member):
-        body = member_client.get(
-            reverse("hub:community", kwargs={"slug": member.community.slug})
-        ).content.decode()
+        body = member_client.get(reverse("hub:community", kwargs={"slug": member.community.slug})).content.decode()
         assert 'id="g-well"' in body
 
     def test_hub_empty_pulse_shows_vignette_not_bare_text(self, member_client, member):
@@ -50,18 +48,12 @@ class TestHubCrown:
 
         from django.utils import timezone
 
-        type(member).objects.filter(pk=member.pk).update(
-            joined_at=timezone.now() - timedelta(days=90)
-        )
-        body = member_client.get(
-            reverse("hub:pulse", kwargs={"slug": member.community.slug})
-        ).content.decode()
+        type(member).objects.filter(pk=member.pk).update(joined_at=timezone.now() - timedelta(days=90))
+        body = member_client.get(reverse("hub:pulse", kwargs={"slug": member.community.slug})).content.decode()
         assert "umi-vignette" in body  # quiet community → empty-state branch
 
     def test_hub_empty_spotlight_shows_vignette(self, member_client, member):
-        body = member_client.get(
-            reverse("hub:community", kwargs={"slug": member.community.slug})
-        ).content.decode()
+        body = member_client.get(reverse("hub:community", kwargs={"slug": member.community.slug})).content.decode()
         assert 'id="g-carry"' in body  # no open needs → spotlight empty state
 
 
@@ -72,18 +64,14 @@ class TestNotices:
     @pytest.fixture
     def need_body(self, member_client, member):
         need = NeedFactory(community=member.community, requester=member)
-        return member_client.get(
-            reverse("need-detail", args=[member.community.slug, need.id])
-        ).content.decode()
+        return member_client.get(reverse("need-detail", args=[member.community.slug, need.id])).content.decode()
 
     @pytest.fixture
     def offer_body(self, member_client, member):
         from tests.conftest import OfferFactory
 
         offer = OfferFactory(community=member.community, offerer=member)
-        return member_client.get(
-            reverse("offer-detail", args=[member.community.slug, offer.id])
-        ).content.decode()
+        return member_client.get(reverse("offer-detail", args=[member.community.slug, offer.id])).content.decode()
 
     def test_need_detail_off_legacy_palette(self, need_body):
         assert "text-gray-" not in need_body
@@ -111,18 +99,14 @@ class TestExchangeCeremony:
         category = CategoryFactory(community=community)
         requester = MemberFactory(community=community)
         offerer = MemberFactory(community=community)
-        need = NeedFactory(
-            community=community, requester=requester, category=category, status="open"
-        )
+        need = NeedFactory(community=community, requester=requester, category=category, status="open")
         offer = OfferFactory(community=community, offerer=offerer, category=category)
         match = MatchFactory(need=need, offer=offer, proposed_by=offerer, status="proposed")
         return community, match, requester
 
     def _get(self, client, community, match, member):
         client.force_login(member.user)
-        return client.get(
-            reverse("match-detail", kwargs={"slug": community.slug, "pk": match.id})
-        ).content.decode()
+        return client.get(reverse("match-detail", kwargs={"slug": community.slug, "pk": match.id})).content.decode()
 
     def test_accepted_match_shows_ceremony(self, client):
         community, match, requester = self._world()
