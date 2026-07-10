@@ -1,0 +1,12 @@
+{% comment %}Chapter rail for the public pages — one book, four chapters.
+   Pass active="about|beliefs|why-umi|technology".{% endcomment %}
+<nav class="flex flex-wrap items-center gap-1.5 mb-2" aria-label="About UMI">
+  <a href="{% url 'about' %}" class="umi-tab {% if active == 'about' %}umi-tab-active{% endif %}"
+     {% if active == 'about' %}aria-current="page"{% endif %}>Our story</a>
+  <a href="{% url 'beliefs' %}" class="umi-tab {% if active == 'beliefs' %}umi-tab-active{% endif %}"
+     {% if active == 'beliefs' %}aria-current="page"{% endif %}>What we believe</a>
+  <a href="{% url 'why-umi' %}" class="umi-tab {% if active == 'why-umi' %}umi-tab-active{% endif %}"
+     {% if active == 'why-umi' %}aria-current="page"{% endif %}>Why UMI</a>
+  <a href="{% url 'technology' %}" class="umi-tab {% if active == 'technology' %}umi-tab-active{% endif %}"
+     {% if active == 'technology' %}aria-current="page"{% endif %}>Technology</a>
+</nav>

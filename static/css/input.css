@@ -255,6 +255,39 @@
   /* Prose measure for body copy. */
   .umi-measure { max-width: 62ch; }
 
+  /* Board lane tabs (feed) + chapter pills (public pages). */
+  .umi-tab {
+    @apply inline-flex items-center rounded-full px-4 py-2 min-h-[40px] text-sm font-semibold;
+    background-color: var(--umi-card);
+    border: 1px solid var(--umi-border);
+    color: var(--umi-text-soft);
+    transition: color 250ms var(--umi-ease), border-color 250ms var(--umi-ease), background-color 250ms var(--umi-ease);
+  }
+  .umi-tab:hover { color: var(--umi-text); border-color: var(--umi-primary); }
+  .umi-tab-active {
+    background-color: var(--umi-primary);
+    border-color: var(--umi-primary);
+    color: #fff;
+  }
+  .umi-tab-active:hover { color: #fff; }
+
+  /* Category medallion on board cards. */
+  .umi-medallion {
+    @apply w-10 h-10 rounded-xl inline-flex items-center justify-center text-xl shrink-0;
+    background-color: var(--umi-bg-soft);
+    border: 1px solid rgba(31, 28, 24, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  /* Illustration vignette: linocut scenes sit in a soft printed plate. */
+  .umi-plate {
+    @apply rounded-[1.25rem] overflow-hidden;
+    background:
+      radial-gradient(120% 90% at 30% 0%, #fffdf8 0%, var(--umi-bg-soft) 100%);
+    border: 1px solid var(--umi-border);
+    box-shadow: var(--umi-shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  }
+
   /* ── Hub (member home) — classes used by templates/hub ── */
   .hub > * + * { margin-top: 1.25rem; }
   .umi-h1 {
@@ -308,6 +341,19 @@
   html { scroll-behavior: auto; }
   .umi-fade, .umi-crossfade-out, .umi-rise { animation: none !important; }
   .umi-card, .umi-card-hover, .btn-primary, .btn-secondary, .btn-accent { transition: none !important; transform: none !important; }
+}
+
+/* Seamless page-to-page: native cross-fade on navigation (progressive —
+   browsers without View Transitions just load normally). */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 220ms;
+    animation-timing-function: var(--umi-ease);
+  }
 }
 
 /* Focus indicators — WCAG 2.1 AA (evergreen ring on every surface). */

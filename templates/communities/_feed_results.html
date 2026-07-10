@@ -10,3 +10,13 @@
     {% include "components/_empty_state.html" with message="No needs or offers yet. Start by posting what you need or can offer." illustration=True %}
   </div>
 {% endfor %}
+{% if page_obj.has_next %}
+{# The surf sentinel: when it scrolls into view, the next page replaces it —
+   cards keep arriving until the board runs out. Filters ride along. #}
+<div class="col-span-full flex justify-center py-6"
+     hx-get="{% url 'community-feed' community.slug %}?page={{ page_obj.next_page_number }}{% if feed_type %}&type={{ feed_type }}{% endif %}"
+     hx-include="[name='category'],[name='urgency'],[name='q']"
+     hx-trigger="revealed" hx-swap="outerHTML">
+  <span class="umi-pill">More coming&hellip;</span>
+</div>
+{% endif %}

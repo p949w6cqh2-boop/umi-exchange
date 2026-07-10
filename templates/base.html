@@ -147,6 +147,30 @@
      server-rendered Django messages.{% endcomment %}
   <div id="umi-toasts" aria-live="polite" aria-atomic="false"></div>
   <script>
+    // Scroll reveals: elements marked data-rise get the .umi-rise entrance as
+    // they enter the viewport. Progressive + reduced-motion honoured.
+    (function () {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (!("IntersectionObserver" in window)) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add("umi-rise");
+            io.unobserve(e.target);
+          }
+        });
+      }, { rootMargin: "0px 0px -8% 0px" });
+      function watch(root) {
+        (root.querySelectorAll ? root.querySelectorAll("[data-rise]") : []).forEach(function (el) {
+          el.style.opacity = "0";
+          io.observe(el);
+        });
+      }
+      document.addEventListener("DOMContentLoaded", function () { watch(document); });
+      document.body.addEventListener("htmx:afterSwap", function (e) { watch(e.target); });
+    })();
+  </script>
+  <script>
     (function () {
       function styleFor(type) {
         if (type === "success") return "bg-white border border-[var(--umi-border)] text-parish-ink shadow-lift border-l-4 !border-l-[var(--umi-primary)]";

@@ -72,7 +72,7 @@
 </section>
 
 {# ── How it works: numbered editorial rows, not a card row ── #}
-<section class="umi-section border-t border-[var(--umi-border)]">
+<section class="umi-section border-t border-[var(--umi-border)]" data-rise>
   <span class="umi-kicker">How it works</span>
   <div class="mt-10 grid grid-cols-1 md:grid-cols-12 gap-y-12 gap-x-8">
     <div class="md:col-span-4">
@@ -99,9 +99,10 @@
 {# ── Trust ledger: quiet rows, hairline-separated ── #}
 <section class="umi-section border-t border-[var(--umi-border)]">
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-    <div class="lg:col-span-4">
+    <div class="lg:col-span-4" data-rise>
       <span class="umi-kicker">Built like it matters</span>
       <h2 class="umi-display mt-4">Dignity is a<br>design decision.</h2>
+      <div class="umi-plate p-3 mt-8 hidden lg:block">{% include "illustrations/_carrying.html" with class="w-full h-auto" %}</div>
     </div>
     <div class="lg:col-span-8 divide-y divide-[var(--umi-border)]">
       <div class="py-6 flex gap-5 first:pt-0">
@@ -130,7 +131,7 @@
 </section>
 
 {# ── Closing shell ── #}
-<section class="umi-section">
+<section class="umi-section" data-rise>
   <div class="umi-shell">
     <div class="umi-card !p-8 md:!p-12 text-center">
       <h2 class="umi-display">The board is waiting.</h2>

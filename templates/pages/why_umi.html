@@ -7,20 +7,26 @@
    merits: horizontal mutual aid + data sovereignty vs top-down referral.{% endcomment %}
 <article class="max-w-4xl mx-auto">
 
-  <header class="pt-8 md:pt-16 umi-rise">
+  <div class="pt-6">{% include "components/_mission_nav.html" with active="why-umi" %}</div>
+
+  <header class="pt-6 md:pt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center umi-rise">
+    <div class="lg:col-span-7">
     <span class="umi-eyebrow">How we're different</span>
     <h1 class="umi-masthead mt-6">A neighbour,<br>not a case.</h1>
-    <div class="umi-rule mt-7" aria-hidden="true"></div>
     <p class="text-lg text-parish-ink/70 mt-7 umi-measure">
       There are good tools that connect vulnerable families to people who want to
       help. We admire the ones that work. We're built on a different conviction
       about <em>where the help begins</em> &mdash; and who the person receiving it
       is allowed to be.
     </p>
+    </div>
+    <div class="lg:col-span-5">
+      <div class="umi-plate p-4">{% include "illustrations/_exchange.html" with class="w-full h-auto" %}</div>
+    </div>
   </header>
 
   {# Fair, factual account of the model we contrast with #}
-  <section class="umi-section !pt-12 border-b border-[var(--umi-border)]">
+  <section class="umi-section !pt-12 border-b border-[var(--umi-border)]" data-rise>
     <span class="umi-kicker">The model we're often compared to</span>
     <div class="mt-5 space-y-5 text-lg leading-relaxed text-parish-ink/85 umi-measure">
       <p>
@@ -42,7 +48,7 @@
   </section>
 
   {# The comparison table — Wellspring style, factual #}
-  <section class="umi-section border-b border-[var(--umi-border)]">
+  <section class="umi-section border-b border-[var(--umi-border)]" data-rise>
     <h2 class="umi-display">Two different shapes of help.</h2>
     <p class="mt-3 text-parish-ink/65 umi-measure">Not better people &mdash; a different design.
       Here's the contrast, laid out plainly.</p>
@@ -98,7 +104,7 @@
   </section>
 
   {# Plain answers to the two questions #}
-  <section class="umi-section border-b border-[var(--umi-border)]">
+  <section class="umi-section border-b border-[var(--umi-border)]" data-rise>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
       <div>
         <h2 class="font-serif text-2xl font-semibold tracking-tight">Why choose us?</h2>
@@ -138,7 +144,7 @@
   </section>
 
   {# Honest close #}
-  <section class="umi-section">
+  <section class="umi-section" data-rise>
     <div class="umi-shell">
       <div class="umi-card !p-8 md:!p-12 text-center">
         <h2 class="umi-display">Come and see.</h2>
@@ -154,5 +160,7 @@
       </div>
     </div>
   </section>
+
+  {% include "components/_chapter_next.html" with next_url="/join/" next_kicker="The door" next_title="Find your community" %}
 </article>
 {% endblock %}

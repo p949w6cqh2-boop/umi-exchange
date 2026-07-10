@@ -1,0 +1,13 @@
+{% comment %}Book flow: the big serif door to the next chapter.
+   Pass next_url, next_kicker, next_title.{% endcomment %}
+<a href="{{ next_url }}" class="group block mt-16 mb-6" data-rise>
+  <div class="umi-shell">
+    <div class="umi-card !p-7 md:!p-9 flex items-center justify-between gap-6">
+      <div>
+        <span class="umi-kicker">Next &middot; {{ next_kicker }}</span>
+        <p class="font-serif text-2xl md:text-3xl font-semibold tracking-tight mt-2 group-hover:text-umi-primary transition-colors duration-300">{{ next_title }}</p>
+      </div>
+      <span class="w-12 h-12 rounded-full shrink-0 inline-flex items-center justify-center text-xl border border-[var(--umi-border)] bg-[var(--umi-bg-soft)] transition-transform duration-300 ease-physical group-hover:translate-x-1.5" aria-hidden="true">&rarr;</span>
+    </div>
+  </div>
+</a>

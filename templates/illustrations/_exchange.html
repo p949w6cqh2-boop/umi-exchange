@@ -1,0 +1,27 @@
+{% comment %}Parish Linocut — original UMI illustration ("The exchange —
+   neighbour to neighbour, and it flows back"). Decorative; ink follows text
+   color, washes follow the community theme.{% endcomment %}
+<svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
+     class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
+  <defs><filter id="g-exch"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
+  <ellipse cx="120" cy="152" rx="90" ry="12" fill="var(--umi-accent)" opacity="0.12"/>
+  <path d="M30 152 H210" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <!-- giver, leaning in from the left -->
+  <path d="M38 152 v-52 a17 17 0 0 1 30 -11" fill="var(--umi-primary)" opacity="0.78"/>
+  <circle cx="62" cy="74" r="10" fill="currentColor"/>
+  <path d="M64 96 q30 -4 44 14" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- receiver, reaching from the right -->
+  <path d="M202 152 v-52 a17 17 0 0 0 -30 -11" fill="var(--umi-accent)" opacity="0.72"/>
+  <circle cx="178" cy="74" r="10" fill="currentColor"/>
+  <path d="M176 96 q-30 -4 -44 14" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- the basket passed between, the centre of gravity -->
+  <path d="M100 112 h40 l-6 18 h-28 z" fill="#fff" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M106 112 a14 10 0 0 1 28 0" fill="none" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M104 119 h32 M106 125 h28" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <ellipse cx="113" cy="108" rx="5" ry="4" fill="var(--umi-primary)" opacity="0.55"/>
+  <ellipse cx="126" cy="107" rx="5" ry="4" fill="var(--umi-accent)" opacity="0.6"/>
+  <!-- and it flows back: one quiet return arrow beneath -->
+  <path d="M150 144 q-30 10 -60 0" stroke="var(--umi-primary)" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <path d="M95 146 l-6 -2 5 -5" stroke="var(--umi-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <rect width="240" height="180" filter="url(#g-exch)" opacity="0.5"/>
+</svg>

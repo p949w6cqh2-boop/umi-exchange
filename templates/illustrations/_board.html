@@ -1,0 +1,29 @@
+{% comment %}Parish Linocut — original UMI illustration ("The notice board").
+   Decorative; ink follows text color, washes follow the community theme.{% endcomment %}
+<svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
+     class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
+  <defs><filter id="g-board"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
+  <path d="M28 156 H212" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <!-- the parish notice board -->
+  <rect x="46" y="28" width="148" height="100" rx="8" fill="#fff" stroke="currentColor" stroke-width="3"/>
+  <rect x="54" y="36" width="132" height="84" rx="4" fill="var(--umi-bg-soft)"/>
+  <path d="M88 128 v28 M152 128 v28" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  <!-- pinned notes -->
+  <rect x="64" y="48" width="34" height="26" rx="2" fill="#fff" stroke="currentColor" stroke-width="1.5" transform="rotate(-3 81 61)"/>
+  <path d="M70 56 h22 M70 62 h16" stroke="var(--umi-primary)" stroke-width="2" stroke-linecap="round" transform="rotate(-3 81 61)"/>
+  <rect x="108" y="44" width="34" height="26" rx="2" fill="#fff" stroke="currentColor" stroke-width="1.5" transform="rotate(2 125 57)"/>
+  <path d="M114 52 h22 M114 58 h14" stroke="var(--umi-accent)" stroke-width="2" stroke-linecap="round" transform="rotate(2 125 57)"/>
+  <rect x="150" y="50" width="30" height="24" rx="2" fill="#fff" stroke="currentColor" stroke-width="1.5" transform="rotate(-2 165 62)"/>
+  <path d="M156 58 h18 M156 64 h12" stroke="var(--umi-primary)" stroke-width="2" stroke-linecap="round" transform="rotate(-2 165 62)"/>
+  <rect x="86" y="84" width="36" height="26" rx="2" fill="#fff" stroke="currentColor" stroke-width="1.5" transform="rotate(1.5 104 97)"/>
+  <path d="M92 92 h24 M92 98 h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.55" transform="rotate(1.5 104 97)"/>
+  <!-- pins -->
+  <circle cx="81" cy="50" r="2.5" fill="var(--umi-accent)"/>
+  <circle cx="125" cy="46" r="2.5" fill="var(--umi-primary)"/>
+  <circle cx="165" cy="52" r="2.5" fill="var(--umi-accent)"/>
+  <circle cx="104" cy="86" r="2.5" fill="var(--umi-primary)"/>
+  <!-- a reader -->
+  <circle cx="34" cy="92" r="8" fill="currentColor"/>
+  <path d="M24 156 v-42 a11 11 0 0 1 20 -6" fill="currentColor" opacity="0.8"/>
+  <rect width="240" height="180" filter="url(#g-board)" opacity="0.5"/>
+</svg>
