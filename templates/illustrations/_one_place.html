@@ -1,0 +1,23 @@
+{% comment %}Parish Linocut — original UMI illustration ("One place set — the widow's table").
+   Decorative; ink follows text color, washes follow the community theme.{% endcomment %}
+<svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
+     class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
+  <defs><filter id="g-place"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
+  <path d="M20 150 H220" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <!-- table -->
+  <rect x="44" y="96" width="152" height="9" rx="3" fill="currentColor"/>
+  <path d="M56 105 l-6 45 M184 105 l6 45" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  <rect x="48" y="88" width="144" height="8" rx="2" fill="var(--umi-accent)" opacity="0.35"/>
+  <!-- one place set -->
+  <circle cx="150" cy="82" r="13" fill="#fff" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="150" cy="82" r="6" fill="var(--umi-primary)" opacity="0.18"/>
+  <path d="M132 74 v16 M168 72 v18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <!-- the empty chair, pulled out -->
+  <path d="M84 150 v-42 h6 v14 h22 v28" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M84 122 h28" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- window light falling across -->
+  <path d="M186 20 l34 34 v22 l-52 -52 z" fill="var(--umi-primary)" opacity="0.10"/>
+  <circle cx="204" cy="34" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.5"/>
+  <path d="M204 24 v20 M194 34 h20" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <rect width="240" height="180" filter="url(#g-place)" opacity="0.5"/>
+</svg>

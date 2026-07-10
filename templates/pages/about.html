@@ -3,47 +3,62 @@
 {% block content %}
 
 {% comment %}Our Story — founder-authored, Jasiah's voice, grounded in his
-   testimony. Public. No other real names / parish specifics (keyring).{% endcomment %}
-<article class="max-w-3xl mx-auto">
+   testimony. Public. No other real names / parish specifics (keyring).
+   Visual-first: short beats, the well scene, chapter flow.{% endcomment %}
+<article class="max-w-4xl mx-auto">
 
-  <header class="pt-8 md:pt-16 umi-rise">
-    <span class="umi-eyebrow">Our story</span>
-    <h1 class="umi-masthead mt-6">The poor are not<br>a market.</h1>
-    <p class="umi-display !text-2xl md:!text-3xl text-parish-ink/75 mt-5">They are neighbours.</p>
-    <div class="umi-rule mt-7" aria-hidden="true"></div>
+  <div class="pt-6">{% include "components/_mission_nav.html" with active="about" %}</div>
+
+  <header class="pt-6 md:pt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center umi-rise">
+    <div class="lg:col-span-7">
+      <span class="umi-eyebrow">Our story</span>
+      <h1 class="umi-masthead mt-6">The poor are not<br>a market.</h1>
+      <p class="umi-display !text-2xl md:!text-3xl text-parish-ink/75 mt-4">They are neighbours.</p>
+    </div>
+    <div class="lg:col-span-5">
+      <div class="umi-plate p-4">{% include "illustrations/_well.html" with class="w-full h-auto" %}</div>
+    </div>
   </header>
 
-  <div class="mt-12 space-y-6 text-lg leading-relaxed text-parish-ink/85 umi-measure">
+  <div class="mt-14 space-y-6 text-lg leading-relaxed text-parish-ink/85 umi-measure" data-rise>
     <p>
       Everyone is searching for the same thing &mdash; something that doesn't move.
-      Christian or atheist, president or peasant, the plumber and the person he
-      can't afford to pay: all of us are looking for somewhere secure to stand.
+      Christian or atheist, president or peasant: all of us are looking for
+      somewhere secure to stand.
     </p>
     <p>
-      People can't be that fixed point for each other; we change, we fail, we
-      leave. But we still need each other. So you build something a person can
-      turn to the moment they feel lost &mdash; and you fill it with the one thing
-      that doesn't run out. Not an app. Each other.
+      So you build something a person can turn to the moment they feel lost &mdash;
+      and you fill it with the one thing that doesn't run out. Not an app.
+      <strong>Each other.</strong>
     </p>
+  </div>
+
+  {# The two commandments, as a visual beat #}
+  <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4" data-rise>
+    <div class="umi-card">
+      <span class="umi-kicker">One act, not two</span>
+      <p class="font-serif text-xl font-semibold mt-2">Love God with everything you are.</p>
+      <p class="text-parish-ink/70 mt-2">All your time, your thoughts, your hope &mdash; and your actions.</p>
+    </div>
+    <div class="umi-card">
+      <span class="umi-kicker">&nbsp;</span>
+      <p class="font-serif text-xl font-semibold mt-2">Love your neighbour as yourself.</p>
+      <p class="text-parish-ink/70 mt-2">When you give to the poor, you give to God. Charity is love with its sleeves rolled up.</p>
+    </div>
+  </div>
+
+  <div class="mt-10 space-y-6 text-lg leading-relaxed text-parish-ink/85 umi-measure" data-rise>
     <p>
-      The whole of the Law is two commandments: love God with everything you are,
-      and love your neighbour as yourself. I've come to believe those are one act,
-      not two. When you give to the poor, you give to God. Charity is just love
-      with its sleeves rolled up &mdash; the coat off your back, the food from your
-      plate, an hour you didn't have to give. And when the person you helped wants
-      to give something back, you <em>let them</em>. Iron sharpens iron. Nobody
-      here is only a giver, and nobody is only a case.
-    </p>
-    <p>
-      That's the whole idea, and it isn't new. It's in Acts, chapter four: a
-      community that held everything in common, so that there was not a needy
-      person among them. Not a program the state ran for them. Them &mdash; for
-      each other.
+      And when the person you helped wants to give something back, you
+      <em>let them</em>. Iron sharpens iron. Nobody here is only a giver, and
+      nobody is only a case. It's Acts, chapter four &mdash; a community that held
+      everything in common, so that no one among them was in need. Not a program
+      run <em>for</em> them. Them &mdash; for each other.
     </p>
   </div>
 
   {# Pull-quote — the line that carries the mission #}
-  <figure class="my-14 umi-shell">
+  <figure class="my-14 umi-shell" data-rise>
     <blockquote class="umi-card !p-8 md:!p-10">
       <p class="font-serif text-2xl md:text-[2rem] leading-snug text-parish-ink">
         &ldquo;UMI is a simple, almost-effortless network built so you can indulge
@@ -53,48 +68,42 @@
     </blockquote>
   </figure>
 
-  <div class="space-y-6 text-lg leading-relaxed text-parish-ink/85 umi-measure">
-    <p>
-      I built the first version of this because I was tired of watching love get
-      turned into logistics &mdash; good people ready to help, and no simple,
-      dignified way for the help to find the need. The tools that existed treated
-      the people they served as data to be moved, or as a market to be reached. I
-      didn't want a better version of that. I wanted the opposite of it.
-    </p>
-    <p>
-      So the rule underneath everything we build is <strong>consent, not
-      surveillance</strong>. Your community's information stays in your
-      community's hands. Names and phone numbers are never a public list. The
-      software is designed so that, when someone asks to be forgotten, it can
-      actually forget them. That isn't a feature we bolted on. It's the reason the
-      thing exists.
-    </p>
-    <p>
-      We started with a parish notice-board because you have to start with
-      something real &mdash; something you can point at and say, <em>here, look, it
-      works.</em> A neighbour asks for a lift to the clinic. Someone across the
-      street can give it. A coordinator you actually know makes the introduction.
-      That's it. That's the seed. Everything else we hope to grow &mdash;
-      education, legal help, gardens and workshops a community owns together &mdash;
-      grows out of that same soil, and only after it's real.
-    </p>
+  {# Why it got built — beside the exchange scene #}
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center" data-rise>
+    <div class="lg:col-span-5 order-last lg:order-first">
+      <div class="umi-plate p-4">{% include "illustrations/_exchange.html" with class="w-full h-auto" %}</div>
+    </div>
+    <div class="lg:col-span-7 space-y-5 text-lg leading-relaxed text-parish-ink/85">
+      <p>
+        I built the first version of this because I was tired of watching love get
+        turned into logistics &mdash; good people ready to help, and no dignified
+        way for the help to find the need.
+      </p>
+      <p>
+        So the rule underneath everything is <strong>consent, not surveillance</strong>.
+        Your community's information stays in your community's hands. The software
+        is built so that, when someone asks to be forgotten, it can actually
+        forget them. That isn't a feature. It's the reason the thing exists.
+      </p>
+      <p>
+        We started with a parish notice-board because you have to start with
+        something real &mdash; something you can point at and say, <em>here, look,
+        it works.</em>
+      </p>
+    </div>
   </div>
 
   {# Founder attribution — Jasiah's, by his own choice #}
-  <div class="mt-14 pt-8 border-t border-[var(--umi-border)]">
+  <div class="mt-14 pt-8 border-t border-[var(--umi-border)]" data-rise>
     <p class="font-serif text-xl text-parish-ink">Jasiah</p>
     <p class="text-sm text-parish-ink/55 mt-1">Founder &amp; Steward, United Moral Infrastructure</p>
     <p class="text-sm text-parish-ink/65 mt-4 umi-measure">
       United Moral Infrastructure is a 501(c)(3) non-profit. We hold no candidates
       and take no party. What we steward is an open standard and the communities
-      that choose to use it &mdash; and we mean to be accountable to them, plainly,
-      with our books open.
+      that choose to use it &mdash; accountable to them, plainly, with our books open.
     </p>
   </div>
 
-  <div class="mt-12 mb-8 flex flex-wrap gap-4">
-    <a href="{% url 'beliefs' %}" class="btn-primary">What we believe</a>
-    <a href="{% url 'why-umi' %}" class="btn-secondary">How we're different</a>
-  </div>
+  {% include "components/_chapter_next.html" with next_url="/what-we-believe/" next_kicker="Chapter two" next_title="What we believe — Lake 0, the heart" %}
 </article>
 {% endblock %}

@@ -160,11 +160,13 @@ class FeedView(LoginRequiredMixin, ListView):
             needs = apply_search(needs, q)
             offers = apply_search(offers, q)
 
+        # Type tabs (All / Asks / Offers): a lane the surfer can pick.
+        kind = self.request.GET.get("type")
         # Tag items with their type for template rendering. Order + slice at
         # the DB layer (LIMIT) so memory stays bounded regardless of community size.
         cap = self.feed_per_type_cap
-        need_list = list(needs.order_by("-created_at")[:cap])
-        offer_list = list(offers.order_by("-created_at")[:cap])
+        need_list = [] if kind == "offer" else list(needs.order_by("-created_at")[:cap])
+        offer_list = [] if kind == "need" else list(offers.order_by("-created_at")[:cap])
         for n in need_list:
             n.item_type = "need"
         for o in offer_list:
@@ -183,6 +185,12 @@ class FeedView(LoginRequiredMixin, ListView):
         ctx["community"] = self.community
         ctx["member"] = self.member
         ctx["categories"] = self.community.categories.filter(is_active=True)
+        ctx["feed_type"] = self.request.GET.get("type", "")
+        # Pulse strip: the week's collective numbers (hub selector, read-only).
+        if not self.request.htmx:
+            from apps.hub.selectors import week_stats
+
+            ctx["week_stats"] = week_stats(self.community)
         self._attach_poster_badges(ctx.get("items", []))
         # Federation (Stage C3): surface the cross-community board only when
         # the flag is on AND this community holds a live link (no query when off).

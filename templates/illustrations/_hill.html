@@ -1,0 +1,28 @@
+{% comment %}Parish Linocut — original UMI illustration ("The city on the hill — gardens first").
+   Decorative; ink follows text color, washes follow the community theme.{% endcomment %}
+<svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
+     class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
+  <defs><filter id="g-hill"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
+  <!-- terraced garden rows up the hill -->
+  <path d="M18 156 Q120 60 222 156 Z" fill="var(--umi-primary)" opacity="0.13"/>
+  <path d="M46 138 q74 -52 148 0" stroke="currentColor" stroke-width="2" fill="none" opacity="0.45"/>
+  <path d="M64 122 q56 -38 112 0" stroke="currentColor" stroke-width="2" fill="none" opacity="0.45"/>
+  <path d="M84 108 q36 -24 72 0" stroke="currentColor" stroke-width="2" fill="none" opacity="0.45"/>
+  <!-- seedlings on the terraces -->
+  <g stroke="var(--umi-primary)" stroke-width="2.5" stroke-linecap="round">
+    <path d="M78 132 v-9 m0 0 q-6 -2 -7 -8 m7 8 q6 -2 7 -8"/>
+    <path d="M126 116 v-9 m0 0 q-6 -2 -7 -8 m7 8 q6 -2 7 -8"/>
+    <path d="M164 130 v-9 m0 0 q-6 -2 -7 -8 m7 8 q6 -2 7 -8"/>
+  </g>
+  <!-- the small city crowning the hill -->
+  <rect x="102" y="66" width="14" height="22" fill="#fff" stroke="currentColor" stroke-width="2"/>
+  <rect x="122" y="58" width="16" height="30" fill="#fff" stroke="currentColor" stroke-width="2"/>
+  <path d="M122 58 h16 l-8 -10 z" fill="var(--umi-accent)" opacity="0.7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M130 48 v-8 M126 44 h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <rect x="106" y="72" width="5" height="6" fill="var(--umi-primary)" opacity="0.5"/>
+  <rect x="127" y="66" width="6" height="7" fill="var(--umi-primary)" opacity="0.5"/>
+  <!-- sun, rising -->
+  <circle cx="196" cy="40" r="13" fill="var(--umi-accent)" opacity="0.4"/>
+  <circle cx="196" cy="40" r="13" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+  <rect width="240" height="180" filter="url(#g-hill)" opacity="0.5"/>
+</svg>
