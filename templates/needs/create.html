@@ -3,8 +3,8 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <div class="flex items-center gap-3 py-4">
-    <a href="{% url 'community-feed' community.slug %}" class="text-gray-500 hover:text-gray-700 min-h-[44px] flex items-center">&larr;</a>
-    <h1 class="font-serif text-2xl font-semibold text-gray-900">Post a need</h1>
+    <a href="{% url 'community-feed' community.slug %}" class="text-parish-ink/55 hover:text-parish-ink min-h-[44px] flex items-center">&larr;</a>
+    <h1 class="font-serif text-2xl font-semibold text-parish-ink">Post a need</h1>
   </div>
 
   <form method="post" class="space-y-6" hx-post="{% url 'need-create' community.slug %}" hx-target="body">
@@ -16,7 +16,7 @@
       <div class="grid grid-cols-3 sm:grid-cols-5 gap-3" role="radiogroup">
         {% for cat in categories %}
         <label class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] border-2 rounded-xl cursor-pointer transition-colors
-                      hover:border-gray-300 hover:bg-gray-50 has-[:checked]:border-[var(--umi-primary)] has-[:checked]:bg-[#E8F2F1]">
+                      hover:border-parish-border hover:bg-parish-soft has-[:checked]:border-[var(--umi-primary)] has-[:checked]:bg-[#E8F2F1]">
           <input type="radio" name="category" value="{{ cat.id }}" class="sr-only" {% if forloop.first %}checked{% endif %}>
           <span class="text-2xl">{{ cat.icon }}</span>
           <span class="text-xs text-center mt-1">{{ cat.name }}</span>
@@ -29,13 +29,13 @@
     <div x-data="{ count: 0 }">
       <label for="id_title" class="umi-label">What do you need? *</label>
       {{ form.title }}
-      <span class="text-sm text-right block mt-1" :class="count > 200 ? 'text-red-500' : 'text-gray-400'" x-text="count + '/200'" x-init="count = $refs.title ? $refs.title.value.length : 0"></span>
+      <span class="text-sm text-right block mt-1" :class="count > 200 ? 'text-red-500' : 'text-parish-ink/45'" x-text="count + '/200'" x-init="count = $refs.title ? $refs.title.value.length : 0"></span>
       {% if form.title.errors %}<p class="text-sm text-red-600 mt-1">{{ form.title.errors.0 }}</p>{% endif %}
     </div>
 
     {# Description #}
     <div>
-      <label for="id_description" class="umi-label">Tell us more <span class="text-gray-400">(optional)</span></label>
+      <label for="id_description" class="umi-label">Tell us more <span class="text-parish-ink/45">(optional)</span></label>
       {{ form.description }}
     </div>
 
@@ -61,7 +61,7 @@
     {% if community.neighborhood_mode != "hidden" %}
     <div class="space-y-1">
       <label for="id_neighborhood" class="umi-label">
-        Area <span class="text-gray-400">({% if community.neighborhood_mode == "required" %}required{% else %}optional{% endif %})</span>
+        Area <span class="text-parish-ink/45">({% if community.neighborhood_mode == "required" %}required{% else %}optional{% endif %})</span>
       </label>
       {{ form.neighborhood }}
       <div class="flex items-start gap-2 mt-1">
@@ -81,7 +81,7 @@
         <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
           <input type="radio" name="contact_pref" value="{{ value }}" {% if value == "in_app" %}checked{% endif %}
                  class="w-4 h-4 accent-[var(--umi-primary)]">
-          <span class="text-base text-gray-700">{{ label }}</span>
+          <span class="text-base text-parish-ink/80">{{ label }}</span>
         </label>
         {% endfor %}
       </div>
