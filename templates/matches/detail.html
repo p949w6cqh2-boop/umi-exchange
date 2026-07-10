@@ -15,15 +15,18 @@
   {# Timeline #}
   {% include "components/_match_timeline.html" %}
 
-  {# Contact info revelation banner (visible immediately after acceptance) #}
+  {# The exchange ceremony — §8.2's peak moment (visible immediately after acceptance) #}
   {% if show_contact and contact_info and is_participant %}
-  <div class="bg-emerald-50 border border-emerald-300 rounded-lg p-4 mt-4 flex items-start gap-3">
-    <svg class="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-    </svg>
-    <div>
-      <p class="font-medium text-emerald-800">Contact information has been shared!</p>
-      <p class="text-sm text-emerald-700 mt-1">You can now see the other party's contact details below. Reach out to coordinate your exchange.</p>
+  <div class="umi-shell mt-6 umi-rise">
+    <div class="umi-card text-center !p-6 md:!p-8">
+      <div class="max-w-[240px] mx-auto text-parish-ink" aria-hidden="true">
+        {% include "illustrations/_exchange.html" %}
+      </div>
+      <h2 class="font-serif text-2xl font-semibold tracking-tight mt-3">You&rsquo;re connected.</h2>
+      <p class="text-sm text-parish-ink/60 mt-2 max-w-sm mx-auto">
+        Contact details are open below &mdash; shared between the two of you alone,
+        the way it should be. Reach out and arrange the exchange.
+      </p>
     </div>
   </div>
   {% endif %}
@@ -42,8 +45,8 @@
       {# Confirmation dialog #}
       <div x-show="confirm" x-cloak class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.away="confirm = false">
-          <h3 class="text-lg font-semibold text-gray-900">Accept this match?</h3>
-          <p class="text-base text-gray-600 mt-2">Your contact info will be shared with the other party.</p>
+          <h3 class="font-serif text-lg font-semibold text-parish-ink">Accept this match?</h3>
+          <p class="text-base text-parish-ink/60 mt-2">Your contact info will be shared with the other party.</p>
           <div class="flex gap-3 mt-6 justify-end">
             <button type="button" @click="confirm = false" class="btn-secondary text-sm">Cancel</button>
             <button type="submit" class="btn-primary text-sm">Yes, Accept</button>

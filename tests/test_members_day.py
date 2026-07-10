@@ -100,6 +100,50 @@ class TestNotices:
         assert "umi-medallion" in offer_body
 
 
+class TestExchangeCeremony:
+    """The §8.2 contact reveal is the product's peak moment — it gets the
+    exchange scene and ceremony copy, under the exact same gating."""
+
+    def _world(self):
+        from tests.conftest import CategoryFactory, MatchFactory, OfferFactory
+
+        community = CommunityFactory()
+        category = CategoryFactory(community=community)
+        requester = MemberFactory(community=community)
+        offerer = MemberFactory(community=community)
+        need = NeedFactory(
+            community=community, requester=requester, category=category, status="open"
+        )
+        offer = OfferFactory(community=community, offerer=offerer, category=category)
+        match = MatchFactory(need=need, offer=offer, proposed_by=offerer, status="proposed")
+        return community, match, requester
+
+    def _get(self, client, community, match, member):
+        client.force_login(member.user)
+        return client.get(
+            reverse("match-detail", kwargs={"slug": community.slug, "pk": match.id})
+        ).content.decode()
+
+    def test_accepted_match_shows_ceremony(self, client):
+        community, match, requester = self._world()
+        match.transition_to("accepted")
+        body = self._get(client, community, match, requester)
+        assert 'id="g-exch"' in body
+        assert "connected" in body.lower()
+
+    def test_proposed_match_shows_no_ceremony(self, client):
+        community, match, requester = self._world()
+        body = self._get(client, community, match, requester)
+        assert 'id="g-exch"' not in body
+
+    def test_match_page_off_legacy_palette(self, client):
+        community, match, requester = self._world()
+        match.transition_to("accepted")
+        body = self._get(client, community, match, requester)
+        assert "text-gray-" not in body
+        assert "bg-gray-" not in body
+
+
 class TestThreshold:
     def test_join_page_carries_threshold_scene(self, homeless_client):
         body = homeless_client.get(reverse("community-join")).content.decode()
