@@ -10,14 +10,14 @@
     </div>
     {% if contact_info.parties %}
       {% for party in contact_info.parties %}
-        <p class="text-base text-gray-900 font-medium {% if not forloop.first %}mt-3{% endif %}">{{ party.display_name }}</p>
-        {% if party.email %}<p class="text-sm text-gray-600 mt-1">Email: {{ party.email }}</p>{% endif %}
-        {% if party.phone %}<p class="text-sm text-gray-600 mt-1">Phone: {{ party.phone }}</p>{% endif %}
+        <p class="text-base text-parish-ink font-medium {% if not forloop.first %}mt-3{% endif %}">{{ party.display_name }}</p>
+        {% if party.email %}<p class="text-sm text-parish-ink/60 mt-1">Email: {{ party.email }}</p>{% endif %}
+        {% if party.phone %}<p class="text-sm text-parish-ink/60 mt-1">Phone: {{ party.phone }}</p>{% endif %}
       {% endfor %}
     {% else %}
-      <p class="text-base text-gray-900 font-medium">{{ contact_info.display_name }}</p>
-      {% if contact_info.email %}<p class="text-sm text-gray-600 mt-1">Email: {{ contact_info.email }}</p>{% endif %}
-      {% if contact_info.phone %}<p class="text-sm text-gray-600 mt-1">Phone: {{ contact_info.phone }}</p>{% endif %}
+      <p class="text-base text-parish-ink font-medium">{{ contact_info.display_name }}</p>
+      {% if contact_info.email %}<p class="text-sm text-parish-ink/60 mt-1">Email: {{ contact_info.email }}</p>{% endif %}
+      {% if contact_info.phone %}<p class="text-sm text-parish-ink/60 mt-1">Phone: {{ contact_info.phone }}</p>{% endif %}
     {% endif %}
   </div>
 {% else %}

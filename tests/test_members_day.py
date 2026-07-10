@@ -65,6 +65,41 @@ class TestHubCrown:
         assert 'id="g-carry"' in body  # no open needs → spotlight empty state
 
 
+class TestNotices:
+    """Need/offer detail must sit on the Commons palette (no legacy grays)
+    and read as a notice pinned to the board (medallion, like feed cards)."""
+
+    @pytest.fixture
+    def need_body(self, member_client, member):
+        need = NeedFactory(community=member.community, requester=member)
+        return member_client.get(
+            reverse("need-detail", args=[member.community.slug, need.id])
+        ).content.decode()
+
+    @pytest.fixture
+    def offer_body(self, member_client, member):
+        from tests.conftest import OfferFactory
+
+        offer = OfferFactory(community=member.community, offerer=member)
+        return member_client.get(
+            reverse("offer-detail", args=[member.community.slug, offer.id])
+        ).content.decode()
+
+    def test_need_detail_off_legacy_palette(self, need_body):
+        assert "text-gray-" not in need_body
+        assert "bg-gray-" not in need_body
+
+    def test_need_detail_reads_as_board_notice(self, need_body):
+        assert "umi-medallion" in need_body
+
+    def test_offer_detail_off_legacy_palette(self, offer_body):
+        assert "text-gray-" not in offer_body
+        assert "bg-gray-" not in offer_body
+
+    def test_offer_detail_reads_as_board_notice(self, offer_body):
+        assert "umi-medallion" in offer_body
+
+
 class TestThreshold:
     def test_join_page_carries_threshold_scene(self, homeless_client):
         body = homeless_client.get(reverse("community-join")).content.decode()
