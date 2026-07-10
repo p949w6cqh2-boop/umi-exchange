@@ -23,7 +23,17 @@ def test_about_carries_founder_and_mission(client):
     assert "Founder" in body
     assert "iron sharpens iron" in body.lower()  # reciprocity, in his words
     assert "Acts" in body  # Acts 4:32 — the blueprint
-    assert "501(c)(3)" in body
+    assert "being established as a 501(c)(3)" in body
+
+
+@pytest.mark.parametrize("name", MISSION_PAGES)
+def test_no_granted_501c3_claim_while_filing_pending(client, name):
+    """The 501(c)(3) filing is not complete (Jasiah, 2026-07-10) — no page may
+    claim the status as granted, only 'being established as'. Covers the shared
+    footer too, since it renders on every page."""
+    body = client.get(reverse(name)).content.decode()
+    assert "501(c)(3) non-profit" not in body  # granted-status phrasing
+    assert "as a 501(c)(3):" not in body  # beliefs' old framing
 
 
 def test_beliefs_grounds_in_cst(client):
