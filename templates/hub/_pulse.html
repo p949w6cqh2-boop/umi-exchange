@@ -36,7 +36,12 @@
   {% endfor %}
 </ul>
 {% else %}
-<p class="text-sm text-parish-ink/55 py-6 text-center">
-  Quiet so far &mdash; the pulse picks up as neighbours start asking and offering.
-</p>
+<div class="py-6 text-center">
+  <div class="umi-vignette text-parish-ink" aria-hidden="true">
+    {% include "illustrations/_board.html" %}
+  </div>
+  <p class="text-sm text-parish-ink/55">
+    Quiet so far &mdash; the pulse picks up as neighbours start asking and offering.
+  </p>
+</div>
 {% endif %}
