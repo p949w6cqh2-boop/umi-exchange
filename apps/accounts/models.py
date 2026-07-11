@@ -17,5 +17,18 @@ class User(AbstractUser):
     class Meta:
         db_table = "accounts_user"
 
+    def clean(self):
+        # AbstractUser.clean() normalizes a missing email to "", which the
+        # unique constraint treats as a value — the second email-less signup
+        # would fail with "already exists". Absent email is stored as NULL.
+        super().clean()
+        self.email = self.email or None
+
+    def save(self, *args, **kwargs):
+        # Writes that skip full_clean (e.g. UserManager.create_user, which
+        # also normalizes None to "") must not store "" either.
+        self.email = self.email or None
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.username
