@@ -8,7 +8,7 @@ from tests.conftest import CommunityFactory, MemberFactory, NeedFactory
 
 pytestmark = pytest.mark.django_db
 
-MISSION_PAGES = ["about", "beliefs", "why-umi"]
+MISSION_PAGES = ["about", "beliefs", "why-umi", "privacy"]
 
 
 @pytest.mark.parametrize("name", MISSION_PAGES)
@@ -82,3 +82,13 @@ def test_mission_pages_do_not_leak_real_needs(client):
     NeedFactory(community=community, requester=MemberFactory(community=community), title="Confidential need XYZ")
     for name in MISSION_PAGES:
         assert "Confidential need XYZ" not in client.get(reverse(name)).content.decode()
+
+
+def test_privacy_page_states_the_schedule(client):
+    body = client.get(reverse("privacy")).content.decode()
+    assert "crypto-shred" in body
+    assert "12 months" in body
+    assert "seven years" in body
+    assert "72 hours" in body
+    assert "30 days" in body  # backups age out + erasure SLA
+    assert "not a market" in body
