@@ -93,3 +93,30 @@ class TestNotificationModel:
         n.save()
         n.refresh_from_db()
         assert n.is_read is True
+
+
+@pytest.mark.django_db
+class TestEmailBrandPalette:
+    """Overhaul phase 6: the HTML email carries the Commons palette as inline
+    hex constants (CSS vars don't exist in mail clients) — evergreen header/
+    button, warm ink, stone background. The old pre-Commons green and cool
+    zinc grays must be gone."""
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def _html(self):
+        user = UserFactory(email="palette@example.com")
+        NotificationAdapter.send(user, "match_accepted", "Title", "Body", link="/c/x/")
+        assert len(mail.outbox) == 1
+        alternatives = mail.outbox[0].alternatives
+        assert alternatives, "HTML alternative missing"
+        return alternatives[0][0]
+
+    def test_email_on_commons_palette(self):
+        html = self._html()
+        assert "#275D4C" in html  # evergreen header + button
+        assert "#2C2A29" in html  # espresso ink headline
+
+    def test_email_sheds_old_brand(self):
+        html = self._html()
+        for old in ("#166534", "#18181b", "#3f3f46", "#a1a1aa", "#f4f4f5", "#e4e4e7"):
+            assert old not in html, f"old palette hex {old} still in email"
