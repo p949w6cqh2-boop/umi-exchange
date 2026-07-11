@@ -3,6 +3,7 @@ View smoke tests: verify all URLs return expected status codes.
 """
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
@@ -134,6 +135,53 @@ class TestRegistration:
             },
         )
         assert response.status_code == 200  # Re-renders form with errors
+
+    def test_register_two_users_without_email(self):
+        """Regression: blank email must store as NULL, so a second email-less
+        signup never collides with the first on the unique constraint.
+
+        Each POST uses its own REMOTE_ADDR: registration is IP-throttled
+        (3/m, django_ratelimit) and the test client's default 127.0.0.1
+        shares one bucket across the whole suite run.
+        """
+        client = Client()
+        for i, username in enumerate(("nomail-one", "nomail-two")):
+            response = client.post(
+                reverse("register"),
+                {
+                    "username": username,
+                    "password": "SecurePass123!",
+                    "password_confirm": "SecurePass123!",
+                },
+                REMOTE_ADDR=f"10.99.1.{i + 1}",
+            )
+            form = response.context["form"] if response.status_code == 200 else None
+            assert response.status_code == 302, (
+                f"{username} signup failed: {response.status_code} "
+                f"{form.errors.as_data() if form else response.content[:200]}"
+            )
+        users = get_user_model().objects.filter(username__startswith="nomail-")
+        assert users.count() == 2
+        assert all(user.email is None for user in users)
+
+    def test_register_duplicate_email_rejected(self):
+        client = Client()
+        payload = {
+            "username": "first-owner",
+            "email": "taken@example.com",
+            "password": "SecurePass123!",
+            "password_confirm": "SecurePass123!",
+        }
+        first = client.post(reverse("register"), payload, REMOTE_ADDR="10.99.2.1")
+        assert first.status_code == 302
+        response = client.post(
+            reverse("register"),
+            {**payload, "username": "second-claimant"},
+            REMOTE_ADDR="10.99.2.2",
+        )
+        assert response.status_code == 200  # Re-renders form with errors
+        assert "This email is already in use." in response.content.decode()
+        assert not get_user_model().objects.filter(username="second-claimant").exists()
 
 
 @pytest.mark.django_db
