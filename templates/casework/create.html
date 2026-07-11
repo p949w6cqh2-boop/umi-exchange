@@ -2,8 +2,8 @@
 {% block title %}Open a case — {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-6">
-  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-gray-600 hover:underline">&larr; Case files</a>
-  <h1 class="text-2xl font-bold text-gray-900 mt-2 mb-4">Open a case</h1>
+  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/60 hover:underline">&larr; Case files</a>
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mt-2 mb-4">Open a case</h1>
 
   {% if form.non_field_errors %}
   <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
@@ -12,56 +12,56 @@
 
   <form method="post" class="space-y-6">
     {% csrf_token %}
-    <section class="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
-      <h2 class="font-semibold text-gray-900">Who is this case about?</h2>
-      <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ form.person.label }}</label>
+    <section class="bg-white border border-[var(--umi-border)] rounded-lg p-4 space-y-3">
+      <h2 class="font-semibold text-parish-ink">Who is this case about?</h2>
+      <div><label class="umi-label">{{ form.person.label }}</label>
         {{ form.person }} {{ form.person.errors }}</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ form.new_person_name.label }}</label>
+        <div><label class="umi-label">{{ form.new_person_name.label }}</label>
           {{ form.new_person_name }} {{ form.new_person_name.errors }}</div>
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ form.new_person_contact.label }}</label>
+        <div><label class="umi-label">{{ form.new_person_contact.label }}</label>
           {{ form.new_person_contact }} {{ form.new_person_contact.errors }}</div>
       </div>
-      <p class="text-xs text-gray-400">Name and contact are encrypted at rest.</p>
+      <p class="text-xs text-parish-ink/45">Name and contact are encrypted at rest.</p>
     </section>
 
-    <section class="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
-      <h2 class="font-semibold text-gray-900">Consent <span class="text-red-600">*</span></h2>
+    <section class="bg-white border border-[var(--umi-border)] rounded-lg p-4 space-y-3">
+      <h2 class="font-semibold text-parish-ink">Consent <span class="text-red-600">*</span></h2>
       {{ form.consent_mode }} {{ form.consent_mode.errors }}
       <div class="pl-1 space-y-3">
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Existing consent</label>
+        <div><label class="umi-label">Existing consent</label>
           {{ form.existing_consent }} {{ form.existing_consent.errors }}</div>
         <div class="flex flex-wrap items-end gap-3">
-          <div><label class="block text-sm font-medium text-gray-700 mb-1">Recorded how</label>
+          <div><label class="umi-label">Recorded how</label>
             {{ form.record_method }} {{ form.record_method.errors }}</div>
-          <label class="flex items-center gap-2 text-sm text-gray-700 pb-2">
+          <label class="flex items-center gap-2 text-sm text-parish-ink/80 pb-2">
             {{ form.include_export }} {{ form.include_export.label }}</label>
         </div>
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Emergency justification (audited)</label>
+        <div><label class="umi-label">Emergency justification (audited)</label>
           {{ form.emergency_justification }} {{ form.emergency_justification.errors }}</div>
       </div>
     </section>
 
-    <section class="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
-      <h2 class="font-semibold text-gray-900">Case details</h2>
+    <section class="bg-white border border-[var(--umi-border)] rounded-lg p-4 space-y-3">
+      <h2 class="font-semibold text-parish-ink">Case details</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Assign to</label>
+        <div><label class="umi-label">Assign to</label>
           {{ form.assigned_to }}</div>
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Sensitivity</label>
+        <div><label class="umi-label">Sensitivity</label>
           {{ form.sensitivity }}</div>
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Intake date</label>
+        <div><label class="umi-label">Intake date</label>
           {{ form.intake_date }}</div>
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Paper file ref</label>
+        <div><label class="umi-label">Paper file ref</label>
           {{ form.physical_ref }}</div>
       </div>
-      <div><span class="block text-sm font-medium text-gray-700 mb-1">Primary needs</span>
+      <div><span class="umi-label">Primary needs</span>
         <div class="flex flex-wrap gap-2 text-sm">{{ form.primary_needs }}</div></div>
-      <div><label class="block text-sm font-medium text-gray-700 mb-1">Summary (encrypted)</label>
+      <div><label class="umi-label">Summary (encrypted)</label>
         {{ form.summary }}</div>
     </section>
 
     <button type="submit"
-            class="w-full sm:w-auto px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800">
+            class="w-full sm:w-auto px-6 py-3 bg-parish-ink text-white rounded-lg font-semibold hover:bg-parish-ink/90">
       Open case</button>
   </form>
 </div>

@@ -1,8 +1,8 @@
-<li id="grant-{{ grant.pk }}" class="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3 text-sm">
+<li id="grant-{{ grant.pk }}" class="bg-white border border-[var(--umi-border)] rounded-lg p-3 flex items-center justify-between gap-3 text-sm">
   <div>
-    <p class="font-medium text-gray-800">{{ grant.member.display_name }}
-      <span class="text-xs text-gray-500">({{ grant.role }})</span></p>
-    <p class="text-xs text-gray-500">{{ grant.reason }}
+    <p class="font-medium text-parish-ink/90">{{ grant.member.display_name }}
+      <span class="text-xs text-parish-ink/55">({{ grant.role }})</span></p>
+    <p class="text-xs text-parish-ink/55">{{ grant.reason }}
       {% if grant.expires_at %} · until {{ grant.expires_at|date:"M j, Y H:i" }}{% endif %}</p>
   </div>
   <form method="post" action="{% url 'casework:grant-revoke' slug=community.slug pk=grant.case_id grant_id=grant.pk %}"

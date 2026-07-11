@@ -2,7 +2,7 @@
 {% block title %}Case {{ case.short_code }} — {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-6 space-y-6">
-  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-gray-600 hover:underline">&larr; Case files</a>
+  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/60 hover:underline">&larr; Case files</a>
 
   {% if consent_frozen %}
   <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
@@ -16,69 +16,69 @@
   </div>
   {% endif %}
 
-  <header class="bg-white border border-gray-200 rounded-lg p-4">
+  <header class="bg-white border border-[var(--umi-border)] rounded-lg p-4">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">{{ case.short_code }} · {{ person_name }}
+        <h1 class="text-xl font-bold text-parish-ink">{{ case.short_code }} · {{ person_name }}
           {% if case.sensitivity == "restricted" %}
           <span class="ml-1 align-middle text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">restricted</span>
           {% endif %}
         </h1>
-        <p class="text-sm text-gray-500 mt-1">
+        <p class="text-sm text-parish-ink/55 mt-1">
           Opened {{ case.intake_date }} by {{ case.opened_by.display_name }}
           · Assigned: {% if case.assigned_to %}{{ case.assigned_to.display_name }}{% else %}—{% endif %}
           {% if case.physical_ref %} · Paper: {{ case.physical_ref }}{% endif %}
         </p>
         {% if case.primary_needs %}
-        <p class="text-sm text-gray-600 mt-1">Needs: {{ case.primary_needs|join:", " }}</p>
+        <p class="text-sm text-parish-ink/60 mt-1">Needs: {{ case.primary_needs|join:", " }}</p>
         {% endif %}
-        {% if case.summary %}<p class="text-sm text-gray-700 mt-2">{{ case.summary }}</p>{% endif %}
+        {% if case.summary %}<p class="text-sm text-parish-ink/80 mt-2">{{ case.summary }}</p>{% endif %}
       </div>
       <div class="flex flex-col items-end gap-2">
         {% include "casework/_case_status.html" %}
         {% if can_export %}
         <a href="{% url 'casework:export' slug=community.slug pk=case.pk %}"
-           class="text-xs text-gray-600 underline">Export (audited)</a>
+           class="text-xs text-parish-ink/60 underline">Export (audited)</a>
         {% endif %}
       </div>
     </div>
 
     {% if can_assign %}
-    <details class="mt-4 border-t border-gray-100 pt-3">
-      <summary class="text-sm font-medium text-gray-700 cursor-pointer">Hand off this case…</summary>
+    <details class="mt-4 border-t border-[var(--umi-border)] pt-3">
+      <summary class="text-sm font-medium text-parish-ink/80 cursor-pointer">Hand off this case…</summary>
       <form method="post" action="{% url 'casework:assign' slug=community.slug pk=case.pk %}" class="mt-3 space-y-2">
         {% csrf_token %}
         <div>{{ assign_form.to_member }}</div>
         <div>{{ assign_form.summary }}</div>
-        <p class="text-xs text-gray-400">The summary becomes the incoming visitor's first screen (encrypted at rest).</p>
-        <button class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold">Hand off</button>
+        <p class="text-xs text-parish-ink/45">The summary becomes the incoming visitor's first screen (encrypted at rest).</p>
+        <button class="px-4 py-2 bg-parish-ink text-white rounded-lg text-sm font-semibold">Hand off</button>
       </form>
     </details>
     {% endif %}
   </header>
 
   <section>
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Notes</h2>
+    <h2 class="text-sm font-semibold text-parish-ink/55 uppercase tracking-wide mb-2">Notes</h2>
     {% if can_contribute and not consent_frozen %}
     <form method="post" action="{% url 'casework:note-create' slug=community.slug pk=case.pk %}"
           hx-post="{% url 'casework:note-create' slug=community.slug pk=case.pk %}"
           hx-target="#notes-list" hx-swap="afterbegin"
-          class="bg-white border border-gray-200 rounded-lg p-4 mb-3 space-y-3">
+          class="bg-white border border-[var(--umi-border)] rounded-lg p-4 mb-3 space-y-3">
       {% csrf_token %}
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Kind</label>{{ note_form.kind }}</div>
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">When</label>{{ note_form.occurred_at }}</div>
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Minutes</label>{{ note_form.duration_minutes }}</div>
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Where</label>{{ note_form.location_kind }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Kind</label>{{ note_form.kind }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">When</label>{{ note_form.occurred_at }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Minutes</label>{{ note_form.duration_minutes }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Where</label>{{ note_form.location_kind }}</div>
       </div>
-      <div><span class="block text-xs font-medium text-gray-500 mb-1">Quick actions</span>
+      <div><span class="block text-xs font-medium text-parish-ink/55 mb-1">Quick actions</span>
         <div class="flex flex-wrap gap-2 text-sm">{{ note_form.actions }}</div></div>
       <div class="grid grid-cols-2 gap-3 text-sm">
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Aid value ($)</label>{{ note_form.aid_amount }}</div>
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Co-visitor</label>{{ note_form.co_visitor }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Aid value ($)</label>{{ note_form.aid_amount }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Co-visitor</label>{{ note_form.co_visitor }}</div>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">Notes (encrypted)</label>
+        <label class="block text-xs font-medium text-parish-ink/55 mb-1">Notes (encrypted)</label>
         <div hx-post="{% url 'casework:validate' slug=community.slug %}"
              hx-trigger="blur from:find textarea" hx-include="find textarea"
              hx-vals='{"form": "note", "field": "body"}' hx-target="#err-body">
@@ -87,32 +87,32 @@
         <span id="err-body"></span>
       </div>
       <div class="flex gap-2">
-        <button type="submit" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Save draft</button>
+        <button type="submit" class="px-4 py-2 border border-parish-border rounded-lg text-sm font-medium text-parish-ink/80 hover:bg-parish-soft">Save draft</button>
         <button type="submit" name="finalize" value="1"
-                class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800">Save &amp; finalize</button>
+                class="px-4 py-2 bg-parish-ink text-white rounded-lg text-sm font-semibold hover:bg-parish-ink/90">Save &amp; finalize</button>
       </div>
     </form>
     {% endif %}
     <div id="notes-list" class="space-y-3">
       {% for note in notes %}{% include "casework/_note.html" %}{% empty %}
-      <p class="text-sm text-gray-500">No notes yet.</p>{% endfor %}
+      <p class="text-sm text-parish-ink/55">No notes yet.</p>{% endfor %}
     </div>
   </section>
 
   <section>
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Open follow-ups</h2>
+    <h2 class="text-sm font-semibold text-parish-ink/55 uppercase tracking-wide mb-2">Open follow-ups</h2>
     <ul id="followups-list" class="space-y-2 mb-3">
       {% for fu in followups %}{% include "casework/_followup_row.html" %}{% empty %}
-      <li class="text-sm text-gray-500">None open.</li>{% endfor %}
+      <li class="text-sm text-parish-ink/55">None open.</li>{% endfor %}
     </ul>
     {% if can_contribute %}
     <form method="post" action="{% url 'casework:followup-create' slug=community.slug pk=case.pk %}"
           hx-post="{% url 'casework:followup-create' slug=community.slug pk=case.pk %}"
           hx-target="#followups-list" hx-swap="beforeend"
-          class="bg-white border border-gray-200 rounded-lg p-4 space-y-2 text-sm">
+          class="bg-white border border-[var(--umi-border)] rounded-lg p-4 space-y-2 text-sm">
       {% csrf_token %}
       <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">Title (no names)</label>
+        <label class="block text-xs font-medium text-parish-ink/55 mb-1">Title (no names)</label>
         <div hx-post="{% url 'casework:validate' slug=community.slug %}"
              hx-trigger="blur from:find input" hx-include="find input"
              hx-vals='{"form": "followup", "field": "title"}' hx-target="#err-fu-title">
@@ -121,40 +121,40 @@
         <span id="err-fu-title"></span>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Due</label>{{ followup_form.due_date }}</div>
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Assign to</label>{{ followup_form.assigned_to }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Due</label>{{ followup_form.due_date }}</div>
+        <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Assign to</label>{{ followup_form.assigned_to }}</div>
       </div>
-      <div><label class="block text-xs font-medium text-gray-500 mb-1">Detail (encrypted, optional)</label>{{ followup_form.detail }}</div>
-      <button class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold">Add follow-up</button>
+      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Detail (encrypted, optional)</label>{{ followup_form.detail }}</div>
+      <button class="px-4 py-2 bg-parish-ink text-white rounded-lg text-sm font-semibold">Add follow-up</button>
     </form>
     {% endif %}
   </section>
 
   {% if can_grant %}
   <section>
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Access grants</h2>
+    <h2 class="text-sm font-semibold text-parish-ink/55 uppercase tracking-wide mb-2">Access grants</h2>
     <ul id="grants-list" class="space-y-2 mb-3">
       {% for grant in grants %}{% include "casework/_grant_row.html" %}{% empty %}
-      <li class="text-sm text-gray-500">No extra access granted.</li>{% endfor %}
+      <li class="text-sm text-parish-ink/55">No extra access granted.</li>{% endfor %}
     </ul>
     <form method="post" action="{% url 'casework:grant-create' slug=community.slug pk=case.pk %}"
           hx-post="{% url 'casework:grant-create' slug=community.slug pk=case.pk %}"
           hx-target="#grants-list" hx-swap="beforeend"
-          class="bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm items-end">
+          class="bg-white border border-[var(--umi-border)] rounded-lg p-4 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm items-end">
       {% csrf_token %}
-      <div><label class="block text-xs font-medium text-gray-500 mb-1">Member</label>{{ grant_form.member }}</div>
-      <div><label class="block text-xs font-medium text-gray-500 mb-1">Role</label>{{ grant_form.role }}</div>
-      <div><label class="block text-xs font-medium text-gray-500 mb-1">Reason (audited)</label>{{ grant_form.reason }}</div>
-      <div><label class="block text-xs font-medium text-gray-500 mb-1">Expires</label>{{ grant_form.expires_at }}</div>
-      <button class="px-4 py-2 bg-gray-900 text-white rounded-lg font-semibold sm:col-span-4 sm:w-auto sm:justify-self-start">Grant access</button>
+      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Member</label>{{ grant_form.member }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Role</label>{{ grant_form.role }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Reason (audited)</label>{{ grant_form.reason }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Expires</label>{{ grant_form.expires_at }}</div>
+      <button class="px-4 py-2 bg-parish-ink text-white rounded-lg font-semibold sm:col-span-4 sm:w-auto sm:justify-self-start">Grant access</button>
     </form>
   </section>
   {% endif %}
 
   {% if handoffs %}
   <section>
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Handoffs</h2>
-    <ul class="space-y-1 text-sm text-gray-600">
+    <h2 class="text-sm font-semibold text-parish-ink/55 uppercase tracking-wide mb-2">Handoffs</h2>
+    <ul class="space-y-1 text-sm text-parish-ink/60">
       {% for ho in handoffs %}
       <li>{{ ho.created_at|date:"M j, Y" }} — {{ ho.from_member.display_name }} → {{ ho.to_member.display_name }}
         <span class="text-xs {% if ho.status == 'pending' %}text-amber-700{% else %}text-green-700{% endif %}">({{ ho.status }})</span></li>

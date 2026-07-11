@@ -5,10 +5,10 @@
     <span class="w-2 h-2 rounded-full bg-umi-primary" aria-hidden="true"></span>
     Verified by their community{% if result.tier %} ({{ result.tier|slice:":20" }}){% endif %}
   {% elif result.status == "self_claimed" %}
-    <span class="w-2 h-2 rounded-full bg-gray-400" aria-hidden="true"></span>
+    <span class="w-2 h-2 rounded-full bg-parish-ink/30" aria-hidden="true"></span>
     Self-reported only &mdash; not verified
   {% elif result.status == "none" %}
-    <span class="w-2 h-2 rounded-full bg-gray-400" aria-hidden="true"></span>
+    <span class="w-2 h-2 rounded-full bg-parish-ink/30" aria-hidden="true"></span>
     No verified &ldquo;{{ tag }}&rdquo; claim
   {% elif result.status == "unsupported" %}
     Their community doesn't offer attestations

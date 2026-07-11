@@ -3,10 +3,10 @@
   {% for row in rows %}
   <li>
     <a href="{% url 'casework:detail' slug=community.slug pk=row.case.pk %}"
-       class="block bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm">
+       class="block bg-white border border-[var(--umi-border)] rounded-lg p-4 hover:shadow-sm">
       <div class="flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <p class="font-semibold text-gray-900 truncate">
+          <p class="font-semibold text-parish-ink truncate">
             {{ row.case.short_code }} · {{ row.name }}
             {% if row.case.sensitivity == "restricted" %}
               <span class="ml-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">restricted</span>
@@ -15,7 +15,7 @@
               <span class="ml-1 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">emergency — consent pending</span>
             {% endif %}
           </p>
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-parish-ink/55">
             {{ row.case.get_status_display }} ·
             {% if row.case.assigned_to %}{{ row.case.assigned_to.display_name }}{% else %}unassigned{% endif %}
             · intake {{ row.case.intake_date }}
@@ -24,13 +24,13 @@
         <span class="text-xs px-2 py-1 rounded-full
           {% if row.case.status == 'open' %}bg-blue-50 text-blue-700
           {% elif row.case.status == 'monitoring' %}bg-yellow-50 text-yellow-800
-          {% else %}bg-gray-100 text-gray-600{% endif %}">{{ row.case.status }}</span>
+          {% else %}bg-parish-soft text-parish-ink/70{% endif %}">{{ row.case.status }}</span>
       </div>
     </a>
   </li>
   {% endfor %}
 </ul>
 {% else %}
-<p class="text-sm text-gray-500 bg-white border border-gray-200 rounded-lg p-6 text-center">
+<p class="text-sm text-parish-ink/55 bg-white border border-[var(--umi-border)] rounded-lg p-6 text-center">
   No case files match. Open one to get started.</p>
 {% endif %}
