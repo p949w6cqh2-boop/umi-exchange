@@ -209,3 +209,23 @@ class TestBadgeTerminalStates:
 
     def test_removed_badge_renders_nothing(self):
         assert self._render("removed").strip() == ""
+
+
+class TestKeepAndExplainCopy:
+    """Jasiah's 2026-07-11 decision: tags and household stay — and the UI
+    says plainly what each is for."""
+
+    def test_my_tags_page_explains_tags(self, community, viewer):
+        resp = login(viewer).get(reverse("tags:my-tags", kwargs={"slug": community.slug}))
+        assert resp.status_code == 200
+        assert b"coordinator confirmed" in resp.content
+        assert b"only verified" in resp.content.lower()
+
+    def test_household_pages_explain_households(self, community, viewer):
+        client = login(viewer)
+        create = client.get(reverse("household-create"))
+        assert create.status_code == 200
+        assert b"families, not individuals" in create.content
+        join = client.get(reverse("household-join"))
+        assert join.status_code == 200
+        assert b"one household" in join.content
