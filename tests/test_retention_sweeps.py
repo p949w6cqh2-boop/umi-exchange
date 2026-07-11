@@ -6,6 +6,7 @@ stay clean."""
 import datetime
 
 import pytest
+from cryptography.fernet import Fernet
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
@@ -14,6 +15,13 @@ from apps.needs.tasks import NEED_PII_RETENTION_DAYS, shred_aged_need_pii
 from tests.conftest import CategoryFactory, CommunityFactory, MemberFactory, NeedFactory
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture(autouse=True)
+def _encryption_key(settings):
+    # Envelope writes need a KEK; CI runs with ENCRYPTION_KEY="" and a fresh
+    # dev checkout has none — same hermetic fixture as apps/casework/tests.
+    settings.ENCRYPTION_KEY = Fernet.generate_key().decode()
 
 
 def _make_need(status="fulfilled", age_days=NEED_PII_RETENTION_DAYS + 1):
