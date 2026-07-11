@@ -29,8 +29,8 @@
       {% csrf_token %}
       <input type="hidden" name="action" value="initiate">
       <label class="block flex-1">
-        <span class="block text-sm font-medium text-gray-700 mb-1">Peer instance URL</span>
-        <input type="url" name="base_url" required placeholder="https://peer.example" class="w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-blue-500">
+        <span class="umi-label">Peer instance URL</span>
+        <input type="url" name="base_url" required placeholder="https://peer.example" class="w-full border border-parish-border rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-[var(--umi-primary)]">
       </label>
       <button type="submit" class="inline-flex items-center justify-center btn-primary transition-colors">Fetch &amp; request</button>
     </form>
@@ -51,8 +51,8 @@
           <input type="hidden" name="action" value="approve">
           <input type="hidden" name="peer_id" value="{{ p.pk }}">
           <label class="block">
-            <span class="block text-sm font-medium text-gray-700 mb-1">Pairing code (from their admin)</span>
-            <input type="text" name="code" required maxlength="32" class="border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-blue-500" autocomplete="off">
+            <span class="umi-label">Pairing code (from their admin)</span>
+            <input type="text" name="code" required maxlength="32" class="border border-parish-border rounded-lg px-3 py-3 text-base min-h-[44px] focus:ring-2 focus:ring-[var(--umi-primary)]" autocomplete="off">
           </label>
           <button type="submit" class="inline-flex items-center justify-center btn-primary transition-colors">Verify &amp; approve</button>
         </form>

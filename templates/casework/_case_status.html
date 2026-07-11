@@ -2,36 +2,36 @@
   <span class="text-xs px-2 py-1 rounded-full
     {% if case.status == 'open' %}bg-blue-50 text-blue-700
     {% elif case.status == 'monitoring' %}bg-yellow-50 text-yellow-800
-    {% else %}bg-gray-100 text-gray-600{% endif %}">{{ case.get_status_display }}</span>
+    {% else %}bg-parish-soft text-parish-ink/70{% endif %}">{{ case.get_status_display }}</span>
   <div class="flex gap-1">
     {% if case.status == "open" %}
       <form method="post" action="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-post="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-target="#case-status" hx-swap="outerHTML">
         {% csrf_token %}<input type="hidden" name="status" value="monitoring">
-        <button class="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50">Monitor</button></form>
+        <button class="text-xs px-2 py-1 border border-parish-border rounded hover:bg-parish-soft">Monitor</button></form>
       <form method="post" action="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-post="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-target="#case-status" hx-swap="outerHTML">
         {% csrf_token %}<input type="hidden" name="status" value="closed">
-        <button class="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50">Close</button></form>
+        <button class="text-xs px-2 py-1 border border-parish-border rounded hover:bg-parish-soft">Close</button></form>
     {% elif case.status == "monitoring" %}
       <form method="post" action="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-post="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-target="#case-status" hx-swap="outerHTML">
         {% csrf_token %}<input type="hidden" name="status" value="open">
-        <button class="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50">Reactivate</button></form>
+        <button class="text-xs px-2 py-1 border border-parish-border rounded hover:bg-parish-soft">Reactivate</button></form>
       <form method="post" action="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-post="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-target="#case-status" hx-swap="outerHTML">
         {% csrf_token %}<input type="hidden" name="status" value="closed">
-        <button class="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50">Close</button></form>
+        <button class="text-xs px-2 py-1 border border-parish-border rounded hover:bg-parish-soft">Close</button></form>
     {% elif case.status == "closed" and is_admin %}
       <form method="post" action="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-post="{% url 'casework:status' slug=community.slug pk=case.pk %}"
             hx-target="#case-status" hx-swap="outerHTML">
         {% csrf_token %}<input type="hidden" name="status" value="open">
-        <button class="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50">Reopen (admin)</button></form>
+        <button class="text-xs px-2 py-1 border border-parish-border rounded hover:bg-parish-soft">Reopen (admin)</button></form>
     {% endif %}
   </div>
 </div>

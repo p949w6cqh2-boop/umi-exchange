@@ -39,7 +39,7 @@
             {% if row.status == 'proposed' %}bg-parish-gold
             {% elif row.status == 'accepted' %}bg-umi-primary
             {% elif row.status == 'fulfilled' %}bg-emerald-600
-            {% else %}bg-gray-400{% endif %}" aria-hidden="true"></span>
+            {% else %}bg-parish-ink/30{% endif %}" aria-hidden="true"></span>
           {{ row.status_copy }}
         </span>
       </div>
@@ -88,7 +88,7 @@
   <h2 id="oversight-heading" class="text-xl font-serif font-semibold text-parish-ink mb-1">All federated activity</h2>
   <p class="text-sm text-parish-ink/55 mb-4">Coordinator view — every cross-community match on this community's links.</p>
   {% if oversight_rows %}
-  <ul class="umi-card divide-y divide-gray-200 p-0">
+  <ul class="umi-card divide-y divide-[var(--umi-border)] p-0">
     {% for row in oversight_rows %}
     <li class="flex flex-wrap items-center justify-between gap-3 p-4">
       <div class="min-w-0">
@@ -110,7 +110,7 @@
         <form class="flex items-center gap-2 mt-2"
               hx-get="{% url 'federation_admin:attest' community.slug row.fm.pk %}"
               hx-target="#attest-{{ row.fm.pk }}" hx-swap="innerHTML">
-          <select name="tag" class="border border-gray-300 rounded-lg px-2 py-1 text-xs min-h-[36px] bg-parish-card"
+          <select name="tag" class="border border-parish-border rounded-lg px-2 py-1 text-xs min-h-[36px] bg-parish-card"
                   aria-label="Tag to verify with their community">
             {% for tag in verifiable_tags %}<option value="{{ tag.slug }}">{{ tag.label }}</option>{% endfor %}
           </select>

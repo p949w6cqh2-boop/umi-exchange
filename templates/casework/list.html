@@ -3,41 +3,41 @@
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between gap-4 mb-4">
-    <h1 class="text-2xl font-bold text-gray-900">Case files</h1>
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Case files</h1>
     <div class="flex gap-2">
       <a href="{% url 'casework:visit' slug=community.slug %}"
-         class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Record a visit</a>
+         class="px-4 py-2 border border-parish-border rounded-lg text-sm font-medium text-parish-ink/80 hover:bg-parish-soft">Record a visit</a>
       <a href="{% url 'casework:create' slug=community.slug %}"
-         class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800">Open a case</a>
+         class="px-4 py-2 bg-parish-ink text-white rounded-lg text-sm font-semibold hover:bg-parish-ink/90">Open a case</a>
     </div>
   </div>
 
   <form method="get" class="flex flex-wrap items-center gap-2 mb-4"
         hx-get="{% url 'casework:list' slug=community.slug %}"
         hx-target="#case-rows" hx-trigger="change, submit" hx-push-url="true">
-    <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <select name="status" class="border border-parish-border rounded-lg px-3 py-2 text-sm">
       <option value="">All statuses</option>
       <option value="open" {% if status_filter == "open" %}selected{% endif %}>Open</option>
       <option value="monitoring" {% if status_filter == "monitoring" %}selected{% endif %}>Monitoring</option>
       <option value="closed" {% if status_filter == "closed" %}selected{% endif %}>Closed</option>
     </select>
-    <label class="flex items-center gap-2 text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2">
+    <label class="flex items-center gap-2 text-sm text-parish-ink/80 border border-parish-border rounded-lg px-3 py-2">
       <input type="checkbox" name="mine" value="1" {% if mine %}checked{% endif %}> Mine
     </label>
     <input type="search" name="q" value="{{ q }}" placeholder="Code or paper ref…"
-           class="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-40">
-    <button type="submit" class="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Filter</button>
+           class="border border-parish-border rounded-lg px-3 py-2 text-sm flex-1 min-w-40">
+    <button type="submit" class="px-3 py-2 text-sm font-medium text-parish-ink/80 border border-parish-border rounded-lg hover:bg-parish-soft">Filter</button>
   </form>
-  <p class="text-xs text-gray-400 mb-3">Names are encrypted at rest — search works on case codes and paper references.</p>
+  <p class="text-xs text-parish-ink/45 mb-3">Names are encrypted at rest — search works on case codes and paper references.</p>
 
   <div id="case-rows">{% include "casework/_case_rows.html" %}</div>
 
   <div class="mt-6">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">My open follow-ups</h2>
+    <h2 class="text-sm font-semibold text-parish-ink/55 uppercase tracking-wide mb-2">My open follow-ups</h2>
     <div hx-get="{% url 'casework:followups-mine' slug=community.slug %}"
          hx-trigger="load" hx-swap="innerHTML">
       <a href="{% url 'casework:followups-mine' slug=community.slug %}"
-         class="text-sm text-gray-600 underline">View my follow-up queue</a>
+         class="text-sm text-parish-ink/60 underline">View my follow-up queue</a>
     </div>
   </div>
 </div>
