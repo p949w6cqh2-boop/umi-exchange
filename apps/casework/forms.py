@@ -49,7 +49,10 @@ class CaseCreateForm(forms.Form):
     sensitivity = forms.ChoiceField(
         choices=[("standard", "Standard"), ("restricted", "Restricted (admins + named people only)")],
         initial="restricted",
-        help_text="Restricted is the safe default. Choose Standard only when the case carries no domestic-violence or other safety risk — every coordinator can read a standard case.",
+        help_text=(
+            "Restricted is the safe default. Choose Standard only when the case carries no "
+            "domestic-violence or other safety risk — every coordinator can read a standard case."
+        ),
     )
     primary_needs = forms.MultipleChoiceField(
         choices=PRIMARY_NEEDS, required=False, widget=forms.CheckboxSelectMultiple
