@@ -6,7 +6,11 @@ services:
     env_file: ../.env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
-      - DATABASE_URL=postgres://umi:${DB_PASSWORD}@db:5432/umi_exchange
+      # Runtime role: defaults keep the single-role setup working, but the
+      # append-only audit gate (threat-model must-fix #1) needs the app on a
+      # non-owner role — see deployment-checklist.md "Database roles".
+      - DATABASE_URL=postgres://${APP_DB_USER:-umi}:${APP_DB_PASSWORD:-${DB_PASSWORD}}@db:5432/umi_exchange
+      - AUDIT_DB_APP_ROLE=${APP_DB_USER:-umi}
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
