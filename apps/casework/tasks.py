@@ -87,6 +87,14 @@ def register_schedule():
     from django_q.models import Schedule
 
     Schedule.objects.update_or_create(
+        name="casework-shred-aged-cases",
+        defaults={
+            "func": "apps.casework.tasks.shred_aged_cases",
+            "schedule_type": Schedule.DAILY,
+            "repeats": -1,
+        },
+    )
+    Schedule.objects.update_or_create(
         name="casework-followup-digest",
         defaults={
             "func": "apps.casework.tasks.followup_overdue_digest",
@@ -102,3 +110,56 @@ def register_schedule():
             "repeats": -1,
         },
     )
+
+
+# Retention policy (Jasiah's yes, 2026-07-11): closed cases keep their
+# encrypted narrative for seven years, then it is crypto-shredded.
+CASE_RETENTION_DAYS = 7 * 365
+
+
+def shred_aged_cases():
+    """Crypto-shred the narrative of cases closed more than seven years ago.
+
+    Nulls BOTH envelope columns (ciphertext + DEK) on the case summary, the
+    emergency justification, and every note/follow-up/handoff body, so reads
+    return None and `casework_envelope_status` stays clean. Bulk `.update()`
+    is deliberate: finalized notes block `save()` edits by design, and this
+    is a policy action, not an edit — one audit row per case (PII-free
+    counts), not per note. Idempotent: a fully shredded case no longer
+    matches the content filter.
+    """
+    from datetime import timedelta
+
+    from django.db.models import Q
+
+    from .models import CaseFile
+
+    cutoff = timezone.now() - timedelta(days=CASE_RETENTION_DAYS)
+    aged = (
+        CaseFile.objects.filter(status=CaseFile.STATUS_CLOSED, closed_at__lt=cutoff)
+        .filter(
+            Q(summary_enc__isnull=False)
+            | Q(emergency_justification_enc__isnull=False)
+            | Q(notes__body_enc__isnull=False)
+            | Q(followups__detail_enc__isnull=False)
+            | Q(handoffs__summary_enc__isnull=False)
+        )
+        .distinct()
+    )
+    count = 0
+    for case in aged:
+        details = {
+            "policy": "retention_7y",
+            "notes": case.notes.filter(body_enc__isnull=False).update(body_enc=None, body_enc_dek=None),
+            "followups": case.followups.filter(detail_enc__isnull=False).update(detail_enc=None, detail_enc_dek=None),
+            "handoffs": case.handoffs.filter(summary_enc__isnull=False).update(summary_enc=None, summary_enc_dek=None),
+        }
+        CaseFile.objects.filter(pk=case.pk).update(
+            summary_enc=None,
+            summary_enc_dek=None,
+            emergency_justification_enc=None,
+            emergency_justification_enc_dek=None,
+        )
+        emit("case.retention_shredded", case, details=details)
+        count += 1
+    return f"Retention-shredded {count} aged closed cases"

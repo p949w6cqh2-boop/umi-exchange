@@ -61,6 +61,14 @@ def register_schedule():
     from django_q.models import Schedule
 
     Schedule.objects.update_or_create(
+        name="needs-shred-aged-pii",
+        defaults={
+            "func": "apps.needs.tasks.shred_aged_need_pii",
+            "schedule_type": Schedule.DAILY,
+            "repeats": -1,
+        },
+    )
+    Schedule.objects.update_or_create(
         name="needs-expire-stale",
         defaults={
             "func": "apps.needs.tasks.expire_stale_needs",
@@ -68,3 +76,33 @@ def register_schedule():
             "repeats": -1,
         },
     )
+
+
+# Retention policy (Jasiah's yes, 2026-07-11): terminal needs keep their
+# encrypted on-behalf-of name for one year, then it is crypto-shredded.
+NEED_PII_RETENTION_DAYS = 365
+
+
+def shred_aged_need_pii():
+    """Null BOTH envelope columns on aged terminal needs.
+
+    Nulling ciphertext and DEK together (not DEK alone) keeps reads returning
+    None instead of the fail-loud ciphertext-without-DEK state, and keeps
+    `migrate_on_behalf_envelope --verify`'s unreadable count at zero.
+    Idempotent: a shredded row no longer matches the dek filter. Each row is
+    audited (§8.3) with PII-free details.
+    """
+    from datetime import timedelta
+
+    cutoff = timezone.now() - timedelta(days=NEED_PII_RETENTION_DAYS)
+    aged = Need.objects.filter(
+        status__in=("fulfilled", "closed", "expired"),
+        updated_at__lt=cutoff,
+        on_behalf_of_dek__isnull=False,
+    )
+    count = 0
+    for need in aged:
+        Need.objects.filter(pk=need.pk).update(on_behalf_of=None, on_behalf_of_dek=None)
+        emit("need.pii_shredded", need, details={"policy": f"retention_{NEED_PII_RETENTION_DAYS}d"})
+        count += 1
+    return f"Shredded on-behalf-of PII for {count} aged needs"

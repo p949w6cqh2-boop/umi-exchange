@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Privacy &amp; retention — UMI Exchange{% endblock %}
+{% block content %}
+
+{% comment %}Privacy & retention — the policy Jasiah set 2026-07-11, in plain
+   language. Every promise here is enforced by code (crypto-shred sweeps,
+   backup aging) — if a promise can't be enforced, it doesn't belong on this
+   page. Public, logged-out visible.{% endcomment %}
+<article class="max-w-4xl mx-auto">
+
+  <div class="pt-6">{% include "components/_mission_nav.html" with active="privacy" %}</div>
+
+  <header class="pt-6 md:pt-10 umi-rise">
+    <span class="umi-eyebrow">Privacy &amp; retention</span>
+    <h1 class="umi-masthead mt-6">Your story is not<br>our property.</h1>
+    <p class="umi-display !text-2xl md:!text-3xl text-parish-ink/75 mt-4">
+      What we keep, for how long, and how it disappears.
+    </p>
+  </header>
+
+  <div class="mt-14 space-y-6 text-lg leading-relaxed text-parish-ink/85 umi-measure" data-rise>
+    <p>
+      UMI exists so neighbours can help neighbours &mdash; not so anyone can build a
+      file on the poor. The board runs on <strong>consent, not surveillance</strong>:
+      you choose what to share, and what you share has an expiry date.
+    </p>
+    <p>
+      Sensitive personal details are stored <strong>encrypted, one key per
+      record</strong>. When a record's time is up, we destroy its key &mdash; a
+      practice called <strong>crypto-shred</strong>. A record without its key is
+      permanent gibberish, to us and to anyone else, forever. Deletion here is
+      not a promise to look away; it is a lock with no key left in the world.
+    </p>
+  </div>
+
+  <section class="mt-12 umi-card p-6 md:p-8" data-rise aria-label="Retention schedule">
+    <h2 class="font-serif text-2xl text-parish-ink mb-6">The schedule</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-base text-parish-ink/85">
+        <thead>
+          <tr class="text-left text-sm text-parish-ink/55 border-b border-[var(--umi-border)]">
+            <th class="py-2 pr-4 font-medium">What</th>
+            <th class="py-2 pr-4 font-medium">Kept</th>
+            <th class="py-2 font-medium">Then</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[var(--umi-border)]">
+          <tr>
+            <td class="py-3 pr-4">"On behalf of" names on fulfilled or expired requests</td>
+            <td class="py-3 pr-4">12 months</td>
+            <td class="py-3">crypto-shredded automatically</td>
+          </tr>
+          <tr>
+            <td class="py-3 pr-4">Casework notes (closed cases)</td>
+            <td class="py-3 pr-4">seven years</td>
+            <td class="py-3">crypto-shredded automatically; a revoked consent freezes the case immediately</td>
+          </tr>
+          <tr>
+            <td class="py-3 pr-4">Contact details exchanged across communities</td>
+            <td class="py-3 pr-4">until fulfilled + 72 hours</td>
+            <td class="py-3">crypto-shredded automatically, on both sides</td>
+          </tr>
+          <tr>
+            <td class="py-3 pr-4">Backups</td>
+            <td class="py-3 pr-4">30 days</td>
+            <td class="py-3">aged out &mdash; after that, a shred is absolute even against restores</td>
+          </tr>
+          <tr>
+            <td class="py-3 pr-4">The audit trail (who did what, never the content)</td>
+            <td class="py-3 pr-4">kept</td>
+            <td class="py-3">contains no personal details by design; IP addresses are stored only as salted hashes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="mt-12 space-y-6 text-lg leading-relaxed text-parish-ink/85 umi-measure" data-rise>
+    <h2 class="font-serif text-2xl text-parish-ink">If you ask us to erase you</h2>
+    <p>
+      Ask your coordinator, or write to us. Within <strong>30 days</strong> your
+      encrypted records are crypto-shredded and your account is deactivated.
+      Once the last backup ages out, nothing anywhere can bring the content back.
+    </p>
+    <h2 class="font-serif text-2xl text-parish-ink">What we never do</h2>
+    <p>
+      We do not sell data. We do not advertise. We do not profile. Contact
+      details are revealed only to the person you agreed to be connected with,
+      only after you both said yes &mdash; and every disclosure is recorded in the
+      audit trail. The poor are not a market.
+    </p>
+  </div>
+
+</article>
+{% endblock %}
