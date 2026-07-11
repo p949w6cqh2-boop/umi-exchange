@@ -50,8 +50,14 @@ def recent_notifications(user):
 
 
 def own_tags(member):
-    """The member's own tags at ALL statuses (their verification state)."""
-    return list(MemberTag.objects.filter(member=member).select_related("tag").order_by("tag__sort_order", "tag__label"))
+    """The member's own live tags — terminal removed/revoked stay hidden,
+    matching the my-tags page queryset (apps/tags/views.py)."""
+    return list(
+        MemberTag.objects.filter(member=member)
+        .exclude(status__in=("removed", "revoked"))
+        .select_related("tag")
+        .order_by("tag__sort_order", "tag__label")
+    )
 
 
 # ── Hub v2 · "The Pulse" ─────────────────────────────

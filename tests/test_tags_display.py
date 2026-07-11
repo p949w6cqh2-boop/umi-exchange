@@ -183,3 +183,29 @@ class TestDetailBadges:
         resp = login(viewer).get(reverse("offer-detail", kwargs={"slug": community.slug, "pk": offer.id}))
         assert resp.status_code == 200
         assert b"SVdP Member" in resp.content
+
+
+class TestBadgeTerminalStates:
+    """Revoked/removed tags must never wear another state's badge.
+
+    The hub renders a member's own tags through tags/_badge.html; before the
+    explicit branches below, a revoked tag fell into the {% else %} arm and
+    was styled as an innocuous "Self-reported" pill.
+    """
+
+    def _render(self, status):
+        from types import SimpleNamespace
+
+        from django.template.loader import render_to_string
+
+        return render_to_string("tags/_badge.html", {"mt": SimpleNamespace(status=status)})
+
+    def test_revoked_badge_is_distinct(self):
+        html = self._render("revoked")
+        assert "Revoked" in html
+        assert "Self-reported" not in html
+        assert "emerald" not in html  # never styled like verified
+        assert "Verified by" not in html
+
+    def test_removed_badge_renders_nothing(self):
+        assert self._render("removed").strip() == ""
