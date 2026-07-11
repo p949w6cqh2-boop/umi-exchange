@@ -101,7 +101,7 @@ def test_recent_notifications_only_recipient_capped():
     assert all(n.recipient_id == user.id for n in result)
 
 
-def test_own_tags_only_this_member_all_statuses():
+def test_own_tags_hides_terminal_states():
     from apps.tags.models import MemberTag, Tag
 
     community = CommunityFactory()
@@ -110,13 +110,20 @@ def test_own_tags_only_this_member_all_statuses():
     # sort_order pins the expected ordering: Cook (0) before Driver (1)
     tag_driver = Tag.objects.create(community=community, slug="driver", label="Driver", sort_order=1)
     tag_cook = Tag.objects.create(community=community, slug="cook", label="Cook", sort_order=0)
+    tag_aid = Tag.objects.create(community=community, slug="first-aid", label="First aid", sort_order=2)
+    tag_greeter = Tag.objects.create(community=community, slug="greeter", label="Greeter", sort_order=3)
     mine_claimed = MemberTag.objects.create(member=me, tag=tag_driver, status="self_claimed")
     mine_verified = MemberTag.objects.create(member=me, tag=tag_cook, status="verified")
+    mine_revoked = MemberTag.objects.create(member=me, tag=tag_aid, status="revoked")
+    mine_removed = MemberTag.objects.create(member=me, tag=tag_greeter, status="removed")
     theirs = MemberTag.objects.create(member=other, tag=tag_driver, status="verified")
     result = selectors.own_tags(me)
-    # all of the member's OWN tags surface regardless of status; others' excluded
+    # live statuses surface; terminal removed/revoked stay hidden — parity
+    # with the my-tags page queryset (apps/tags/views.py)
     assert mine_claimed in result
-    assert mine_verified in result  # non-default status still surfaces
+    assert mine_verified in result
+    assert mine_revoked not in result
+    assert mine_removed not in result
     assert theirs not in result
     # ordered by tag.sort_order then label
     assert [mt.pk for mt in result] == [mine_verified.pk, mine_claimed.pk]
