@@ -26,6 +26,11 @@ ENCRYPTION_KEY = env("ENCRYPTION_KEY", default="")
 ENCRYPTION_KEYS = env.list("ENCRYPTION_KEYS", default=[])
 UMI_CONFORMANCE_LEVEL = env("UMI_CONFORMANCE_LEVEL", default="core")
 DEBUG = env.bool("DEBUG", default=False)
+# Runtime app DB role the append-only REVOKE targets (audit migration 0002 +
+# restrict_audit_permissions). Set when migrations run as a separate owner
+# role — revoking from the owner itself is a no-op it can undo. Empty = fall
+# back to the connection's USER (single-role setups keep today's behavior).
+AUDIT_DB_APP_ROLE = env("AUDIT_DB_APP_ROLE", default="")
 
 # ── Federation (Stage A — docs/federation-design.md; default OFF at every level) ──
 FEDERATION_ENABLED = env.bool("FEDERATION_ENABLED", default=False)

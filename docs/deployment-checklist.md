@@ -11,6 +11,8 @@
   - [ ] `ENCRYPTION_KEY`: Generate with `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
   - [ ] `DATABASE_URL`: PostgreSQL connection string
   - [ ] `DB_PASSWORD`: Strong password (not `umi`)
+  - [ ] `APP_DB_USER` / `APP_DB_PASSWORD`: the runtime role (`umi_app`) — created in the
+        "Database roles" step below; keeps the append-only audit REVOKE binding
   - [ ] `ALLOWED_HOSTS`: Your domain
   - [ ] `SITE_URL`: `https://yourdomain.org`
   - [ ] `SENTRY_DSN`: From sentry.io project settings (optional)
@@ -33,8 +35,31 @@ cp .env.example .env
 # Start services
 docker compose -f docker/docker-compose.prod.yml up -d
 
-# Run migrations
-docker compose -f docker/docker-compose.prod.yml exec app python manage.py migrate
+# ── Database roles (threat-model must-fix #1 — BEFORE migrating) ──────────
+# The append-only audit log is enforced by REVOKE, and a REVOKE only binds a
+# role that does NOT own the table: owners can re-grant themselves, and
+# superusers ignore ACLs entirely. So `umi` (the compose POSTGRES_USER) stays
+# the OWNER and runs migrations, while the app connects as `umi_app`, a plain
+# non-owner role.
+docker compose -f docker/docker-compose.prod.yml exec db psql -U umi -d umi_exchange -c "
+  CREATE ROLE umi_app LOGIN PASSWORD '<strong password>' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+  GRANT USAGE ON SCHEMA public TO umi_app;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO umi_app;
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO umi_app;
+  ALTER DEFAULT PRIVILEGES FOR ROLE umi IN SCHEMA public
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO umi_app;
+  ALTER DEFAULT PRIVILEGES FOR ROLE umi IN SCHEMA public
+    GRANT USAGE, SELECT ON SEQUENCES TO umi_app;"
+# Then add to .env:  APP_DB_USER=umi_app  APP_DB_PASSWORD=<that password>
+# and recreate the app service so DATABASE_URL / AUDIT_DB_APP_ROLE pick them up:
+docker compose -f docker/docker-compose.prod.yml up -d app
+
+# Run migrations — AS THE OWNER (umi), with AUDIT_DB_APP_ROLE pointing at the
+# runtime role so audit migration 0002's REVOKE lands on umi_app:
+docker compose -f docker/docker-compose.prod.yml exec \
+  -e DATABASE_URL=postgres://umi:${DB_PASSWORD}@db:5432/umi_exchange \
+  -e AUDIT_DB_APP_ROLE=umi_app \
+  app python manage.py migrate
 
 # Create superuser
 docker compose -f docker/docker-compose.prod.yml exec app python manage.py createsuperuser
@@ -42,8 +67,18 @@ docker compose -f docker/docker-compose.prod.yml exec app python manage.py creat
 # Collect static files
 docker compose -f docker/docker-compose.prod.yml exec app python manage.py collectstatic --noinput
 
-# Restrict audit log permissions
-docker compose -f docker/docker-compose.prod.yml exec app python manage.py restrict_audit_permissions
+# Restrict audit log permissions (idempotent re-assert — same owner-connection
+# env override as the migrate step, targeting the runtime role)
+docker compose -f docker/docker-compose.prod.yml exec \
+  -e DATABASE_URL=postgres://umi:${DB_PASSWORD}@db:5432/umi_exchange \
+  -e AUDIT_DB_APP_ROLE=umi_app \
+  app python manage.py restrict_audit_permissions
+
+# VERIFY the gate (both must hold, on every production instance):
+docker compose -f docker/docker-compose.prod.yml exec db psql -U umi -d umi_exchange -c \
+  "SELECT tableowner FROM pg_tables WHERE tablename='audit_auditlog';"      # must NOT be umi_app
+docker compose -f docker/docker-compose.prod.yml exec db psql -U umi_app -d umi_exchange -c \
+  "SELECT current_user, rolsuper FROM pg_roles WHERE rolname=current_user;" # rolsuper must be f
 
 # Register background-job schedules (django-q2). Without this the recurring
 # sweeps never run: need expiry (§4.1), match-proposal expiry (§10.6), the
