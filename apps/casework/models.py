@@ -38,7 +38,10 @@ class CaseFile(StateMachineMixin, models.Model):
     )
 
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_OPEN)
-    sensitivity = models.CharField(max_length=12, choices=SENSITIVITY_CHOICES, default=SENS_STANDARD)
+    # Restricted by default (threat-model must-fix #4, Jasiah 2026-07-11):
+    # coordinators read ALL standard-case PII by design, so an unclassified
+    # case must fail safe. Intake consciously downgrades to standard.
+    sensitivity = models.CharField(max_length=12, choices=SENSITIVITY_CHOICES, default=SENS_RESTRICTED)
 
     # Consent-first opening (§3.6): consent may be null ONLY with the
     # emergency flag — enforced by a DB CheckConstraint below.

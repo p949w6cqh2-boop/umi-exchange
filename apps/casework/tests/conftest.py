@@ -74,7 +74,14 @@ def world(db):
     )
 
     case = CaseFile.objects.create(
-        community=community, subject_person=person, opened_by=coordinator, assigned_to=coordinator, consent=consent
+        community=community,
+        subject_person=person,
+        opened_by=coordinator,
+        assigned_to=coordinator,
+        consent=consent,
+        # Deliberately standard: the suite's baseline exercises coordinator
+        # access; the restricted DEFAULT is pinned by test_default_sensitivity.
+        sensitivity=CaseFile.SENS_STANDARD,
     )
 
     return SimpleNamespace(
