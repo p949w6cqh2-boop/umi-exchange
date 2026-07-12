@@ -163,20 +163,30 @@ class FeedView(LoginRequiredMixin, ListView):
 
             needs = apply_search(needs, q)
             offers = apply_search(offers, q)
+        from apps.needs.search import order_by_relevance
 
         # Type tabs (All / Asks / Offers): a lane the surfer can pick.
         kind = self.request.GET.get("type")
         # Tag items with their type for template rendering. Order + slice at
         # the DB layer (LIMIT) so memory stays bounded regardless of community size.
         cap = self.feed_per_type_cap
-        need_list = [] if kind == "offer" else list(needs.order_by("-created_at")[:cap])
-        offer_list = [] if kind == "need" else list(offers.order_by("-created_at")[:cap])
+        need_list = [] if kind == "offer" else list(order_by_relevance(needs, q)[:cap])
+        offer_list = [] if kind == "need" else list(order_by_relevance(offers, q)[:cap])
         for n in need_list:
             n.item_type = "need"
         for o in offer_list:
             o.item_type = "offer"
 
-        combined = sorted(need_list + offer_list, key=lambda x: x.created_at, reverse=True)
+        if q:
+            # Searching: each list arrives relevance-ranked (ts_rank); merge by
+            # rank so the best answer tops the board, not merely the newest.
+            combined = sorted(
+                need_list + offer_list,
+                key=lambda x: getattr(x, "_rank", 0.0),
+                reverse=True,
+            )
+        else:
+            combined = sorted(need_list + offer_list, key=lambda x: x.created_at, reverse=True)
         return combined
 
     def get_template_names(self):
