@@ -26,7 +26,9 @@ class Need(models.Model):
     description = models.TextField(blank=True)
     urgency = models.CharField(max_length=10, default="medium", choices=URGENCY_CHOICES)
     neighborhood = models.CharField(max_length=100, blank=True)
-    contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
+    # Default "any" (was "in_app"): with no in-app channel, "in_app" made the
+    # connect moment a bare name (found live in the 2026-07-11 rehearsal).
+    contact_pref = models.CharField(max_length=10, default="any", choices=CONTACT_CHOICES)
     status = models.CharField(max_length=10, default="open", choices=STATUS_CHOICES)
     # Reversible coordinator action (moderation queue) — never a delete.
     moderation_hidden = models.BooleanField(default=False)
