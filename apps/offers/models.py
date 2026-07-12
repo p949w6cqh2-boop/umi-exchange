@@ -25,6 +25,8 @@ class Offer(models.Model):
     radius = models.IntegerField(null=True, blank=True, help_text="km; null=unlimited")
     contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
     status = models.CharField(max_length=12, default="active", choices=STATUS_CHOICES)
+    # Reversible coordinator action (moderation queue) — never a delete.
+    moderation_hidden = models.BooleanField(default=False)
     # Federation (Stage B): per-record opt-in, default OFF. See Need.share_scope.
     SHARE_CHOICES = [("local", "This community only"), ("federated", "Discoverable by linked communities")]
     share_scope = models.CharField(max_length=10, default="local", choices=SHARE_CHOICES)

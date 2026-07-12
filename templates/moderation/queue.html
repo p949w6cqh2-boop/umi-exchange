@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Reports — {{ community.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="font-serif text-2xl text-parish-ink">Reports</h1>
+      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }} — concerns raised by neighbours</p>
+    </div>
+    <a href="{% url 'community-feed' community.slug %}"
+       class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
+  </div>
+
+  <section aria-label="Open reports">
+    <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">
+      Open ({{ rows|length }})
+    </h2>
+    {% if rows %}
+    <div class="space-y-3">
+      {% for row in rows %}
+      <div class="umi-card p-4 sm:p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-medium text-parish-ink">{{ row.flag.get_reason_display }}</p>
+            <p class="text-sm text-parish-ink/60 mt-0.5">
+              {{ row.flag.get_target_type_display }} · reported {{ row.flag.created_at|timesince }} ago
+            </p>
+            {% if row.flag.detail %}
+            <p class="text-sm text-parish-ink/80 mt-2 max-w-prose">&ldquo;{{ row.flag.detail }}&rdquo;</p>
+            {% endif %}
+            {% if row.target %}
+              {% if row.flag.target_type == "need" %}
+                <a href="{% url 'need-detail' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">View the ask: {{ row.target.title }}</a>
+              {% elif row.flag.target_type == "offer" %}
+                <a href="{% url 'offer-detail' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">View the offer: {{ row.target.title }}</a>
+              {% else %}
+                <p class="text-sm text-parish-ink/70 mt-2">Member: {{ row.target.display_name }}</p>
+              {% endif %}
+            {% else %}
+            <p class="text-sm text-parish-ink/50 mt-2">The reported item is no longer available.</p>
+            {% endif %}
+          </div>
+          <form method="post" action="{% url 'moderation:resolve' community.slug row.flag.pk %}"
+                class="flex flex-wrap items-center gap-2">
+            {% csrf_token %}
+            {% if row.target %}
+            <button name="action" value="hide" class="btn-secondary text-sm !min-h-[40px] !px-3.5"
+                    title="Take it off the board — reversible, nothing is deleted">Hide it</button>
+            <button name="action" value="keep" class="btn-secondary text-sm !min-h-[40px] !px-3.5"
+                    title="Reviewed; the post stays up">Looks fine</button>
+            {% endif %}
+            <button name="action" value="dismiss" class="text-sm text-parish-ink/60 hover:text-parish-ink min-h-[40px] px-2 focus-ring rounded-lg"
+                    title="Close the report without action">Dismiss</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="umi-card p-8 text-center text-parish-ink/50">
+      <p>No open reports — a quiet board is a good board.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  {% if recent %}
+  <section aria-label="Recently handled reports">
+    <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">Recently handled</h2>
+    <ul class="umi-card divide-y divide-[var(--umi-border)]">
+      {% for flag in recent %}
+      <li class="px-4 py-3 text-sm text-parish-ink/70 flex flex-wrap justify-between gap-2">
+        <span>{{ flag.get_reason_display }} · {{ flag.get_target_type_display }}</span>
+        <span class="text-parish-ink/50">{{ flag.resolution }} by {{ flag.resolved_by.display_name|default:"—" }} · {{ flag.resolved_at|timesince }} ago</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

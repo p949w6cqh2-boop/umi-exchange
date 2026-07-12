@@ -143,8 +143,12 @@ class FeedView(LoginRequiredMixin, ListView):
         self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
         self.member = get_object_or_404(Member, user=self.request.user, community=self.community, is_active=True)
 
-        needs = Need.objects.filter(community=self.community, status="open").select_related("category", "requester")
-        offers = Offer.objects.filter(community=self.community, status="active").select_related("category", "offerer")
+        needs = Need.objects.filter(
+            community=self.community, status="open", moderation_hidden=False
+        ).select_related("category", "requester")
+        offers = Offer.objects.filter(
+            community=self.community, status="active", moderation_hidden=False
+        ).select_related("category", "offerer")
 
         cat = self.request.GET.get("category")
         urg = self.request.GET.get("urgency")

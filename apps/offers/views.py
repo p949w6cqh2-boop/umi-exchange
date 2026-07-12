@@ -55,8 +55,11 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         from django.http import Http404
 
         obj = super().get_object(queryset)
-        if not Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).exists():
+        viewer = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
+        if viewer is None:
             raise Http404("You are not a member of this community.")
+        if obj.moderation_hidden and not viewer.is_coordinator:
+            raise Http404("This post is no longer available.")
         return obj
 
     def get_context_data(self, **kwargs):

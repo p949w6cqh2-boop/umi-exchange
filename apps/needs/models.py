@@ -28,6 +28,8 @@ class Need(models.Model):
     neighborhood = models.CharField(max_length=100, blank=True)
     contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
     status = models.CharField(max_length=10, default="open", choices=STATUS_CHOICES)
+    # Reversible coordinator action (moderation queue) — never a delete.
+    moderation_hidden = models.BooleanField(default=False)
     # Federation (Stage B): per-record opt-in, default OFF. "federated" makes a
     # REDACTED row discoverable to linked communities that carry an active
     # consent; identity/contact/free-text never cross (see apps/federation).
