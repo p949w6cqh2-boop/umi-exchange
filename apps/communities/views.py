@@ -6,7 +6,8 @@ import re
 from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.validators import URLValidator
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -21,7 +22,7 @@ from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
 
 from .forms import CommunityCreateForm, CommunitySettingsForm, JoinForm
-from .models import Community, Member, generate_join_code
+from .models import Community, Member, Resource, generate_join_code
 from .themes import THEME_DEFAULT, THEMES
 
 
@@ -144,9 +145,7 @@ class CommunityWelcomeView(LoginRequiredMixin, TemplateView):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
         self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
-        self.member = get_object_or_404(
-            Member, user=request.user, community=self.community, is_active=True
-        )
+        self.member = get_object_or_404(Member, user=request.user, community=self.community, is_active=True)
         if not self.member.is_admin:
             raise PermissionDenied("Only this community's admin sees the setup guide.")
         return super().dispatch(request, *args, **kwargs)
@@ -172,6 +171,84 @@ class CommunityWelcomeView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
+class ResourceListView(LoginRequiredMixin, TemplateView):
+    """Beyond the board — the community's curated help directory. Members
+    read; coordinators add and archive (never delete) on the same page."""
+
+    template_name = "communities/resources.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
+        self.member = get_object_or_404(Member, user=request.user, community=self.community, is_active=True)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        resources = Resource.objects.filter(community=self.community, is_active=True)
+        grouped = {}
+        for r in resources:
+            grouped.setdefault(r.get_category_display(), []).append(r)
+        ctx.update(
+            {
+                "community": self.community,
+                "member": self.member,
+                "grouped": grouped,
+                "categories": Resource.CATEGORY_CHOICES,
+            }
+        )
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        if not self.member.is_coordinator:
+            raise PermissionDenied("Only coordinators curate the directory.")
+        action = request.POST.get("action", "")
+        if action == "add":
+            title = (request.POST.get("title") or "").strip()[:120]
+            url = (request.POST.get("url") or "").strip()
+            category = request.POST.get("category", "other")
+            blurb = (request.POST.get("blurb") or "").strip()[:280]
+            validate = URLValidator(schemes=["http", "https"])
+            try:
+                validate(url)
+            except ValidationError:
+                messages.error(request, "That link doesn't look like a web address.")
+                return redirect("community-resources", slug=self.community.slug)
+            if not title:
+                messages.error(request, "Give the link a name people will recognise.")
+                return redirect("community-resources", slug=self.community.slug)
+            resource = Resource.objects.create(
+                community=self.community,
+                title=title,
+                url=url,
+                category=category if category in dict(Resource.CATEGORY_CHOICES) else "other",
+                blurb=blurb,
+                added_by=self.member,
+            )
+            emit(
+                "resource.added", resource, user=request.user, request=request, details={"category": resource.category}
+            )
+            messages.success(request, "Added to the directory.")
+        elif action == "archive":
+            resource = get_object_or_404(
+                Resource, pk=request.POST.get("resource_id"), community=self.community, is_active=True
+            )
+            resource.is_active = False
+            resource.save(update_fields=["is_active"])
+            emit(
+                "resource.archived",
+                resource,
+                user=request.user,
+                request=request,
+                details={"category": resource.category},
+            )
+            messages.success(request, "Archived — it can come back any time.")
+        else:
+            messages.error(request, "Unknown action.")
+        return redirect("community-resources", slug=self.community.slug)
+
+
 class FeedView(LoginRequiredMixin, ListView):
     """Community feed: merged needs + offers, filterable, with HTMX infinite scroll."""
 
@@ -188,9 +265,9 @@ class FeedView(LoginRequiredMixin, ListView):
         self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
         self.member = get_object_or_404(Member, user=self.request.user, community=self.community, is_active=True)
 
-        needs = Need.objects.filter(
-            community=self.community, status="open", moderation_hidden=False
-        ).select_related("category", "requester")
+        needs = Need.objects.filter(community=self.community, status="open", moderation_hidden=False).select_related(
+            "category", "requester"
+        )
         offers = Offer.objects.filter(
             community=self.community, status="active", moderation_hidden=False
         ).select_related("category", "offerer")

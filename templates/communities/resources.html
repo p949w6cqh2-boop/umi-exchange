@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Resources — {{ community.name }}{% endblock %}
+
+{% block content %}
+{% comment %}Beyond material aid — the whole person. Coordinator-curated
+   links, grouped by what a neighbour might be facing. Display-only; the
+   platform never fetches these.{% endcomment %}
+<div class="max-w-3xl mx-auto space-y-8">
+
+  <header class="flex items-start justify-between gap-4">
+    <div>
+      <span class="umi-eyebrow">Beyond the board</span>
+      <h1 class="font-serif text-3xl text-parish-ink mt-2">Resources</h1>
+      <p class="text-parish-ink/70 mt-2 max-w-prose">Help that lives outside this board — gathered by your coordinators. Education, legal aid, health, benefits: the whole person, not just the errand.</p>
+    </div>
+    <a href="{% url 'community-feed' community.slug %}"
+       class="text-sm text-[var(--umi-primary)] hover:underline shrink-0 min-h-[44px] inline-flex items-center">&larr; The board</a>
+  </header>
+
+  {% if grouped %}
+    {% for category, items in grouped.items %}
+    <section aria-label="{{ category }}">
+      <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">{{ category }}</h2>
+      <ul class="umi-card divide-y divide-[var(--umi-border)]">
+        {% for r in items %}
+        <li class="px-4 sm:px-5 py-4 flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer"
+               class="font-medium text-[var(--umi-primary)] hover:underline break-words">{{ r.title }}</a>
+            {% if r.blurb %}<p class="text-sm text-parish-ink/60 mt-1 max-w-prose">{{ r.blurb }}</p>{% endif %}
+          </div>
+          {% if member.is_coordinator %}
+          <form method="post" class="shrink-0">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="archive">
+            <input type="hidden" name="resource_id" value="{{ r.pk }}">
+            <button class="text-sm text-parish-ink/50 hover:text-parish-ink min-h-[40px] px-2 focus-ring rounded-lg"
+                    title="Archive — reversible, nothing is deleted">Archive</button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  {% else %}
+    <div class="max-w-sm mx-auto py-10 text-center">
+      <div class="umi-plate p-3 mb-6">{% include "illustrations/_carrying.html" with class="w-full h-auto" %}</div>
+      <p class="font-serif text-xl text-parish-ink/75">Nothing gathered yet.</p>
+      <p class="text-sm text-parish-ink/60 mt-2">{% if member.is_coordinator %}Add the first place a neighbour in a hard week should know about.{% else %}Your coordinators are gathering trusted places to turn — check back soon.{% endif %}</p>
+    </div>
+  {% endif %}
+
+  {% if member.is_coordinator %}
+  <section class="umi-card p-5 sm:p-6" aria-labelledby="res-add-h">
+    <h2 id="res-add-h" class="font-serif text-xl text-parish-ink">Add to the directory</h2>
+    <form method="post" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div>
+        <label for="id_res_title" class="umi-label">Name</label>
+        <input id="id_res_title" name="title" maxlength="120" required
+               class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]"
+               placeholder="County legal aid clinic">
+      </div>
+      <div>
+        <label for="id_res_url" class="umi-label">Link</label>
+        <input id="id_res_url" name="url" type="url" maxlength="500" required
+               class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]"
+               placeholder="https://…">
+      </div>
+      <div>
+        <label for="id_res_cat" class="umi-label">Kind of help</label>
+        <select id="id_res_cat" name="category"
+                class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]">
+          {% for key, label in categories %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="id_res_blurb" class="umi-label">One helpful line <span class="text-parish-ink/45">(optional)</span></label>
+        <input id="id_res_blurb" name="blurb" maxlength="280"
+               class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]"
+               placeholder="Free consults on Tuesdays; ask for the intake desk.">
+      </div>
+      <div class="sm:col-span-2">
+        <button type="submit" class="btn-primary !min-h-[44px]">Add it</button>
+      </div>
+    </form>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}
