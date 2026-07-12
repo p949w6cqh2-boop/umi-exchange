@@ -154,3 +154,38 @@ class Category(models.Model):
 
     def __str__(self):
         return f"{self.icon} {self.name}"
+
+
+class Resource(models.Model):
+    """Coordinator-curated help beyond the board — the whole person (Lake 0's
+    hands): where to turn for education, legal aid, mental health, benefits.
+    Display-only links; nothing is fetched server-side. Archive, never delete."""
+
+    CATEGORY_CHOICES = [
+        ("education", "Education & tutoring"),
+        ("legal", "Legal aid"),
+        ("health", "Mental & physical health"),
+        ("benefits", "Benefits & financial help"),
+        ("food", "Food & essentials"),
+        ("housing", "Housing & shelter"),
+        ("other", "Other"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="resources")
+    category = models.CharField(max_length=12, choices=CATEGORY_CHOICES, default="other")
+    title = models.CharField(max_length=120)
+    url = models.URLField(max_length=500)
+    blurb = models.CharField(max_length=280, blank=True)
+    added_by = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="resources_added")
+    is_active = models.BooleanField(default=True)
+    sort_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "communities_resource"
+        ordering = ["category", "sort_order", "title"]
+        indexes = [models.Index(fields=["community", "is_active"], name="comm_resource_active_idx")]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_category_display()})"
