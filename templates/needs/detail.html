@@ -54,6 +54,10 @@
     </div>
   </div>
 
+  {% if not is_own_need %}
+  {% include "components/_report_button.html" with target_type="need" target_id=need.id %}
+  {% endif %}
+
   {% include "federation/_share_panel.html" %}
 
   {# Contact info box (§8.2): locked for members; revealed to coordinators (audited). #}

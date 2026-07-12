@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Moderation Queue — {{ community.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="font-serif text-2xl text-parish-ink">Moderation Queue</h1>
+      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }}</p>
+    </div>
+    <a href="{% url 'community-feed' community.slug %}"
+       class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
+  </div>
+
+  <section aria-label="Open reports">
+    <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">
+      Open reports ({{ flags|length }})
+    </h2>
+    {% if flags %}
+    <div id="queue-list" class="space-y-3">
+      {% for flag in flags %}
+      {% include "moderation/_flag_row.html" with flag=flag community=community %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="umi-card p-8 text-center text-parish-ink/50">
+      <p>No open reports. All quiet on the board.</p>
+    </div>
+    {% endif %}
+  </section>
+
+</div>
+
+<script>
+// Remove resolved item from queue list (HTMX path)
+document.body.addEventListener("queueItemResolved", function(e) {
+  var id = e.detail && e.detail.id;
+  if (id) {
+    var row = document.getElementById("queue-row-" + id);
+    if (row) {
+      row.style.transition = "opacity 0.2s";
+      row.style.opacity = "0";
+      setTimeout(function() { row.remove(); }, 220);
+    }
+  }
+});
+</script>
+{% endblock %}

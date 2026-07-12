@@ -28,6 +28,10 @@
     </div>
   </div>
 
+  {% if not is_own_offer %}
+  {% include "components/_report_button.html" with target_type="offer" target_id=offer.id %}
+  {% endif %}
+
   {# Contact info box (§8.2): locked for members; revealed to coordinators (audited). #}
   {% include "federation/_share_panel.html" %}
 

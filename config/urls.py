@@ -15,6 +15,7 @@ urlpatterns = [
     path("hub/", include("apps.hub.urls")),
     path("c/<slug:slug>/cases/", include(("apps.casework.urls", "casework"), namespace="casework")),
     path("c/<slug:slug>/tags/", include(("apps.tags.urls", "tags"), namespace="tags")),
+    path("c/<slug:slug>/moderation/", include(("apps.moderation.urls", "moderation"), namespace="moderation")),
     path("c/", include("apps.communities.urls")),
     path("account/", include("apps.accounts.urls_settings")),
     path("consent/", include("apps.consent.urls")),

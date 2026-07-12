@@ -65,6 +65,9 @@
             </a>
           {% endif %}
           {% if community and member and member.role in 'admin coordinator' %}
+            <a href="{% url 'moderation:queue' community.slug %}" class="text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center">
+              Moderation
+            </a>
             <a href="{% url 'community-settings' community.slug %}" class="text-sm font-medium text-umi-primary hover:text-umi-primary-hover min-h-[44px] flex items-center mr-2">
               Community Settings
             </a>

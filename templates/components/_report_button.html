@@ -1,0 +1,43 @@
+{% comment %}
+Report/flag disclosure for a need or offer detail page.
+Usage: {% include "components/_report_button.html" with target_type="need" target_id=need.id %}
+Callers hide it for the poster's own content (you can't report yourself).
+{% endcomment %}
+{% if request.GET.reported %}
+<div class="umi-card !p-4 mt-4 text-sm text-parish-ink/70">
+  Thank you — a coordinator will review your report.
+</div>
+{% else %}
+<details class="mt-4">
+  <summary class="inline-flex items-center gap-1.5 text-sm font-medium text-parish-ink/50 hover:text-parish-ink cursor-pointer min-h-[44px]">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z"/>
+    </svg>
+    Report this {{ target_type }}
+  </summary>
+  <form method="post" action="{% url 'moderation:flag' community.slug %}" class="umi-card !p-4 mt-3 space-y-3">
+    {% csrf_token %}
+    <input type="hidden" name="target_type" value="{{ target_type }}">
+    <input type="hidden" name="target_id" value="{{ target_id }}">
+    <div>
+      <label for="report-reason-{{ target_id }}" class="umi-label">Why are you reporting this?</label>
+      <select id="report-reason-{{ target_id }}" name="reason" class="umi-input" required>
+        <option value="fake_or_scam">It looks fake or like a scam</option>
+        <option value="inappropriate">It's inappropriate</option>
+        <option value="safety">I'm worried about someone's safety</option>
+        <option value="spam">It's spam or a duplicate</option>
+        <option value="other">Something else</option>
+      </select>
+    </div>
+    <div>
+      <label for="report-detail-{{ target_id }}" class="umi-label">Anything a coordinator should know? (optional)</label>
+      <textarea id="report-detail-{{ target_id }}" name="detail" rows="2" maxlength="2000" class="umi-input"
+                placeholder="Please don't include personal details."></textarea>
+    </div>
+    <div class="flex justify-end">
+      <button type="submit" class="btn-secondary text-sm">Send report</button>
+    </div>
+    <p class="text-xs text-parish-ink/45">Reports go only to your community's coordinators. The poster is not told who reported.</p>
+  </form>
+</details>
+{% endif %}
