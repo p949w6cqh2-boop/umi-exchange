@@ -11,6 +11,7 @@ urlpatterns = [
     path("create/", views.CommunityCreateView.as_view(), name="community-create"),
     path("<slug:slug>/", views.FeedView.as_view(), name="community-feed"),
     path("<slug:slug>/settings/", views.CommunitySettingsView.as_view(), name="community-settings"),
+    path("<slug:slug>/welcome/", views.CommunityWelcomeView.as_view(), name="community-welcome"),
     path("<slug:slug>/leave/", views.LeaveCommunityView.as_view(), name="community-leave"),
     path("<slug:slug>/settings/qr/", views.JoinCodeQRView.as_view(), name="join-code-qr"),
     path("<slug:slug>/dashboard/", DashboardView.as_view(), name="community-dashboard"),
