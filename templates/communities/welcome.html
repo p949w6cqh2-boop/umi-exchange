@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Setup guide — {{ community.name }}{% endblock %}
+
+{% block content %}
+{% comment %}The founder's setup guide — the lakes vision as four buttons.
+   Data-derived checkmarks; revisitable from settings; skippable always.{% endcomment %}
+<div class="max-w-3xl mx-auto space-y-8">
+
+  <header class="pt-4 grid grid-cols-1 md:grid-cols-12 gap-8 items-center umi-rise">
+    <div class="md:col-span-7">
+      <span class="umi-eyebrow">Setup guide</span>
+      <h1 class="font-serif text-3xl md:text-4xl text-parish-ink mt-3">{{ community.name }} is ready.</h1>
+      <p class="text-parish-ink/70 mt-3">Four small moves and it's a living board. Everything here is reversible, and you can come back to this page from Settings anytime.</p>
+    </div>
+    <div class="md:col-span-5 hidden md:block">
+      <div class="umi-plate p-3">{% include "illustrations/_threshold.html" with class="w-full h-auto" %}</div>
+    </div>
+  </header>
+
+  {# ① Share the code #}
+  <section class="umi-card p-5 sm:p-6" aria-labelledby="wz-share">
+    <div class="flex items-start gap-3">
+      {% if steps.shared %}
+      <span class="mt-0.5 w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0" aria-label="Done">✓</span>
+      {% else %}
+      <span class="mt-0.5 w-7 h-7 rounded-full border-2 border-[var(--umi-border)] text-parish-ink/40 flex items-center justify-center text-sm shrink-0">1</span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <h2 id="wz-share" class="font-serif text-xl text-parish-ink">Share the join code</h2>
+        <p class="text-sm text-parish-ink/60 mt-1">The bulletin, the corkboard, a word after the service — anyone with the code can join; nobody without it can even see the board.</p>
+        <div class="mt-3 flex flex-wrap items-center gap-3" x-data="{ copied: false }">
+          <code class="font-mono text-2xl tracking-widest bg-parish-soft border border-[var(--umi-border)] rounded-lg px-4 py-2 select-all">{{ community.join_code }}</code>
+          <button class="btn-secondary text-sm !min-h-[42px]"
+                  @click="navigator.clipboard.writeText('{{ community.join_code }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                  x-text="copied ? 'Copied!' : 'Copy code'">Copy code</button>
+          <a href="{% url 'join-code-qr' community.slug %}" class="text-sm text-[var(--umi-primary)] hover:underline min-h-[42px] inline-flex items-center">Printable QR</a>
+        </div>
+        <p class="text-xs text-parish-ink/50 mt-2">Leaked too far? You can regenerate it any time in <a href="{% url 'community-settings' community.slug %}" class="underline">Settings</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ② Make it yours #}
+  <section class="umi-card p-5 sm:p-6" aria-labelledby="wz-theme">
+    <div class="flex items-start gap-3">
+      {% if steps.themed %}
+      <span class="mt-0.5 w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0" aria-label="Done">✓</span>
+      {% else %}
+      <span class="mt-0.5 w-7 h-7 rounded-full border-2 border-[var(--umi-border)] text-parish-ink/40 flex items-center justify-center text-sm shrink-0">2</span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <h2 id="wz-theme" class="font-serif text-xl text-parish-ink">Make it yours</h2>
+        <p class="text-sm text-parish-ink/60 mt-1">Pick the accent your community wears. Same calm surfaces for everyone — the colour is yours.</p>
+        <form method="post" action="{% url 'community-settings' community.slug %}" class="mt-3 flex flex-wrap gap-2.5">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="set_theme">
+          <input type="hidden" name="next" value="{% url 'community-welcome' community.slug %}">
+          {% for key, theme in themes.items %}
+          <button name="theme" value="{{ key }}"
+                  class="group flex items-center gap-2 border rounded-full pl-1.5 pr-3.5 py-1.5 min-h-[44px] focus-ring
+                         {% if key == current_theme %}border-[var(--umi-primary)] bg-parish-soft{% else %}border-[var(--umi-border)] hover:border-parish-ink/30{% endif %}"
+                  title="{{ theme.label|default:key }}">
+            <span class="w-6 h-6 rounded-full border border-black/10" style="background: {{ theme.primary }}"></span>
+            <span class="w-4 h-4 rounded-full border border-black/10 -ml-4 mt-3" style="background: {{ theme.accent }}"></span>
+            <span class="text-sm text-parish-ink/80 capitalize">{{ key }}</span>
+          </button>
+          {% endfor %}
+        </form>
+      </div>
+    </div>
+  </section>
+
+  {# ③ Coordinators #}
+  <section class="umi-card p-5 sm:p-6" aria-labelledby="wz-coord">
+    <div class="flex items-start gap-3">
+      {% if steps.coordinators %}
+      <span class="mt-0.5 w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0" aria-label="Done">✓</span>
+      {% else %}
+      <span class="mt-0.5 w-7 h-7 rounded-full border-2 border-[var(--umi-border)] text-parish-ink/40 flex items-center justify-center text-sm shrink-0">3</span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <h2 id="wz-coord" class="font-serif text-xl text-parish-ink">Add a coordinator or two</h2>
+        <p class="text-sm text-parish-ink/60 mt-1">Trusted people who match asks to offers, verify tags, and review reports. Have them join with the code first — then promote them from <a href="{% url 'community-settings' community.slug %}" class="underline">Settings</a>.</p>
+        <p class="text-xs text-parish-ink/50 mt-2">Two is plenty to start. You count as one.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ④ First post #}
+  <section class="umi-card p-5 sm:p-6" aria-labelledby="wz-post">
+    <div class="flex items-start gap-3">
+      {% if steps.posted %}
+      <span class="mt-0.5 w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0" aria-label="Done">✓</span>
+      {% else %}
+      <span class="mt-0.5 w-7 h-7 rounded-full border-2 border-[var(--umi-border)] text-parish-ink/40 flex items-center justify-center text-sm shrink-0">4</span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <h2 id="wz-post" class="font-serif text-xl text-parish-ink">Put the first thing on the board</h2>
+        <p class="text-sm text-parish-ink/60 mt-1">An empty board teaches nothing. Post a real ask or a real offer — yours counts — so the first neighbour through the door sees how it works.</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <a href="{% url 'need-create' community.slug %}" class="btn-secondary text-sm !min-h-[42px]">Post an ask</a>
+          <a href="{% url 'offer-create' community.slug %}" class="btn-secondary text-sm !min-h-[42px]">Post an offer</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex flex-wrap items-center justify-between gap-3 pb-6">
+    <a href="{% url 'community-feed' community.slug %}" class="btn-primary !min-h-[44px]">Open the board</a>
+    <a href="/privacy/" class="text-sm text-parish-ink/50 hover:text-parish-ink">What we keep, and for how long</a>
+  </div>
+
+</div>
+{% endblock %}

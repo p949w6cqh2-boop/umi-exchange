@@ -6,8 +6,10 @@ import re
 from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
@@ -125,6 +127,49 @@ class CommunityCreateView(LoginRequiredMixin, CreateView):
         emit("member.joined", creator, user=self.request.user, request=self.request, details={"role": creator.role})
         messages.success(self.request, f"Community '{self.object.name}' created!")
         return response
+
+    def get_success_url(self):
+        return reverse("community-welcome", kwargs={"slug": self.object.slug})
+
+
+class CommunityWelcomeView(LoginRequiredMixin, TemplateView):
+    """The setup wizard — shown right after creating a community, revisitable
+    from settings. Four moves with data-derived checkmarks (no tracking):
+    share the code, make it yours, add coordinators, put the first thing on
+    the board. Admin-gated: this is the founder's page."""
+
+    template_name = "communities/welcome.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
+        self.member = get_object_or_404(
+            Member, user=request.user, community=self.community, is_active=True
+        )
+        if not self.member.is_admin:
+            raise PermissionDenied("Only this community's admin sees the setup guide.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        members = Member.objects.filter(community=self.community, is_active=True)
+        ctx.update(
+            {
+                "community": self.community,
+                "member": self.member,
+                "themes": THEMES,
+                "current_theme": (self.community.settings or {}).get("theme", THEME_DEFAULT),
+                "steps": {
+                    "shared": members.count() > 1,
+                    "themed": "theme" in (self.community.settings or {}),
+                    "coordinators": members.filter(role__in=("coordinator", "admin")).count() > 1,
+                    "posted": Need.objects.filter(community=self.community).exists()
+                    or Offer.objects.filter(community=self.community).exists(),
+                },
+            }
+        )
+        return ctx
 
 
 class FeedView(LoginRequiredMixin, ListView):
@@ -295,6 +340,9 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                 details={"theme": settings["theme"]},
             )
             messages.success(request, "Theme updated.")
+            nxt = request.POST.get("next", "")
+            if nxt.startswith("/") and not nxt.startswith("//"):
+                return redirect(nxt)
             return redirect("community-settings", slug=self.community.slug)
 
         if action == "change_role":
