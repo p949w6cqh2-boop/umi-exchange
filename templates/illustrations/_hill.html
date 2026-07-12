@@ -1,28 +1,73 @@
-{% comment %}Parish Linocut — original UMI illustration ("The city on the hill — gardens first").
-   Decorative; ink follows text color, washes follow the community theme.{% endcomment %}
+{% comment %}Parish Linocut — original UMI illustration ("The city on the hill
+   — gardens first"). The hill itself: terraced rows climbing in carved
+   curves, the switchback path, the little town and its tower at the crest
+   under a low gold sun. Two hoes stand planted in the row and two hats hang
+   on the fencepost — the gardeners are close. Two-plate relief print: black
+   key = currentColor, white gouges = var(--umi-bg), washes = community
+   theme, off-register. Decorative.{% endcomment %}
 <svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
      class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
   <defs><filter id="g-hill"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
-  <!-- terraced garden rows up the hill -->
-  <path d="M18 156 Q120 60 222 156 Z" fill="var(--umi-primary)" opacity="0.13"/>
-  <path d="M46 138 q74 -52 148 0" stroke="currentColor" stroke-width="2" fill="none" opacity="0.45"/>
-  <path d="M64 122 q56 -38 112 0" stroke="currentColor" stroke-width="2" fill="none" opacity="0.45"/>
-  <path d="M84 108 q36 -24 72 0" stroke="currentColor" stroke-width="2" fill="none" opacity="0.45"/>
-  <!-- seedlings on the terraces -->
-  <g stroke="var(--umi-primary)" stroke-width="2.5" stroke-linecap="round">
-    <path d="M78 132 v-9 m0 0 q-6 -2 -7 -8 m7 8 q6 -2 7 -8"/>
-    <path d="M126 116 v-9 m0 0 q-6 -2 -7 -8 m7 8 q6 -2 7 -8"/>
-    <path d="M164 130 v-9 m0 0 q-6 -2 -7 -8 m7 8 q6 -2 7 -8"/>
-  </g>
-  <!-- the small city crowning the hill -->
-  <rect x="102" y="66" width="14" height="22" fill="#fff" stroke="currentColor" stroke-width="2"/>
-  <rect x="122" y="58" width="16" height="30" fill="#fff" stroke="currentColor" stroke-width="2"/>
-  <path d="M122 58 h16 l-8 -10 z" fill="var(--umi-accent)" opacity="0.7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M130 48 v-8 M126 44 h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <rect x="106" y="72" width="5" height="6" fill="var(--umi-primary)" opacity="0.5"/>
-  <rect x="127" y="66" width="6" height="7" fill="var(--umi-primary)" opacity="0.5"/>
-  <!-- sun, rising -->
-  <circle cx="196" cy="40" r="13" fill="var(--umi-accent)" opacity="0.4"/>
-  <circle cx="196" cy="40" r="13" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+
+  <!-- colour plates: low gold sun, teal hillside -->
+  <circle cx="194" cy="36" r="20" fill="var(--umi-accent)" opacity="0.6" transform="translate(-3 2)"/>
+  <path d="M8 170 q60 -76 152 -106 l72 -12 0 118 z" fill="var(--umi-primary)" opacity="0.16" transform="translate(0 4)"/>
+
+  <!-- carved sun rays -->
+  <path d="M194 8 l0 -6 M212 15 l5 -5 M221 34 l7 0 M213 53 l5 5" stroke="var(--umi-accent)" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- THE HILL LINE, one long confident carve -->
+  <path d="M6 168 q60 -72 150 -102" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/>
+
+  <!-- THE TOWN at the crest: three roofs, the tower, lit windows -->
+  <path d="M154 66 l11 -10 11 10 -2 3 -9 -8 -9 8 z M158 68 h15 v11 h-15 z" fill="currentColor"/>
+  <path d="M176 63 l10 -9 10 9 -2 3 -8 -7 -8 7 z M179 65 h14 v13 h-14 z" fill="currentColor"/>
+  <path d="M198 60 h9 v-17 l4.5 -7 4.5 7 v17 h4 v19 h-22 z" fill="currentColor"/>
+  <path d="M163 71 h5 v8 h-5 z" fill="var(--umi-accent)"/>
+  <path d="M184 68 h4 v5 h-4 z M207 64 h5 v7 h-5 z" fill="var(--umi-bg)"/>
+  <path d="M211 41 l0 -6" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- chimney smoke, one thin curl -->
+  <path d="M170 54 q3 -6 -1 -10 q-3 -5 1 -9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.6"/>
+
+  <!-- TERRACED ROWS: carved double-lines following the slope -->
+  <path d="M24 158 q28 -10 54 -24 M40 164 q28 -11 56 -26" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M70 134 q26 -13 50 -24 M86 142 q26 -13 52 -26" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M118 108 q22 -11 42 -19" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- shoots along the rows: young teal, first gold near the top -->
+  <path d="M34 152 l0 -7 m-4 4 l4 -4 4 4 M52 144 l0 -7 m-4 4 l4 -4 4 4 M70 136 l0 -7 m-4 4 l4 -4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M98 126 l0 -7 m-4 4 l4 -4 4 4 M116 117 l0 -7 m-4 4 l4 -4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M134 101 l0 -7 m-4 4 l4 -4 4 4 M150 93 l0 -7 m-4 4 l4 -4 4 4" stroke="var(--umi-accent)" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- THE PATH: carved dashes switchbacking up -->
+  <path d="M20 166 q30 -8 52 -25 M78 134 q24 -14 42 -33 M126 96 q18 -12 30 -27"
+        stroke="currentColor" stroke-width="2.2" stroke-dasharray="7 6" stroke-linecap="round" opacity="0.75"/>
+
+  <!-- TWO HOES planted in the row, handles crossed toward each other -->
+  <path d="M92 150 L110 96" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M106 96 l10 -3 2 5 -10 4 z" fill="currentColor"/>
+  <path d="M120 146 L106 100" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M102 102 l-10 -1 0 5 10 1 z" fill="currentColor"/>
+
+  <!-- THE FENCEPOST with two hats hung, one gold-banded, one teal-banded -->
+  <path d="M56 156 l0 -34" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M48 130 h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  <path d="M38 122 a11 5.5 0 0 1 22 0 z" fill="currentColor"/>
+  <path d="M44 118 a6 5 0 0 1 11 0 l0 4 -11 0 z" fill="currentColor"/>
+  <path d="M45 122 h8" stroke="var(--umi-accent)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M58 112 a10 5 0 0 1 20 0 z" fill="currentColor"/>
+  <path d="M63 108 a6 4.5 0 0 1 10 0 l0 4 -10 0 z" fill="currentColor"/>
+  <path d="M64 112 h7" stroke="var(--umi-primary)" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- the shared water jug at the post's foot -->
+  <path d="M70 154 q-6 -2 -6 -9 q0 -6 4 -8 l-1 -4 7 0 -2 4 q4 2 4 8 q0 7 -6 9 z" fill="currentColor"/>
+  <path d="M67 140 q3 -2 6 0" stroke="var(--umi-bg)" stroke-width="1.3" stroke-linecap="round"/>
+
+  <!-- birds over the valley -->
+  <path d="M38 58 q4 -5 8 0 q4 -5 8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M66 42 q4 -4 7 0 q3 -4 7 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.55"/>
+
+  <!-- registration ticks -->
+  <path d="M8 14 h14 M218 170 h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+
   <rect width="240" height="180" filter="url(#g-hill)" opacity="0.5"/>
 </svg>
