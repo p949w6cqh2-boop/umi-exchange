@@ -58,6 +58,7 @@ class HubView(LoginRequiredMixin, TemplateView):
         # The Pulse (hub v2): witnessed generosity + immediate agency.
         ctx["pulse"] = selectors.pulse_events(self.community)
         ctx["spotlight"] = selectors.spotlight_need(self.member)
+        ctx["first_steps"] = selectors.first_steps(self.member)
         ctx["cycle"] = 0
         ctx["season_impact"] = selectors.season_impact(self.member)
         ctx["week_stats"] = selectors.week_stats(self.community)
