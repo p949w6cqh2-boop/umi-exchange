@@ -14,6 +14,8 @@ class Notification(models.Model):
         ("match_cancelled", "Match Cancelled"),
         ("need_expiring", "Need Expiring"),
         ("need_expired", "Need Expired"),
+        ("flag_received", "Flag Received"),
+        ("flag_reviewed", "Flag Reviewed"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

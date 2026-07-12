@@ -58,5 +58,12 @@
     </div>
   </div>
   {% endif %}
+
+  {% if offer.moderation_hidden %}
+  <div class="umi-card p-4 border-amber-300 bg-amber-50 text-sm text-amber-900">
+    Hidden from the board by a coordinator. Members can't see this post.
+  </div>
+  {% endif %}
+  {% include "components/_flag_panel.html" with target_type="offer" target_id=offer.pk is_own=is_own_offer %}
 </div>
 {% endblock %}

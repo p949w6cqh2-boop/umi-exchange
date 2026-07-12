@@ -1,0 +1,37 @@
+{% comment %}Report control for a need/offer. Include with:
+   target_type ("need"/"offer"), target_id, is_own (owner never flags own
+   post). Quiet by design: a small disclosure, not a red siren — reporting
+   should feel safe and ordinary, not dramatic.{% endcomment %}
+{% if member and not is_own %}
+<details class="mt-6 group">
+  <summary class="inline-flex items-center gap-1.5 text-sm text-parish-ink/50 hover:text-parish-ink cursor-pointer focus-ring rounded-lg px-1 py-1 min-h-[44px] list-none">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-16 M3 5l12 -1 -2.5 4 2.5 4 -12 1"/>
+    </svg>
+    Something wrong with this post?
+  </summary>
+  <form method="post" action="{% url 'moderation:flag' community.slug %}"
+        class="mt-3 umi-card p-4 space-y-3 max-w-md">
+    {% csrf_token %}
+    <input type="hidden" name="target_type" value="{{ target_type }}">
+    <input type="hidden" name="target_id" value="{{ target_id }}">
+    <div>
+      <label for="id_flag_reason" class="umi-label">What's the concern?</label>
+      <select name="reason" id="id_flag_reason"
+              class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]">
+        <option value="fake">Seems fake or misleading</option>
+        <option value="unsafe">Unsafe or threatening</option>
+        <option value="spam">Spam or off-topic</option>
+        <option value="other">Something else</option>
+      </select>
+    </div>
+    <div>
+      <textarea name="detail" rows="2" maxlength="500"
+                class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]"
+                placeholder="Optional — what should the coordinator know?"></textarea>
+      <p class="text-xs text-parish-ink/50 mt-1">No names or private details needed — the coordinator can see the post. Only coordinators see your report.</p>
+    </div>
+    <button type="submit" class="btn-secondary text-sm !min-h-[42px]">Send to a coordinator</button>
+  </form>
+</details>
+{% endif %}

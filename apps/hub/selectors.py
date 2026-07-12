@@ -83,7 +83,7 @@ def pulse_events(community, cap=PULSE_CAP):
     since = timezone.now() - timedelta(days=PULSE_WINDOW_DAYS)
     events = []
     needs = (
-        Need.objects.filter(community=community, created_at__gte=since)
+        Need.objects.filter(community=community, created_at__gte=since, moderation_hidden=False)
         .select_related("requester", "category")
         .order_by("-created_at")[:cap]
     )
@@ -99,7 +99,7 @@ def pulse_events(community, cap=PULSE_CAP):
             }
         )
     offers = (
-        Offer.objects.filter(community=community, created_at__gte=since)
+        Offer.objects.filter(community=community, created_at__gte=since, moderation_hidden=False)
         .select_related("offerer", "category")
         .order_by("-created_at")[:cap]
     )
@@ -170,7 +170,7 @@ def spotlight_need(member, cycle=0):
     from apps.needs.models import Need
 
     qs = (
-        Need.objects.filter(community=member.community, status="open")
+        Need.objects.filter(community=member.community, status="open", moderation_hidden=False)
         .exclude(requester=member)
         .exclude(matches__status__in=OPEN_MATCH_STATUSES)
         .select_related("requester", "category")

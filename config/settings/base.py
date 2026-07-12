@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "apps.health",
     "apps.federation",
     "apps.hub",
+    "apps.moderation",
 ]
 
 # Optional: Django-Q2 (for background tasks — not required for basic operation)
