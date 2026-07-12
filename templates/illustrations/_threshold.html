@@ -1,32 +1,69 @@
-{% comment %}Parish Linocut — original UMI illustration ("The threshold — two doors in one wall:
-   step through the open one, or paint a new one"). Decorative; ink follows text color,
-   washes follow the community theme.{% endcomment %}
+{% comment %}Parish Linocut — original UMI illustration ("The threshold — two
+   doors in one wall: step through the open one, or paint a new one"). The
+   wall itself: the left door stands open, lamplight spilling over a pair of
+   boots already on the sill; at the right the second frame is half-painted,
+   the brush still resting on the pail. Whoever they are, they're welcome.
+   Two-plate relief print: black key = currentColor, white gouges =
+   var(--umi-bg), washes = community theme, off-register. Decorative.{% endcomment %}
 <svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
      class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
   <defs><filter id="g-thresh"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
-  <ellipse cx="120" cy="152" rx="100" ry="13" fill="var(--umi-primary)" opacity="0.10"/>
-  <path d="M20 150 H220" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
-  <!-- the parish wall -->
-  <path d="M36 150 V64 L120 40 L204 64 V150" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M36 64 L120 40 L204 64" fill="var(--umi-primary)" opacity="0.08"/>
-  <!-- small cross finial at the apex -->
-  <path d="M120 40 V26 M113 32 h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- left door: arched, ajar, warm light spilling -->
-  <path d="M58 150 V92 a20 20 0 0 1 40 0 V150" stroke="currentColor" stroke-width="2.5"/>
-  <path d="M62 150 V93 a16 16 0 0 1 32 0 V150 Z" fill="var(--umi-accent)" opacity="0.30"/>
-  <path d="M62 150 L84 142 V96 a14 14 0 0 0 -22 -3 Z" fill="currentColor" opacity="0.82"/>
-  <path d="M84 142 L62 150 L104 166 Z" fill="var(--umi-accent)" opacity="0.35"/>
-  <circle cx="80" cy="120" r="2.2" fill="var(--umi-accent)"/>
-  <!-- right door: arched, fresh paint, ladder and pot -->
-  <path d="M142 150 V92 a20 20 0 0 1 40 0 V150" stroke="currentColor" stroke-width="2.5"/>
-  <path d="M146 150 V93 a16 16 0 0 1 32 0 V150 Z" fill="var(--umi-primary)" opacity="0.34"/>
-  <path d="M146 118 h32 M162 93 V150" stroke="currentColor" stroke-width="2" opacity="0.5"/>
-  <path d="M190 150 L198 108 M206 150 L198 108 M192 138 h11 M194 126 h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M128 141 h12 v9 h-12 z" fill="var(--umi-primary)" opacity="0.5" stroke="currentColor" stroke-width="2"/>
-  <path d="M129 141 a5 5 0 0 1 10 0" stroke="currentColor" stroke-width="1.8"/>
-  <!-- the neighbour at the threshold, faceless, mid-step toward the open door -->
-  <circle cx="112" cy="106" r="8.5" fill="currentColor"/>
-  <path d="M101 150 v-24 a11 11 0 0 1 22 0 v24" fill="var(--umi-primary)" opacity="0.78"/>
-  <path d="M104 150 l-5 12 M119 150 l6 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- colour plates: lamplight through the open door, wet teal on the new frame -->
+  <path d="M46 146 l0 -70 34 0 0 70 z" fill="var(--umi-accent)" opacity="0.5" transform="translate(3 2)"/>
+  <path d="M42 150 l-26 14 60 0 -6 -14 z" fill="var(--umi-accent)" opacity="0.32"/>
+  <path d="M152 146 l0 -66 30 0 0 66 z" fill="var(--umi-primary)" opacity="0.22" transform="translate(-3 2)"/>
+
+  <!-- carved ground -->
+  <path d="M12 156 q30 -4 58 -1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M76 157 q46 -4 90 0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M172 156 q28 -3 54 1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M40 164 h22 M118 165 h26 M186 164 h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- THE WALL: lintel band with carved stone courses, two flanks -->
+  <path d="M20 60 h200 v12 h-200 z" fill="currentColor"/>
+  <path d="M28 66 h32 M68 66 h28 M104 66 h32 M144 66 h28 M180 66 h32" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M20 148 l0 -76 M220 148 l0 -76" stroke="currentColor" stroke-width="5"/>
+  <path d="M20 148 h200" stroke="currentColor" stroke-width="3"/>
+  <path d="M26 84 h11 M26 98 h9 M26 112 h11 M26 126 h9 M203 84 h11 M205 98 h9 M203 112 h11 M205 126 h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- OPEN DOOR (left): deep jamb, door swung wide against the wall -->
+  <path d="M44 148 l0 -76 38 0 0 76 z" fill="currentColor"/>
+  <path d="M51 148 l0 -69 24 0 0 69 z" fill="var(--umi-bg)"/>
+  <!-- the lamp just inside, hanging warm -->
+  <path d="M63 79 v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M57 86 h12 l-2 7 h-8 z" fill="currentColor"/>
+  <path d="M60 93 a3.5 3 0 0 0 7 0 z" fill="var(--umi-accent)"/>
+  <!-- the door leaf, panelled, handle catching light -->
+  <path d="M44 72 l-16 9 0 74 16 -5 z" fill="currentColor"/>
+  <path d="M33 90 l9 -5 M33 104 l9 -5 M33 118 l9 -5 M33 132 l9 -5" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round"/>
+  <circle cx="40" cy="113" r="2" fill="var(--umi-bg)"/>
+  <!-- carved rays across the sill -->
+  <path d="M52 150 l-22 13 M61 150 l-9 15 M72 150 l7 14" stroke="var(--umi-accent)" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- THE BOOTS on the sill, toes already inside -->
+  <path d="M56 142 q0 -8 5 -8 q4 0 4 6 l0 6 q6 0 6 4 l-15 0 z" fill="currentColor"/>
+  <path d="M70 142 q0 -8 5 -8 q4 0 4 6 l0 6 q6 0 6 4 l-15 0 z" fill="currentColor"/>
+  <path d="M59 140 q3 -1 5 0 M73 140 q3 -1 5 0" stroke="var(--umi-bg)" stroke-width="1.3" stroke-linecap="round"/>
+
+  <!-- NEW DOOR (right): frame carved, half painted, dashes where it isn't yet -->
+  <path d="M148 148 l0 -72 36 0 0 72" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M155 142 l0 -59 22 0 0 59" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="6 5"/>
+  <path d="M148 148 l0 -38 M148 92 l0 -16 36 0 0 14" stroke="var(--umi-primary)" stroke-width="5" stroke-linecap="round"/>
+  <!-- one wet drip -->
+  <path d="M150 106 q2 5 0 9" stroke="var(--umi-primary)" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- BRUSH resting on the pail, work paused mid-frame -->
+  <path d="M196 150 l2 -12 12 0 2 12 z" fill="currentColor"/>
+  <path d="M199 141 a7 3 0 0 1 10 0" stroke="var(--umi-primary)" stroke-width="2.4"/>
+  <path d="M192 128 l16 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  <path d="M188 125 l-6 -4 3 -4 6 4 z" fill="var(--umi-primary)"/>
+  <!-- folded dropcloth by the pail -->
+  <path d="M214 150 l4 -8 14 0 -2 8 z" fill="currentColor" opacity="0.85"/>
+  <path d="M218 146 h10" stroke="var(--umi-bg)" stroke-width="1.3" stroke-linecap="round"/>
+
+  <!-- registration ticks -->
+  <path d="M8 14 h14 M218 168 h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+
   <rect width="240" height="180" filter="url(#g-thresh)" opacity="0.5"/>
 </svg>

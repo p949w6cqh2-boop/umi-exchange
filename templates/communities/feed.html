@@ -22,7 +22,7 @@
 {# Sticky surf bar: tabs + filters stay with you as the board scrolls. #}
 <div class="sticky top-[57px] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 umi-header rounded-b-2xl">
   <div class="flex flex-wrap items-center gap-2.5">
-    <nav class="flex items-center gap-1.5 mr-1" aria-label="Board lanes">
+    <nav class="flex items-center gap-1.5 mr-1 max-w-full overflow-x-auto whitespace-nowrap" aria-label="Board lanes">
       <a href="{% url 'community-feed' community.slug %}"
          class="umi-tab {% if not feed_type %}umi-tab-active{% endif %}" {% if not feed_type %}aria-current="page"{% endif %}>All</a>
       <a href="{% url 'community-feed' community.slug %}?type=need"
