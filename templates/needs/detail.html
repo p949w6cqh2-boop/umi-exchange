@@ -54,6 +54,12 @@
     </div>
   </div>
 
+  {% if is_own_need and need.status == "open" %}
+  <div class="umi-card p-4 text-sm text-parish-ink/70 flex items-start gap-2.5">
+    <svg class="w-4 h-4 mt-0.5 text-[var(--umi-primary)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span>It's on the board. You'll get a notification the moment a neighbour offers — a coordinator may also connect you. Nothing about you is shared until you accept a match.</span>
+  </div>
+  {% endif %}
   {% include "federation/_share_panel.html" %}
 
   {# Contact info box (§8.2): locked for members; revealed to coordinators (audited). #}

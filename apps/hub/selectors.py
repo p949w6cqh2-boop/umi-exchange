@@ -60,6 +60,32 @@ def own_tags(member):
     )
 
 
+def first_steps(member):
+    """First-run guidance state, derived from data — no schema, no tracking.
+
+    None once every step is done (the card retires itself); otherwise which
+    of the three moves this member has already made. The aha moment is the
+    CONNECT; these are the shortest honest path to it.
+    """
+    from apps.needs.models import Need
+    from apps.offers.models import Offer
+
+    posted = (
+        Need.objects.filter(requester=member).exists()
+        or Offer.objects.filter(offerer=member).exists()
+    )
+    offered = Match.objects.filter(
+        Q(proposed_by=member) | Q(offer__offerer=member)
+    ).exists()
+    connected = Match.objects.filter(
+        Q(need__requester=member) | Q(offer__offerer=member) | Q(proposed_by=member),
+        status__in=("accepted", "fulfilled"),
+    ).exists()
+    if posted and offered and connected:
+        return None
+    return {"posted": posted, "offered": offered, "connected": connected}
+
+
 # ── Hub v2 · "The Pulse" ─────────────────────────────
 
 PULSE_CAP = 30

@@ -7,7 +7,11 @@
   {% endif %}
 {% empty %}
   <div class="col-span-full">
-    {% include "components/_empty_state.html" with message="No needs or offers yet. Start by posting what you need or can offer." illustration=True %}
+    {% if request.GET.q or request.GET.category or request.GET.urgency %}
+      {% include "components/_empty_state.html" with message="Nothing on the board matches those filters." illustration=True cta_url=request.path cta_text="Clear filters" %}
+    {% else %}
+      {% include "components/_empty_state.html" with message="No needs or offers yet. Start by posting what you need or can offer." illustration=True %}
+    {% endif %}
   </div>
 {% endfor %}
 {% if page_obj.has_next %}
