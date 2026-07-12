@@ -13,12 +13,17 @@
         <p class="text-base text-parish-ink font-medium {% if not forloop.first %}mt-3{% endif %}">{{ party.display_name }}</p>
         {% if party.email %}<p class="text-sm text-parish-ink/60 mt-1">Email: {{ party.email }}</p>{% endif %}
         {% if party.phone %}<p class="text-sm text-parish-ink/60 mt-1">Phone: {{ party.phone }}</p>{% endif %}
+        {% if not party.email and not party.phone %}<p class="text-sm text-parish-ink/60 mt-1">Prefers to arrange things through the community — a coordinator can pass a message.</p>{% endif %}
       {% endfor %}
     {% else %}
       <p class="text-base text-parish-ink font-medium">{{ contact_info.display_name }}</p>
       {% if contact_info.email %}<p class="text-sm text-parish-ink/60 mt-1">Email: {{ contact_info.email }}</p>{% endif %}
       {% if contact_info.phone %}<p class="text-sm text-parish-ink/60 mt-1">Phone: {{ contact_info.phone }}</p>{% endif %}
+      {% if not contact_info.email and not contact_info.phone %}
+      <p class="text-sm text-parish-ink/60 mt-1">They prefer to arrange things through the community — a coordinator can pass a message along.</p>
+      {% endif %}
     {% endif %}
+    <p class="text-xs text-emerald-800/70 mt-3">Reach out kindly and arrange the rest together.</p>
   </div>
 {% else %}
   <div class="bg-parish-soft border border-parish-border rounded-lg p-4 mt-4 flex items-center gap-3">
