@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>document.documentElement.classList.add("js");</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ community.name|default:"UMI Exchange" }}{% endblock %}</title>
@@ -150,27 +151,31 @@
      server-rendered Django messages.{% endcomment %}
   <div id="umi-toasts" aria-live="polite" aria-atomic="false"></div>
   <script>
-    // Scroll reveals: elements marked data-rise get the .umi-rise entrance as
-    // they enter the viewport. Progressive + reduced-motion honoured.
+    // Scroll reveals: [data-rise] elements fade up as they enter view. The
+    // hidden state lives in CSS gated on .js, so this only ever ADDS the
+    // reveal — it never hides. A load-time failsafe reveals anything an
+    // observer missed, so a section can't ship blank on a headless/hidden
+    // renderer. Reduced motion: CSS already keeps them visible.
     (function () {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      if (!("IntersectionObserver" in window)) return;
-      var io = new IntersectionObserver(function (entries) {
+      function reveal(el) { el.classList.add("is-revealed"); }
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var hasIO = "IntersectionObserver" in window;
+      var io = (!reduce && hasIO) ? new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
-          if (e.isIntersecting) {
-            e.target.classList.add("umi-rise");
-            io.unobserve(e.target);
-          }
+          if (e.isIntersecting) { reveal(e.target); io.unobserve(e.target); }
         });
-      }, { rootMargin: "0px 0px -8% 0px" });
+      }, { rootMargin: "0px 0px -8% 0px" }) : null;
       function watch(root) {
-        (root.querySelectorAll ? root.querySelectorAll("[data-rise]") : []).forEach(function (el) {
-          el.style.opacity = "0";
-          io.observe(el);
-        });
+        var els = root.querySelectorAll ? root.querySelectorAll("[data-rise]") : [];
+        els.forEach(function (el) { io ? io.observe(el) : reveal(el); });
+      }
+      function revealAll() {
+        document.querySelectorAll("[data-rise]:not(.is-revealed)").forEach(reveal);
       }
       document.addEventListener("DOMContentLoaded", function () { watch(document); });
       document.body.addEventListener("htmx:afterSwap", function (e) { watch(e.target); });
+      // Failsafe: whatever hasn't intersected shortly after load, show it.
+      window.addEventListener("load", function () { setTimeout(revealAll, 1200); });
     })();
   </script>
   <script>

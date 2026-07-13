@@ -17,13 +17,13 @@
 
   {# The exchange ceremony — §8.2's peak moment (visible immediately after acceptance) #}
   {% if show_contact and contact_info and is_participant %}
-  <div class="umi-shell mt-6 umi-rise">
+  <div class="umi-shell mt-6 umi-ceremony">
     <div class="umi-card text-center !p-6 md:!p-8">
-      <div class="max-w-[240px] mx-auto text-parish-ink" aria-hidden="true">
+      <div class="umi-ceremony__scene max-w-[240px] mx-auto text-parish-ink" aria-hidden="true">
         {% include "illustrations/_exchange.html" %}
       </div>
-      <h2 class="font-serif text-2xl font-semibold tracking-tight mt-3">You&rsquo;re connected.</h2>
-      <p class="text-sm text-parish-ink/60 mt-2 max-w-sm mx-auto">
+      <h2 class="umi-ceremony__line font-serif text-2xl font-semibold tracking-tight mt-3" style="--ceremony-step: 1">You&rsquo;re connected.</h2>
+      <p class="umi-ceremony__line text-sm text-parish-ink/60 mt-2 max-w-sm mx-auto" style="--ceremony-step: 2">
         Contact details are open below &mdash; shared between the two of you alone,
         the way it should be. Reach out and arrange the exchange.
       </p>

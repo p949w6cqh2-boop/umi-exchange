@@ -387,9 +387,53 @@
 .umi-crossfade-out { animation: umi-fade-out 200ms var(--umi-ease) both; }
 .umi-rise { animation: umi-rise-in 650ms var(--umi-ease) both; animation-delay: var(--rise-delay, 0ms); }
 
+/* Scroll reveals are enhancement-only: content is visible by default and
+   only STARTS hidden when JS is present (the .js class is set pre-paint in
+   <head>). No-JS, a headless renderer, or a JS failure therefore all show
+   the section — the reveal can never leave it blank. .is-revealed is added
+   on intersect, with a load-time failsafe for observers that never fire. */
+.js [data-rise] { opacity: 0; transform: translateY(14px); }
+.js [data-rise].is-revealed {
+  opacity: 1;
+  transform: none;
+  transition: opacity 650ms var(--umi-ease), transform 650ms var(--umi-ease);
+}
+
+/* ── The connect ceremony: §8.2's peak moment, once ──
+   The scene settles, a warm accent glow blooms behind the card and fades,
+   then the lines rise in sequence. Pure CSS (no JS animation dep); the
+   whole thing runs on load and never repeats. */
+.umi-ceremony { position: relative; }
+.umi-ceremony::before {
+  content: "";
+  position: absolute;
+  inset: -8% -4%;
+  border-radius: 2rem;
+  background: radial-gradient(60% 60% at 50% 38%, color-mix(in srgb, var(--umi-accent) 30%, transparent), transparent 70%);
+  opacity: 0;
+  z-index: -1;
+  animation: umi-ceremony-glow 2200ms var(--umi-ease) 200ms both;
+}
+.umi-ceremony__scene { animation: umi-ceremony-settle 900ms var(--umi-ease) both; transform-origin: 50% 70%; }
+.umi-ceremony__line {
+  animation: umi-rise-in 650ms var(--umi-ease) both;
+  animation-delay: calc(360ms + var(--ceremony-step, 0) * 140ms);
+}
+@keyframes umi-ceremony-glow {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes umi-ceremony-settle {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .umi-fade, .umi-crossfade-out, .umi-rise { animation: none !important; }
+  .js [data-rise] { opacity: 1; transform: none; }
+  .umi-ceremony::before, .umi-ceremony__scene, .umi-ceremony__line { animation: none !important; opacity: 1 !important; transform: none !important; }
   .umi-card, .umi-card-hover, .btn-primary, .btn-secondary, .btn-accent { transition: none !important; transform: none !important; }
 }
 
