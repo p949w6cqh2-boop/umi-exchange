@@ -628,11 +628,24 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
                             user=request.user,
                             details={"match": str(fm.match_id)},
                         )
-                    # §4.4: the exchanged contact on this link must still enter the
-                    # shred grace even though no terminal match-event fires on revoke.
-                    # Arm expiry on every payload-carrying fedmatch on the link (both
-                    # roles) lacking one, so sweep_expired_contacts shreds it — else
-                    # the encrypted contact PII would linger indefinitely.
+                    # Mirror matches (match is NULL, so excluded from the loop above):
+                    # tear each non-terminal one down the way a terminal authority
+                    # event would — release the held local offer (matched -> active)
+                    # and mark it cancelled. Otherwise an offer proposed abroad stays
+                    # `matched` forever once the link is cut. include_contact=False: a
+                    # revoke moves no contact; _apply_mirror_state locks the offer row
+                    # and we are already inside transaction.atomic().
+                    for fm in link.matches.filter(role="mirror").exclude(mirror_status__in=mirror.MIRROR_TERMINAL):
+                        mirror._apply_mirror_state(fm, "cancelled", include_contact=False)
+                        emit(
+                            "fed.match_cancelled_on_revoke",
+                            fm,
+                            user=request.user,
+                            details={"mirror": str(fm.pk)},
+                        )
+                    # §4.4: arm the shred grace on any remaining payload-carrying
+                    # fedmatch (authority rows — the mirror loop armed its own) that
+                    # no terminal event scheduled, else the contact PII would linger.
                     from .outbox import CONTACT_GRACE_HOURS
 
                     link.matches.filter(contact_payload_enc__isnull=False, contact_expires_at__isnull=True).update(
