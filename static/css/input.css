@@ -212,6 +212,24 @@
   .btn-accent:hover { filter: brightness(0.94); transform: translateY(-1px); }
   .btn-accent:active { transform: translateY(0) scale(0.98); }
 
+  /* Shared button states (shadcn discipline): a visible keyboard focus ring
+     and a real disabled look — so the primary CTA is reachable by keyboard
+     and a disabled action reads as disabled, not merely un-clickable. */
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .btn-accent:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--umi-bg), 0 0 0 4px var(--umi-primary);
+  }
+  .btn-primary:disabled, .btn-primary[aria-disabled="true"],
+  .btn-secondary:disabled, .btn-secondary[aria-disabled="true"],
+  .btn-accent:disabled, .btn-accent[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+  }
+
   /* Quiet chip — square-ish flag, not a pill balloon. */
   .umi-pill {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase;
@@ -234,6 +252,11 @@
     outline: none;
     border-color: var(--umi-primary);
     box-shadow: 0 0 0 4px var(--umi-primary-soft), var(--umi-shadow-xs);
+  }
+  .umi-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--umi-bg-soft);
   }
   .umi-input::placeholder { color: #a49b8c; }
   .umi-label {
