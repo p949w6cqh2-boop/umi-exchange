@@ -94,6 +94,12 @@ from apps.casework.tasks import register_schedule as _c; _c()"
 ## Post-Deployment
 
 - [ ] **Health check**: `curl https://yourdomain.org/health/` returns `{"status": "ok"}`
+- [ ] **Email delivery (SMTP)**: set `EMAIL_HOST` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD`
+      (parish/diocese mail server or a transactional provider) and `DEFAULT_FROM_EMAIL`. Production
+      auto-switches to the SMTP backend once `EMAIL_HOST_USER` is set (no `EMAIL_BACKEND` needed).
+      Confirm: `manage.py shell -c "from django.core.mail import send_mail; send_mail('UMI test','it works','$DEFAULT_FROM_EMAIL',['you@yourdomain.org'])"`
+      lands in a real inbox (check SPF/DKIM so it isn't spam-filed). Notification email is consented
+      per user — a member can opt out under Account settings, and the adapter honours it.
 - [ ] **Sentry**: Trigger a test error — verify it appears in Sentry dashboard
 - [ ] **SSL**: Verify with `curl -vI https://yourdomain.org` — look for `HTTP/2 200`
 - [ ] **Security headers**: Test at https://observatory.mozilla.org

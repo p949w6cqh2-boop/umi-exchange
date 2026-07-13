@@ -94,7 +94,7 @@ class ProfileForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["email", "phone"]
+        fields = ["email", "phone", "email_notifications"]
         widgets = {
             "email": forms.EmailInput(
                 attrs={
@@ -108,6 +108,11 @@ class ProfileForm(forms.ModelForm):
                     "placeholder": "Phone (optional)",
                 }
             ),
+            "email_notifications": forms.CheckboxInput(attrs={"class": "accent-[var(--umi-primary)] w-5 h-5"}),
+        }
+        labels = {"email_notifications": "Email me when something needs my attention"}
+        help_texts = {
+            "email_notifications": "Turn this off and you'll still see everything in the app — we just won't email you."
         }
 
     def clean_email(self):

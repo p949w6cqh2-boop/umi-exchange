@@ -10,6 +10,10 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(blank=True, null=True, unique=True)
     phone = models.CharField(max_length=20, blank=True)
+    # Consent for email: on by default for anyone who gives an address, but
+    # always honoured — a neighbour can turn off notification emails from
+    # account settings and the adapter stops sending to them.
+    email_notifications = models.BooleanField(default=True)
 
     REQUIRED_FIELDS = []
     USERNAME_FIELD = "username"

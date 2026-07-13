@@ -127,3 +127,13 @@ LOGGING = {
         "apps": {"level": "INFO", "propagate": True},
     },
 }
+
+
+# ── Email delivery ────────────────────────────────────────────────────────
+# In production, send real mail over SMTP the moment credentials are present.
+# If SMTP creds are set but the backend is still the console default (e.g. the
+# operator copied .env.example verbatim), switch to real delivery. An explicit
+# non-console EMAIL_BACKEND is always respected. Delivery is consented per user
+# (User.email_notifications).
+if EMAIL_HOST_USER and EMAIL_BACKEND.endswith("console.EmailBackend"):  # noqa: F405
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

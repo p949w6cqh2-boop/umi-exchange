@@ -21,6 +21,14 @@
       {% if form.phone.errors %}<p class="text-sm text-red-600 mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
     </div>
 
+    <label for="id_email_notifications" class="flex items-start gap-3 cursor-pointer pt-1">
+      {{ form.email_notifications }}
+      <span>
+        <span class="text-parish-ink font-medium">{{ form.email_notifications.label }}</span>
+        <span class="block text-sm text-parish-ink/60 mt-0.5">{{ form.email_notifications.help_text }}</span>
+      </span>
+    </label>
+
     <div class="flex items-center justify-between pt-2">
       <button type="submit"
               class="btn-primary transition-colors">
