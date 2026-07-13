@@ -72,14 +72,5 @@
   <button type="submit" class="text-xs text-parish-ink/40 hover:text-red-600 min-h-[44px]">Leave this community</button>
 </form>
 
-{# Mobile FAB #}
-<div x-data="{ open: false }" class="fixed bottom-6 right-6 z-20 sm:hidden">
-  <div x-show="open" x-cloak class="flex flex-col gap-3 items-end mb-3">
-    <a href="{% url 'need-create' community.slug %}" class="btn-primary text-sm shadow-lg">Post an ask</a>
-    <a href="{% url 'offer-create' community.slug %}" class="btn-secondary text-sm shadow-lg bg-parish-bg">Offer something</a>
-  </div>
-  <button @click="open = !open" class="w-14 h-14 rounded-full bg-[var(--umi-primary)] text-white shadow-lg flex items-center justify-center text-2xl" aria-label="Post an ask or offer">
-    <span x-text="open ? '&times;' : '+'"></span>
-  </button>
-</div>
+{# Posting lives in the global thumb-reach bar's centre action (base.html). #}
 {% endblock %}

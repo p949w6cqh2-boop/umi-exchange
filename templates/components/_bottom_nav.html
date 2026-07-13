@@ -1,0 +1,54 @@
+{% comment %}Mobile thumb-reach bar. Shown only to signed-in members with a
+   community in reach, and only below sm — desktop keeps the top bar. Five
+   slots with the primary action (Post) elevated in the true centre; the four
+   core destinations sit either side, all inside the bottom third where a
+   thumb actually lands. Honours the iOS home-indicator safe area.{% endcomment %}
+{% load notifications_tags %}
+{% if user.is_authenticated and nav_slug %}
+{% with vn=request.resolver_match.view_name %}
+<nav class="umi-bottomnav sm:hidden" aria-label="Primary">
+  <a href="{% url 'hub:community' nav_slug %}"
+     class="umi-bottomnav__tab{% if vn == 'hub:community' or vn == 'hub:index' %} is-active{% endif %}"
+     {% if vn == 'hub:community' or vn == 'hub:index' %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>
+    <span>Hub</span>
+  </a>
+  <a href="{% url 'community-feed' nav_slug %}"
+     class="umi-bottomnav__tab{% if vn == 'community-feed' %} is-active{% endif %}"
+     {% if vn == 'community-feed' %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
+    <span>Board</span>
+  </a>
+
+  {# Elevated primary action — opens a small ask/offer sheet #}
+  <div class="umi-bottomnav__post" x-data="{ open: false }">
+    <div x-show="open" x-cloak @click.away="open = false" class="umi-bottomnav__sheet">
+      <a href="{% url 'need-create' nav_slug %}" class="btn-primary text-sm w-full justify-center">Post an ask</a>
+      <a href="{% url 'offer-create' nav_slug %}" class="btn-secondary text-sm w-full justify-center bg-white">Offer something</a>
+    </div>
+    <button type="button" @click="open = !open"
+            class="umi-bottomnav__fab" x-bind:aria-expanded="open ? 'true' : 'false'" aria-label="Post an ask or an offer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"
+           class="transition-transform duration-200" x-bind:class="open ? 'rotate-45' : ''"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <a href="{% url 'notification-list' %}"
+     class="umi-bottomnav__tab{% if vn == 'notification-list' %} is-active{% endif %}"
+     {% if vn == 'notification-list' %}aria-current="page"{% endif %}>
+    <span class="relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1"/></svg>
+      {% unread_count user as n_count %}
+      {% if n_count %}<span class="umi-bottomnav__badge">{{ n_count }}</span>{% endif %}
+    </span>
+    <span>Alerts</span>
+  </a>
+  <a href="{% url 'account-settings' %}"
+     class="umi-bottomnav__tab{% if vn == 'account-settings' %} is-active{% endif %}"
+     {% if vn == 'account-settings' %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+    <span>You</span>
+  </a>
+</nav>
+{% endwith %}
+{% endif %}

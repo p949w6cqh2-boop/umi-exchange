@@ -94,6 +94,56 @@
     max-width: 960px;
   }
 
+  /* ── Mobile thumb-reach bar (below sm only; desktop keeps the top bar) ── */
+  /* 8-point grid throughout: every length below is divisible by 4. */
+  .umi-bottomnav {
+    @apply fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around;
+    background-color: color-mix(in srgb, var(--umi-bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    border-top: 1px solid var(--umi-border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    box-shadow: 0 -4px 20px -12px rgba(28, 24, 20, 0.28);
+  }
+  .umi-bottomnav__tab {
+    @apply flex flex-1 flex-col items-center justify-center gap-1 py-2;
+    min-height: 56px;
+    color: color-mix(in srgb, var(--umi-text) 52%, transparent);
+    transition: color 200ms var(--umi-ease);
+  }
+  .umi-bottomnav__tab svg { @apply w-6 h-6; }
+  .umi-bottomnav__tab span { @apply text-xs font-medium leading-none; }
+  .umi-bottomnav__tab.is-active { color: var(--umi-primary); }
+  .umi-bottomnav__tab:active { opacity: 0.7; }
+
+  /* Elevated primary action, lifted above the bar in the true centre. */
+  .umi-bottomnav__post { @apply relative flex flex-1 items-start justify-center; }
+  .umi-bottomnav__fab {
+    @apply flex items-center justify-center rounded-full text-white -translate-y-4;
+    width: 56px;
+    height: 56px;
+    background-color: var(--umi-primary);
+    box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--umi-primary) 60%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+  .umi-bottomnav__fab svg { @apply w-8 h-8; }
+  .umi-bottomnav__fab:active { transform: translateY(-1rem) scale(0.94); }
+  .umi-bottomnav__sheet {
+    @apply absolute left-1/2 -translate-x-1/2 flex flex-col gap-2 p-4 rounded-2xl;
+    bottom: calc(100% + 8px);
+    width: 192px;
+    background-color: var(--umi-card);
+    border: 1px solid var(--umi-border);
+    box-shadow: var(--umi-shadow-md);
+  }
+  .umi-bottomnav__badge {
+    @apply absolute -top-2 -right-2 flex items-center justify-center rounded-full text-white font-bold;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    font-size: 0.6rem;
+    background-color: #dc2626;
+  }
+
   /* ── Cards: true white on stone, hairline, layered lift ── */
   .umi-card {
     @apply rounded-2xl p-6 md:p-7;
