@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('needs', '0004_need_share_scope'),
+        ("needs", "0004_need_share_scope"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='need',
-            name='moderation_hidden',
+            model_name="need",
+            name="moderation_hidden",
             field=models.BooleanField(default=False),
         ),
     ]

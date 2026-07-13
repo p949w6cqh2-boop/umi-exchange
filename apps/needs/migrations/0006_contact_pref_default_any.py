@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('needs', '0005_need_moderation_hidden'),
+        ("needs", "0005_need_moderation_hidden"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='need',
-            name='contact_pref',
-            field=models.CharField(choices=[('in_app', 'In-app'), ('email', 'Email'), ('phone', 'Phone'), ('any', 'Any')], default='any', max_length=10),
+            model_name="need",
+            name="contact_pref",
+            field=models.CharField(
+                choices=[("in_app", "In-app"), ("email", "Email"), ("phone", "Phone"), ("any", "Any")],
+                default="any",
+                max_length=10,
+            ),
         ),
     ]
