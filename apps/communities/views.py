@@ -13,6 +13,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
 
@@ -426,7 +427,10 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             )
             messages.success(request, "Theme updated.")
             nxt = request.POST.get("next", "")
-            if nxt.startswith("/") and not nxt.startswith("//"):
+            # url_has_allowed_host_and_scheme rejects the bypasses the manual
+            # startswith check missed (e.g. "/\evil.com" and "/%2f%2fevil.com",
+            # which browsers normalize to a protocol-relative //evil.com).
+            if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
                 return redirect(nxt)
             return redirect("community-settings", slug=self.community.slug)
 

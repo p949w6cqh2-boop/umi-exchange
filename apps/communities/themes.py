@@ -13,6 +13,12 @@ Stored on Community.settings:
 Resolved into CSS custom properties consumed by base.html / input.css.
 """
 
+import re
+
+# Overrides are interpolated raw into a <style> block, so every value must be a
+# strict #RRGGBB hex — HTML-autoescape does not neutralize CSS metacharacters.
+_HEX_RE = re.compile(r"#[0-9A-Fa-f]{6}")
+
 THEME_DEFAULT = "parish"
 
 # One surface system for every theme — the product's constant ground.
@@ -58,6 +64,10 @@ def resolve_theme(community):
     key = settings.get("theme") or THEME_DEFAULT
     theme = dict(THEMES.get(key, THEMES[THEME_DEFAULT]))
     for var, value in (settings.get("theme_custom") or {}).items():
-        if var in CUSTOMIZABLE and value:
+        # Validate at the RENDER boundary, not only at the writer: the value lands
+        # raw in a <style> block (base.html) where autoescape does NOT neutralize
+        # CSS metacharacters, so an unvalidated "red;}html{display:none}" would
+        # break out and inject arbitrary CSS. Only a strict #RRGGBB is applied.
+        if var in CUSTOMIZABLE and isinstance(value, str) and _HEX_RE.fullmatch(value):
             theme[var] = value
     return theme
