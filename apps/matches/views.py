@@ -135,7 +135,11 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         ctx["community"] = community
         ctx["member"] = member
         ctx["is_requester"] = member and match.need.requester == member
-        ctx["is_offerer"] = member and match.offer and match.offer.offerer == member
+        # The offering party is the offer owner, or — for an offer-less direct
+        # volunteer match — the proposer (mirrors Match.get_contact_info_for).
+        ctx["is_offerer"] = member and (
+            (match.offer and match.offer.offerer == member) or (match.offer is None and match.proposed_by == member)
+        )
         ctx["is_participant"] = ctx["is_requester"] or ctx["is_offerer"]
         ctx["is_coordinator"] = member and member.is_coordinator
 
