@@ -93,3 +93,27 @@ def test_sync_replay_does_not_leak_foreign_note_id(world, auth):
     assert resp.status_code == 200
     result = resp.json()["results"][0]
     assert result.get("note_id") != str(nb.pk)  # foreign note id must never surface
+
+
+def test_followup_blocked_after_consent_revoked(world, auth, u):
+    """§3.6: a follow-up's `detail` is envelope-encrypted subject narrative, so it
+    is frozen with notes once consent is revoked (deferred bug-hunt item)."""
+    from apps.casework.models import FollowUp
+
+    world.consent.status = "revoked"
+    world.consent.revoked_at = timezone.now()
+    world.consent.save(update_fields=["status", "revoked_at"])
+
+    before = FollowUp.objects.filter(case=world.case).count()
+    client = auth(world.coord_u)
+    resp = client.post(
+        u("followup-create", pk=world.case.pk),
+        {
+            "title": "check in after revocation",
+            "detail": "new subject narrative that must not be written",
+            "due_date": timezone.now().date().isoformat(),
+            "assigned_to": str(world.coordinator.pk),
+        },
+    )
+    assert resp.status_code == 403
+    assert FollowUp.objects.filter(case=world.case).count() == before  # nothing written

@@ -32,6 +32,13 @@ class TestUrlValidation:
         settings.DEBUG = True
         _validate_public_url("http://localhost:8000/x")  # no raise
 
+    def test_debug_still_blocks_link_local_metadata(self, settings):
+        # DEBUG relaxes loopback for the local rehearsal but must NOT reopen the
+        # cloud-metadata sink (169.254.169.254).
+        settings.DEBUG = True
+        with pytest.raises(FederationClientError):
+            _validate_public_url("https://169.254.169.254/latest/meta-data/")
+
 
 class TestRedirectRefusal:
     def test_handler_returns_none(self):

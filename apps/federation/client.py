@@ -40,19 +40,21 @@ def _validate_public_url(url: str) -> None:
     loopback/link-local/reserved/multicast addresses — the cloud-metadata and
     localhost SSRF sinks. Private ranges (RFC1918, CGNAT 100.64/10) are allowed:
     parish-to-parish federation over a LAN or Tailscale is a legitimate topology.
+    DEBUG relaxes ONLY the https requirement and loopback (so the local
+    dark-launch rehearsal on 127.0.0.1:8021/8022 works) — it never opens the
+    link-local metadata sink; the address checks run in every environment.
     NOTE: getaddrinfo here and the socket in urlopen re-resolve independently
     (a TOCTOU window); acceptable for an admin-gated Stage-A surface — a future
     hardening can pin the resolved address."""
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
         raise FederationClientError("unsupported URL scheme")
-    if parsed.scheme != "https" and not settings.DEBUG:
+    debug = bool(settings.DEBUG)
+    if parsed.scheme != "https" and not debug:
         raise FederationClientError("federation peers must be https")
     host = parsed.hostname
     if not host:
         raise FederationClientError("peer URL has no host")
-    if settings.DEBUG:
-        return  # local dev/tests may target localhost
     port = parsed.port or (443 if parsed.scheme == "https" else 80)
     try:
         infos = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
@@ -60,7 +62,13 @@ def _validate_public_url(url: str) -> None:
         raise FederationClientError(f"could not resolve peer host: {str(e)[:100]}") from e
     for info in infos:
         ip = ipaddress.ip_address(info[4][0])
-        if ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+        # Link-local (cloud metadata 169.254.169.254), reserved, multicast, and the
+        # unspecified address are blocked in EVERY environment — DEBUG must not open
+        # the metadata SSRF sink. Loopback is blocked outside DEBUG; under DEBUG it is
+        # allowed for the local dark-launch rehearsal (127.0.0.1:8021/8022).
+        if ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            raise FederationClientError("peer resolves to a non-public address")
+        if ip.is_loopback and not debug:
             raise FederationClientError("peer resolves to a non-public address")
 
 

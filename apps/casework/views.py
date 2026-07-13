@@ -772,6 +772,11 @@ class FollowUpCreateView(CommunityMixin, View):
         case = self.get_case(pk)
         if access.case_access(self.membership, case) < access.CONTRIBUTOR:
             return _forbidden("You can't add follow-ups to this case.")
+        if self._consent_frozen(case):
+            # §3.6: a follow-up's `detail` is envelope-encrypted subject narrative
+            # (new PII), so it is frozen with notes/visits/amendments once consent
+            # is revoked — the case can still be closed via status.
+            return _forbidden("Consent was revoked — new follow-ups are frozen.")
         form = FollowUpForm(self.community, request.POST)
         if not form.is_valid():
             return HttpResponse(form.errors.as_text(), status=400)
