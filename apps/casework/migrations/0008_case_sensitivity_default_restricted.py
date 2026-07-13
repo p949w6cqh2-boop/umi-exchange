@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('casework', '0007_drop_emergency_justification_plaintext'),
+        ("casework", "0007_drop_emergency_justification_plaintext"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='casefile',
-            name='sensitivity',
-            field=models.CharField(choices=[('standard', 'Standard'), ('restricted', 'Restricted')], default='restricted', max_length=12),
+            model_name="casefile",
+            name="sensitivity",
+            field=models.CharField(
+                choices=[("standard", "Standard"), ("restricted", "Restricted")], default="restricted", max_length=12
+            ),
         ),
     ]

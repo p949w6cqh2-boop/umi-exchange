@@ -4,15 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notifications', '0001_initial'),
+        ("notifications", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='notification',
-            name='type',
-            field=models.CharField(choices=[('match_proposed', 'Match Proposed'), ('match_accepted', 'Match Accepted'), ('match_fulfilled', 'Match Fulfilled'), ('match_cancelled', 'Match Cancelled'), ('need_expiring', 'Need Expiring'), ('need_expired', 'Need Expired'), ('flag_received', 'Flag Received'), ('flag_reviewed', 'Flag Reviewed')], max_length=30),
+            model_name="notification",
+            name="type",
+            field=models.CharField(
+                choices=[
+                    ("match_proposed", "Match Proposed"),
+                    ("match_accepted", "Match Accepted"),
+                    ("match_fulfilled", "Match Fulfilled"),
+                    ("match_cancelled", "Match Cancelled"),
+                    ("need_expiring", "Need Expiring"),
+                    ("need_expired", "Need Expired"),
+                    ("flag_received", "Flag Received"),
+                    ("flag_reviewed", "Flag Reviewed"),
+                ],
+                max_length=30,
+            ),
         ),
     ]

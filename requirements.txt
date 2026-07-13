@@ -27,6 +27,6 @@ qrcode>=7.4
 pytest-django>=4.8
 factory-boy>=3.3
 coverage>=7.4
-ruff>=0.3
+ruff==0.15.14  # pinned: unpinned CI ruff auto-upgrades and reformats untouched files -> surprise red
 bandit>=1.7
 pip-audit>=2.7

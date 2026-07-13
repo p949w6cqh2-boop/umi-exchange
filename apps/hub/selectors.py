@@ -70,13 +70,8 @@ def first_steps(member):
     from apps.needs.models import Need
     from apps.offers.models import Offer
 
-    posted = (
-        Need.objects.filter(requester=member).exists()
-        or Offer.objects.filter(offerer=member).exists()
-    )
-    offered = Match.objects.filter(
-        Q(proposed_by=member) | Q(offer__offerer=member)
-    ).exists()
+    posted = Need.objects.filter(requester=member).exists() or Offer.objects.filter(offerer=member).exists()
+    offered = Match.objects.filter(Q(proposed_by=member) | Q(offer__offerer=member)).exists()
     connected = Match.objects.filter(
         Q(need__requester=member) | Q(offer__offerer=member) | Q(proposed_by=member),
         status__in=("accepted", "fulfilled"),

@@ -27,9 +27,15 @@ def test_switcher_marks_focused_community(client):
     client.force_login(user)
     resp = client.get(reverse("hub:community", kwargs={"slug": a.community.slug}))
     body = resp.content.decode()
+    # Scope to the switcher nav: the mobile bottom nav (_bottom_nav.html) also
+    # emits aria-current="page" for the active section, so a whole-body count is
+    # not the switcher's to make.
+    switcher = re.search(r'<nav\b[^>]*class="[^"]*umi-switcher[^"]*"[^>]*>(.*?)</nav>', body, re.S)
+    assert switcher, "switcher nav not found in response"
+    region = switcher.group(1)
     # exactly one community is marked current, and it is the focused one (Alpha)
-    assert body.count('aria-current="page"') == 1
-    marked = re.search(r'<a\b[^>]*aria-current="page"[^>]*>(.*?)</a>', body, re.S)
+    assert region.count('aria-current="page"') == 1
+    marked = re.search(r'<a\b[^>]*aria-current="page"[^>]*>(.*?)</a>', region, re.S)
     assert marked and "Alpha" in marked.group(1)
 
 

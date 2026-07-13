@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - run: pip install ruff bandit pip-audit
+      - run: pip install ruff==0.15.14 bandit pip-audit
       - name: Ruff lint
         run: ruff check .
       - name: Ruff format check

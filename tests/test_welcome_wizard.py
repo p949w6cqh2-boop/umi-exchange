@@ -44,13 +44,9 @@ def test_wizard_shows_the_join_code_to_the_admin(world):
 
 def test_wizard_is_admin_only(world):
     community, admin, member = world
-    assert (
-        _login(member.user).get(reverse("community-welcome", kwargs={"slug": community.slug})).status_code == 403
-    )
+    assert _login(member.user).get(reverse("community-welcome", kwargs={"slug": community.slug})).status_code == 403
     outsider = MemberFactory(community=CommunityFactory(), role="admin")
-    assert (
-        _login(outsider.user).get(reverse("community-welcome", kwargs={"slug": community.slug})).status_code == 404
-    )
+    assert _login(outsider.user).get(reverse("community-welcome", kwargs={"slug": community.slug})).status_code == 404
 
 
 def test_posted_step_flips_with_the_first_ask(world):
