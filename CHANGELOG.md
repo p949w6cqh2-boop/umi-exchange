@@ -5,6 +5,10 @@
 
 ## 2026-07-13
 
+- **For coordinators: the federation launch guide caught up with the build** — sharing beyond
+  your community is now described the way it actually works (the "Share beyond this community"
+  card on your own ask or offer — one press, and only the outline travels), and the one-time
+  pairing code is documented where it now lives: pinned on the page, not a vanishing pop-up.
 - **Fixed things you never saw** — two rounds of adversarial bug-hunting hardened security,
   robustness, federation, and theming; the build checks that guard every change were repaired and
   pinned so they can't silently drift.
