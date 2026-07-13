@@ -103,7 +103,7 @@
   </header>
   {% endblock %}
 
-  <main id="main" class="flex-grow umi-container py-6 w-full">
+  <main id="main" class="flex-grow umi-container py-6 w-full pb-24 sm:pb-6">
     {% comment %}Server-rendered messages. With JS, the toast script below turns these into
        animated toasts and removes this block; without JS they remain visible.{% endcomment %}
     {% if messages %}
@@ -117,6 +117,8 @@
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+
+  {% include "components/_bottom_nav.html" %}
 
   <footer class="bg-[#191613] text-[#EDEAE2] mt-16">
     <div class="umi-container py-10">
