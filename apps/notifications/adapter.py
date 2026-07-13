@@ -45,8 +45,9 @@ class NotificationAdapter:
             channels_sent=channels_sent,
         )
 
-        # 2. Email: send if user has an email address
-        if recipient_user.email:
+        # 2. Email: send only to a neighbour who has an address AND hasn't
+        # opted out (consent, not surveillance — honoured on every send).
+        if recipient_user.email and getattr(recipient_user, "email_notifications", True):
             email_sent = NotificationAdapter._send_email(recipient_user, title, body, link)
             if email_sent:
                 channels_sent.append("email")
