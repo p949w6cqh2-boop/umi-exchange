@@ -129,12 +129,32 @@ Key mechanisms (respect these — they're load-bearing):
   `{# #}` only comments to end-of-line. A `{#`/`#}` spanning newlines leaves any `{% … %}`/`{{ … }}`
   on the inner lines **live** — a usage-example `{% include %}` inside such a block self-recursed to a
   `RecursionError`. Use `{% comment %}…{% endcomment %}` for multi-line comments.
+- **Never judge a test suite through a pipe.** `pytest … | tail` exits with the pipe's status, not
+  the suite's — chained `&& git commit` has shipped red gates. Write the summary line to a file,
+  **Read the pass count**, then commit as a separate command (a PreToolUse hook warns on this; the
+  `/gate` skill encodes the whole verified sequence).
+- **Never `git add -A` / `git add .` here.** The tree deliberately carries the untracked local
+  `hgit_sync.py` (Jasiah's WIP; excluded from ruff via `pyproject.toml extend-exclude`) — blanket
+  staging has committed it and broken CI lint twice. Stage explicit paths (hook-enforced).
+- **`MatchFactory` auto-creates an Offer with its own offerer.** A volunteer-proposer test must pin
+  `offer=None`, or the proposer is a stranger to the match and §8.2 correctly returns None.
+- **CI runs with `ENCRYPTION_KEY=""`.** Tests that write envelope PII need the hermetic autouse
+  fixture (`settings.ENCRYPTION_KEY = Fernet.generate_key().decode()` — copy from
+  `apps/casework/tests/conftest.py`), or they pass locally and fail in CI.
+- **Django ≥4.1 caches templates even in DEBUG** — restart `runserver` to see template edits.
+- **Auth endpoints are IP-throttled** (register 3/min, login 5/min, django_ratelimit) — tests that
+  POST them repeatedly need a distinct `REMOTE_ADDR` per request or they collect 429s.
+- **Known flake:** `test_reauth_returns_429_after_five_attempts` straddles a fixed-window minute
+  boundary (~rare). Green in isolation ⇒ flake; anything else failing ⇒ real.
 
 ## Workflow conventions
 
-- **Branch, don't push to `main` without explicit approval.** Verify before merge:
-  `ruff check . && ruff format --check .` · `makemigrations --check` · `pytest` (ideally on Postgres
-  too) · `check --deploy` (prod) = 0 issues.
+- **Branch, don't push to `main` without explicit approval.** Verify before merge with the
+  **`/gate` skill** (canonical sequence: ruff check + `ruff format .`, `makemigrations --check`,
+  FULL `pytest` on Postgres with the count read from a file, bandit/semgrep vs `main`,
+  `check --deploy` = 0).
+- **Update `CHANGELOG.md` with every merge** — plain language, written for the people who use the
+  board; all product copy checks against the brain's `identity/voice.md`.
 - **Safe-fail defaults:** archive not delete, draft not send, read not edit. Never send real
   email/SMS, spend money, delete data, or touch live community data without explicit approval.
 - **Sensitive personal data** (real names, parish specifics, settlement details) stays out of git.
