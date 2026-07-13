@@ -173,9 +173,15 @@ class MatchUpdateView(LoginRequiredMixin, View):
 
     def post(self, request, slug, pk):
         new_status = request.POST.get("status")
-        notes = sanitize_text_field(request.POST.get("notes", ""))
         if new_status not in ("accepted", "fulfilled", "unfulfilled", "cancelled"):
             return HttpResponse(status=400)
+        # sanitize_text_field raises ValidationError on script-injection / blocked
+        # content. It ran before the try/except below, so a hostile note 500'd the
+        # request instead of a clean 400 — validate it up front and reject cleanly.
+        try:
+            notes = sanitize_text_field(request.POST.get("notes", ""))
+        except ValidationError as exc:
+            return HttpResponse("; ".join(exc.messages), status=400)
 
         community = get_object_or_404(Community, slug=slug)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)

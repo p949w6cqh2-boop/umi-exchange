@@ -1,7 +1,7 @@
 """Account forms: registration and login."""
 
 from django import forms
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.forms import AuthenticationForm
 
 User = get_user_model()
@@ -55,8 +55,14 @@ class RegistrationForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        if cleaned.get("password") != cleaned.get("password_confirm"):
+        password = cleaned.get("password")
+        if password != cleaned.get("password_confirm"):
             self.add_error("password_confirm", "Passwords do not match.")
+        if password:
+            try:
+                password_validation.validate_password(password, self.instance)
+            except forms.ValidationError as exc:
+                self.add_error("password", exc)
         return cleaned
 
     def save(self, commit=True):
