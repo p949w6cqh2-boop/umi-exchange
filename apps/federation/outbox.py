@@ -126,7 +126,20 @@ def deliver_due_events(now=None) -> int:
         if key in blocked or _older_pending_exists(ev):
             blocked.add(key)
             continue
-        if _deliver_one(ev, now):
+        # Claim the row so a second django-q worker running this pass concurrently
+        # can't also deliver it (double POST + duplicate fed.contact_disclosed +
+        # raced attempts writes). skip_locked means the other worker skips it, not
+        # blocks. No-op on SQLite (single writer); enforced on Postgres.
+        with transaction.atomic():
+            locked = (
+                FederationEvent.objects.select_for_update(skip_locked=True)
+                .filter(pk=ev.pk, direction="out", state="pending")
+                .first()
+            )
+            if locked is None:
+                continue  # another worker claimed it (or it's no longer pending)
+            ok = _deliver_one(locked, now)
+        if ok:
             delivered += 1
         else:
             blocked.add(key)

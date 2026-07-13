@@ -538,6 +538,17 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             remote_uuid = uuid.UUID(str(requested.get("uuid", "")))
         except ValueError:
             remote_uuid = None
+        if remote_uuid is None:
+            # A link with no remote community identity can't be consent-scoped: a
+            # later share would mint a Consent(grantee_id=None), which covers()
+            # treats as "matches any community" (legacy-NULL rule) — collapsing the
+            # §4.1 per-peer-community gate. Refuse, as HandshakeConfirmView does.
+            messages.error(
+                request,
+                "That peer didn't identify its community (no valid UUID). Nothing was approved — "
+                "ask them to re-send the link request.",
+            )
+            return
         try:
             link = FederationLink.objects.create(
                 peer=peer,
@@ -617,6 +628,16 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
                             user=request.user,
                             details={"match": str(fm.match_id)},
                         )
+                    # §4.4: the exchanged contact on this link must still enter the
+                    # shred grace even though no terminal match-event fires on revoke.
+                    # Arm expiry on every payload-carrying fedmatch on the link (both
+                    # roles) lacking one, so sweep_expired_contacts shreds it — else
+                    # the encrypted contact PII would linger indefinitely.
+                    from .outbox import CONTACT_GRACE_HOURS
+
+                    link.matches.filter(contact_payload_enc__isnull=False, contact_expires_at__isnull=True).update(
+                        contact_expires_at=timezone.now() + timedelta(hours=CONTACT_GRACE_HOURS)
+                    )
         except TransitionConflict as e:
             messages.error(request, str(e.message))
             return
@@ -822,6 +843,11 @@ class FederatedShareToggleView(LoginRequiredMixin, FederationGateMixin, View):
         if action == "share":
             if link.status != "active":
                 messages.error(request, "That community link isn't active right now.")
+            elif link.remote_community_uuid is None:
+                # Defense-in-depth for any pre-existing null-identity link: never mint
+                # a Consent(grantee_id=None), which covers()'s legacy-NULL rule would
+                # treat as authorizing federated_share to EVERY peer community.
+                messages.error(request, "This link is missing its community identity — re-pair before sharing.")
             else:
                 consent = sharing_mod.find_share_consent(record, link)
                 if consent is None:
