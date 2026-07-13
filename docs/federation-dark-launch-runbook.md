@@ -55,9 +55,10 @@ Federation) shows this instance's key thumbprint.
 Roles: **Admin A** (St. Patrick) and **Admin B** (the peer). Both open
 `c/<community>/federation/` and keep the page visible — it shows their **own key thumbprint**.
 
-1. Admin B enters A's base URL → **Fetch & request**. A one-time **12-character pairing code**
-   appears in a toast. **⚠ Write it down immediately — it is shown exactly once and the toast
-   auto-dismisses in a few seconds** (UX follow-up filed: pin it to the page).
+1. Admin B enters A's base URL → **Fetch & request**. The page reloads with the one-time
+   **12-character pairing code pinned in a card** ("Pairing code — shown only once"). It expires
+   in 24 hours and is not rendered again after this page view — **write it down before leaving
+   the page**.
 2. **Phone call (the MITM kill, §3.3):** B reads A the pairing code AND B's thumbprint; A reads
    back the thumbprint shown in A's *Inbound requests* panel. **They must match verbatim.** Any
    mismatch → stop, revoke, investigate.
@@ -65,10 +66,31 @@ Roles: **Admin A** (St. Patrick) and **Admin B** (the peer). Both open
    sides automatically. Both pages now show the link **Active**.
 4. Verify in the audit log (both sides): `fed.link_requested` + `fed.link_approved`.
 
-## 4. Share the pilot record (current UI gap — shell step)
+## 4. Share the pilot record (member-facing UI — §4.1 one-action consent)
 
-There is **no member-facing share UI yet** (flagged follow-up slice). For the dark launch, share
-one consenting member's need via shell on its home instance:
+Sharing is done by the record's **owner** in the UI; the share action IS the digital consent
+capture (§4.1):
+
+1. The consenting member opens **their own** need (or offer) detail page. Below the record sits
+   the **"Share beyond this community"** card — one row per linked community
+   (`templates/federation/_share_panel.html`; only the owner sees it, coordinators cannot share
+   on a member's behalf).
+2. They press **Share** next to the peer. That single action records a digital `Consent`
+   (scope `federated_share`), mints the `FederatedShare` + signed receipt, and flips the record's
+   `share_scope`. The card and the confirmation message state plainly: only the outline travels —
+   category, urgency, general area — never name or contact details, until a match they accept.
+3. **Stop sharing** on the same card revokes the share and sends the peer a signed delete-request
+   (§4.3); the peer's shadow dies by tombstone/TTL. The consent itself stays the member's to
+   revoke from their consent page.
+4. Verify: audit `fed.share_created` on the home instance; the share counts in
+   `manage.py federation_status`.
+
+Only redacted fields ever cross at this stage (category, urgency, coarse locality, week bucket).
+
+### Appendix — shell fallback (pre-UI path, kept for emergencies)
+
+If the UI is unavailable, the same share can be made via shell on the record's home instance.
+The member's **verbal consent must be real** — record who consented and when in the consent row:
 
 ```bash
 python manage.py shell
@@ -85,9 +107,6 @@ python manage.py shell
 ...     scope=["federated_share"], purpose="Dark-launch pilot share", method="verbal")
 >>> sharing.share_record(need, link, actor_user=user)
 ```
-
-The member's **verbal consent must be real** — record who consented and when in the consent row.
-Only redacted fields ever cross at this stage (category, urgency, coarse locality, week bucket).
 
 ## 5. Drive the lifecycle (the rehearsed checklist)
 
@@ -143,6 +162,8 @@ sides. Audit trail on the need side: `fed.link_requested/approved`, `fed.share_c
 Offer side: `fed.link_requested/approved`, `fed.proposal_sent`, `fed.match_event_received`,
 `fed.contact_disclosed`.
 
-**Known gaps carried into the pilot:** no share UI (shell step above); the one-time pairing-code
-toast should become a pinned panel; local multi-instance rehearsals must use separate browser
-profiles (cookies ignore ports).
+**Known gaps carried into the pilot:** local multi-instance rehearsals must use separate browser
+profiles (cookies ignore ports). *(The rehearsal's other two flagged gaps are closed since PR #56:
+member-facing sharing is the "Share beyond this community" card on need/offer detail — §4 above —
+and the pairing code is pinned in a card on Community Settings → Federation instead of a
+vanishing toast.)*
