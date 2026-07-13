@@ -429,9 +429,15 @@ class NoteCreateView(CommunityMixin, View):
         )
         note.body = d["body"]
         try:
-            note.save()
+            with transaction.atomic():  # savepoint: an IntegrityError must not poison the request txn
+                note.save()
         except IntegrityError:  # client_uuid replay via the online form
-            existing = CaseNote.objects.get(client_uuid=d["client_uuid"])
+            # Scope to THIS case: client_uuid is globally unique, so an unscoped
+            # lookup would render another case's decrypted note body to a caller
+            # who only has access here. A cross-case collision surfaces nothing.
+            existing = CaseNote.objects.filter(client_uuid=d["client_uuid"], case=case).first()
+            if existing is None:
+                return HttpResponse("That note reference is already in use.", status=409)
             return self._respond(request, slug, case, existing)
         if "finalize" in request.POST:
             note.transition_to(CaseNote.STATUS_FINAL)
@@ -497,6 +503,12 @@ class NoteAmendView(CommunityMixin, View):
         case = self.get_case(pk)
         if access.case_access(self.membership, case) < access.CONTRIBUTOR:
             return _forbidden("You can't amend notes on this case.")
+        if self._consent_frozen(case):
+            # §3.6: once consent is revoked, no new note content may be written.
+            # An amendment is a brand-new CaseNote row (fresh PII), so it must be
+            # frozen exactly like NoteCreate/Visit/Sync — otherwise it is the one
+            # open door to writing about someone who withdrew consent.
+            return _forbidden("Consent was revoked — amendments are frozen.")
         original = get_object_or_404(CaseNote, pk=note_id, case=case)
         if original.status != CaseNote.STATUS_FINAL:
             return _conflict("Only finalized notes can be amended (discard drafts instead).")
@@ -666,9 +678,6 @@ class SyncView(CommunityMixin, View):
             cu = str(uuid.UUID(str(raw_cu)))
         except (ValueError, TypeError, AttributeError):
             return {"client_uuid": None, "status": "error", "error": "invalid client_uuid"}
-        existing = CaseNote.objects.filter(client_uuid=cu).first()
-        if existing:
-            return {"client_uuid": cu, "status": "duplicate", "note_id": str(existing.pk)}
         try:
             case = CaseFile.objects.select_related("consent", "subject_person").get(
                 pk=item.get("case_id"), community=self.community
@@ -677,6 +686,12 @@ class SyncView(CommunityMixin, View):
             return {"client_uuid": cu, "status": "error", "error": "unknown case"}
         if access.case_access(self.membership, case) < access.CONTRIBUTOR:
             return {"client_uuid": cu, "status": "error", "error": "forbidden"}
+        # Duplicate detection is scoped to the authorized case. client_uuid is
+        # globally unique, so an unscoped lookup would leak (via note_id) whether a
+        # uuid exists in a case the caller can't access — run it AFTER the gate.
+        existing = CaseNote.objects.filter(client_uuid=cu, case=case).first()
+        if existing:
+            return {"client_uuid": cu, "status": "duplicate", "note_id": str(existing.pk)}
         if self._consent_frozen(case):
             return {"client_uuid": cu, "status": "error", "error": "consent_revoked"}
 
@@ -728,9 +743,14 @@ class SyncView(CommunityMixin, View):
         )
         note.body = body[:8000]
         try:
-            note.save()
+            with transaction.atomic():  # savepoint: an IntegrityError must not poison the batch txn
+                note.save()
         except IntegrityError:  # replay race on the unique client_uuid
-            existing = CaseNote.objects.get(client_uuid=cu)
+            # Scope to the authorized case — a cross-case collision must not leak
+            # a foreign note's id (client_uuid is globally unique).
+            existing = CaseNote.objects.filter(client_uuid=cu, case=case).first()
+            if existing is None:
+                return {"client_uuid": cu, "status": "error", "error": "duplicate client_uuid"}
             return {"client_uuid": cu, "status": "duplicate", "note_id": str(existing.pk)}
         audit.emit("note.synced_offline", note, user=request.user, request=request, details={"client_uuid": str(cu)})
         if item.get("finalize", True):

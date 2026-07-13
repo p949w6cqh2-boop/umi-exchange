@@ -33,11 +33,24 @@ if FEDERATION_ENABLED and not FEDERATION_PRIVATE_KEY:
         "generate one with `manage.py federation_keygen`). Refusing to start with an "
         "unsigned federation identity."
     )
-if FEDERATION_ENABLED and "locmem" in CACHES["default"]["BACKEND"].lower():
+_USING_LOCMEM = "locmem" in CACHES["default"]["BACKEND"].lower()  # noqa: F405
+if FEDERATION_ENABLED and _USING_LOCMEM:
     raise ImproperlyConfigured(
         "FEDERATION_ENABLED=True requires a shared cache (set REDIS_URL). With the per-process "
         "LocMemCache, the signed-request replay (jti) guard and rate limits are not atomic across "
         "gunicorn workers — a replay landing on another worker would be accepted."
+    )
+# Even without federation, the auth rate limiter (login / register / password-reset)
+# lives in the cache. Under gunicorn's multiple pre-fork workers a per-process
+# LocMemCache gives each worker its own counter, so every throttle multiplies by the
+# worker count and concurrent attempts on different workers never see each other.
+# Refuse to boot on LocMemCache in production unless an operator has explicitly
+# accepted it for a genuinely single-worker deployment.
+if _USING_LOCMEM and not env.bool("ALLOW_LOCMEM_CACHE", default=False):  # noqa: F405
+    raise ImproperlyConfigured(
+        "Production requires a shared cache: set REDIS_URL so auth rate limits are atomic "
+        "across gunicorn workers. Per-process LocMemCache multiplies every throttle by the "
+        "worker count. If you truly run a single worker, set ALLOW_LOCMEM_CACHE=1 to override."
     )
 
 # ── Security Headers ─────────────────────────────────

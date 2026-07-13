@@ -2,6 +2,7 @@
 
 import io
 import re
+import uuid
 
 from django.conf import settings as django_settings
 from django.contrib import messages
@@ -275,6 +276,13 @@ class FeedView(LoginRequiredMixin, ListView):
         cat = self.request.GET.get("category")
         urg = self.request.GET.get("urgency")
         q = self.request.GET.get("q")
+        if cat:
+            # category_id is a UUID FK — a malformed value would raise ValueError
+            # inside the ORM filter and 500 the feed. Ignore an unparseable param.
+            try:
+                cat = uuid.UUID(str(cat))
+            except (ValueError, TypeError):
+                cat = None
         if cat:
             needs = needs.filter(category_id=cat)
             offers = offers.filter(category_id=cat)

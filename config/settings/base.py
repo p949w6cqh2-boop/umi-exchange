@@ -158,6 +158,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ── Auth ──────────────────────────────────────────────
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/auth/login/"
+
+# Password strength — enforced by RegistrationForm.clean() and Django's built-in
+# password-change/reset forms. Without these, "1" is an acceptable password.
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 LOGIN_REDIRECT_URL = "/hub/"
 LOGOUT_REDIRECT_URL = "/"
 SESSION_COOKIE_AGE = 86400  # 24 hours
@@ -191,6 +200,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ── Cache / Sessions ──────────────────────────────────
 REDIS_URL = env("REDIS_URL", default="")
+# Default to a per-process in-memory cache, and define CACHES unconditionally so
+# every settings module can introspect CACHES["default"]["BACKEND"] (production.py
+# refuses to boot on LocMemCache — see its shared-cache guard).
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 if REDIS_URL:
     try:
         import django_redis  # noqa: F401
@@ -257,7 +270,7 @@ EMAIL_SUBJECT_PREFIX = env("EMAIL_SUBJECT_PREFIX", default="[UMI] ")
 # ── Rate Limiting ─────────────────────────────────────
 RATELIMIT_USE_CACHE = "default"
 # Paths the AuthRateLimitMiddleware throttles (POST). Empty = inert.
-RATELIMIT_AUTH_PATHS = ("/auth/login/", "/auth/register/")
+RATELIMIT_AUTH_PATHS = ("/auth/login/", "/auth/register/", "/auth/password/reset/")
 # Third-party django_ratelimit (RegisterView/UMILoginView key="ip") must read
 # the SAME trusted IP the rest of the app uses, not REMOTE_ADDR — behind Caddy
 # REMOTE_ADDR is the proxy's constant docker-net address, so every user would
