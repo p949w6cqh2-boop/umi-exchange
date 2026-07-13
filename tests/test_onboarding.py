@@ -13,7 +13,6 @@ from tests.conftest import (
     MatchFactory,
     MemberFactory,
     NeedFactory,
-    OfferFactory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -79,9 +78,7 @@ class TestHubCard:
 class TestEmptyStates:
     def test_filtered_board_offers_to_clear_filters(self, world):
         community, member, other, category = world
-        resp = _login(member).get(
-            reverse("community-feed", kwargs={"slug": community.slug}), {"q": "zebra-unicorn"}
-        )
+        resp = _login(member).get(reverse("community-feed", kwargs={"slug": community.slug}), {"q": "zebra-unicorn"})
         assert b"matches those filters" in resp.content
         assert b"Clear filters" in resp.content
 
@@ -107,4 +104,5 @@ class TestOwnerHint:
         community, member, other, category = world
         need = NeedFactory(community=community, requester=member, category=category)
         resp = _login(other).get(reverse("need-detail", kwargs={"slug": community.slug, "pk": need.pk}))
-        assert b"You&#x27;ll get a notification" not in resp.content and b"You'll get a notification" not in resp.content
+        assert b"You&#x27;ll get a notification" not in resp.content
+        assert b"You'll get a notification" not in resp.content
