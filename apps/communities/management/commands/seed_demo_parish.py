@@ -155,7 +155,9 @@ class Command(BaseCommand):
                 defaults={"email": f"{username}@demo.invalid", "first_name": first},
             )
             if created:
-                user.set_password(DEMO_PASSWORD)
+                # Demo fixture password by design (DEBUG-only guard above); validators
+                # would reject the shared throwaway on purpose-built demo accounts.
+                user.set_password(DEMO_PASSWORD)  # nosemgrep: unvalidated-password
                 user.save()
             users[username] = user
 
