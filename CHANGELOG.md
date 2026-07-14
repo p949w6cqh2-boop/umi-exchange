@@ -8,6 +8,10 @@
 - **New pictures** — the scenes on the story pages and around the board are now real
   two-colour block prints: the well, the lamplit door, bread passing hand to hand, the
   shared harvest basket, the one place set, the garden hill, the notice board.
+- **The widow's table shows her now** — the first scene on the beliefs page carries the
+  grief it names: a widow alone at her table, head in her hands, the loaf untouched.
+- **Pictures sit tighter in their frames** — the extra paper edge around each print is
+  gone, so they read as prints on the page, not pictures in white boxes.
 
 ## 2026-07-13
 
