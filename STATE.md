@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `6fa350a` (2026-07-14).
+> Reflects `main` @ `bb6a12c` (2026-07-14).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 
@@ -90,7 +90,7 @@
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
-- **In-flight (`design/print-polish`, 2026-07-14):** M2 ✅ CLAUDE.md rules · M3 ✅ prints cropped to frame · M4 ✅ widow scene (grieving figure, his key) · M5 ✅ "why lakes" passage on beliefs (his wording key pending). **Gate: PASS 855 on PG16+Redis.** Awaiting his merge key.
+- **Print-polish MERGED `bb6a12c` (his key 2026-07-14):** insights rules in CLAUDE.md, prints cropped to frame, the widow scene (first figure, his key), "why lakes" passage on beliefs. Gate was PASS 855 on PG16+Redis.
 - All feature work merged to `main`: Lakes 1+2, envelope A–E + retention sweeps, Federation v1
   (A–E), moderation, hub v2, the full 2026-07 product backlog (onboarding, search, connect
   moment, wizard, resources, consented email), The Commons design system + illustration suite.
