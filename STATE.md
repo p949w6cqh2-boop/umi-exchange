@@ -90,7 +90,7 @@
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
-- **In-flight (`design/print-polish`, 2026-07-14):** M2 ✅ CLAUDE.md rules · M3 ✅ prints cropped to frame · M4 ✅ widow scene (grieving figure, his key; first figure in the suite). Gate + his merge key pending.
+- **In-flight (`design/print-polish`, 2026-07-14):** M2 ✅ CLAUDE.md rules · M3 ✅ prints cropped to frame · M4 ✅ widow scene (grieving figure, his key) · M5 ✅ "why lakes" passage on beliefs (his wording key pending). **Gate: PASS 855 on PG16+Redis.** Awaiting his merge key.
 - All feature work merged to `main`: Lakes 1+2, envelope A–E + retention sweeps, Federation v1
   (A–E), moderation, hub v2, the full 2026-07 product backlog (onboarding, search, connect
   moment, wizard, resources, consented email), The Commons design system + illustration suite.
