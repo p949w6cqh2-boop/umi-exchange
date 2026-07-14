@@ -11,6 +11,9 @@
 - **Kinder dead ends** — a page you don't have access to now explains itself politely,
   and broken links get a warm page instead of a technical one.
 - **The hub greets you by your first name.**
+- **"What you've shared" now says it in plain words** — who can see what, in a sentence
+  ("They can see your name and your email"), with a Stop sharing button and an honest note
+  about what stopping does.
 
 - **New pictures** — the scenes on the story pages and around the board are now real
   two-colour block prints: the well, the lamplit door, bread passing hand to hand, the
