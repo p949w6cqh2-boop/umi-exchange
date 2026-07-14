@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `f6ac2b3` (2026-07-14).
+> Reflects `main` @ `ce56d1b` (2026-07-14).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 
@@ -90,7 +90,7 @@
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
-- **In-flight (`design/spoken-flow`, 2026-07-14):** say-it-aloud rewrite of mission copy (his flag: "no one talks like that") — contractions restored, comma-stacked clauses broken into spoken sentences; impeccable clarify rules applied. His standing key: merge on green gate, then delete branch.
+- **Spoken-flow copy MERGED `ce56d1b` (his standing key 2026-07-14):** mission copy passes the say-it-aloud test — contractions back, comma-chains broken into spoken sentences (impeccable clarify). Say-aloud rule = master formatting rule in brain voice.md. Gate was PASS 855. Branch deleted.
 - **CarePortal-form copy MERGED `f6ac2b3` (his key 2026-07-14):** mission-page body rewritten as flowing sentences from studying careportal.org directly; 37 em-dash constructions gone (testimony quote keeps its one, never edited); form rules recorded in brain `identity/voice.md` §Grammar. Gate was PASS 855. Branch deleted on his key.
 - **Widow-copy-pass MERGED `d9bdea4` (his key 2026-07-14):** widow print regenerated to the suite's bare-paper style; heading grammar pass (verbless fragments → complete sentences, his CarePortal-form direction, recorded in the brain's `identity/voice.md`). Gate was PASS 855.
 - **Print-polish MERGED `bb6a12c` (his key 2026-07-14):** insights rules in CLAUDE.md, prints cropped to frame, the widow scene (first figure, his key), "why lakes" passage on beliefs. Gate was PASS 855 on PG16+Redis.
