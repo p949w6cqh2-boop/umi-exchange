@@ -112,6 +112,14 @@ Key mechanisms (respect these — they're load-bearing):
   `constant_time_compare`.
 - **Concurrency:** contended writes use `select_for_update`; double-accept → 409.
 
+## Repositories & working directory
+
+Two separate repos sit side by side: **`/home/umi/umi-exchange`** (this app) and
+**`/home/umi/umi-brain`** (Jasiah's markdown brain). Before ANY git or file-writing command,
+print the current working directory and state which repo you're in — CWD drift has created
+branches in the wrong repo. Prefer absolute paths or an explicit `cd /home/umi/umi-exchange &&`
+prefix; never assume the shell is where you left it.
+
 ## Gotchas (these have bitten us)
 
 - **SQLite ≠ Postgres.** SQLite silently ignores `select_for_update`; Postgres enforces it. In
@@ -146,9 +154,21 @@ Key mechanisms (respect these — they're load-bearing):
   POST them repeatedly need a distinct `REMOTE_ADDR` per request or they collect 429s.
 - **Known flake:** `test_reauth_returns_429_after_five_attempts` straddles a fixed-window minute
   boundary (~rare). Green in isolation ⇒ flake; anything else failing ⇒ real.
+- **No smart/curly quotes in Python source or f-strings** — they read as normal quotes to the eye
+  and cascade into suite-wide syntax failures (~70 tests once).
+- **No Tailwind opacity modifiers on arbitrary CSS-var colors** — `text-[var(--umi-accent)]/70`
+  fails to compile; use a solid color or a pre-mixed token instead.
 
 ## Workflow conventions
 
+- **TDD for all feature work:** write the failing test first, implement to green, and verify on
+  the real stack (PostgreSQL 16 + Redis) before opening a PR — SQLite green is not done.
+- **PR review checklist (recurring critical bugs):** prod-guards keyed off the settings module
+  name instead of `DEBUG`; probe/health endpoints that redirect; User-row data leaks across
+  communities. Check all three before any merge.
+- **Summarizing a PR/branch diff:** use the three-dot form `git diff main...HEAD --stat` and
+  confirm the file list against the PR view — two-dot diffs have produced false "22 files
+  deleted" reports.
 - **Branch, don't push to `main` without explicit approval.** Verify before merge with the
   **`/gate` skill** (canonical sequence: ruff check + `ruff format .`, `makemigrations --check`,
   FULL `pytest` on Postgres with the count read from a file, bandit/semgrep vs `main`,
