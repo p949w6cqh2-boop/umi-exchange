@@ -5,6 +5,9 @@
 
 ## 2026-07-14
 
+- **The "What we believe" page opens like the story page now** — same voice, same
+  conviction. Lake 0 gets its picture: the spring the other lakes are filled from.
+
 - **Everything reads the way you'd say it** — every screen in the app got the same
   plain-language pass the story pages got: buttons, settings, empty pages, and error
   pages included.
