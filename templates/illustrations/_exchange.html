@@ -1,58 +1,46 @@
 {% comment %}Parish Linocut — original UMI illustration ("The exchange —
    neighbour to neighbour, and it flows back"). Two hands across the frame:
-   one gives the round loaf, the other receives it — and beneath, a sprig
-   passes back the other way. No figures; the hands are the whole story.
-   Two-plate relief print: black key = currentColor, white gouges =
-   var(--umi-bg), washes = community theme, off-register. Decorative.{% endcomment %}
+   one gives the round loaf, the other receives it — and beneath, a sprig of
+   rosemary passes back the other way. No figures; the hands are the whole
+   story. Carved as solid mitts, fingers gouged in white. Two-plate relief
+   print: black key = currentColor, white gouges = var(--umi-bg), washes =
+   community theme, off-register. Decorative.{% endcomment %}
 <svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
      class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
   <defs><filter id="g-exch"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
 
   <!-- colour plates, hand-registered a touch off -->
-  <path d="M0 34 h96 q10 22 0 44 h-96 z" fill="var(--umi-primary)" opacity="0.30" transform="translate(3 -2)"/>
-  <path d="M240 96 h-96 q-10 22 0 44 h96 z" fill="var(--umi-accent)" opacity="0.34" transform="translate(-3 2)"/>
-  <circle cx="120" cy="86" r="34" fill="var(--umi-accent)" opacity="0.35" transform="translate(2 2)"/>
+  <path d="M0 46 h84 q10 20 0 40 h-84 z" fill="var(--umi-primary)" opacity="0.30" transform="translate(3 -2)"/>
+  <path d="M240 90 h-84 q-10 20 0 40 h84 z" fill="var(--umi-accent)" opacity="0.34" transform="translate(-3 2)"/>
+  <circle cx="120" cy="84" r="36" fill="var(--umi-accent)" opacity="0.35" transform="translate(2 2)"/>
 
-  <!-- GIVING hand and forearm, entering from the left -->
-  <path d="M0 44
-           l62 2
-           q10 1 16 8 l15 13
-           q5 4 1 8 q-4 4 -9 0 l-9 -7
-           q7 8 3 12 q-5 4 -10 -1 l-8 -8
-           q5 9 0 12 q-5 3 -9 -2 l-6 -9
-           q3 9 -3 11 q-6 2 -8 -5 l-4 -12
-           q-3 -8 -12 -9 l-18 -2 z"
-        fill="currentColor"/>
-  <!-- carved cuff and knuckle gouges -->
-  <path d="M10 48 q1 6 0 12 M18 47 q1 7 0 14" stroke="var(--umi-bg)" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M60 52 q6 2 10 7 M74 62 l6 6 M70 72 l5 6 M62 76 l4 6" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- GIVING hand from the left: sleeve, then an open palm offered under the loaf -->
+  <path d="M0 84 h30 l2 26 h-32 z" fill="currentColor"/>
+  <path d="M9 88 q1 8 0 18 M17 88 q1 8 0 18" stroke="var(--umi-bg)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M28 86 q20 -4 30 4 q8 7 6 16 q-2 8 -14 8 q-14 0 -22 -6 z" fill="currentColor"/>
+  <!-- four fingers, carved apart by daylight -->
+  <path d="M56 92 L82 74 M60 97 L88 82 M62 102 L90 92 M62 108 L88 102" stroke="currentColor" stroke-width="7.5" stroke-linecap="round"/>
+  <!-- the thumb, tucked under -->
+  <path d="M44 110 L68 116" stroke="currentColor" stroke-width="8.5" stroke-linecap="round"/>
 
-  <!-- RECEIVING hand and forearm, open palm from the right, a little lower -->
-  <path d="M240 128
-           l-64 -2
-           q-10 -1 -16 -8 l-12 -13
-           q-4 -5 1 -9 q4 -3 9 1 l7 6
-           q-5 -9 -1 -13 q5 -4 10 2 l5 7
-           q-3 -9 2 -12 q5 -3 9 3 l4 8
-           q-1 -8 4 -9 q6 -2 7 5 l3 11
-           q3 8 12 9 l20 2 z"
-        fill="currentColor"/>
-  <path d="M230 124 q-1 -6 0 -12 M222 125 q-1 -7 0 -14" stroke="var(--umi-bg)" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M180 120 q-6 -2 -10 -7 M166 110 l-6 -6 M170 100 l-5 -6 M178 96 l-4 -6" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- RECEIVING hand from the right, a little lower: open palm, same offering -->
+  <path d="M240 96 h-30 l-2 26 h32 z" fill="currentColor"/>
+  <path d="M231 100 q-1 8 0 18 M223 100 q-1 8 0 18" stroke="var(--umi-bg)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M212 98 q-20 -4 -30 4 q-8 7 -6 16 q2 8 14 8 q14 0 22 -6 z" fill="currentColor"/>
+  <path d="M184 104 L158 86 M180 109 L152 94 M178 114 L150 104 M178 120 L152 114" stroke="currentColor" stroke-width="7.5" stroke-linecap="round"/>
+  <path d="M196 122 L172 128" stroke="currentColor" stroke-width="8.5" stroke-linecap="round"/>
 
-  <!-- THE LOAF, mid-air between them: round, scored, alive -->
-  <path d="M94 86 a26 22 0 0 1 52 0 a26 16 0 0 1 -52 0 z" fill="currentColor"/>
-  <path d="M104 74 q16 -8 32 0" stroke="var(--umi-bg)" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M110 66 l6 10 M124 63 l0 11 M136 66 l-6 10" stroke="var(--umi-bg)" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M100 92 q20 8 40 0" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round" opacity="0.8"/>
+  <!-- THE LOAF, mid-air between them: a round boule, three bold slashes -->
+  <path d="M94 74 a26 21 0 0 1 52 0 a26 13 0 0 1 -52 0 z" fill="currentColor"/>
+  <path d="M103 62 l10 -7 M115 58 l11 -7 M128 58 l10 -6" stroke="var(--umi-bg)" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M100 80 q20 7 40 0" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round" opacity="0.8"/>
   <!-- warmth rising off it -->
-  <path d="M112 60 q-3 -8 2 -14 M128 60 q3 -8 -2 -14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" opacity="0.7"/>
+  <path d="M110 46 q-3 -8 2 -14 M130 46 q3 -8 -2 -14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" opacity="0.7"/>
 
   <!-- and it flows back: a sprig of rosemary passing underneath, right to left -->
-  <path d="M150 142 q-30 10 -60 2" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-  <path d="M138 141 l6 -7 M128 144 l5 -7 M118 145 l4 -8 M108 144 l3 -8 M100 142 l2 -8" stroke="var(--umi-primary)" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M136 148 l4 5 M124 150 l3 6 M112 150 l2 6" stroke="var(--umi-primary)" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M88 141 l-8 2 6 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M158 144 q-38 12 -76 2" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+  <path d="M146 145 q4 -8 10 -9 q-1 8 -8 11 z M130 148 q3 -8 9 -10 q0 8 -7 12 z M114 149 q2 -8 8 -11 q1 8 -6 13 z M99 147 q1 -8 6 -11 q2 7 -4 12 z" fill="var(--umi-primary)"/>
+  <path d="M140 152 q5 3 6 8 q-7 0 -9 -6 z M122 154 q5 3 6 8 q-7 0 -9 -6 z M105 153 q5 2 6 7 q-7 1 -9 -5 z" fill="var(--umi-primary)"/>
 
   <!-- carved registration ticks, the printmaker's habit -->
   <path d="M8 166 h14 M218 14 h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>

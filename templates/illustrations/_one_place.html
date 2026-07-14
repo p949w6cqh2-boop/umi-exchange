@@ -1,17 +1,17 @@
 {% comment %}Parish Linocut — original UMI illustration ("One place set — the
-   widow's table"). A small table by an open door: one plate with a round
-   loaf, steam rising, a cup, the chair pulled out and waiting. The lamp above
-   is lit. Nobody is asked to earn the seat. Two-plate relief print: black key
-   = currentColor, white gouges = var(--umi-bg), washes = community theme.
-   Decorative.{% endcomment %}
+   widow's table"). A small table under a lit lamp: one plate with a round
+   loaf, steam rising, a cup of tea, the chair pulled out and waiting. Through
+   the little window it is already night — the seat is kept anyway. Nobody is
+   asked to earn it. Two-plate relief print: black key = currentColor, white
+   gouges = var(--umi-bg), washes = community theme. Decorative.{% endcomment %}
 <svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
      class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
   <defs><filter id="g-place"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
 
-  <!-- colour plates: lamplight pooling on the table, teal dusk in the doorway -->
-  <path d="M74 96 l92 0 -8 -38 -76 0 z" fill="var(--umi-accent)" opacity="0.34" transform="translate(2 3) scale(1 -1) translate(0 -196)"/>
-  <path d="M60 100 h120 l14 58 h-148 z" fill="var(--umi-accent)" opacity="0.26" transform="translate(2 2)"/>
-  <path d="M176 132 l0 -96 40 0 0 96 z" fill="var(--umi-primary)" opacity="0.28" transform="translate(-2 2)"/>
+  <!-- colour plates: lamplight pooling over the table, night in the window -->
+  <ellipse cx="118" cy="98" rx="58" ry="26" fill="var(--umi-accent)" opacity="0.30" transform="translate(2 2)"/>
+  <path d="M64 108 h116 l12 50 h-140 z" fill="var(--umi-accent)" opacity="0.22" transform="translate(2 2)"/>
+  <path d="M182 42 h36 v34 h-36 z" fill="var(--umi-primary)" opacity="0.30" transform="translate(-2 2)"/>
 
   <!-- carved floorboards -->
   <path d="M12 158 q30 -3 58 -1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
@@ -19,48 +19,45 @@
   <path d="M172 158 q26 -2 52 1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
   <path d="M34 166 h24 M108 167 h28 M178 166 h22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
 
-  <!-- THE OPEN DOOR (right): dusk beyond, door swung inward -->
-  <path d="M178 156 l0 -100 40 0 0 100" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M184 152 l0 -90 28 0 0 90 z" fill="currentColor" opacity="0.14"/>
-  <path d="M178 60 l-16 10 0 90 16 -6 z" fill="currentColor"/>
-  <path d="M167 78 l8 -5 M167 94 l8 -5 M167 110 l8 -5 M167 126 l8 -5" stroke="var(--umi-bg)" stroke-width="1.4" stroke-linecap="round"/>
-  <circle cx="173" cy="104" r="1.8" fill="var(--umi-bg)"/>
-  <!-- a carved star and the road home, out in the dusk -->
-  <path d="M198 74 l0 6 m-3 -3 l6 0 m-5 -2 l4 4 m0 -4 l-4 4" stroke="var(--umi-bg)" stroke-width="1.2" stroke-linecap="round"/>
-  <path d="M186 140 q12 -6 24 -4" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 4"/>
+  <!-- THE WINDOW, night outside: one carved star, the road home -->
+  <path d="M182 42 h36 v34 h-36 z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M200 44 v30 M184 59 h32" stroke="currentColor" stroke-width="2.4"/>
+  <path d="M192 50 l0 6 m-3 -3 l6 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M204 66 q7 -4 12 -2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 3"/>
 
   <!-- THE LAMP above the table, lit -->
-  <path d="M104 18 l0 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M92 32 h24 l-4 12 h-16 z" fill="currentColor"/>
-  <path d="M98 44 a6 5 0 0 0 12 0 z" fill="var(--umi-accent)"/>
-  <path d="M104 52 l0 4 M92 48 l-4 4 M116 48 l4 4" stroke="var(--umi-accent)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M112 14 l0 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M100 28 h24 l-4 12 h-16 z" fill="currentColor"/>
+  <path d="M106 40 a6 5 0 0 0 12 0 z" fill="var(--umi-accent)"/>
+  <path d="M112 48 l0 5 M99 44 l-5 5 M125 44 l5 5" stroke="var(--umi-accent)" stroke-width="2.2" stroke-linecap="round"/>
 
-  <!-- THE TABLE: heavy carved top, turned legs, cloth edge -->
-  <path d="M56 100 h108 v10 h-108 z" fill="currentColor"/>
-  <path d="M62 105 h96" stroke="var(--umi-bg)" stroke-width="1.4" stroke-linecap="round"/>
-  <path d="M64 110 l-4 46 M156 110 l4 46" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
-  <path d="M70 118 h80" stroke="currentColor" stroke-width="2" opacity="0.5"/>
-  <!-- cloth fold hanging at the corner -->
-  <path d="M56 100 l-6 16 6 -2 z" fill="currentColor"/>
+  <!-- THE TABLE: heavy carved top, cloth fold at the corner -->
+  <path d="M58 104 h116 v10 h-116 z" fill="currentColor"/>
+  <path d="M64 109 h104" stroke="var(--umi-bg)" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M66 114 l-4 44 M166 114 l4 44" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M72 122 h88" stroke="currentColor" stroke-width="2" opacity="0.5"/>
+  <path d="M58 104 l-6 16 6 -2 z" fill="currentColor"/>
 
-  <!-- ONE PLACE SET: plate, round loaf, rising steam, cup -->
-  <ellipse cx="104" cy="96" rx="22" ry="6" fill="var(--umi-bg)" stroke="currentColor" stroke-width="2.5"/>
-  <path d="M92 93 a12 8 0 0 1 24 0 l-1 3 -22 0 z" fill="currentColor"/>
-  <path d="M98 87 q6 -3 12 0" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M100 76 q-3 -6 2 -10 M108 76 q3 -6 -2 -10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.75"/>
-  <!-- the cup, a swallow of tea gone gold -->
-  <path d="M136 90 h14 l-2 9 h-10 z" fill="currentColor"/>
-  <path d="M150 92 q6 0 5 5 q-1 4 -6 3" stroke="currentColor" stroke-width="2" fill="none"/>
-  <path d="M139 92 h8" stroke="var(--umi-accent)" stroke-width="2" stroke-linecap="round"/>
+  <!-- ONE PLACE SET: plate, round loaf, rising steam, the cup of tea -->
+  <ellipse cx="108" cy="100" rx="24" ry="6" fill="var(--umi-bg)" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M94 97 a14 10 0 0 1 28 0 l-1 3 -26 0 z" fill="currentColor"/>
+  <path d="M100 90 q8 -4 16 0" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M103 78 q-3 -7 2 -12 M113 78 q3 -7 -2 -12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.75"/>
+  <path d="M144 93 h15 l-2 10 h-11 z" fill="currentColor"/>
+  <path d="M159 95 q6 0 5 5 q-1 5 -6 4" stroke="currentColor" stroke-width="2" fill="none"/>
+  <path d="M147 95 h9" stroke="var(--umi-accent)" stroke-width="2.2" stroke-linecap="round"/>
 
-  <!-- THE CHAIR, pulled out and turned a little toward the door -->
-  <g transform="rotate(6 52 128)">
-    <path d="M30 152 l2 -44 M56 152 l-2 -44" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-    <path d="M30 118 h26 M30 128 h26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-    <path d="M28 96 l2 14 M58 96 l-2 14" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-    <path d="M28 96 q15 -5 30 0" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/>
-    <path d="M34 101 q10 -3 20 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <!-- THE CHAIR, pulled out and turned a little, waiting -->
+  <g transform="rotate(6 48 128)">
+    <path d="M26 154 l2 -44 M52 154 l-2 -44" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+    <path d="M26 120 h26 M26 130 h26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <path d="M24 96 l2 16 M54 96 l-2 16" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+    <path d="M24 96 q15 -5 30 0" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <path d="M30 102 q10 -3 20 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
   </g>
+
+  <!-- registration ticks -->
+  <path d="M8 14 h14 M224 168 h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
 
   <rect width="240" height="180" filter="url(#g-place)" opacity="0.5"/>
 </svg>
