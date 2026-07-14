@@ -1,65 +1,7 @@
-{% comment %}Parish Linocut — original UMI illustration ("The threshold —
-   the door stands open"). One freestanding doorway, drawn large: heavy
-   jambs and lintel, the door leaf swung wide — its face still wet with new
-   paint, one drip running — lamplight spilling from inside across the sill,
-   a pair of boots already waiting on the step, the paint pail and brush
-   resting by the frame. Whoever they are, they're welcome. Two-plate relief
-   print: black key = currentColor, white gouges = var(--umi-bg), washes =
-   community theme, off-register. Decorative.{% endcomment %}
-<svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
-     class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
-  <defs><filter id="g-thresh"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
-
-  <!-- colour plates: lamplight through the opening, spilling over the sill -->
-  <path d="M92 142 l0 -88 46 0 0 88 z" fill="var(--umi-accent)" opacity="0.45" transform="translate(2 2)"/>
-  <path d="M96 146 l-34 18 106 0 -24 -18 z" fill="var(--umi-accent)" opacity="0.30"/>
-
-  <!-- carved ground -->
-  <path d="M12 152 q30 -4 58 -1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M76 153 q46 -4 90 0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M172 152 q28 -3 54 1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M30 162 h22 M116 163 h26 M188 162 h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
-
-  <!-- THE DOORWAY, freestanding: two heavy jambs, one deep lintel -->
-  <path d="M84 142 l0 -80 M144 142 l0 -80" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-  <path d="M76 52 h76 v12 h-76 z" fill="currentColor"/>
-  <path d="M82 59 h20 M108 59 h20 M134 59 h13" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
-  <!-- the stone sill -->
-  <path d="M74 142 h84 l-4 10 h-76 z" fill="currentColor"/>
-  <path d="M84 147 h64" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round"/>
-
-  <!-- THE DOOR LEAF, swung wide against the right jamb, fresh-painted -->
-  <path d="M144 58 l34 12 0 76 -34 -4 z" fill="currentColor"/>
-  <path d="M144 58 l34 12 0 76 -34 -4" fill="var(--umi-primary)" opacity="0.55"/>
-  <path d="M150 74 l22 7 M150 92 l22 6 M150 110 l22 5 M150 128 l22 4" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
-  <circle cx="150" cy="102" r="2.2" fill="var(--umi-bg)"/>
-  <!-- one wet drip down the fresh paint -->
-  <path d="M166 96 q2 6 0 11" stroke="var(--umi-primary)" stroke-width="2.2" stroke-linecap="round"/>
-
-  <!-- inside the opening: the lamp hanging warm -->
-  <path d="M114 58 v9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M107 67 h14 l-2 8 h-10 z" fill="currentColor"/>
-  <path d="M110 75 a4 3.5 0 0 0 8 0 z" fill="var(--umi-accent)"/>
-  <path d="M114 82 v4 M104 78 l-4 4 M124 78 l4 4" stroke="var(--umi-accent)" stroke-width="2" stroke-linecap="round"/>
-
-  <!-- lamplight carved across the step -->
-  <path d="M96 154 l-24 12 M112 155 l-6 14 M128 154 l14 12" stroke="var(--umi-accent)" stroke-width="2.6" stroke-linecap="round"/>
-
-  <!-- THE BOOTS on the step, toes toward the light -->
-  <path d="M98 136 q0 -9 5 -9 q4 0 4 7 l0 5 q7 0 7 5 l-16 0 z" fill="currentColor"/>
-  <path d="M114 136 q0 -9 5 -9 q4 0 4 7 l0 5 q7 0 7 5 l-16 0 z" fill="currentColor"/>
-  <path d="M101 133 q3 -1 5 0 M117 133 q3 -1 5 0" stroke="var(--umi-bg)" stroke-width="1.4" stroke-linecap="round"/>
-
-  <!-- THE PAIL by the frame, brush resting across it, dropcloth folded -->
-  <path d="M34 150 l2 -14 14 0 2 14 z" fill="currentColor"/>
-  <path d="M37 139 a8 3.5 0 0 1 12 0" stroke="var(--umi-primary)" stroke-width="2.6"/>
-  <path d="M30 122 l18 12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-  <path d="M26 119 l-7 -5 3 -4 7 5 z" fill="var(--umi-primary)"/>
-  <path d="M56 150 l4 -8 14 0 -2 8 z" fill="currentColor" opacity="0.85"/>
-  <path d="M60 146 h10" stroke="var(--umi-bg)" stroke-width="1.3" stroke-linecap="round"/>
-
-  <!-- registration ticks -->
-  <path d="M8 14 h14 M218 168 h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
-
-  <rect width="240" height="180" filter="url(#g-thresh)" opacity="0.5"/>
-</svg>
+{% comment %}Parish Linocut — original UMI illustration. The threshold — the door stands open. Lamplit doorway, boots on the step, fresh evergreen paint, pail and brush.
+   Two-plate relief print in the Commons palette (stone paper, espresso ink,
+   evergreen + bronze), generated suite 2026-07-14. Decorative.{% endcomment %}
+{% load static %}
+<img src="{% static 'img/scenes/threshold.webp' %}" data-scene="threshold" alt=""
+     class="{{ class|default:'w-full h-auto' }}" width="1600" height="1200"
+     decoding="async">

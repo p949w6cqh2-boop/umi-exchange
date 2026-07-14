@@ -1,62 +1,7 @@
-{% comment %}Parish Linocut — original UMI illustration ("Carried together —
-   solidarity"). The shared harvest basket set down on the path: one big
-   two-handled basket, brimming — round loaf, greens, the gold jug — and
-   beside it two hats set down together on the path. Two carriers, resting
-   just out of frame — nobody
-   hauls alone. Two-plate relief print: black key = currentColor, white
-   gouges = var(--umi-bg), washes = community theme, off-register.
-   Decorative.{% endcomment %}
-<svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
-     class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
-  <defs><filter id="g-carry"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
-
-  <!-- colour plates, off-register -->
-  <ellipse cx="120" cy="118" rx="52" ry="34" fill="var(--umi-accent)" opacity="0.30" transform="translate(3 3)"/>
-  <ellipse cx="120" cy="158" rx="92" ry="10" fill="var(--umi-primary)" opacity="0.14"/>
-
-  <!-- carved ground -->
-  <path d="M14 154 q30 -4 58 -1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M78 155 q44 -4 86 0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M170 154 q28 -3 54 1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M46 162 h24 M114 163 h26 M182 162 h22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
-
-  <!-- WHAT IT HOLDS, heaped above the rim -->
-  <!-- the round loaf, scored -->
-  <path d="M96 96 a15 12 0 0 1 30 0 l-2 4 -26 0 z" fill="currentColor"/>
-  <path d="M103 88 q8 -4 16 0 M108 82 l3 6 M117 82 l-2 6" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
-  <!-- greens leaning out left -->
-  <path d="M88 96 q-6 -14 -16 -20 M90 98 q-2 -16 -6 -24" stroke="var(--umi-primary)" stroke-width="3" stroke-linecap="round"/>
-  <path d="M72 76 q-6 -2 -8 -8 q7 -1 10 4 z M84 74 q-5 -4 -5 -10 q7 1 8 7 z" fill="var(--umi-primary)"/>
-  <!-- the gold jug tucked in right -->
-  <path d="M142 98 q-8 -2 -8 -12 q0 -8 6 -10 l-2 -6 8 0 -2 6 q6 2 6 10 q0 10 -8 12 z" fill="var(--umi-accent)"/>
-  <path d="M142 98 q-8 -2 -8 -12 q0 -8 6 -10 l-2 -6 8 0 -2 6 q6 2 6 10 q0 10 -8 12 z" fill="none" stroke="currentColor" stroke-width="2.2"/>
-
-  <!-- THE BASKET: one body, two handles — built to be carried by two -->
-  <path d="M74 100 h92 l-8 46 q-1 8 -38 8 q-37 0 -38 -8 z" fill="currentColor"/>
-  <ellipse cx="120" cy="100" rx="46" ry="7" fill="currentColor"/>
-  <path d="M80 100 a40 5 0 0 1 80 0" stroke="var(--umi-bg)" stroke-width="1.8"/>
-  <!-- weave: coursed gouges -->
-  <path d="M79 113 q41 5 82 0 M83 126 q37 5 74 0 M87 139 q33 4 66 0" stroke="var(--umi-bg)" stroke-width="1.8" fill="none"/>
-  <path d="M100 107 q-2 22 0 44 M140 107 q2 22 0 44 M120 108 q-1 23 0 46" stroke="var(--umi-bg)" stroke-width="1.4" opacity="0.7" fill="none"/>
-  <!-- the two rope handles, one each side -->
-  <path d="M74 104 q-16 -2 -18 12 q-1 10 10 12" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-  <path d="M166 104 q16 -2 18 12 q1 10 -10 12" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-  <path d="M60 110 l4 3 M62 121 l4 -2 M180 110 l-4 3 M178 121 l-4 -2" stroke="var(--umi-bg)" stroke-width="1.4" stroke-linecap="round"/>
-
-  <!-- TWO HATS set down together by the path -->
-  <path d="M22 152 a13 6 0 0 1 26 0 z" fill="currentColor"/>
-  <path d="M28 148 a7 6 0 0 1 14 0 l0 4 -14 0 z" fill="currentColor"/>
-  <path d="M30 152 h10" stroke="var(--umi-accent)" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M192 152 a13 6 0 0 1 26 0 z" fill="currentColor"/>
-  <path d="M198 148 a7 6 0 0 1 14 0 l0 4 -14 0 z" fill="currentColor"/>
-  <path d="M200 152 h10" stroke="var(--umi-primary)" stroke-width="2.2" stroke-linecap="round"/>
-
-  <!-- two carved birds keeping pace overhead -->
-  <path d="M64 34 q5 -6 10 0 q5 -6 10 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-  <path d="M150 24 q4 -5 8 0 q4 -5 8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
-
-  <!-- registration ticks -->
-  <path d="M8 16 h14 M218 168 h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
-
-  <rect width="240" height="180" filter="url(#g-carry)" opacity="0.5"/>
-</svg>
+{% comment %}Parish Linocut — original UMI illustration. Carried together — the shared harvest basket set down on the path, two hats resting beside it. Nobody hauls alone.
+   Two-plate relief print in the Commons palette (stone paper, espresso ink,
+   evergreen + bronze), generated suite 2026-07-14. Decorative.{% endcomment %}
+{% load static %}
+<img src="{% static 'img/scenes/carrying.webp' %}" data-scene="carrying" alt=""
+     class="{{ class|default:'w-full h-auto' }}" width="1600" height="1200"
+     decoding="async">
