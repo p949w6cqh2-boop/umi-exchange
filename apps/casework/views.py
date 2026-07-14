@@ -196,7 +196,7 @@ class CaseCreateView(CommunityMixin, View):
                     grantee_type="community",
                     grantee_id=self.community.id,
                     scope=scope,
-                    purpose=f"Case records — {self.community.name}"[:500],
+                    purpose=f"Case records for you at {self.community.name}"[:500],
                     method=d["record_method"],
                     custom=({} if person.linked_user_id else {"on_behalf_person_id": str(person.id)}),
                 )
