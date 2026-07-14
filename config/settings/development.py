@@ -2,7 +2,9 @@
 
 from .base import *  # noqa: F401, F403
 
-DEBUG = True
+# Demo/dev toggle: DEBUG=0 lets a seeded demo run with the real 403/404 pages
+# (Django shows technical pages under DEBUG). Defaults on for development.
+DEBUG = env.bool("DEBUG", default=True)
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 INSTALLED_APPS += ["debug_toolbar"] if False else []  # Set True to enable
 

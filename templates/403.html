@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Not your page{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto text-center py-20 umi-rise">
+  <span class="font-serif text-[6rem] leading-none text-parish-ink/10 tabular">403</span>
+  <h1 class="umi-display !text-3xl mt-4 mb-3">This page is kept by the coordinators</h1>
+  <p class="text-parish-ink/60 mb-9">Your account doesn't have access to it. If you think it
+    should, ask a coordinator and they can sort it out.</p>
+  <div class="flex items-center justify-center gap-4">
+    <a href="{% url 'landing' %}" class="btn-primary">Go home</a>
+    <a href="javascript:history.back()" class="btn-secondary">Go back</a>
+  </div>
+</div>
+{% endblock %}
