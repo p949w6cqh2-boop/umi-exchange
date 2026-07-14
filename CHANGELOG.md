@@ -5,6 +5,13 @@
 
 ## 2026-07-14
 
+- **Everything reads the way you'd say it** — every screen in the app got the same
+  plain-language pass the story pages got: buttons, settings, empty pages, and error
+  pages included.
+- **Kinder dead ends** — a page you don't have access to now explains itself politely,
+  and broken links get a warm page instead of a technical one.
+- **The hub greets you by your first name.**
+
 - **New pictures** — the scenes on the story pages and around the board are now real
   two-colour block prints: the well, the lamplit door, bread passing hand to hand, the
   shared harvest basket, the one place set, the garden hill, the notice board.
