@@ -72,5 +72,6 @@ Both said yes. The page settles, warms, and shares contact between the two of th
 ## Accessibility note
 
 Focus rings, reduced-motion, and AA contrast are built into the design system (see DESIGN.md's
-verified contrast table). An automated axe pass wasn't run for this gallery — the toolchain
-isn't installed offline; screens were checked by eye against the token contrast table.
+verified contrast table). An automated axe pass wasn't run for this gallery (toolchain not installed offline); screens
+were checked by eye against the token contrast table. This gallery was captured with
+`DEBUG=0`, the same conditions as the demo recipe above.
