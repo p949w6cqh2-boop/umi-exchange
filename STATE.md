@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `ce56d1b` (2026-07-14).
+> Reflects `main` @ `fc7f7e5` (2026-07-14).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 
