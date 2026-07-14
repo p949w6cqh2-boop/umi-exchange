@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}What we believe — UMI Exchange{% endblock %}
+{% block title %}What we believe · Reciprocal Aid Network{% endblock %}
 {% block content %}
 
 {% comment %}What We Believe — Lake 0, the heart every other lake serves. CST
@@ -14,7 +14,7 @@
     <h1 class="umi-masthead mt-6">This board is a lake,<br>the first of many.</h1>
     <div class="umi-rule mt-7" aria-hidden="true"></div>
     <p class="text-lg text-parish-ink/70 mt-7 umi-measure">
-      The Parish Aid Board is the first of many tools we call lakes. A lake is a
+      This board is the first of many tools we call lakes. A lake is a
       simple thing: a place where a community's help gathers, where anyone can
       draw and anyone can add. Casework is the second. More are on the way.
     </p>
@@ -35,7 +35,7 @@
   <section class="umi-section !pt-14 border-b border-[var(--umi-border)]" data-rise>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
       <div class="lg:col-span-5">
-        <div class="umi-plate p-2">{% include "illustrations/_spring.html" with class="w-full h-auto" %}</div>
+        <div class="umi-plate p-2">{% include "illustrations/_lakes.html" with class="w-full h-auto" %}</div>
       </div>
       <div class="lg:col-span-7">
         <h2 class="umi-display">A conviction you can act on.</h2>
@@ -186,6 +186,6 @@
 
   </section>
 
-  {% include "components/_chapter_next.html" with next_url="/why-umi/" next_kicker="Chapter three" next_title="How we're different — you're a neighbour, not a case" %}
+  {% include "components/_chapter_next.html" with next_url="/why-umi/" next_kicker="Chapter three" next_title="How we're different · you're a neighbour, not a case" %}
 </article>
 {% endblock %}

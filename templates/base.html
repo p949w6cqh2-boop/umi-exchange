@@ -4,7 +4,7 @@
   <script>document.documentElement.classList.add("js");</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}{{ community.name|default:"UMI Exchange" }}{% endblock %}</title>
+  <title>{% block title %}{{ community.name|default:"Reciprocal Aid Network" }}{% endblock %}</title>
   {% load static %}
   <link rel="preload" href="{% static 'fonts/newsreader-var.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{% static 'fonts/schibsted-var.woff2' %}" as="font" type="font/woff2" crossorigin>
@@ -53,7 +53,7 @@
         {% else %}
           <a href="{% url 'landing' %}" class="group inline-flex items-baseline gap-2.5 focus-ring rounded-lg">
             <span class="w-2 h-2 rounded-[3px] bg-[var(--umi-primary)] self-center transition-transform duration-300 ease-physical group-hover:rotate-45" aria-hidden="true"></span>
-            <span class="font-serif text-[1.35rem] font-semibold tracking-tight text-parish-ink">UMI Exchange</span>
+            <span class="font-serif text-base leading-tight sm:text-[1.35rem] font-semibold tracking-tight text-parish-ink">Reciprocal Aid Network</span>
           </a>
         {% endif %}
       </div>
@@ -85,7 +85,7 @@
             <div x-show="confirming" x-cloak class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
               <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6" @click.away="confirming = false">
                 <h3 class="text-lg font-semibold text-parish-ink">Sign out?</h3>
-                <p class="text-sm text-parish-ink/60 mt-2">Are you sure you want to sign out of UMI Exchange?</p>
+                <p class="text-sm text-parish-ink/60 mt-2">Are you sure you want to sign out of the Reciprocal Aid Network?</p>
                 <div class="flex gap-3 mt-6 justify-end">
                   <button type="button" @click="confirming = false" class="btn-secondary text-sm">Cancel</button>
                   <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px] transition-colors">Yes, Sign Out</button>
@@ -96,7 +96,7 @@
         {% else %}
           <a href="{% url 'about' %}" class="hidden sm:flex text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] items-center focus-ring rounded-lg px-2">Our story</a>
           <a href="{% url 'why-umi' %}" class="hidden md:flex text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] items-center focus-ring rounded-lg px-2">Why UMI</a>
-          <a href="{% url 'login' %}" class="text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center focus-ring rounded-lg px-2">Sign in</a>
+          <a href="{% url 'login' %}" class="text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center whitespace-nowrap focus-ring rounded-lg px-2">Sign in</a>
           <a href="{% url 'community-join' %}" class="btn-primary text-sm !min-h-[42px] !px-5 !py-2">Join a community</a>
         {% endif %}
       </div>
@@ -127,7 +127,7 @@
         <div>
           <span class="inline-flex items-baseline gap-2.5">
             <span class="w-2 h-2 rounded-[3px] bg-[var(--umi-accent)] self-center" aria-hidden="true"></span>
-            <span class="font-serif text-2xl font-medium tracking-tight">UMI Exchange</span>
+            <span class="font-serif text-2xl font-medium tracking-tight">Reciprocal Aid Network</span>
           </span>
           <p class="text-sm text-[#EDEAE2]/55 mt-2 max-w-sm">Neighbours asking, neighbours answering: matched with care, private by default.</p>
           <nav class="flex flex-wrap gap-x-5 gap-y-1.5 mt-4 text-sm" aria-label="About UMI">
@@ -140,7 +140,7 @@
         <div class="text-xs text-[#EDEAE2]/45 sm:text-right space-y-1.5">
           <p>United Moral Infrastructure, a non-profit being established as a 501(c)(3)</p>
           <p><a href="https://umi-protocol.org/spec/v0.1" class="hover:text-[#EDEAE2] transition-colors duration-300">Built on the UMI Protocol v0.1. Build your own.</a></p>
-          <p>&copy; 2026 UMI Exchange</p>
+          <p>&copy; 2026 Reciprocal Aid Network</p>
         </div>
       </div>
     </div>

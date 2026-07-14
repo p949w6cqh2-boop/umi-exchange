@@ -5,6 +5,12 @@
 
 ## 2026-07-14
 
+- **One name everywhere: Reciprocal Aid Network.** The app stopped switching between
+  its old names. UMI stays as the infrastructure it's all built on.
+- **Pictures checked for truth** — every scene was scanned for realism. The giving-hands
+  print was redrawn, a stray artist's scribble came out of the basket scene, and the
+  beliefs page now shows the first lake itself: water close to home.
+
 - **The "What we believe" page opens like the story page now** — same voice, same
   conviction. Lake 0 gets its picture: the spring the other lakes are filled from.
 
