@@ -16,6 +16,8 @@
   her green shawl the only colour in the room.
 - **Plainer section titles** — headings across the story pages are now complete
   sentences, written the way you'd say them out loud.
+- **Smoother reading** — the story pages now read in full, flowing sentences.
+  The dashes and clipped fragments are gone.
 
 ## 2026-07-13
 

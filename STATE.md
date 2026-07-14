@@ -90,6 +90,7 @@
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
+- **In-flight (`design/careportal-form`, 2026-07-14):** body-copy rewrite in CarePortal form (studied their real pages): 37 em-dash constructions across landing/about/beliefs/why rewritten as flowing sentences; his testimony quote untouched. Rules recorded in brain `identity/voice.md`. Gate pending, then his merge key.
 - **Widow-copy-pass MERGED `d9bdea4` (his key 2026-07-14):** widow print regenerated to the suite's bare-paper style; heading grammar pass (verbless fragments → complete sentences, his CarePortal-form direction, recorded in the brain's `identity/voice.md`). Gate was PASS 855.
 - **Print-polish MERGED `bb6a12c` (his key 2026-07-14):** insights rules in CLAUDE.md, prints cropped to frame, the widow scene (first figure, his key), "why lakes" passage on beliefs. Gate was PASS 855 on PG16+Redis.
 - All feature work merged to `main`: Lakes 1+2, envelope A–E + retention sweeps, Federation v1
