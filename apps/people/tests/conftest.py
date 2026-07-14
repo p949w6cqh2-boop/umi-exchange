@@ -8,6 +8,8 @@ from django.contrib.auth import get_user_model
 @pytest.fixture(autouse=True)
 def _encryption_key(settings):
     settings.ENCRYPTION_KEY = Fernet.generate_key().decode()
+    # §12.3: dedicated blind-index key — Person name writes fail closed without it.
+    settings.BLIND_INDEX_KEY = "hermetic-test-blind-index-key"
 
 
 def _make_member():

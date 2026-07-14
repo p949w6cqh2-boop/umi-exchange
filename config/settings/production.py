@@ -27,6 +27,18 @@ if not ENCRYPTION_KEYS and not ENCRYPTION_KEY:
         "ENCRYPTION_KEY must be set in production; an empty key silently disables encryption "
         "of sensitive fields."
     )
+if not BLIND_INDEX_KEY:
+    raise ImproperlyConfigured(
+        "BLIND_INDEX_KEY must be set in production (a dedicated secret, distinct from the "
+        "encryption keys) — setting a Person name fails closed without it (§12.3 blind index; "
+        "clearing/crypto-shred never needs it)."
+    )
+if BLIND_INDEX_KEY == ENCRYPTION_KEY or BLIND_INDEX_KEY in ENCRYPTION_KEYS:
+    raise ImproperlyConfigured(
+        "BLIND_INDEX_KEY must differ from every encryption key — a shared secret would let an "
+        "encryption-key holder test name equality (§12.3 key separation). Refusing to start; "
+        "crypto.name_blind_index() would reject every name write at runtime anyway."
+    )
 if FEDERATION_ENABLED and not FEDERATION_PRIVATE_KEY:
     raise ImproperlyConfigured(
         "FEDERATION_ENABLED=True requires FEDERATION_PRIVATE_KEY (an Ed25519 private JWK; "

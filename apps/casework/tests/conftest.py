@@ -23,6 +23,8 @@ from apps.people.models import Person
 @pytest.fixture(autouse=True)
 def _encryption_key(settings):
     settings.ENCRYPTION_KEY = Fernet.generate_key().decode()
+    # §12.3: dedicated blind-index key — Person name writes fail closed without it.
+    settings.BLIND_INDEX_KEY = "hermetic-test-blind-index-key"
 
 
 def make_user(handle):

@@ -59,7 +59,7 @@ make format     # ruff format .
   DATABASE_URL="postgres://user:pass@127.0.0.1:5432/umi_test" pytest -q
   ```
 - **Lint config:** ruff, `line-length = 120`, `target-version = py312`, rules `E,F,I,N,W`. Migrations ignore `E501`; settings modules ignore `F403/F405`.
-- **Deploy check:** `DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=… ENCRYPTION_KEY=… ALLOWED_HOSTS=… python manage.py check --deploy` → must be **0 issues**.
+- **Deploy check:** `DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=… ENCRYPTION_KEY=… BLIND_INDEX_KEY=… ALLOWED_HOSTS=… python manage.py check --deploy` → must be **0 issues** (`BLIND_INDEX_KEY` must differ from the encryption keys or production refuses to boot).
 - **CSS:** `output.css` is compiled, committed Tailwind — regenerate with
   `npx tailwindcss@3.4.14 -i static/css/input.css -o static/css/output.css --minify`. Never hand-edit it.
 
@@ -70,8 +70,9 @@ make format     # ruff format .
 
 - DB via `DATABASE_URL` (django-environ); defaults to `sqlite:///db.sqlite3`.
 - Field encryption keys: `ENCRYPTION_KEYS` (list, primary first) or legacy `ENCRYPTION_KEY`.
-- **`production.py` fails fast** (`ImproperlyConfigured`) on an insecure/empty `SECRET_KEY` or an
-  empty `ENCRYPTION_KEY` — by design. It also sets HSTS, SSL redirect, secure cookies, `DEBUG=False`.
+- **`production.py` fails fast** (`ImproperlyConfigured`) on an insecure/empty `SECRET_KEY`, an
+  empty `ENCRYPTION_KEY`, or a missing/encryption-key-colliding `BLIND_INDEX_KEY` — by design.
+  It also sets HSTS, SSL redirect, secure cookies, `DEBUG=False`.
 - Dev relaxes those, so `check --deploy` under *development* reports the expected W004/W008/W012/W016/W018 — not action items.
 
 ## Architecture

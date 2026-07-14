@@ -3,6 +3,15 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## Unreleased
+
+- **Groundwork for finding a person by name.** Nothing changes on screen yet. Names on
+  file stay locked (encrypted), and the board now keeps a scrambled fingerprint of each
+  name that can't be turned back into the name itself. When the lookup screen arrives
+  later, a coordinator will be able to type a name and find the right record — within
+  their own community only — without the board ever unlocking anyone else's. People
+  already on file get their fingerprint added in a later, separately approved step.
+
 ## 2026-07-18
 
 - **The demo parish now speaks American English.** St. Brigid's sample notices traded their

@@ -14,6 +14,20 @@ from django.db import models
 from . import crypto
 
 
+class PersonQuerySet(models.QuerySet):
+    def by_name(self, name: str | None, *, community):
+        """Exact-name lookup via the §12.3 blind index — equality only,
+        normalization applied to the query. `community` is a REQUIRED kwarg:
+        an unscoped Person lookup is the cross-community leak class the PR
+        checklist bans, so scoping is the method's own job, not the caller's.
+        Empty query matches nothing (rows without a name carry a NULL bidx,
+        never an empty-string HMAC)."""
+        bidx = crypto.name_blind_index(name)
+        if bidx is None:
+            return self.none()
+        return self.filter(created_in_community=community, name_bidx=bidx)
+
+
 class Person(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -26,6 +40,17 @@ class Person(models.Model):
     contact_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
     dob_enc = models.BinaryField(null=True, blank=True)
     dob_enc_dek = models.BinaryField(null=True, blank=True, editable=False)
+
+    # §12.3 blind index: HMAC-SHA256(BLIND_INDEX_KEY, normalized name).
+    # Equality lookups only (PersonQuerySet.by_name) — NEVER authorization.
+    # Kept in sync by the display_name setter; crypto-shred MUST leave this
+    # NULL or the erased name stays equality-testable. Not derivable from
+    # the encryption keys — BLIND_INDEX_KEY is a separate secret.
+    # ⚠ Bulk erasure bypasses the setter: any retention sweep that nulls
+    # display_name_enc/_dek via queryset.update() (the needs/casework shred
+    # idiom) MUST include name_bidx=None in the same update(), or the erased
+    # name stays equality-testable. `person_bidx_status` reports such strays.
+    name_bidx = models.BinaryField(null=True, blank=True, editable=False)
 
     linked_user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -61,11 +86,14 @@ class Person(models.Model):
     custom = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    objects = PersonQuerySet.as_manager()
+
     class Meta:
         db_table = "people_person"
         indexes = [
             models.Index(fields=["created_in_community"], name="people_person_comm_idx"),
             models.Index(fields=["household"], name="people_person_hh_idx"),
+            models.Index(fields=["name_bidx"], name="people_person_name_bidx"),
         ]
 
     # ---- decrypt-on-access properties ----------------------------------
@@ -88,10 +116,17 @@ class Person(models.Model):
         if isinstance(value, (bytes, bytearray, memoryview)):
             raise TypeError("display_name takes PLAINTEXT — a write site is passing pre-encrypted bytes.")
         if value in (None, ""):
+            # Clearing is also the crypto-shred path: null the bidx BEFORE any
+            # key lookup so erasure never depends on BLIND_INDEX_KEY being set.
             self.display_name_enc = None
             self.display_name_enc_dek = None
+            self.name_bidx = None
             return
+        # Bidx FIRST — it can raise (missing/shared BLIND_INDEX_KEY), and a
+        # raise must leave the instance untouched, never half-updated.
+        bidx = crypto.name_blind_index(str(value))
         self.display_name_enc, self.display_name_enc_dek = crypto.envelope_encrypt_str(str(value))
+        self.name_bidx = bidx
 
     @property
     def contact(self) -> dict | None:
