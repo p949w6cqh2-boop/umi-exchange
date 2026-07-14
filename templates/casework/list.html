@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Case files — {{ community.name }}{% endblock %}
+{% block title %}Case files · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between gap-4 mb-4">
@@ -28,7 +28,7 @@
            class="border border-parish-border rounded-lg px-3 py-2 text-sm flex-1 min-w-40">
     <button type="submit" class="px-3 py-2 text-sm font-medium text-parish-ink/80 border border-parish-border rounded-lg hover:bg-parish-soft">Filter</button>
   </form>
-  <p class="text-xs text-parish-ink/45 mb-3">Names are encrypted at rest — search works on case codes and paper references.</p>
+  <p class="text-xs text-parish-ink/45 mb-3">Names are encrypted at rest. Search works on case codes and paper references.</p>
 
   <div id="case-rows">{% include "casework/_case_rows.html" %}</div>
 

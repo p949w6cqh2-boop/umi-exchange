@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}My Tags — {{ community.name }}{% endblock %}
+{% block title %}My tags · {{ community.name }}{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-8">
 
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="font-serif text-2xl text-parish-ink">My Tags</h1>
+      <h1 class="font-serif text-2xl text-parish-ink">My tags</h1>
       <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }}</p>
     </div>
     <a href="{% url 'community-feed' community.slug %}"
@@ -14,7 +14,7 @@
   </div>
 
   <p class="text-sm text-parish-ink/60">
-    Tags tell your neighbours what you can do &mdash; <em>Driver</em>, <em>Cook</em>,
+    Tags tell your neighbours what you can do: <em>Driver</em>, <em>Cook</em>,
     <em>Nurse</em>. A grey tag is self-reported; a green one means a
     coordinator confirmed it. Only verified tags ever appear beside your name
     on the board, so a claim never looks endorsed before someone your
@@ -44,7 +44,7 @@
             {% if mt.status == "verified" %}
               Verified {% if mt.verified_at %}{{ mt.verified_at|date:"N j, Y" }}{% endif %}
             {% elif mt.status == "rejected" %}
-              Not approved{% if mt.rejection_reason %} — {{ mt.rejection_reason }}{% endif %}
+              Not approved{% if mt.rejection_reason %}: {{ mt.rejection_reason }}{% endif %}
             {% elif mt.status == "pending" %}
               Awaiting review
             {% else %}
@@ -73,7 +73,7 @@
                 {% csrf_token %}
                 <div class="mb-3">
                   {{ request_verify_form.evidence_note }}
-                  <p class="text-xs text-parish-ink/50 mt-1">No personal details — a coordinator will confirm independently.</p>
+                  <p class="text-xs text-parish-ink/50 mt-1">No personal details needed. A coordinator confirms independently.</p>
                 </div>
                 <button type="submit" class="btn-primary w-full text-sm py-2">Submit request</button>
               </form>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Match — {{ community.name }}{% endblock %}
+{% block title %}Match · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-xl mx-auto">
   <a href="{% url 'community-feed' community.slug %}" class="text-sm text-parish-ink/60 hover:text-parish-ink">&larr; Back to feed</a>
@@ -24,7 +24,7 @@
       </div>
       <h2 class="umi-ceremony__line font-serif text-2xl font-semibold tracking-tight mt-3" style="--ceremony-step: 1">You&rsquo;re connected.</h2>
       <p class="umi-ceremony__line text-sm text-parish-ink/60 mt-2 max-w-sm mx-auto" style="--ceremony-step: 2">
-        Contact details are open below &mdash; shared between the two of you alone,
+        Contact details are open below, shared between the two of you alone,
         the way it should be. Reach out and arrange the exchange.
       </p>
     </div>
@@ -41,7 +41,7 @@
           x-data="{ confirm: false }">
       {% csrf_token %}
       <input type="hidden" name="status" value="accepted">
-      <button type="button" @click="confirm = true" class="btn-primary">Accept Match</button>
+      <button type="button" @click="confirm = true" class="btn-primary">Accept match</button>
       {# Confirmation dialog #}
       <div x-show="confirm" x-cloak class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.away="confirm = false">
@@ -65,7 +65,7 @@
     <form method="post" action="{% url 'match-update' community.slug match.id %}">
       {% csrf_token %}
       <input type="hidden" name="status" value="fulfilled">
-      <button type="submit" class="btn-primary">Mark Fulfilled</button>
+      <button type="submit" class="btn-primary">Mark fulfilled</button>
     </form>
     <form method="post" action="{% url 'match-update' community.slug match.id %}">
       {% csrf_token %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Resources — {{ community.name }}{% endblock %}
+{% block title %}Resources · {{ community.name }}{% endblock %}
 
 {% block content %}
 {% comment %}Beyond material aid — the whole person. Coordinator-curated
@@ -11,7 +11,7 @@
     <div>
       <span class="umi-eyebrow">Beyond the board</span>
       <h1 class="font-serif text-3xl text-parish-ink mt-2">Resources</h1>
-      <p class="text-parish-ink/70 mt-2 max-w-prose">Help that lives outside this board — gathered by your coordinators. Education, legal aid, health, benefits: the whole person, not just the errand.</p>
+      <p class="text-parish-ink/70 mt-2 max-w-prose">Help that lives outside this board, gathered by your coordinators. Education, legal aid, health, benefits: the whole person, not just the errand.</p>
     </div>
     <a href="{% url 'community-feed' community.slug %}"
        class="text-sm text-[var(--umi-primary)] hover:underline shrink-0 min-h-[44px] inline-flex items-center">&larr; The board</a>
@@ -35,7 +35,7 @@
             <input type="hidden" name="action" value="archive">
             <input type="hidden" name="resource_id" value="{{ r.pk }}">
             <button class="text-sm text-parish-ink/50 hover:text-parish-ink min-h-[40px] px-2 focus-ring rounded-lg"
-                    title="Archive — reversible, nothing is deleted">Archive</button>
+                    title="Archive. Reversible; nothing is deleted.">Archive</button>
           </form>
           {% endif %}
         </li>
@@ -47,7 +47,7 @@
     <div class="max-w-sm mx-auto py-10 text-center">
       <div class="umi-plate p-2 mb-6">{% include "illustrations/_carrying.html" with class="w-full h-auto" %}</div>
       <p class="font-serif text-xl text-parish-ink/75">Nothing gathered yet.</p>
-      <p class="text-sm text-parish-ink/60 mt-2">{% if member.is_coordinator %}Add the first place a neighbour in a hard week should know about.{% else %}Your coordinators are gathering trusted places to turn — check back soon.{% endif %}</p>
+      <p class="text-sm text-parish-ink/60 mt-2">{% if member.is_coordinator %}Add the first place a neighbour in a hard week should know about.{% else %}Your coordinators are gathering trusted places to turn to. Check back soon.{% endif %}</p>
     </div>
   {% endif %}
 

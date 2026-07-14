@@ -64,7 +64,7 @@
       </div>
       {% elif row.status == 'proposed' %}
       <p class="text-sm text-parish-ink/55 mt-3">
-        Their community reviews the ask on their side — you'll see contact details here if it's accepted.
+        Their community reviews the ask on their side. You'll see contact details here if it's accepted.
       </p>
       {% endif %}
     </article>
@@ -86,7 +86,7 @@
 {% if member.is_coordinator %}
 <section aria-labelledby="oversight-heading" class="mt-12">
   <h2 id="oversight-heading" class="text-xl font-serif font-semibold text-parish-ink mb-1">All federated activity</h2>
-  <p class="text-sm text-parish-ink/55 mb-4">Coordinator view — every cross-community match on this community's links.</p>
+  <p class="text-sm text-parish-ink/55 mb-4">Coordinator view: every cross-community match on this community's links.</p>
   {% if oversight_rows %}
   <ul class="umi-card divide-y divide-[var(--umi-border)] p-0">
     {% for row in oversight_rows %}
@@ -94,7 +94,7 @@
       <div class="min-w-0">
         <p class="text-base font-medium text-parish-ink truncate">
           {% if row.fm.role == 'authority' %}
-            Ask here: &ldquo;{{ row.fm.match.need.title }}&rdquo; &mdash; offer from {{ row.fm.link.remote_community_label|default:"a linked community" }}
+            Ask here: &ldquo;{{ row.fm.match.need.title }}&rdquo; &middot; offer from {{ row.fm.link.remote_community_label|default:"a linked community" }}
           {% else %}
             Offer &ldquo;{{ row.fm.offer.title|default:"(withdrawn)" }}&rdquo; &rarr; {{ row.fm.link.remote_community_label|default:"a linked community" }}
           {% endif %}
@@ -126,7 +126,7 @@
   {% elif my_rows %}
   <p class="text-sm text-parish-ink/55">Nothing beyond your own offers above.</p>
   {% else %}
-  <p class="text-sm text-parish-ink/55">Nothing yet — activity appears as soon as a match crosses a link.</p>
+  <p class="text-sm text-parish-ink/55">Nothing yet. Activity appears as soon as a match crosses a link.</p>
   {% endif %}
 </section>
 {% endif %}

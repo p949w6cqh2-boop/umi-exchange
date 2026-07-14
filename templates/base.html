@@ -62,7 +62,7 @@
           {% include "components/_notification_badge.html" %}
           {% if community and member %}
             <a href="{% url 'tags:my-tags' community.slug %}" class="text-sm font-medium text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center">
-              My Tags
+              My tags
             </a>
           {% endif %}
           {% if community and member and member.role in 'admin coordinator' %}
@@ -129,7 +129,7 @@
             <span class="w-2 h-2 rounded-[3px] bg-[var(--umi-accent)] self-center" aria-hidden="true"></span>
             <span class="font-serif text-2xl font-medium tracking-tight">UMI Exchange</span>
           </span>
-          <p class="text-sm text-[#EDEAE2]/55 mt-2 max-w-sm">Neighbours asking, neighbours answering &mdash; matched with care, private by default.</p>
+          <p class="text-sm text-[#EDEAE2]/55 mt-2 max-w-sm">Neighbours asking, neighbours answering: matched with care, private by default.</p>
           <nav class="flex flex-wrap gap-x-5 gap-y-1.5 mt-4 text-sm" aria-label="About UMI">
             <a href="{% url 'about' %}" class="text-[#EDEAE2]/70 hover:text-[#EDEAE2] transition-colors duration-300">Our story</a>
             <a href="{% url 'beliefs' %}" class="text-[#EDEAE2]/70 hover:text-[#EDEAE2] transition-colors duration-300">What we believe</a>
@@ -138,8 +138,8 @@
           </nav>
         </div>
         <div class="text-xs text-[#EDEAE2]/45 sm:text-right space-y-1.5">
-          <p>United Moral Infrastructure &mdash; a non-profit being established as a 501(c)(3)</p>
-          <p><a href="https://umi-protocol.org/spec/v0.1" class="hover:text-[#EDEAE2] transition-colors duration-300">Built on the UMI Protocol v0.1 &mdash; build your own</a></p>
+          <p>United Moral Infrastructure, a non-profit being established as a 501(c)(3)</p>
+          <p><a href="https://umi-protocol.org/spec/v0.1" class="hover:text-[#EDEAE2] transition-colors duration-300">Built on the UMI Protocol v0.1. Build your own.</a></p>
           <p>&copy; 2026 UMI Exchange</p>
         </div>
       </div>

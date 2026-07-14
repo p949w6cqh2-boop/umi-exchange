@@ -25,7 +25,7 @@
     </div>
     <div class="relative">
       <span class="umi-kicker">{{ community.name }}</span>
-      <h1 id="hub-heading" class="umi-h1 mt-1.5">Welcome back, {{ member.display_name }}.</h1>
+      <h1 id="hub-heading" class="umi-h1 mt-1.5">Welcome back, {{ member.display_name.split.0 }}.</h1>
       {% if season_impact %}
       <p class="text-sm text-parish-ink/60 mt-2">
         Through you this season: <span class="font-semibold text-umi-primary tabular">{{ season_impact }}</span>
@@ -102,7 +102,7 @@
           </ul>
         {% else %}
           <p class="text-sm text-parish-ink/50">
-            None yet &mdash; <a href="{% url 'tags:my-tags' community.slug %}" class="text-umi-primary hover:underline">claim one</a>.
+            None yet. <a href="{% url 'tags:my-tags' community.slug %}" class="text-umi-primary hover:underline">Claim one</a>.
           </p>
         {% endif %}
       </div>

@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-8">
   <div class="flex items-center justify-between">
-    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">{{ community.name }} — Settings</h1>
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">{{ community.name }} · Settings</h1>
     <a href="{% url 'community-feed' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to feed</a>
   </div>
 
@@ -18,7 +18,7 @@
               class="text-sm text-umi-primary hover:text-umi-primary-hover min-h-[44px]"
               :aria-label="copied ? 'Copied!' : 'Copy join code'">
         <span x-show="!copied">Copy code</span>
-        <span x-show="copied" x-cloak class="text-emerald-600">Copied!</span>
+        <span x-show="copied" x-cloak class="text-emerald-600">Copied</span>
       </button>
     </div>
     {# No-JS fallback: the code is visible in the <code> tag and can be manually selected #}
@@ -36,7 +36,7 @@
         {% csrf_token %}
         <input type="hidden" name="action" value="regenerate_join_code">
         <button type="submit" class="text-sm text-amber-600 hover:text-amber-800 min-h-[44px]"
-                onclick="return confirm('This will invalidate the current join code and QR. Continue?')">
+                onclick="return confirm('The old join code and QR stop working right away. Continue?')">
           Regenerate Join Code
         </button>
       </form>
@@ -69,7 +69,7 @@
     <div class="pt-2">
       <button type="submit"
               class="btn-primary transition-colors">
-        Save Changes
+        Save changes
       </button>
     </div>
   </form>
@@ -79,7 +79,7 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="set_theme">
     <h2 class="text-lg text-parish-ink">Appearance</h2>
-    <p class="text-sm text-parish-ink/60 mt-1">Pick a look for your community — or set your own colours below.</p>
+    <p class="text-sm text-parish-ink/60 mt-1">Pick a look for your community, or set your own colours below.</p>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
       {% for key, t in themes.items %}
@@ -98,11 +98,11 @@
     <div class="mt-4 flex flex-wrap items-end gap-4">
       <div>
         <label for="custom_primary" class="block text-sm text-parish-ink/70 mb-1">Custom primary (optional)</label>
-        <input type="color" id="custom_primary" name="custom_primary" value="{{ theme_custom.primary|default:'' }}" class="h-10 w-16 rounded border border-parish-border">
+        <input type="color" id="custom_primary" name="custom_primary" value="{{ theme_custom.primary|default:'#275D4C' }}" class="h-10 w-16 rounded border border-parish-border">
       </div>
       <div>
         <label for="custom_accent" class="block text-sm text-parish-ink/70 mb-1">Custom accent (optional)</label>
-        <input type="color" id="custom_accent" name="custom_accent" value="{{ theme_custom.accent|default:'' }}" class="h-10 w-16 rounded border border-parish-border">
+        <input type="color" id="custom_accent" name="custom_accent" value="{{ theme_custom.accent|default:'#9C7A3C' }}" class="h-10 w-16 rounded border border-parish-border">
       </div>
       <button type="submit" class="btn-primary">Save theme</button>
     </div>

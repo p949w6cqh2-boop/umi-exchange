@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Case {{ case.short_code }} — {{ community.name }}{% endblock %}
+{% block title %}Case {{ case.short_code }} · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-6 space-y-6">
   <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/60 hover:underline">&larr; Case files</a>
@@ -11,7 +11,7 @@
   {% endif %}
   {% if case.emergency_opened and not case.consent %}
   <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-    Opened under the <strong>emergency override</strong> — regularize consent as soon as possible.
+    Opened under the <strong>emergency override</strong>. Regularize consent as soon as possible.
     {% if case.emergency_justification %}<span class="block mt-1 text-amber-700">“{{ case.emergency_justification }}”</span>{% endif %}
   </div>
   {% endif %}
@@ -156,7 +156,7 @@
     <h2 class="text-sm font-semibold text-parish-ink/55 uppercase tracking-wide mb-2">Handoffs</h2>
     <ul class="space-y-1 text-sm text-parish-ink/60">
       {% for ho in handoffs %}
-      <li>{{ ho.created_at|date:"M j, Y" }} — {{ ho.from_member.display_name }} → {{ ho.to_member.display_name }}
+      <li>{{ ho.created_at|date:"M j, Y" }} · {{ ho.from_member.display_name }} → {{ ho.to_member.display_name }}
         <span class="text-xs {% if ho.status == 'pending' %}text-amber-700{% else %}text-green-700{% endif %}">({{ ho.status }})</span></li>
       {% endfor %}
     </ul>

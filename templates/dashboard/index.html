@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Dashboard — {{ community.name }}{% endblock %}
+{% block title %}Dashboard · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-7xl mx-auto">
   <div class="flex items-center justify-between py-4">
@@ -29,7 +29,7 @@
 
     {# Stale needs #}
     <div class="mt-8">
-      <h2 class="font-serif text-lg font-semibold text-parish-ink">Stale Needs (7+ days, no matches)</h2>
+      <h2 class="font-serif text-lg font-semibold text-parish-ink">Waiting asks (7 days or more, no match yet)</h2>
       {% if stale_needs %}
       <div class="umi-card !p-0 overflow-x-auto mt-4">
         <table class="w-full text-sm">
@@ -50,7 +50,7 @@
         </table>
       </div>
       {% else %}
-      <div class="bg-emerald-50 rounded-lg p-4 text-sm text-emerald-800 mt-4">&#10003; No stale needs! All requests are being addressed.</div>
+      <div class="bg-emerald-50 rounded-lg p-4 text-sm text-emerald-800 mt-4">&#10003; Nothing waiting. Every ask has movement.</div>
       {% endif %}
     </div>
 
