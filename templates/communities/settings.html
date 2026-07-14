@@ -18,7 +18,7 @@
               class="text-sm text-umi-primary hover:text-umi-primary-hover min-h-[44px]"
               :aria-label="copied ? 'Copied!' : 'Copy join code'">
         <span x-show="!copied">Copy code</span>
-        <span x-show="copied" x-cloak class="text-emerald-600">Copied!</span>
+        <span x-show="copied" x-cloak class="text-emerald-600">Copied</span>
       </button>
     </div>
     {# No-JS fallback: the code is visible in the <code> tag and can be manually selected #}
@@ -36,7 +36,7 @@
         {% csrf_token %}
         <input type="hidden" name="action" value="regenerate_join_code">
         <button type="submit" class="text-sm text-amber-600 hover:text-amber-800 min-h-[44px]"
-                onclick="return confirm('This will invalidate the current join code and QR. Continue?')">
+                onclick="return confirm('The old join code and QR stop working right away. Continue?')">
           Regenerate Join Code
         </button>
       </form>
@@ -69,7 +69,7 @@
     <div class="pt-2">
       <button type="submit"
               class="btn-primary transition-colors">
-        Save Changes
+        Save changes
       </button>
     </div>
   </form>

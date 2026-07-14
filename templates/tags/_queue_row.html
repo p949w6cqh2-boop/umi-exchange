@@ -51,7 +51,7 @@
              class="absolute right-0 top-10 z-20 w-72 bg-white rounded-xl shadow-lg border border-[var(--umi-border)] p-4">
           <p class="text-sm font-medium text-parish-ink mb-2">Confirm verification</p>
           {% if mt.tag.tier == "admin_verified" %}
-          <p class="text-xs text-red-600 mb-2 font-medium">Admin-verified tag &mdash; evidence note required.</p>
+          <p class="text-xs text-red-600 mb-2 font-medium">Admin-verified tag. An evidence note is required.</p>
           {% endif %}
           <form hx-post="{% url 'tags:verify' slug=community.slug pk=mt.id %}"
                 hx-swap="none"

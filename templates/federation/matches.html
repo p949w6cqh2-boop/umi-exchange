@@ -94,7 +94,7 @@
       <div class="min-w-0">
         <p class="text-base font-medium text-parish-ink truncate">
           {% if row.fm.role == 'authority' %}
-            Ask here: &ldquo;{{ row.fm.match.need.title }}&rdquo; &mdash; offer from {{ row.fm.link.remote_community_label|default:"a linked community" }}
+            Ask here: &ldquo;{{ row.fm.match.need.title }}&rdquo; &middot; offer from {{ row.fm.link.remote_community_label|default:"a linked community" }}
           {% else %}
             Offer &ldquo;{{ row.fm.offer.title|default:"(withdrawn)" }}&rdquo; &rarr; {{ row.fm.link.remote_community_label|default:"a linked community" }}
           {% endif %}

@@ -13,12 +13,12 @@
 
   {% for reveal in pairing_reveals %}
   <section class="umi-card" aria-label="One-time pairing code">
-    <p class="umi-kicker">Pairing code &mdash; shown only once</p>
+    <p class="umi-kicker">Pairing code &middot; shown only once</p>
     <p class="font-mono text-3xl tracking-widest mt-2 select-all" data-pairing-code="{{ reveal.code }}">{{ reveal.code }}</p>
     <p class="text-sm text-parish-ink/70 mt-3">
       Phone the admin at <strong>{{ reveal.link.peer.base_url }}</strong> now: read them this code and
       your key thumbprint above, and have them read theirs back. The code expires in 24 hours and
-      will not be shown again &mdash; write it down before leaving this page.
+      won't be shown again. Write it down before you leave this page.
     </p>
   </section>
   {% endfor %}

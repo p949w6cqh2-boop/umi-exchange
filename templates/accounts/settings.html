@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Account Settings{% endblock %}
+{% block title %}Account settings{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-8">
-  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Account Settings</h1>
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Account settings</h1>
 
   {# Profile Form (Gap 1: POST handler) #}
   <form method="post" class="umi-card space-y-4">
@@ -32,16 +32,16 @@
     <div class="flex items-center justify-between pt-2">
       <button type="submit"
               class="btn-primary transition-colors">
-        Save Changes
+        Save changes
       </button>
-      <a href="{% url 'password_change' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Change Password</a>
+      <a href="{% url 'password_change' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Change password</a>
     </div>
   </form>
 
   {# 2FA Section (Gap 2: conditional UI) #}
   {% if enable_2fa %}
   <div class="umi-card">
-    <h2 class="font-serif text-lg font-semibold text-parish-ink">Two-Factor Authentication</h2>
+    <h2 class="font-serif text-lg font-semibold text-parish-ink">Two-step sign-in</h2>
     {% if is_2fa_enabled %}
     <div class="mt-3 flex items-center gap-2">
       <span class="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
@@ -55,7 +55,7 @@
     <p class="text-sm text-parish-ink/60 mt-3">Add an extra layer of security to your account with a TOTP authenticator app.</p>
     <a href="{% url 'two_factor:setup' %}"
        class="inline-block mt-3 btn-primary text-sm transition-colors">
-      Set Up 2FA
+      Set up two-step sign-in
     </a>
     {% endif %}
   </div>
@@ -89,8 +89,8 @@
   </div>
 
   <div class="bg-parish-soft rounded-xl border border-[var(--umi-border)] p-6">
-    <h2 class="text-sm font-semibold text-parish-ink/70">About This App</h2>
-    <p class="text-sm text-parish-ink/55 mt-2">Protocol: UMI v0.1 &middot; Conformance: {{ umi_conformance|title }} &middot; License: AGPL-3.0</p>
+    <h2 class="text-sm font-semibold text-parish-ink/70">About this board</h2>
+    <p class="text-sm text-parish-ink/55 mt-2">Runs on the open UMI Protocol (v0.1), so your community owns its board. Free and open source (AGPL-3.0).</p>
   </div>
 
   <div class="umi-card" x-data="{ confirming: false }">

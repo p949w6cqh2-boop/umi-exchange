@@ -12,17 +12,17 @@
     <div class="min-w-0 flex-1">
       <p class="text-[15px] text-parish-ink leading-snug">
         {% if e.kind == 'need_posted' %}
-          <span class="font-semibold">{{ e.actor }}</span> put an ask on the board &mdash;
+          <span class="font-semibold">{{ e.actor }}</span> put an ask on the board:
           <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
         {% elif e.kind == 'offer_posted' %}
-          <span class="font-semibold">{{ e.actor }}</span> offered &mdash;
+          <span class="font-semibold">{{ e.actor }}</span> offered:
           <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
         {% elif e.kind == 'ask_answered' %}
           A neighbour stepped up for
           <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
         {% elif e.kind == 'need_fulfilled' %}
           <a href="{{ e.url }}" class="font-serif font-semibold hover:text-umi-primary">{{ e.title }}</a>
-          &mdash; <span class="text-emerald-700 font-semibold">fulfilled</span>
+          &middot; <span class="text-emerald-700 font-semibold">fulfilled</span>
         {% elif e.kind == 'member_joined' %}
           <span class="font-semibold">{{ e.actor }}</span> joined the community
         {% endif %}
@@ -41,7 +41,7 @@
     {% include "illustrations/_board.html" %}
   </div>
   <p class="text-sm text-parish-ink/55">
-    Quiet so far &mdash; the pulse picks up as neighbours start asking and offering.
+    Quiet so far. The pulse picks up as neighbours start asking and offering.
   </p>
 </div>
 {% endif %}

@@ -6,13 +6,13 @@
     Verified by their community{% if result.tier %} ({{ result.tier|slice:":20" }}){% endif %}
   {% elif result.status == "self_claimed" %}
     <span class="w-2 h-2 rounded-full bg-parish-ink/30" aria-hidden="true"></span>
-    Self-reported only &mdash; not verified
+    Self-reported only, not verified
   {% elif result.status == "none" %}
     <span class="w-2 h-2 rounded-full bg-parish-ink/30" aria-hidden="true"></span>
     No verified &ldquo;{{ tag }}&rdquo; claim
   {% elif result.status == "unsupported" %}
     Their community doesn't offer attestations
   {% else %}
-    Couldn't reach their community &mdash; try again later
+    Couldn't reach their community. Try again later.
   {% endif %}
 </span>

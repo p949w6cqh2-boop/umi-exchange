@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}My Consents{% endblock %}
+{% block title %}What you've shared{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-6">
-  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">My Consents</h1>
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">What you've shared</h1>
 
   {% if consents %}
   <div class="umi-card !p-0 divide-y divide-[var(--umi-border)] overflow-hidden">
@@ -34,7 +34,7 @@
   </div>
   {% else %}
   <div class="umi-card !p-8">
-    {% include "components/_empty_state.html" with message="No consent records." illustration=True %}
+    {% include "components/_empty_state.html" with message="Nothing shared yet. When you accept a match, what you agreed to share shows up here." illustration=True %}
   </div>
   {% endif %}
 </div>

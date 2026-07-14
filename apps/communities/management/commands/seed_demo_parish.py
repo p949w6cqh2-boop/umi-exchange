@@ -248,7 +248,8 @@ class Command(BaseCommand):
                 f"{Need.objects.filter(community=community).count()} needs, "
                 f"{Offer.objects.filter(community=community).count()} offers, "
                 f"{Match.objects.filter(need__community=community).count()} matches. "
-                f"Sign in as marta / {DEMO_PASSWORD} (coordinator) or nuala / {DEMO_PASSWORD}."
+                f"Sign in as marta (admin), tomas (coordinator), "
+                f"or nuala (member) — password {DEMO_PASSWORD!r} for all."
             )
         )
 
