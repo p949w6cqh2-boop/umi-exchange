@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `2e7c4a3` (2026-07-14).
+> Reflects `main` @ `6fa350a` (2026-07-14).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 
@@ -66,10 +66,13 @@
 - Editorial noticeboard system (v2, replaced the v1 parish theme): stone paper `#F6F4EE`, ink,
   evergreen `#275D4C`, bronze accent; Newsreader (serif display) + Schibsted Grotesk (body);
   `umi-*` component tokens; per-community themes layer on top.
-- **Linocut still-life illustration suite** (hand-carved two-plate SVGs, object scenes, no
-  figures) with pinned grain-filter ids (design-guard tested). Legibility redraw merged
-  `2e7c4a3` (2026-07-14): 6 of 7 scenes redrawn after founder flagged them as not depicting
-  their captions; every scene now render-verified (headless screenshot) to read at a glance.
+- **Linocut print illustration suite** (merged `6fa350a`, 2026-07-14, founder's key): all 7
+  scenes are AI-generated two-colour block prints (Higgsfield z_image, locked Commons-palette
+  style spec), served as static webp under `static/img/scenes/`; the illustration partials
+  render an `<img>` with a `data-scene` marker (scene tests assert those markers). Trade-off
+  accepted with the key: prints are fixed-palette rasters — per-community themes no longer
+  recolor them. History: hand-coded SVG suite (legibility redraw `2e7c4a3`) replaced the same
+  day after the founder called for professional-grade art.
 - **8-point grid** (everything divisible by 4); thumb-reach **bottom nav** on mobile
   (Hub · Board · + Post · Alerts · You, 56px targets, safe-area).
 - No-JS-safe reveals (`.js`-gated, failsafe reveal-all); connect-moment ceremony; keyboard
