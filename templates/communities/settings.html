@@ -98,11 +98,11 @@
     <div class="mt-4 flex flex-wrap items-end gap-4">
       <div>
         <label for="custom_primary" class="block text-sm text-parish-ink/70 mb-1">Custom primary (optional)</label>
-        <input type="color" id="custom_primary" name="custom_primary" value="{{ theme_custom.primary|default:'' }}" class="h-10 w-16 rounded border border-parish-border">
+        <input type="color" id="custom_primary" name="custom_primary" value="{{ theme_custom.primary|default:'#275D4C' }}" class="h-10 w-16 rounded border border-parish-border">
       </div>
       <div>
         <label for="custom_accent" class="block text-sm text-parish-ink/70 mb-1">Custom accent (optional)</label>
-        <input type="color" id="custom_accent" name="custom_accent" value="{{ theme_custom.accent|default:'' }}" class="h-10 w-16 rounded border border-parish-border">
+        <input type="color" id="custom_accent" name="custom_accent" value="{{ theme_custom.accent|default:'#9C7A3C' }}" class="h-10 w-16 rounded border border-parish-border">
       </div>
       <button type="submit" class="btn-primary">Save theme</button>
     </div>
