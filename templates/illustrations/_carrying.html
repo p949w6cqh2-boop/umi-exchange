@@ -1,63 +1,59 @@
 {% comment %}Parish Linocut — original UMI illustration ("Carried together —
-   solidarity"). The load at rest, halfway up the path: one laden sack slung
-   from a shoulder-pole propped on the milestone, TWO walking sticks leaned
-   against it, two hats hung on the pole ends. Two carriers, resting just out
-   of frame — nobody hauls alone. Two-plate relief print: black key =
-   currentColor, white gouges = var(--umi-bg), washes = community theme,
-   off-register. Decorative.{% endcomment %}
+   solidarity"). The shared harvest basket set down on the path: one big
+   two-handled basket, brimming — round loaf, greens, the gold jug — and
+   beside it two hats set down together on the path. Two carriers, resting
+   just out of frame — nobody
+   hauls alone. Two-plate relief print: black key = currentColor, white
+   gouges = var(--umi-bg), washes = community theme, off-register.
+   Decorative.{% endcomment %}
 <svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg"
      class="{{ class|default:'w-full h-auto' }}" aria-hidden="true" focusable="false">
   <defs><filter id="g-carry"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.05 0"/></filter></defs>
 
   <!-- colour plates, off-register -->
-  <ellipse cx="120" cy="102" rx="44" ry="30" fill="var(--umi-accent)" opacity="0.32" transform="translate(3 3)"/>
-  <path d="M12 168 q56 -18 108 -22 q64 -5 108 -14 l0 48 -216 0 z" fill="var(--umi-primary)" opacity="0.14" transform="translate(0 3)"/>
+  <ellipse cx="120" cy="118" rx="52" ry="34" fill="var(--umi-accent)" opacity="0.30" transform="translate(3 3)"/>
+  <ellipse cx="120" cy="158" rx="92" ry="10" fill="var(--umi-primary)" opacity="0.14"/>
 
-  <!-- the path, rising right, carved strokes -->
-  <path d="M10 164 q32 -7 60 -10" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M78 153 q46 -7 86 -12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M170 139 q30 -5 58 -8" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M42 170 h24 M116 158 h26 M184 146 h22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <!-- carved ground -->
+  <path d="M14 154 q30 -4 58 -1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M78 155 q44 -4 86 0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M170 154 q28 -3 54 1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M46 162 h24 M114 163 h26 M182 162 h22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
 
-  <!-- THE MILESTONE, waist-high, carved with a wayfarer's cross-tick -->
-  <path d="M86 150 q-2 -34 14 -36 q16 2 14 36 z" fill="currentColor"/>
-  <path d="M93 124 q7 -3 14 0 M91 136 h18" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
-  <path d="M100 128 v6 M97 131 h6" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- WHAT IT HOLDS, heaped above the rim -->
+  <!-- the round loaf, scored -->
+  <path d="M96 96 a15 12 0 0 1 30 0 l-2 4 -26 0 z" fill="currentColor"/>
+  <path d="M103 88 q8 -4 16 0 M108 82 l3 6 M117 82 l-2 6" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- greens leaning out left -->
+  <path d="M88 96 q-6 -14 -16 -20 M90 98 q-2 -16 -6 -24" stroke="var(--umi-primary)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 76 q-6 -2 -8 -8 q7 -1 10 4 z M84 74 q-5 -4 -5 -10 q7 1 8 7 z" fill="var(--umi-primary)"/>
+  <!-- the gold jug tucked in right -->
+  <path d="M142 98 q-8 -2 -8 -12 q0 -8 6 -10 l-2 -6 8 0 -2 6 q6 2 6 10 q0 10 -8 12 z" fill="var(--umi-accent)"/>
+  <path d="M142 98 q-8 -2 -8 -12 q0 -8 6 -10 l-2 -6 8 0 -2 6 q6 2 6 10 q0 10 -8 12 z" fill="none" stroke="currentColor" stroke-width="2.2"/>
 
-  <!-- THE POLE, propped on the stone, bowed by the load -->
-  <path d="M34 96 Q120 92 206 66" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <path d="M52 93 q3 -2 6 -1 M150 76 q3 -2 6 -1" stroke="var(--umi-bg)" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- THE BASKET: one body, two handles — built to be carried by two -->
+  <path d="M74 100 h92 l-8 46 q-1 8 -38 8 q-37 0 -38 -8 z" fill="currentColor"/>
+  <ellipse cx="120" cy="100" rx="46" ry="7" fill="currentColor"/>
+  <path d="M80 100 a40 5 0 0 1 80 0" stroke="var(--umi-bg)" stroke-width="1.8"/>
+  <!-- weave: coursed gouges -->
+  <path d="M79 113 q41 5 82 0 M83 126 q37 5 74 0 M87 139 q33 4 66 0" stroke="var(--umi-bg)" stroke-width="1.8" fill="none"/>
+  <path d="M100 107 q-2 22 0 44 M140 107 q2 22 0 44 M120 108 q-1 23 0 46" stroke="var(--umi-bg)" stroke-width="1.4" opacity="0.7" fill="none"/>
+  <!-- the two rope handles, one each side -->
+  <path d="M74 104 q-16 -2 -18 12 q-1 10 10 12" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <path d="M166 104 q16 -2 18 12 q1 10 -10 12" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <path d="M60 110 l4 3 M62 121 l4 -2 M180 110 l-4 3 M178 121 l-4 -2" stroke="var(--umi-bg)" stroke-width="1.4" stroke-linecap="round"/>
 
-  <!-- THE SACK, heavy, slung from the pole's middle -->
-  <path d="M112 84 l18 -3 M121 82 v9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-  <path d="M121 90 q-26 3 -28 26 q-1 22 28 24 q29 -2 28 -26 q-2 -21 -28 -24 z" fill="currentColor"/>
-  <path d="M108 96 q-9 7 -10 19 M134 97 q9 7 9 19" stroke="var(--umi-bg)" stroke-width="2" stroke-linecap="round"/>
-  <path d="M115 88 q6 4 12 0" stroke="var(--umi-bg)" stroke-width="1.8" stroke-linecap="round"/>
-  <path d="M114 92 h14" stroke="var(--umi-bg)" stroke-width="2.2" stroke-linecap="round"/>
-  <!-- a patch, stitched: someone has carried this a long time -->
-  <path d="M126 116 l12 3 -2 10 -12 -3 z" fill="var(--umi-bg)"/>
-  <path d="M127 118 l10 2 M126 122 l10 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2"/>
-
-  <!-- TWO HATS hung on the pole ends: one each -->
-  <path d="M42 96 a12 6 0 0 1 24 0 z" fill="currentColor"/>
-  <path d="M48 92 a7 6 0 0 1 12 0 l0 4 -12 0 z" fill="currentColor"/>
-  <path d="M50 96 h9" stroke="var(--umi-accent)" stroke-width="2" stroke-linecap="round"/>
-  <path d="M172 74 a12 6 0 0 1 24 0 z" fill="currentColor"/>
-  <path d="M178 70 a7 6 0 0 1 12 0 l0 4 -12 0 z" fill="currentColor"/>
-  <path d="M180 74 h9" stroke="var(--umi-primary)" stroke-width="2" stroke-linecap="round"/>
-
-  <!-- TWO STICKS leaned on the load, crossed — the pair of them -->
-  <path d="M96 148 L128 92" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M146 146 L116 94" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M126 96 q3 -3 6 -2 M114 98 q-3 -3 -6 -2" stroke="var(--umi-bg)" stroke-width="1.4" stroke-linecap="round"/>
-
-  <!-- the water flask set down between them, shared -->
-  <path d="M160 142 q-6 -2 -6 -9 q0 -6 4 -8 l-1 -4 7 0 -2 4 q4 2 4 8 q0 7 -6 9 z" fill="var(--umi-accent)"/>
-  <path d="M160 142 q-6 -2 -6 -9 q0 -6 4 -8 l-1 -4 7 0 -2 4 q4 2 4 8 q0 7 -6 9 z" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- TWO HATS set down together by the path -->
+  <path d="M22 152 a13 6 0 0 1 26 0 z" fill="currentColor"/>
+  <path d="M28 148 a7 6 0 0 1 14 0 l0 4 -14 0 z" fill="currentColor"/>
+  <path d="M30 152 h10" stroke="var(--umi-accent)" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M192 152 a13 6 0 0 1 26 0 z" fill="currentColor"/>
+  <path d="M198 148 a7 6 0 0 1 14 0 l0 4 -14 0 z" fill="currentColor"/>
+  <path d="M200 152 h10" stroke="var(--umi-primary)" stroke-width="2.2" stroke-linecap="round"/>
 
   <!-- two carved birds keeping pace overhead -->
-  <path d="M84 32 q5 -6 10 0 q5 -6 10 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-  <path d="M132 22 q4 -5 8 0 q4 -5 8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M64 34 q5 -6 10 0 q5 -6 10 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M150 24 q4 -5 8 0 q4 -5 8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
 
   <!-- registration ticks -->
   <path d="M8 16 h14 M218 168 h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>

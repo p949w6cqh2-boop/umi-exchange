@@ -3,6 +3,14 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-14
+
+- **The little pictures now show what they mean** — the carved scenes on the story pages and
+  around the board were redrawn so each one reads at a glance: the one place set at the widow's
+  table, the harvest basket carried together, bread passing from one hand to another, the open
+  door with the light on, the terraced garden under the town. Same warm print style — clearer
+  stories.
+
 ## 2026-07-13
 
 - **For coordinators: the federation launch guide caught up with the build** — sharing beyond
