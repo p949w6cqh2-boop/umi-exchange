@@ -12,6 +12,10 @@
   grief it names: a widow alone at her table, head in her hands, the loaf untouched.
 - **Pictures sit tighter in their frames** — the extra paper edge around each print is
   gone, so they read as prints on the page, not pictures in white boxes.
+- **The widow's scene now matches the other prints** — redrawn on the same bare paper,
+  her green shawl the only colour in the room.
+- **Plainer section titles** — headings across the story pages are now complete
+  sentences, written the way you'd say them out loud.
 
 ## 2026-07-13
 

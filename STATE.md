@@ -90,6 +90,7 @@
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
+- **In-flight (`design/widow-copy-pass`, 2026-07-14):** widow print regenerated to match the suite's bare-paper style (his flag) · heading grammar pass — verbless fragments → complete sentences (his direction: CarePortal grammar conventions, our words). Gate pending, then his merge key.
 - **Print-polish MERGED `bb6a12c` (his key 2026-07-14):** insights rules in CLAUDE.md, prints cropped to frame, the widow scene (first figure, his key), "why lakes" passage on beliefs. Gate was PASS 855 on PG16+Redis.
 - All feature work merged to `main`: Lakes 1+2, envelope A–E + retention sweeps, Federation v1
   (A–E), moderation, hub v2, the full 2026-07 product backlog (onboarding, search, connect
