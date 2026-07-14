@@ -18,6 +18,8 @@
   sentences, written the way you'd say them out loud.
 - **Smoother reading** — the story pages now read in full, flowing sentences.
   The dashes and clipped fragments are gone.
+- **Written the way people talk** — the story pages passed a read-it-out-loud test.
+  Contractions are back, and long comma-chains became short spoken sentences.
 
 ## 2026-07-13
 
