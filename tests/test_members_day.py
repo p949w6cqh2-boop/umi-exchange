@@ -1,8 +1,9 @@
 """Phase 2 "Member's Day" — the logged-in journey must look, not read:
 threshold scene at join/create, hub crown, tokened notices, exchange ceremony.
 
-Scenes are asserted via their unique grain-filter ids (g-*) because the
-Parish Linocut header comments are {% comment %} blocks and never render."""
+Scenes are asserted via their data-scene markers on the illustration <img>
+tags (the Parish Linocut header comments are {% comment %} blocks and never
+render; the 2026-07-14 generated suite replaced the inline SVGs)."""
 
 import pytest
 from django.urls import reverse
@@ -39,7 +40,7 @@ def member_client(client, member):
 class TestHubCrown:
     def test_hub_masthead_carries_well_wash(self, member_client, member):
         body = member_client.get(reverse("hub:community", kwargs={"slug": member.community.slug})).content.decode()
-        assert 'id="g-well"' in body
+        assert 'data-scene="well"' in body
 
     def test_hub_empty_pulse_shows_vignette_not_bare_text(self, member_client, member):
         # A fresh member IS a pulse event (member_joined) — backdate the join
@@ -54,7 +55,7 @@ class TestHubCrown:
 
     def test_hub_empty_spotlight_shows_vignette(self, member_client, member):
         body = member_client.get(reverse("hub:community", kwargs={"slug": member.community.slug})).content.decode()
-        assert 'id="g-carry"' in body  # no open needs → spotlight empty state
+        assert 'data-scene="carrying"' in body  # no open needs → spotlight empty state
 
 
 class TestNotices:
@@ -112,13 +113,13 @@ class TestExchangeCeremony:
         community, match, requester = self._world()
         match.transition_to("accepted")
         body = self._get(client, community, match, requester)
-        assert 'id="g-exch"' in body
+        assert 'data-scene="exchange"' in body
         assert "connected" in body.lower()
 
     def test_proposed_match_shows_no_ceremony(self, client):
         community, match, requester = self._world()
         body = self._get(client, community, match, requester)
-        assert 'id="g-exch"' not in body
+        assert 'data-scene="exchange"' not in body
 
     def test_match_page_off_legacy_palette(self, client):
         community, match, requester = self._world()
@@ -131,8 +132,8 @@ class TestExchangeCeremony:
 class TestThreshold:
     def test_join_page_carries_threshold_scene(self, homeless_client):
         body = homeless_client.get(reverse("community-join")).content.decode()
-        assert 'id="g-thresh"' in body
+        assert 'data-scene="threshold"' in body
 
     def test_create_page_carries_threshold_scene(self, homeless_client):
         body = homeless_client.get(reverse("community-create")).content.decode()
-        assert 'id="g-thresh"' in body
+        assert 'data-scene="threshold"' in body

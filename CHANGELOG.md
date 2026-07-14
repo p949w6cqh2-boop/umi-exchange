@@ -5,11 +5,9 @@
 
 ## 2026-07-14
 
-- **The little pictures now show what they mean** — the carved scenes on the story pages and
-  around the board were redrawn so each one reads at a glance: the one place set at the widow's
-  table, the harvest basket carried together, bread passing from one hand to another, the open
-  door with the light on, the terraced garden under the town. Same warm print style — clearer
-  stories.
+- **New pictures** — the scenes on the story pages and around the board are now real
+  two-colour block prints: the well, the lamplit door, bread passing hand to hand, the
+  shared harvest basket, the one place set, the garden hill, the notice board.
 
 ## 2026-07-13
 
