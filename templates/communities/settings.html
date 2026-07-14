@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-8">
   <div class="flex items-center justify-between">
-    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">{{ community.name }} — Settings</h1>
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">{{ community.name }} · Settings</h1>
     <a href="{% url 'community-feed' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to feed</a>
   </div>
 
@@ -79,7 +79,7 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="set_theme">
     <h2 class="text-lg text-parish-ink">Appearance</h2>
-    <p class="text-sm text-parish-ink/60 mt-1">Pick a look for your community — or set your own colours below.</p>
+    <p class="text-sm text-parish-ink/60 mt-1">Pick a look for your community, or set your own colours below.</p>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
       {% for key, t in themes.items %}

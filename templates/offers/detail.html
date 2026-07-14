@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ offer.title }} — {{ community.name }}{% endblock %}
+{% block title %}{{ offer.title }} · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto">
   <a href="{% url 'community-feed' community.slug %}" class="inline-flex items-center gap-1.5 text-sm font-medium text-parish-ink/60 hover:text-parish-ink transition-colors">&larr; Back to the board</a>

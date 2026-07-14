@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Reports — {{ community.name }}{% endblock %}
+{% block title %}Reports · {{ community.name }}{% endblock %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto space-y-8">
@@ -7,7 +7,7 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="font-serif text-2xl text-parish-ink">Reports</h1>
-      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }} — concerns raised by neighbours</p>
+      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }}: concerns raised by neighbours</p>
     </div>
     <a href="{% url 'community-feed' community.slug %}"
        class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
@@ -47,7 +47,7 @@
             {% csrf_token %}
             {% if row.target %}
             <button name="action" value="hide" class="btn-secondary text-sm !min-h-[40px] !px-3.5"
-                    title="Take it off the board — reversible, nothing is deleted">Hide it</button>
+                    title="Take it off the board. Reversible; nothing is deleted.">Hide it</button>
             <button name="action" value="keep" class="btn-secondary text-sm !min-h-[40px] !px-3.5"
                     title="Reviewed; the post stays up">Looks fine</button>
             {% endif %}
@@ -60,7 +60,7 @@
     </div>
     {% else %}
     <div class="umi-card p-8 text-center text-parish-ink/50">
-      <p>No open reports — a quiet board is a good board.</p>
+      <p>No open reports. A quiet board is a good board.</p>
     </div>
     {% endif %}
   </section>

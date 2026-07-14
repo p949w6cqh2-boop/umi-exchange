@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Record a visit — {{ community.name }}{% endblock %}
+{% block title %}Record a visit · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-xl mx-auto px-4 py-6">
   <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/60 hover:underline">&larr; Case files</a>
   <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mt-2 mb-1">Record a visit</h1>
-  <p class="text-sm text-parish-ink/55 mb-4">Three minutes, tops. Works offline — drafts queue on your
+  <p class="text-sm text-parish-ink/55 mb-4">Three minutes, tops. Works offline. Drafts queue on your
     phone (codes only, no names) and sync when you're back in signal.</p>
 
   {% if saved %}
@@ -13,7 +13,7 @@
     Visit saved to case {{ saved }}.</div>
   {% endif %}
   <div id="offline-banner" hidden class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-    <span id="offline-banner-text">You're offline — visits will queue on this device.</span>
+    <span id="offline-banner-text">You're offline. Visits will queue on this device.</span>
     <a id="offline-reauth-link" hidden class="underline font-medium"
        href="{% url 'casework:reauth' slug=community.slug %}?next={% url 'casework:visit' slug=community.slug %}">Re-authenticate to sync</a>
   </div>
@@ -40,7 +40,7 @@
       <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Where</label>{{ form.location_kind }}</div>
     </div>
     <div>
-      <span class="umi-label">Quick actions — tap what you did</span>
+      <span class="umi-label">Quick actions: tap what you did</span>
       <div class="flex flex-wrap gap-2 text-sm">{{ form.actions }}</div>
     </div>
     <div class="grid grid-cols-2 gap-3 text-sm">

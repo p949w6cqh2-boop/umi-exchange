@@ -44,7 +44,7 @@
             {% if mt.status == "verified" %}
               Verified {% if mt.verified_at %}{{ mt.verified_at|date:"N j, Y" }}{% endif %}
             {% elif mt.status == "rejected" %}
-              Not approved{% if mt.rejection_reason %} — {{ mt.rejection_reason }}{% endif %}
+              Not approved{% if mt.rejection_reason %}: {{ mt.rejection_reason }}{% endif %}
             {% elif mt.status == "pending" %}
               Awaiting review
             {% else %}
@@ -73,7 +73,7 @@
                 {% csrf_token %}
                 <div class="mb-3">
                   {{ request_verify_form.evidence_note }}
-                  <p class="text-xs text-parish-ink/50 mt-1">No personal details — a coordinator will confirm independently.</p>
+                  <p class="text-xs text-parish-ink/50 mt-1">No personal details needed. A coordinator confirms independently.</p>
                 </div>
                 <button type="submit" class="btn-primary w-full text-sm py-2">Submit request</button>
               </form>

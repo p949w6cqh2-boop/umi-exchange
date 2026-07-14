@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Open a case — {{ community.name }}{% endblock %}
+{% block title %}Open a case · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-6">
   <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/60 hover:underline">&larr; Case files</a>
