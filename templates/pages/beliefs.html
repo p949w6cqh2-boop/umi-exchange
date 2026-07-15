@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}What we believe — UMI Exchange{% endblock %}
+{% block title %}What we believe · Reciprocal Aid Network{% endblock %}
 {% block content %}
 
 {% comment %}What We Believe — Lake 0, the heart every other lake serves. CST
@@ -11,20 +11,23 @@
 
   <header class="pt-6 md:pt-10 umi-rise">
     <span class="umi-eyebrow">What we believe &middot; Lake&nbsp;0</span>
-    <h1 class="umi-masthead mt-6">Every lake is built<br>on the same heart.</h1>
+    <h1 class="umi-masthead mt-6">This board is a lake,<br>the first of many.</h1>
     <div class="umi-rule mt-7" aria-hidden="true"></div>
     <p class="text-lg text-parish-ink/70 mt-7 umi-measure">
-      We number our tools like lakes: a board here, casework there, more to
-      come. But there's a Lake&nbsp;0 underneath all of them, and it isn't software.
-      It's the conviction that a person is never only a problem to be solved.
+      This board is the first of many tools we call lakes. A lake is a
+      simple thing: a place where a community's help gathers, where anyone can
+      draw and anyone can add. Casework is the second. More are on the way.
     </p>
     <p class="text-lg text-parish-ink/70 mt-5 umi-measure">
-      Why call them lakes? Two old sayings explain it. You can lead a horse to
-      water, but you can't make it drink. Teach a man to fish, and you feed him
-      for a lifetime. Bring a man to a lake and he still can't fish. So we do two things
-      at once: we build the lakes, and the community teaches itself to fish them.
-      Build enough lakes and the horses will drink eventually. Teach the fishing,
-      and every lake is worth more.
+      The name comes from two old sayings. You can lead a horse to water, but you
+      can't make it drink. Teach a man to fish, and you feed him for a lifetime.
+      One says help can't be forced. The other says the best help stays. So we
+      don't deliver aid into a community: we put water close to home, and the
+      community learns to fish it.
+    </p>
+    <p class="text-lg text-parish-ink/70 mt-5 umi-measure">
+      And underneath every lake is Lake&nbsp;0. It isn't software. It's the
+      conviction that a person is never only a problem to be solved.
     </p>
   </header>
 
@@ -32,22 +35,20 @@
   <section class="umi-section !pt-14 border-b border-[var(--umi-border)]" data-rise>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
       <div class="lg:col-span-5">
-        <div class="umi-plate p-2">{% include "illustrations/_one_place.html" with class="w-full h-auto" %}</div>
+        <div class="umi-plate p-2">{% include "illustrations/_lakes.html" with class="w-full h-auto" %}</div>
       </div>
       <div class="lg:col-span-7">
-        <h2 class="umi-display">You have already seen it.</h2>
+        <h2 class="umi-display">A conviction you can act on.</h2>
         <div class="mt-6 space-y-5 text-lg leading-relaxed text-parish-ink/85 umi-measure">
       <p>
-        The widow who sets one place at the table. The man who sleeps in the church
-        doorway and is stepped over on the way to the pew. The mother counting
-        change at the till and putting the milk back. The old woman who hasn't been
-        asked how she is in so long she wouldn't know how to answer.
+        Most people never stop caring. What they run out of is a way to act that
+        doesn't cost anyone their dignity: a way to help that doesn't make one
+        neighbour a donor and the other a case.
       </p>
       <p>
-        A child sees all of this. A child sees it clearly, and learns, quietly,
-        that this is just how the world is, and says nothing, because no one
-        gave them anything to do about it. An elder has watched it for seventy
-        years and carries the same silence from the other end.
+        That's what Lake&nbsp;0 asks of every tool we build. Help has to move both
+        ways. Privacy has to be the default. And nobody gets reduced to their
+        hardest season.
       </p>
           <p class="font-serif text-xl text-parish-ink">
             Lake&nbsp;0 is the refusal to keep walking past.
@@ -118,7 +119,7 @@
   <section class="umi-section border-b border-[var(--umi-border)]" data-rise>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-2">
       <div class="lg:col-span-7"></div>
-      <div class="lg:col-span-5"><div class="umi-plate p-2">{% include "illustrations/_hill.html" with class="w-full h-auto" %}</div></div>
+      <div class="lg:col-span-5"><div class="umi-plate p-2">{% include "illustrations/_priest.html" with class="w-full h-auto" %}</div></div>
     </div>
     <div class="flex items-center gap-3 flex-wrap">
       <span class="umi-kicker">Where we're going</span>
@@ -185,6 +186,6 @@
 
   </section>
 
-  {% include "components/_chapter_next.html" with next_url="/why-umi/" next_kicker="Chapter three" next_title="How we're different — you're a neighbour, not a case" %}
+  {% include "components/_chapter_next.html" with next_url="/why-umi/" next_kicker="Chapter three" next_title="How we're different · you're a neighbour, not a case" %}
 </article>
 {% endblock %}
