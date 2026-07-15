@@ -196,8 +196,12 @@ theming; no HTML storage.
 rest — the WordPress line. Behavior: edited in the settings surface; `set_theme` precedent
 (`apps/communities/views.py` — validate, write `community.settings`, `emit`) for the action
 shape; rendered with graceful absence (zero-customization = today's warm defaults, goal 11);
-unknown scene slug falls back silently like `resolve_theme` does for unknown themes. Edges:
-emoji/length, blank-clears-key, switcher swaps the whole bundle. Not-do: no freeform HTML
+unknown scene slug falls back silently like `resolve_theme` does for unknown themes.
+**The wall has no second door (Stage-3 keyed amendment):** identity facts render auto-escaped
+in every template — never `|safe`, never concatenated into HTML; a `<script>` in `welcome_line`
+displays as text. Edges: emoji/length, blank-clears-key, switcher swaps the whole bundle;
+red-team row: script tag in `welcome_line` renders inert on hub, sign-in, and landing. Not-do:
+no freeform HTML
 keys; no per-key audit PII (log key names only: `community.identity_set` — 22 chars, fits
 the 32-char audit action column).
 
@@ -246,7 +250,9 @@ platform chrome first (title, community, mandatory byline "Written by the coordi
 content cannot summon umi-card/btn/nav classes; no form/button/input/svg in allowlist ⇒ no
 fake platform controls. Deps: `markdown==X`, `nh3==X` exact pins + why-comment (the
 `ruff==0.15.14` precedent line in requirements.txt) + threat-model note (keyed). Red-team
-test table: javascript: links, raw script/form/div-class, data: images, 20k render budget.
+test table: javascript: links, raw script/form/div-class, data: images, 20k render budget,
+and (Stage-3 keyed) a script tag in `welcome_line`/`patron`/`signin_blurb` rendering inert on
+every surface that shows them.
 Not-do: no `extra` extension; no |safe anywhere except the nh3-written column; no
 request-time rendering.
 
@@ -322,3 +328,39 @@ redirects), golden-path Playwright re-run with St. Patrick's seed DEBUG off, /ga
 ## Next
 
 Stage 3 — the outline. Nothing beyond this document is built under the Stage-2 key.
+
+---
+
+# ✋ STAGE 3 — KEYED (Jasiah, 2026-07-14) — the outline
+
+Keyed with two insertions (3.2/3.3 carries the edits-require-draft rule in narrative; 4.2
+carries the wall's second surface) and one reorder (writing the protocol precedes serving it).
+
+1. **Why two layers** — 1.1 the pipes and the water; 1.2 a link is a promise (true on an
+   offline laptop); 1.3 what this is not: CMS-lite, never WordPress.
+2. **The platform floor (Layer P)** — 2.1 writing the protocol down: v0.1 derived from the
+   reference implementation, the founder's key makes it canonical (§A); 2.2 the protocol has
+   a home: /protocol/ on every instance, raw spec beside it (§B1–B2); 2.3 every promise kept:
+   references repointed, ONE true security.txt, the link-rot guard (§B3–B6); 2.4 what the
+   floor never does: leak instance facts, lean on a dead domain.
+3. **The community's own (Layer C)** — 3.1 the small facts: patron, welcome line, sign-in
+   blurb, chosen scenes (§D); 3.2 the pages and their life: draft → published → archived,
+   never deleted — and a published page is never edited in place: a live fix goes back
+   through draft (§C); 3.3 who writes, who signs: coordinators draft, admins publish — the
+   priest signs, and signs again after every fix (§F); 3.4 where writing happens: the "Your
+   pages" manager; the wizard stays light (§E).
+4. **How words become pages** — 4.1 the pipeline: markdown → transforms → nh3 → cached HTML,
+   rendered on save (§G); 4.2 the wall: what the allowlist admits and refuses; images become
+   links; and the small identity facts render auto-escaped, never |safe — the wall has no
+   second door (§D/§G); 4.3 content cannot wear the platform's clothes: the prose well, the
+   mandatory byline (§G); 4.4 one moderation model: flaggable, reversible hide, the
+   lone-admin honesty note (§H).
+5. **Where pages live** — 5.1 URLs and the index: /c/<community>/p/, capped nav, warm
+   tombstones (§I); 5.2 the front door: the pre-auth landing, what anonymous eyes may see,
+   the no-oracle rule (§I); 5.3 the hub wears the identity; the switcher swaps the whole
+   bundle (§J).
+6. **Safe by default** — 6.1 zero customization still looks finished (§J); 6.2 what never
+   crosses: local-only v1, the federation guard (§C/§I); 6.3 the audit trail, PII-free (§H).
+7. **Proving it** — 7.1 the matrices: authz, sanitizer red-team, no-oracle probes (§K);
+   7.2 the demo: St. Patrick's being St. Patrick's, DEBUG off, in the gallery (§J/§K).
+8. **Appendix** — the slice map (Stage 4's blueprint; dependency diagram above).
