@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `f131886` (2026-07-14).
+> Reflects `main` @ `4b086ed` (2026-07-14).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 
@@ -90,6 +90,7 @@
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
+- **Identity pipeline Stages 0–2 KEYED, doc MERGED `4b086ed` (PR #72, Ultraplan-refined, his keys):** `docs/community-identity-pipeline.md` = canonical. Two-layer model: Layer P platform floor (/protocol/ page serving the spec, all dead domains repointed, security.txt via one Django view — cloud verification found TWO conflicting unserved copies + a second dead domain `umi-exchange.org`, both now denylisted), Slice 0 = write UMI Protocol v0.1 FROM the implementation (59 §-citations fixed, RFC-2119, founder-keys the draft), Layer C = CommunityPage CMS-lite (apps/pages, draft/published/archived, markdown+nh3 pinned, coordinators draft / admins publish, flaggable, no-oracle pre-auth landing). Next: Stage 3 outline ✋. Gate was PASS 858.
 - **Bread restored `f131886` (his word 2026-07-14):** the realism scan re-rolled the exchange print unasked; the original (one hand gives, two receive) is back. Lesson: scan findings on keyed art get his per-image yes before swapping.
 - **Beliefs-heart MERGED `132a6e5` (his standing key 2026-07-14):** beliefs opening rebuilt three times to his flags (final: "This board is a lake, the first of many." — concrete-first, sayings resolved plainly, litany scratched, closer kept); product name unified to **Reciprocal Aid Network** (UMI = infrastructure, Lake 0 at heart); full realism scan of the print suite (exchange re-rolled with correct hands; fake AI signature removed; spring retired for reeds-from-rock; lakes re-rolled with the boat afloat and his composition; hill idea returned as a SACRED print: a Black priest planting on the terraced hillside at dawn, his representation rule now standing in the brain). 390px header fixed for the longer name; output.css recompiled. Gate was PASS 858.
 - **Consent-voice MERGED `2bbe17a` (his key 2026-07-14):** triage 1–14 all confirmed shipped; consent FILLED state speaks parish (scope tokens → words, Stop sharing, honest footnote); gallery recaptured under real `DEBUG=0` conditions (recipe verified live). Gate was PASS 858.
