@@ -7,9 +7,9 @@
 
 - **One name everywhere: Reciprocal Aid Network.** The app stopped switching between
   its old names. UMI stays as the infrastructure it's all built on.
-- **The garden has its priest** — where the page says the deed comes first, a priest
-  now kneels in the community garden at dawn, planting with his own hands, the church
-  behind him. Made carefully, as a sacred image.
+- **The hillside has its priest** — where the page says the deed comes first, a priest
+  kneels on the terraced hillside at dawn, planting with his own hands, the sun rising
+  behind the church at the crest. Made carefully, as a sacred image.
 - **Pictures checked for truth** — every scene was scanned for realism. The giving-hands
   print was redrawn, a stray artist's scribble came out of the basket scene, and the
   beliefs page now shows the first lake itself: water close to home.
