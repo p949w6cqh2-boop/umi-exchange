@@ -364,3 +364,28 @@ carries the wall's second surface) and one reorder (writing the protocol precede
 7. **Proving it** — 7.1 the matrices: authz, sanitizer red-team, no-oracle probes (§K);
    7.2 the demo: St. Patrick's being St. Patrick's, DEBUG off, in the gallery (§J/§K).
 8. **Appendix** — the slice map (Stage 4's blueprint; dependency diagram above).
+
+---
+
+# ✋ STAGE 4 — KEYED (Jasiah, 2026-07-14) — the blueprint
+
+**Interleave ruling: YES.** S0+S1 proceed immediately; Layer C code waits for the Stage 5–7
+keys. Noted benefit: S1 makes the footer line true before the Father Mac demo. /protocol/
+appears in Stage 5's inventory and is revisited at Stage 7 only if the founder flags it.
+
+**Slice map:** S0 (spec doc, `slice/protocol-doc`) ──✋ founder key on the draft──▶ S1
+(Layer P, `slice/platform-floor`) ──merge + FOUNDER OPS STEP: redeploy retires the inline
+Caddy security.txt──▶ floor done. Stages 5–7 keys ──▶ S2 (`slice/pages-core`: model,
+renderer+pins, authz, audit, manager) ──▶ S3 (`slice/pages-surfaces`: public/member routes,
+no-oracle landing, moderation target, nav) ──▶ S4 (`slice/community-identity`: settings
+identity + hub + switcher + St. Patrick's seed) ──▶ Stage 8 final pass.
+
+**Rollback honesty (keyed amendment):** for S2 and later, rollback = unroute/disable the
+surfaces; data preserved. Migrating `apps/pages` backwards is last-resort and DESTROYS
+authored page content — named plainly here so nobody mistakes which lever loses data.
+Safe-fail means naming that lever.
+
+**Confirmed as written:** hard block S0→✋→S1; S2 bundling; S3 surfaces+moderation+no-oracle;
+S4 identity/hub/seed; link-rot scope incl. config/ and docker/ with the pipeline-doc
+self-allowlist; every slice = explicit-path staging, full /gate on Postgres, semgrep vs main,
+merge only on the founder's key, branch deleted after.
