@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `132a6e5` (2026-07-14).
+> Reflects `main` @ `f131886` (2026-07-14).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 
@@ -90,6 +90,7 @@
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
+- **Bread restored `f131886` (his word 2026-07-14):** the realism scan re-rolled the exchange print unasked; the original (one hand gives, two receive) is back. Lesson: scan findings on keyed art get his per-image yes before swapping.
 - **Beliefs-heart MERGED `132a6e5` (his standing key 2026-07-14):** beliefs opening rebuilt three times to his flags (final: "This board is a lake, the first of many." — concrete-first, sayings resolved plainly, litany scratched, closer kept); product name unified to **Reciprocal Aid Network** (UMI = infrastructure, Lake 0 at heart); full realism scan of the print suite (exchange re-rolled with correct hands; fake AI signature removed; spring retired for reeds-from-rock; lakes re-rolled with the boat afloat and his composition; hill idea returned as a SACRED print: a Black priest planting on the terraced hillside at dawn, his representation rule now standing in the brain). 390px header fixed for the longer name; output.css recompiled. Gate was PASS 858.
 - **Consent-voice MERGED `2bbe17a` (his key 2026-07-14):** triage 1–14 all confirmed shipped; consent FILLED state speaks parish (scope tokens → words, Stop sharing, honest footnote); gallery recaptured under real `DEBUG=0` conditions (recipe verified live). Gate was PASS 858.
 - **Demo-polish MERGED `fc7f7e5` (his key 2026-07-14):** the Father Mac pass — `seed_demo_parish` (fictional St. Brigid's, DEBUG-only, 3 tests), 38-screen triage (`docs/demo-triage-2026-07-14.md`), app-wide spoken copy (72 em-dash rewrites + sentence-case sweep), swatch defaults, warm 403 + human 500 + DEBUG env toggle, `docs/demo-walkthrough.md` (8-screen golden path). Gate was PASS 858.
