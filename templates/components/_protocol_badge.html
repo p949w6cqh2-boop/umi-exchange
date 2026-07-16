@@ -1,9 +1,8 @@
 {# Protocol badge: shows UMI Protocol conformance level. #}
 {# Usage: {% include "components/_protocol_badge.html" %} #}
-<a href="https://umi-protocol.org/spec/v0.1"
+<a href="{% url 'protocol' %}"
    class="inline-flex items-center gap-1.5 text-xs text-parish-ink/40 hover:text-parish-ink/70 transition-colors"
-   title="UMI Protocol v0.1 · {{ umi_conformance|default:'core'|title }} level"
-   target="_blank" rel="noopener noreferrer">
+   title="UMI Protocol v0.1 · {{ umi_conformance|default:'core'|title }} level">
   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M13 10V3L4 14h7v7l9-11h-7z"/>

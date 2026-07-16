@@ -1,6 +1,6 @@
 # UMI Exchange
 
-**Reference implementation of the [UMI Protocol v0.1](https://umi-protocol.org/spec/v0.1) at Core conformance level.**
+**Reference implementation of the [UMI Protocol v0.1](docs/protocol/spec.md) at Core conformance level.**
 
 An open-source tool for coordinating reciprocal exchange in communities. A Catholic parish, a secular mutual aid group, a disaster relief network, or a Buddhist timebank can each adopt this as their starting point.
 
@@ -107,7 +107,8 @@ This implementation conforms to **UMI Protocol v0.1 at Core level**:
 - **Code**: AGPL-3.0
 - **Protocol Specification**: CC-BY-4.0
 
-Built on UMI Protocol v0.1 — [Build your own](https://umi-protocol.org/spec/v0.1).
+Built on UMI Protocol v0.1 — [build your own](docs/protocol/spec.md). Every running instance
+also serves the protocol at `/protocol/` and the raw spec at `/protocol/spec.md`.
 
 ## Production Deployment
 

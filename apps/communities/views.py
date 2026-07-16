@@ -3,6 +3,9 @@
 import io
 import re
 import uuid
+from datetime import datetime, timedelta
+from datetime import timezone as dt_timezone
+from pathlib import Path
 
 from django.conf import settings as django_settings
 from django.contrib import messages
@@ -10,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.validators import URLValidator
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -550,3 +553,60 @@ class TechnologyView(TemplateView):
             ("Caddy", "2015 — auto-TLS"),
         ]
         return ctx
+
+
+# --- Layer P: the platform floor (pipeline §B) --------------------------------
+# The protocol lives ON the instance so the footer's promise holds on an offline
+# laptop. No runtime markdown: the fragment is pre-rendered by
+# scripts/render_protocol.py, committed, and staleness-tested against spec.md.
+
+SPEC_PATH = Path(django_settings.BASE_DIR) / "docs" / "protocol" / "spec.md"
+SPEC_FRAGMENT_PATH = Path(django_settings.BASE_DIR) / "templates" / "pages" / "_protocol_spec.html"
+
+# Monitored personal address until a real domain is registered and deployed;
+# upgrade path to security@<domain> is noted in the spec and SECURITY.md.
+SECURITY_CONTACT = "jasiahcw9@gmail.com"
+SECURITY_POLICY_URL = "https://github.com/p949w6cqh2-boop/umi-exchange/blob/main/SECURITY.md"
+
+
+class ProtocolView(TemplateView):
+    """Public, community-unscoped: the UMI Protocol, readable on this very server."""
+
+    template_name = "pages/protocol.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # The fragment is nh3-written at build time — the only |safe surface here.
+        # Split markers let the template keep the keyed reading order:
+        # document head → intro card → TOC → sections.
+        head, toc, body = SPEC_FRAGMENT_PATH.read_text(encoding="utf-8").split("<!--SPLIT-->")
+        ctx.update(spec_head=head, spec_toc=toc, spec_body=body)
+        ctx["security_policy_url"] = SECURITY_POLICY_URL
+        return ctx
+
+
+class ProtocolSpecRawView(View):
+    """The canonical spec.md, streamed as plain markdown next to the rendered page."""
+
+    def get(self, request):
+        try:
+            content = SPEC_PATH.read_bytes()
+        except OSError:
+            # A missing canonical file is a server fault — warm page, never a traceback.
+            return render(request, "500.html", status=500)
+        return HttpResponse(content, content_type="text/markdown; charset=utf-8")
+
+
+class SecurityTxtView(View):
+    """RFC 9116 security.txt — the ONLY copy; Caddy proxies this path through."""
+
+    def get(self, request):
+        expires = datetime.now(dt_timezone.utc) + timedelta(days=365)
+        lines = [
+            f"Contact: mailto:{SECURITY_CONTACT}",
+            f"Expires: {expires.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+            f"Policy: {SECURITY_POLICY_URL}",
+            f"Canonical: {request.build_absolute_uri('/.well-known/security.txt')}",
+            "Preferred-Languages: en",
+        ]
+        return HttpResponse("\n".join(lines) + "\n", content_type="text/plain; charset=utf-8")

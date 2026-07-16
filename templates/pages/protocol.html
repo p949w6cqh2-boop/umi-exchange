@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}The UMI Protocol · Reciprocal Aid Network{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-8">
+
+  {# Keyed reading order: the document's own head (h1, version, license, status), then
+     this intro, then the TOC, then the sections. #}
+  <div id="protocol-doc">{{ spec_head|safe }}</div>
+
+  <div class="umi-card !p-6 sm:!p-8 mt-6">
+    <p class="text-base text-parish-ink/80 leading-relaxed">Every promise this board makes is
+      written down. The rules below say who can see what, what gets encrypted, and what gets
+      shed on schedule. They live on this server, so the footer's link stays true even on an
+      offline laptop.</p>
+    <p class="text-base text-parish-ink/80 leading-relaxed mt-3">The protocol is licensed
+      <a href="https://creativecommons.org/licenses/by/4.0/" class="text-umi-primary underline hover:text-umi-primary-hover" rel="license">CC-BY-4.0</a>.
+      Copy it, adapt it, build your own board on it. Prefer the plain file? Read
+      <a href="{% url 'protocol-spec' %}" class="text-umi-primary underline hover:text-umi-primary-hover">spec.md</a>.</p>
+    <p class="text-sm text-parish-ink/60 mt-4">Found a security problem?
+      <a href="{{ security_policy_url }}" class="text-umi-primary underline hover:text-umi-primary-hover">SECURITY.md</a>
+      says how to reach us. Write to us first, quietly — real people use these boards.</p>
+  </div>
+
+  <div id="protocol-doc" class="mt-2">
+    {{ spec_toc|safe }}
+    {{ spec_body|safe }}
+  </div>
+</div>
+
+<style>
+  /* The document arrives as a pre-rendered, nh3-cleaned fragment — its tags carry no
+     classes, so all typography lands via descendant selectors (the .page-prose posture). */
+  #protocol-doc h1 { font-size: 1.875rem; line-height: 1.2; font-weight: 600; letter-spacing: -0.015em; }
+  #protocol-doc h2 { font-size: 1.25rem; font-weight: 600; margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--umi-border); }
+  #protocol-doc h3 { font-size: 1.05rem; font-weight: 600; margin-top: 1.75rem; }
+  #protocol-doc h4 { font-size: 1rem; font-weight: 600; margin-top: 1.25rem; }
+  /* Anchor jumps must clear the sticky header. */
+  #protocol-doc h1, #protocol-doc h2, #protocol-doc h3, #protocol-doc h4 { scroll-margin-top: 5rem; color: var(--umi-text); }
+  #protocol-doc p, #protocol-doc li { font-size: 0.9375rem; line-height: 1.7; color: rgba(31, 28, 24, 0.82); }
+  #protocol-doc p { margin-top: 0.875rem; }
+  #protocol-doc ul, #protocol-doc ol { margin-top: 0.875rem; padding-left: 1.5rem; }
+  #protocol-doc ul { list-style: disc; }
+  #protocol-doc ol { list-style: decimal; }
+  #protocol-doc li { margin-top: 0.375rem; }
+  #protocol-doc a { color: var(--umi-primary); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--umi-primary) 30%, transparent); }
+  #protocol-doc a:hover { text-decoration-color: var(--umi-primary); }
+  #protocol-doc code { background: var(--umi-bg-soft); border-radius: 0.25rem; padding: 0.1rem 0.35rem; font-size: 0.85em; }
+  #protocol-doc blockquote { border-left: 2px solid var(--umi-border); padding-left: 1rem; margin-top: 0.875rem; color: rgba(31, 28, 24, 0.65); }
+  #protocol-doc hr { border: 0; border-top: 1px solid var(--umi-border); margin: 2rem 0; }
+  #protocol-doc table { display: block; overflow-x: auto; margin-top: 1rem; border-collapse: collapse; font-size: 0.875rem; }
+  #protocol-doc th, #protocol-doc td { border: 1px solid var(--umi-border); padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+  #protocol-doc th { background: var(--umi-bg-soft); font-weight: 600; }
+
+  /* The TOC reads as a top jump list — one column in the hand, two on a desk. */
+  #protocol-toc { background: var(--umi-card); border: 1px solid var(--umi-border); border-radius: 1rem; padding: 1.25rem 1.5rem; margin-top: 1.5rem; box-shadow: var(--umi-shadow-xs); }
+  #protocol-toc ul { list-style: none; padding: 0; margin: 0; }
+  #protocol-toc li { margin: 0; }
+  #protocol-toc a { display: block; padding: 0.3rem 0; font-size: 0.875rem; line-height: 1.45; color: rgba(31, 28, 24, 0.7); text-decoration: none; }
+  #protocol-toc a:hover { color: var(--umi-primary); }
+  @media (min-width: 640px) {
+    #protocol-toc ul { columns: 2; column-gap: 2rem; }
+    #protocol-toc a { break-inside: avoid; }
+  }
+</style>
+{% endblock %}

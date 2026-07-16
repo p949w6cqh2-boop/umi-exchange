@@ -30,3 +30,5 @@ coverage>=7.4
 ruff==0.15.14  # pinned: unpinned CI ruff auto-upgrades and reformats untouched files -> surprise red
 bandit>=1.7
 pip-audit>=2.7
+markdown==3.10.2  # pinned: build-time only — scripts/render_protocol.py pre-renders /protocol/; an unpinned renderer drifts the served HTML silently. Layer C (§G, docs/community-identity-pipeline.md) promotes these to runtime with the same pins.
+nh3==0.3.6  # pinned: sanitizes the committed fragment so the only |safe surface stays nh3-written; exact pin per the keyed renderer ruling (§G)
