@@ -389,3 +389,25 @@ Safe-fail means naming that lever.
 S4 identity/hub/seed; link-rot scope incl. config/ and docker/ with the pipeline-doc
 self-allowlist; every slice = explicit-path staging, full /gate on Postgres, semgrep vs main,
 merge only on the founder's key, branch deleted after.
+
+---
+
+# ✋ STAGE 5 — KEYED (Jasiah, 2026-07-14) — wireframe development
+
+Screen inventory (10): /protocol/ (interleave check) · settings-identity · pages-manager ·
+page-editor · page-member-view · page-anon-view · pages-index · hub-personalized · tombstone ·
+**moderation-queue page row (keyed addition — wireframed, not improvised)**. Flows F1–F6
+(authoring, live-fix, member read, anonymous front door, moderation, switch). Annotation style
+carries REGIONS/AUTHZ/EMPTY/SAFETY and — keyed — **named VARIANT STATES** (member-index
+coordinator chips; draft-banner and hidden-banner as states of the page view). Medium keyed:
+annotated ASCII/markdown lo-fi under `docs/wireframes/identity/`; HTML held for mid-fi.
+
+# STAGE 6 — THE WIREFRAMES ✋ AWAITING KEY
+
+Drawn per the keyed plan: `docs/wireframes/identity/README.md` (index + flows + legend) and
+screens 01–10, 390px-first with desktop notes, every keyed variant state named in place
+(05: draft-banner, hidden-banner · 07: anon / member / coordinator-chips · 04: coordinator
+no-publish · 09: coordinator restore line · 10: conflict-of-interest line). One structural
+decision surfaced by drawing, for this key: **the tombstone omits the archived page's title**
+— archived content is put away, not teased; anonymous visitors never reach the tombstone at
+all (no-oracle redirect).
