@@ -565,7 +565,7 @@ SPEC_FRAGMENT_PATH = Path(django_settings.BASE_DIR) / "templates" / "pages" / "_
 
 # Monitored address until a real domain is registered and deployed; upgrade
 # path to security@<domain> is noted in SECURITY.md. (Steward's key, 2026-07-16.)
-SECURITY_CONTACT = "usermegadatainfrastracture@proton.me"
+SECURITY_CONTACT = "usermegadatainfrastructure@proton.me"
 SECURITY_POLICY_URL = "https://github.com/p949w6cqh2-boop/umi-exchange/blob/main/SECURITY.md"
 
 
