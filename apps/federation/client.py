@@ -62,13 +62,27 @@ def _validate_public_url(url: str) -> None:
         raise FederationClientError(f"could not resolve peer host: {str(e)[:100]}") from e
     for info in infos:
         ip = ipaddress.ip_address(info[4][0])
+        # IPv4-mapped IPv6 classifies inconsistently across Python versions (3.12:
+        # is_reserved; 3.13: is_loopback) — judge by the embedded IPv4 address, and
+        # never trust mapped loopback: the DEBUG rehearsal uses literal 127.0.0.1
+        # (arrives as plain IPv4), so a resolver answering ::ffff:127.0.0.1 for a
+        # peer NAME is a rebind smell, blocked in every environment.
+        if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+            ip = ip.ipv4_mapped
+            if ip.is_loopback:
+                raise FederationClientError("peer resolves to a non-public address")
+        # Loopback first: it is the ONE address class DEBUG relaxes (dark-launch
+        # rehearsal on 127.0.0.1:8021/8022, ::1 included). On Python 3.12, ::1 is
+        # ALSO is_reserved — checking the every-environment classes first blocked
+        # the rehearsal everywhere (bit CI runners whose localhost resolves to ::1).
+        if ip.is_loopback:
+            if not debug:
+                raise FederationClientError("peer resolves to a non-public address")
+            continue
         # Link-local (cloud metadata 169.254.169.254), reserved, multicast, and the
         # unspecified address are blocked in EVERY environment — DEBUG must not open
-        # the metadata SSRF sink. Loopback is blocked outside DEBUG; under DEBUG it is
-        # allowed for the local dark-launch rehearsal (127.0.0.1:8021/8022).
+        # the metadata SSRF sink.
         if ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
-            raise FederationClientError("peer resolves to a non-public address")
-        if ip.is_loopback and not debug:
             raise FederationClientError("peer resolves to a non-public address")
 
 

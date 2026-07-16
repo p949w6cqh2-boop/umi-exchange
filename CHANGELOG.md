@@ -5,6 +5,14 @@
 
 ## 2026-07-16
 
+- **The protocol has a home.** The footer's "Built on the UMI Protocol" line now goes to a
+  real page on this very server: /protocol/, with the plain file beside it at
+  /protocol/spec.md. No outside website needed — it reads fine on an offline laptop.
+- **One honest way to report a security problem.** /.well-known/security.txt now says
+  exactly how to reach us, and SECURITY.md explains it in plain words. The old copies that
+  pointed at addresses that didn't exist are gone.
+- **Every link is a promise.** A new test fails the build if anything in the app points at
+  a domain we don't actually have.
 - **The promise is written down.** The rules this board lives by — who can see what, what
   gets encrypted, what gets shed and when — now exist as one document: the UMI Protocol,
   version 0.1. It was written from what the code already does, read in full, and signed off.
