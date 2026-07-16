@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{% if page %}{{ page.title }}{% else %}New page{% endif %} · {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-8">
+  <p class="text-sm"><a href="{% url 'pages:manage' community.slug %}" class="text-parish-ink/60 hover:text-parish-ink transition-colors">← Your pages</a></p>
+
+  {% if page and page.status == 'published' %}
+  <div class="mt-4 rounded-xl border border-parish-border bg-parish-soft px-4 py-3 text-sm text-parish-ink/80">
+    <strong class="text-xs tracking-wider">LIVE</strong> — live pages aren't edited in place.
+    Unpublish to draft first, fix it, and publish again.
+  </div>
+  {% elif page and page.status == 'archived' %}
+  <div class="mt-4 rounded-xl border border-parish-border bg-parish-soft px-4 py-3 text-sm text-parish-ink/80">
+    <strong class="text-xs tracking-wider">ARCHIVED</strong> — restore it from Your pages to edit again.
+  </div>
+  {% endif %}
+
+  {% if form.errors %}
+  <div class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    {% for field, errors in form.errors.items %}{% for e in errors %}<p>{{ e }}</p>{% endfor %}{% endfor %}
+  </div>
+  {% endif %}
+
+  {% with locked=page.status|default:'draft' %}{% endwith %}
+  <form method="post" class="umi-card mt-4" {% if page and page.status != 'draft' %}data-readonly="true"{% endif %}>
+    {% csrf_token %}
+    <label class="block text-sm font-semibold text-parish-ink" for="id_title">Title</label>
+    <input type="text" name="title" id="id_title" maxlength="120" value="{{ form.title.value|default:'' }}"
+           class="mt-1.5 w-full rounded-lg border border-parish-border px-3 py-2.5 text-parish-ink"
+           {% if page and page.status != 'draft' %}disabled{% endif %} required>
+
+    <label class="block text-sm font-semibold text-parish-ink mt-4" for="id_slug">Slug</label>
+    <input type="text" name="slug" id="id_slug" maxlength="80" value="{{ form.slug.value|default:'' }}"
+           class="mt-1.5 w-full rounded-lg border border-parish-border px-3 py-2.5 text-parish-ink"
+           {% if form.fields.slug.disabled or page and page.status != 'draft' %}disabled{% endif %}>
+    <p class="text-xs text-parish-ink/45 mt-1.5">
+      Link: /c/{{ community.slug }}/p/{{ form.slug.value|default:"…" }}.
+      {% if form.fields.slug.disabled %}Links are promises: this one froze at first publish.{% else %}You can change it until first publish.{% endif %}
+    </p>
+
+    <div class="flex items-center gap-4 mt-4">
+      <label class="text-sm font-semibold text-parish-ink" for="id_sort_order">Order</label>
+      <input type="number" name="sort_order" id="id_sort_order" value="{{ form.sort_order.value|default:0 }}"
+             class="w-20 rounded-lg border border-parish-border px-3 py-2 text-parish-ink"
+             {% if page and page.status != 'draft' %}disabled{% endif %}>
+      <label class="text-sm text-parish-ink/80 flex items-center gap-2">
+        <input type="checkbox" name="show_on_landing" {% if form.show_on_landing.value %}checked{% endif %}
+               {% if page and page.status != 'draft' %}disabled{% endif %}>
+        On landing
+      </label>
+    </div>
+    {% if community.visibility == 'private' %}
+    <p class="text-xs text-parish-ink/45 mt-1.5">Your community is private, so this stays members-only.</p>
+    {% endif %}
+
+    <label class="block text-sm font-semibold text-parish-ink mt-4" for="id_content_md">Body (markdown)</label>
+    <textarea name="content_md" id="id_content_md" rows="14"
+              class="mt-1.5 w-full rounded-lg border border-parish-border px-3 py-2.5 font-mono text-sm text-parish-ink"
+              {% if page and page.status != 'draft' %}disabled{% endif %}>{{ form.content_md.value|default:'' }}</textarea>
+    <p class="text-xs text-parish-ink/45 mt-1.5">Up to 20,000 characters. Images become links when the page renders. The words carry the page.</p>
+
+    {% if not page or page.status == 'draft' %}
+    <div class="flex items-center gap-3 mt-5">
+      <button type="submit" class="btn-primary text-sm">Save draft</button>
+      <button type="button" class="btn-secondary text-sm"
+              hx-post="{% url 'pages:preview' community.slug %}"
+              hx-include="#id_content_md" hx-target="#preview" hx-swap="innerHTML">Preview</button>
+    </div>
+    {% endif %}
+  </form>
+
+  <div id="preview" class="mt-4"></div>
+
+  {% if page %}
+  <div class="umi-card mt-4">
+    <p class="text-xs font-bold uppercase tracking-wider text-parish-ink/50">Only admins publish</p>
+    {% if member.role == 'admin' %}
+    <div class="flex flex-wrap items-center gap-3 mt-3">
+      {% if page.status == 'draft' %}
+      <form method="post" action="{% url 'pages:publish' community.slug page.pk %}">{% csrf_token %}
+        <button type="submit" class="btn-primary text-sm">Publish</button></form>
+      {% elif page.status == 'published' %}
+      <form method="post" action="{% url 'pages:unpublish' community.slug page.pk %}">{% csrf_token %}
+        <button type="submit" class="btn-primary text-sm">Unpublish</button></form>
+      {% endif %}
+      {% if page.status != 'archived' %}
+      <form method="post" action="{% url 'pages:archive' community.slug page.pk %}">{% csrf_token %}
+        <button type="submit" class="btn-secondary text-sm">Archive</button></form>
+      {% else %}
+      <form method="post" action="{% url 'pages:restore' community.slug page.pk %}">{% csrf_token %}
+        <button type="submit" class="btn-secondary text-sm">Restore</button></form>
+      {% endif %}
+      <form method="post" action="{% url 'pages:toggle-landing' community.slug page.pk %}">{% csrf_token %}
+        <button type="submit" class="btn-secondary text-sm">{% if page.show_on_landing %}Take off landing{% else %}Show on landing{% endif %}</button></form>
+    </div>
+    <p class="text-xs text-parish-ink/45 mt-3">Publishing signs this page in the community's name.</p>
+    {% else %}
+    <p class="text-sm text-parish-ink/60 mt-2">
+      {% if page.status == 'draft' %}Your draft is saved. It's waiting on an admin to publish it.
+      {% elif page.status == 'archived' %}
+      <form method="post" action="{% url 'pages:restore' community.slug page.pk %}" class="inline">{% csrf_token %}
+        <button type="submit" class="btn-secondary text-sm">Restore</button></form>
+      {% else %}An admin can unpublish this page if it needs a fix.{% endif %}
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

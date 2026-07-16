@@ -13,6 +13,7 @@ from apps.communities.models import Category, Community, Member
 from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.offers.models import Offer
+from apps.pages.models import CommunityPage
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -104,3 +105,14 @@ class MatchFactory(DjangoModelFactory):
 @pytest.fixture
 def user(db):
     return UserFactory()
+
+
+class PageFactory(DjangoModelFactory):
+    class Meta:
+        model = CommunityPage
+
+    community = factory.SubFactory(CommunityFactory)
+    title = factory.Sequence(lambda n: f"Page {n}")
+    slug = factory.Sequence(lambda n: f"page-{n}")
+    content_md = "Words for neighbours."
+    created_by = factory.SubFactory(MemberFactory, community=factory.SelfAttribute("..community"))
