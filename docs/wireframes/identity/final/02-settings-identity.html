@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Settings → Identity — mid-fi</title>
+<link rel="stylesheet" href="final.css">
+</head>
+<body>
+<div class="shotmeta">FINAL · 02 settings → identity · St. Patrick's (fictional seed)</div>
+<div class="page">
+  <header class="hdr"><div class="hdr-in">
+    <span class="brand">St. Patrick's</span>
+    <span class="hdr-icons"><span>○</span><span class="avatar">N</span></span>
+  </div></header>
+
+  <main class="content">
+    <h1>Settings</h1>
+    <p class="small muted" style="margin-top:4px">What your community looks like and how people join it.</p>
+
+    <div class="card" style="margin-top:20px">
+      <div class="row"><span class="t"><span class="name">Join code</span><span class="sub">MASS-1928 · share it carefully</span></span><span class="faint">▸</span></div>
+      <div class="row"><span class="t"><span class="name">Details</span><span class="sub">Name, area, visibility</span></span><span class="faint">▸</span></div>
+      <div class="row"><span class="t"><span class="name">Appearance</span><span class="sub">Theme and colors</span></span><span class="faint">▸</span></div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:19px">Identity</h2>
+      <p class="small muted" style="margin-top:4px">The small facts. Your pages carry the rest.</p>
+
+      <label class="f" for="patron">Patron</label>
+      <input type="text" id="patron" value="St. Patrick">
+      <p class="hint">Blank keeps the warm default.</p>
+
+      <label class="f" for="wl">Welcome line</label>
+      <input type="text" id="wl" value="Bear one another's burdens.">
+      <p class="hint">Greets your members on the hub, under their name. 28 / 140</p>
+
+      <label class="f" for="blurb">Sign-in blurb</label>
+      <textarea id="blurb" style="min-height:84px;font-family:inherit;font-size:14px">St. Patrick's parishioners look after each other here. Sign in to see the board, or join with the code from your bulletin.</textarea>
+      <p class="hint">Shown to visitors before they sign in. 118 / 300</p>
+
+      <label class="f">Scenes</label>
+      <div class="frow" style="margin-top:2px">
+        <span class="small" style="width:110px">Hub spotlight</span>
+        <select><option selected>Well (the default)</option><option>Lakes</option><option>Hillside</option></select>
+      </div>
+      <div class="frow" style="margin-top:10px">
+        <span class="small" style="width:110px">Landing</span>
+        <select><option selected>Lakes</option><option>Well (the default)</option><option>Hillside</option></select>
+      </div>
+      <p class="hint">Chosen from the platform's own prints. Blank keeps the warm default.</p>
+
+      <div style="margin-top:20px"><button class="btn">Save identity</button></div>
+    </div>
+
+    <div class="card">
+      <a class="row" href="03-pages-manager.html" style="text-decoration:none;color:inherit">
+        <span class="t"><span class="name">Your pages</span><span class="sub">2 live · 1 draft · 1 archived</span></span>
+        <span class="faint">▸</span>
+      </a>
+    </div>
+  </main>
+
+  <nav class="bnav">
+    <span><span class="ico">⌂</span>Home</span>
+    <span><span class="ico">▤</span>Board</span>
+    <span><span class="ico">⊕</span>Post</span>
+    <span class="on"><span class="ico">▣</span>More</span>
+  </nav>
+</div>
+<script src="midfi.js"></script>
+</body>
+</html>

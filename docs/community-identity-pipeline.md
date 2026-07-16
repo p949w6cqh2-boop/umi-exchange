@@ -416,7 +416,7 @@ copy stand as drawn. All 10 screens + variant states accepted as drawn.
 
 ---
 
-# STAGE 7 — MID-FI ✋ AWAITING KEY (stopped at the shots, per the key)
+# ✋ STAGE 7 — KEYED (Jasiah, 2026-07-16) — mid-fi
 
 Greyscale Commons grid, fictional St. Patrick's seed content (the §J canon: Our story +
 Mass times live, Ministries draft, Old bulletin archived; Nuala the member, Fr. Declan the
@@ -430,3 +430,33 @@ Screen 01 is not a mockup: it is the REAL `/protocol/` page from `slice/platform
 `/protocol/`, TOC jump to §13. Interleave status: S0 merged CANONICAL (`00021b2`, "spec
 read, proceed" given 2026-07-16); S1 built TDD-first, gate PASS 874 on Postgres, PR #73
 ✋ awaiting the merge key. Layer C remains code-untouched until this stage's key lands.
+
+**Keyed 2026-07-16, all 29 shots reviewed; second-read sample (05/08/09) verified
+spec-faithful. Carry-forwards to Stage 8:** vary the seeded scripture (05/08 repeated one
+verse); decide static-vs-rotating for the hub greeting sub-line and present it with Stage 8;
+"We still don't." keyed as demo canon. (S1 merged `85d0a14` after this stage's shots;
+deploy-workflow gating ruled the same day → PR #74.)
+
+---
+
+# STAGE 8 — THE FINAL PASS ✋ AWAITING KEY
+
+The Wellspring on the Commons geometry: `docs/wireframes/identity/final/` — nine screens
+(01 shipped real in S1, not flagged for revisit), evergreen/bronze/stone/espresso, the
+app's own Newsreader + Schibsted woff2, real prints from `static/img/scenes/`. 27 shots
+in `final/shots/` (both widths per screen, keyed variant states at 390).
+
+**Carry-forwards resolved (final/README.md carries the detail):**
+1. Scripture varied — hub welcome line now "Bear one another's burdens." (Gal 6:2);
+   the story page keeps Matthew 25:40 inside the demo-canon prose. Screens 02/08 agree.
+2. **Hub greeting sub-line: STATIC recommended, presented for this key** — §D keys one
+   ≤140 field; the parish changes it by hand, seasonally and deliberately; automated
+   rotation invites out-of-context scripture nobody signed, and is an IDEA for post-v1
+   at most.
+3. "We still don't." kept verbatim.
+
+**Correction made by looking:** mid-fi's spotlight said "basket default"; §J keys `_well`
+as the hub default — final shows the real well print and says so.
+
+Layer C slices S2–S4 open per the keyed chain (Stage-7 key text): S2 `slice/pages-core`
+first; each slice ends /gate + the founder's merge key on its PR.

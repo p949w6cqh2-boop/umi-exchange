@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Page editor — mid-fi</title>
+<link rel="stylesheet" href="final.css">
+</head>
+<body>
+<div class="shotmeta">FINAL · 04 page editor · St. Patrick's (fictional seed)</div>
+<div class="page">
+  <header class="hdr"><div class="hdr-in">
+    <span class="brand">St. Patrick's</span>
+    <span class="hdr-icons"><span>○</span><span class="avatar">N</span></span>
+  </div></header>
+
+  <main class="content">
+    <p class="small"><a href="03-pages-manager.html" class="muted" style="text-decoration:none">← Your pages</a></p>
+
+    <div class="banner" data-on="published">
+      <strong>LIVE</strong> — live pages aren't edited in place. Unpublish to draft first, fix it, and an admin publishes it again.
+    </div>
+
+    <div class="editwrap" style="margin-top:12px">
+      <div class="card">
+        <label class="f" for="title">Title</label>
+        <input type="text" id="title" value="Our story">
+
+        <label class="f" for="slug">Slug</label>
+        <input type="text" id="slug" value="our-story" data-off="published">
+        <input type="text" id="slug" value="our-story" disabled data-on="published">
+        <p class="hint" data-off="published">Link: /c/st-patricks/p/our-story. You can change it until first publish.</p>
+        <p class="hint" data-on="published">Links are promises: the slug froze at first publish.</p>
+
+        <div class="frow" style="margin-top:16px">
+          <span class="small" style="width:60px">Order</span>
+          <input type="text" value="1" style="width:64px">
+          <label class="small" style="margin-left:12px"><input type="checkbox" checked> On landing</label>
+        </div>
+
+        <label class="f" for="body">Body (markdown)</label>
+        <textarea id="body">St. Patrick's has kept a common table since 1928. When the mill closed, the parish fed forty families out of one kitchen, and nobody wrote down who owed what. We still don't.
+
+## What we do now
+
+Ask for what you need. Offer what you can. The board matches them quietly:
+
+- rides to Mass and to appointments
+- meals when a family is stretched thin
+- small repairs, done by neighbours who know how
+
+> "Whatever you did for the least of these, you did for me."</textarea>
+        <p class="hint">412 / 20,000 · Images become links when the page renders. The words carry the page.</p>
+
+        <div class="frow" style="margin-top:16px">
+          <button class="btn" data-off="published">Save draft</button>
+          <button class="btn-ghost" data-off="published">Preview</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="kicker">Preview</p>
+        <div class="prose" style="margin-top:10px">
+          <p>St. Patrick's has kept a common table since 1928. When the mill closed, the parish fed forty families out of one kitchen, and nobody wrote down who owed what. We still don't.</p>
+          <h2>What we do now</h2>
+          <p>Ask for what you need. Offer what you can. The board matches them quietly:</p>
+          <ul>
+            <li>rides to Mass and to appointments</li>
+            <li>meals when a family is stretched thin</li>
+            <li>small repairs, done by neighbours who know how</li>
+          </ul>
+          <blockquote>"Whatever you did for the least of these, you did for me."</blockquote>
+        </div>
+        <p class="hint">Server-rendered with the same pipeline that publishes. Nothing is saved by previewing.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px" data-off="coordinator">
+      <p class="kicker">Only admins publish</p>
+      <div class="frow" style="margin-top:12px">
+        <button class="btn" data-off="published">Publish</button>
+        <button class="btn" data-on="published">Unpublish</button>
+        <button class="btn-ghost">Archive</button>
+      </div>
+      <p class="hint">Publishing signs this page in the parish's name. That's the priest's signature.</p>
+    </div>
+
+    <div class="card" style="margin-top:16px" data-on="coordinator">
+      <p class="kicker">Only admins publish</p>
+      <p class="small muted" style="margin-top:8px">Your draft is saved. It's waiting on an admin to publish it.</p>
+    </div>
+  </main>
+
+  <nav class="bnav">
+    <span><span class="ico">⌂</span>Home</span>
+    <span><span class="ico">▤</span>Board</span>
+    <span><span class="ico">⊕</span>Post</span>
+    <span class="on"><span class="ico">▣</span>More</span>
+  </nav>
+</div>
+<script src="midfi.js"></script>
+</body>
+</html>
