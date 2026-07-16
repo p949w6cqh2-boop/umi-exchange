@@ -121,6 +121,7 @@
 
   {% include "components/_bottom_nav.html" %}
 
+  {% load pages_nav %}
   <footer class="bg-[#191613] text-[#EDEAE2] mt-16">
     <div class="umi-container py-10">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -137,6 +138,7 @@
             <a href="{% url 'privacy' %}" class="text-[#EDEAE2]/70 hover:text-[#EDEAE2] transition-colors duration-300">Privacy &amp; retention</a>
           </nav>
         </div>
+        {% community_pages_footer %}
         <div class="text-xs text-[#EDEAE2]/45 sm:text-right space-y-1.5">
           <p>United Moral Infrastructure, a non-profit being established as a 501(c)(3)</p>
           <p><a href="{% url 'protocol' %}" class="hover:text-[#EDEAE2] transition-colors duration-300">Built on the UMI Protocol v0.1. Build your own.</a></p>

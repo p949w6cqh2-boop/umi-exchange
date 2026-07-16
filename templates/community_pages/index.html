@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Pages · {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-8">
+  <span class="umi-kicker">{{ community.name }}</span>
+  <h1 class="font-serif text-3xl font-semibold tracking-tight text-parish-ink mt-1.5">Pages</h1>
+
+  {% if pages %}
+  <div class="umi-card !p-2 mt-6 divide-y divide-parish-border">
+    {% for page in pages %}
+    <a href="{% url 'pages:view' community.slug page.slug %}" class="flex items-center gap-3 p-3 group focus-ring rounded-xl">
+      <span class="text-parish-ink/40" aria-hidden="true">&#9656;</span>
+      <span class="font-semibold text-parish-ink group-hover:text-umi-primary transition-colors">{{ page.title }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% elif member and not chips %}
+  <div class="umi-card mt-6 text-center !py-10">
+    <p class="text-parish-ink/70">Your coordinators haven't written any pages yet.</p>
+  </div>
+  {% endif %}
+
+  {% if chips %}
+  <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mt-8">Not on the board</h2>
+  <div class="umi-card !p-2 mt-3 divide-y divide-parish-border">
+    {% for page in chips %}
+    <div class="flex items-center gap-3 p-3">
+      <p class="flex-1 min-w-0 font-semibold text-parish-ink truncate">{{ page.title }}</p>
+      {% if page.moderation_hidden %}
+      <span class="inline-block text-[10px] font-bold uppercase tracking-wider border border-amber-300 bg-amber-50 text-amber-900 px-2.5 py-0.5 rounded-full">Hidden</span>
+      {% endif %}
+      {% if page.status != 'published' %}{% include "community_pages/_status_pill.html" %}{% endif %}
+      <a href="{% url 'pages:edit' community.slug page.pk %}" class="text-sm text-umi-primary hover:underline min-h-[44px] flex items-center px-1">Edit</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not member %}
+  <div class="mt-8">{% include "community_pages/_join_door.html" %}</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -62,6 +62,10 @@ class HubView(LoginRequiredMixin, TemplateView):
         ctx["cycle"] = 0
         ctx["season_impact"] = selectors.season_impact(self.member)
         ctx["week_stats"] = selectors.week_stats(self.community)
+        # §I nav anchor: the quick-actions row gains "Pages" once something is live.
+        from apps.pages.models import CommunityPage
+
+        ctx["pages_live"] = CommunityPage.objects.member_visible(self.community).exists()
         return ctx
 
 

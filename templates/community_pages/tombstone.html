@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Put away · {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto py-16 text-center">
+  <svg class="w-10 h-10 mx-auto text-parish-ink/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+  </svg>
+  <h1 class="font-serif text-2xl text-parish-ink mt-4">Your coordinators put this page away.</h1>
+  <p class="text-parish-ink/60 mt-2">It may return; nothing here is ever deleted.</p>
+  {% if is_coordinator %}
+  <p class="mt-4"><a href="{% url 'pages:manage' community.slug %}" class="text-sm text-umi-primary hover:underline">Restore it from Your pages &#9656;</a></p>
+  {% endif %}
+  <div class="flex items-center justify-center gap-3 mt-8">
+    <a href="{% url 'pages:index' community.slug %}" class="btn-secondary text-sm">All pages</a>
+    <a href="{% url 'hub:community' community.slug %}" class="btn-primary text-sm">Go home</a>
+  </div>
+</div>
+{% endblock %}

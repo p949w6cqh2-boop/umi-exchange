@@ -17,13 +17,7 @@
         <p class="font-semibold text-parish-ink">{{ page.title }}</p>
         <p class="text-xs text-parish-ink/55 mt-0.5">/p/{{ page.slug }}{% if page.show_on_landing %} · on landing ✓{% endif %}{% if page.moderation_hidden %} · hidden after a report{% endif %}</p>
       </div>
-      {% if page.status == 'published' %}
-        <span class="inline-block text-[10px] font-bold uppercase tracking-wider bg-umi-primary text-white px-2.5 py-0.5 rounded-full">Live</span>
-      {% elif page.status == 'draft' %}
-        <span class="inline-block text-[10px] font-bold uppercase tracking-wider border border-parish-border text-parish-ink/60 px-2.5 py-0.5 rounded-full">Draft</span>
-      {% else %}
-        <span class="inline-block text-[10px] font-bold uppercase tracking-wider border border-parish-border text-parish-ink/45 px-2.5 py-0.5 rounded-full">Archived</span>
-      {% endif %}
+      {% include "community_pages/_status_pill.html" %}
       <a href="{% url 'pages:edit' community.slug page.pk %}" class="text-parish-ink/50 hover:text-parish-ink min-h-[44px] flex items-center px-1" aria-label="Edit {{ page.title }}">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
       </a>

@@ -5,12 +5,22 @@
 
 ## 2026-07-16
 
+- **Community pages are on the board.** The pages your coordinators write now show up:
+  members find them under Pages on the hub and at the bottom of every screen, each one
+  signed "Written by the coordinators" — always. A community can also choose pages for
+  its front door, so a neighbour who isn't signed in yet can read them and find the
+  join door. Private communities stay private: from the outside, a private board and no
+  board at all look exactly the same.
+- **Pages can be reported, like anything else on the board.** "Something wrong with this
+  page?" sits at the bottom of every page. A coordinator can take a reported page off the
+  board with one press, and put it back just as easily. Nothing is deleted.
+- **A put-away page says so, warmly.** Following an old link to an archived page tells a
+  member it was put away and may return — without teasing what it said.
 - **Your community can start writing its own pages.** Coordinators and admins now have
   "Your pages" in Settings: write a draft in plain text, preview it exactly as it will
   look, and keep shaping it until it's right. Only an admin can publish — that's the
   community signing its name. Pages are never deleted, only put away, and anything put
-  away can come back as a draft. Members will see the finished pages on the board in the
-  next update.
+  away can come back as a draft.
 - **The protocol has a home.** The footer's "Built on the UMI Protocol" line now goes to a
   real page on this very server: /protocol/, with the plain file beside it at
   /protocol/spec.md. No outside website needed — it reads fine on an offline laptop.

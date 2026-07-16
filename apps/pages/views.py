@@ -1,12 +1,17 @@
 """The "Your pages" manager (§E) behind the §F gates: coordinators draft and
 edit; ONLY admins publish — the priest signs, and signs again after every fix.
 Browsable surfaces soft-redirect plain members (settings precedent); POST-only
-role gates raise PermissionDenied (403); state races map to 409."""
+role gates raise PermissionDenied (403); state races map to 409.
+
+S3 adds the read surfaces (§I): the /p/ index and page views. The anonymous
+no-oracle rule governs every logged-out failure — missing community, private
+community, draft, hidden, archived, or no such page all answer with the one
+identical login redirect. Nothing about the database shows through it."""
 
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
@@ -172,3 +177,112 @@ class ToggleLandingView(_ActionView):
     def act(self, request, page):
         page.show_on_landing = not page.show_on_landing
         page.save()
+
+
+class UnhideView(_ActionView):
+    """Reverses a moderation hide (§H) — the same reversible boolean the queue
+    flips, offered from the coordinator's hidden-banner (wireframe 05)."""
+
+    audit_action = "content.unhidden"
+    done_message = "“{title}” is back on the board."
+
+    def act(self, request, page):
+        page.moderation_hidden = False
+        page.save(update_fields=["moderation_hidden"])
+
+
+# ---------------------------------------------------------------------------
+# §I — the read surfaces: index, page, tombstone. Anonymous failure = the one
+# identical login redirect (no-oracle); authenticated failure = 404.
+# ---------------------------------------------------------------------------
+
+
+def _membership(request, community):
+    """The viewer's Member row in this community, or None (stranger)."""
+    if not request.user.is_authenticated:
+        return None
+    return Member.objects.filter(user=request.user, community=community, is_active=True).first()
+
+
+class _PublicSurface(View):
+    """Shared resolution for the read surfaces. Sets self.community and
+    self.member (None = stranger or anonymous)."""
+
+    def dispatch(self, request, *args, **kwargs):
+        self.community = Community.objects.filter(slug=kwargs["slug"], is_active=True).first()
+        if self.community is None:
+            return self.refuse(request)
+        self.member = _membership(request, self.community)
+        return super().dispatch(request, *args, **kwargs)
+
+    @property
+    def is_coordinator(self):
+        return self.member is not None and self.member.is_coordinator
+
+    def refuse(self, request):
+        """The §I refusal: anonymous eyes get the login redirect, signed-in ones a 404."""
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
+        raise Http404
+
+
+class PagesIndexView(_PublicSurface):
+    """/c/<slug>/p/ — the index (§I, wireframe 07): anonymous and strangers see
+    landing-marked pages with the join door; members see everything published;
+    coordinators also see chip rows for drafts, archived, and hidden."""
+
+    def get(self, request, slug):
+        chips = None
+        if self.member is None:
+            pages = CommunityPage.objects.pre_auth_visible(self.community).order_by("sort_order", "title")
+            if not pages.exists():
+                return self.refuse(request)
+        else:
+            pages = CommunityPage.objects.member_visible(self.community).order_by("sort_order", "title")
+            if self.is_coordinator:
+                chips = (
+                    CommunityPage.objects.filter(community=self.community)
+                    .exclude(status="published", moderation_hidden=False)
+                    .order_by("sort_order", "title")
+                )
+        return render(
+            request,
+            "community_pages/index.html",
+            {"community": self.community, "pages": pages, "member": self.member, "chips": chips},
+        )
+
+
+class PageView(_PublicSurface):
+    """/c/<slug>/p/<page_slug>/ — one page (§I, wireframes 05/06/09). A live row
+    (draft or published) owns its slug; the tombstone answers only when nothing
+    lives there and something archived did."""
+
+    def get(self, request, slug, page_slug):
+        if self.member is None:
+            # Anonymous and strangers: only the pre-auth-eligible page renders.
+            page = CommunityPage.objects.pre_auth_visible(self.community).filter(slug=page_slug).first()
+            if page is None:
+                return self.refuse(request)
+            return render(request, "community_pages/page_public.html", {"community": self.community, "page": page})
+
+        live = CommunityPage.objects.filter(community=self.community, slug=page_slug).exclude(status="archived").first()
+        if live is not None:
+            if (live.status == "draft" or live.moderation_hidden) and not self.is_coordinator:
+                raise Http404
+            return render(
+                request,
+                "community_pages/page.html",
+                {"community": self.community, "page": live, "member": self.member},
+            )
+
+        archived_here = CommunityPage.objects.filter(
+            community=self.community, slug=page_slug, status="archived"
+        ).exists()
+        if archived_here:
+            # Put away, not teased: the tombstone never carries the title (wireframe 09).
+            return render(
+                request,
+                "community_pages/tombstone.html",
+                {"community": self.community, "member": self.member, "is_coordinator": self.is_coordinator},
+            )
+        raise Http404
