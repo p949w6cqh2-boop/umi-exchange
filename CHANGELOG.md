@@ -3,6 +3,13 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-16
+
+- **The promise is written down.** The rules this board lives by — who can see what, what
+  gets encrypted, what gets shed and when — now exist as one document: the UMI Protocol,
+  version 0.1. It was written from what the code already does, read in full, and signed off.
+  Soon there'll be a page where anyone can read it.
+
 ## 2026-07-14
 
 - **One name everywhere: Reciprocal Aid Network.** The app stopped switching between
