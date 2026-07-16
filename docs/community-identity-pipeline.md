@@ -402,12 +402,31 @@ carries REGIONS/AUTHZ/EMPTY/SAFETY and — keyed — **named VARIANT STATES** (m
 coordinator chips; draft-banner and hidden-banner as states of the page view). Medium keyed:
 annotated ASCII/markdown lo-fi under `docs/wireframes/identity/`; HTML held for mid-fi.
 
-# STAGE 6 — THE WIREFRAMES ✋ AWAITING KEY
+# ✋ STAGE 6 — KEYED (Jasiah, 2026-07-14) — the wireframes
 
 Drawn per the keyed plan: `docs/wireframes/identity/README.md` (index + flows + legend) and
 screens 01–10, 390px-first with desktop notes, every keyed variant state named in place
 (05: draft-banner, hidden-banner · 07: anon / member / coordinator-chips · 04: coordinator
-no-publish · 09: coordinator restore line · 10: conflict-of-interest line). One structural
-decision surfaced by drawing, for this key: **the tombstone omits the archived page's title**
-— archived content is put away, not teased; anonymous visitors never reach the tombstone at
-all (no-oracle redirect).
+no-publish · 09: coordinator restore line · 10: conflict-of-interest line).
+
+**Tombstone ruling (keyed):** title OMITTED, confirmed — moderation-hidden routes to 404, so
+no sensitive title can reach the tombstone; the slug orients; put away, not teased. The
+coordinator "Restore it from Your pages ▸" variant and the "nothing here is ever deleted"
+copy stand as drawn. All 10 screens + variant states accepted as drawn.
+
+---
+
+# STAGE 7 — MID-FI ✋ AWAITING KEY (stopped at the shots, per the key)
+
+Greyscale Commons grid, fictional St. Patrick's seed content (the §J canon: Our story +
+Mass times live, Ministries draft, Old bulletin archived; Nuala the member, Fr. Declan the
+admin), Playwright shots at 390px + 1280 desktop. Artifacts:
+`docs/wireframes/identity/midfi/` (mockups, `commons.css` greyscale system, `shoot.mjs`
+runner, README) and `midfi/shots/` — 29 captures: every screen at both widths, every keyed
+variant state at 390.
+
+Screen 01 is not a mockup: it is the REAL `/protocol/` page from `slice/platform-floor`
+(PR #73), shot live at DEBUG=0 with the keyed walk verified — footer line at 390px →
+`/protocol/`, TOC jump to §13. Interleave status: S0 merged CANONICAL (`00021b2`, "spec
+read, proceed" given 2026-07-16); S1 built TDD-first, gate PASS 874 on Postgres, PR #73
+✋ awaiting the merge key. Layer C remains code-untouched until this stage's key lands.

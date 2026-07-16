@@ -1,0 +1,158 @@
+/* Stage 7 mid-fi — the Commons grid in greyscale.
+   Structure, hierarchy, and spacing are real (Commons geometry: 16px card radius,
+   pill buttons, hairline borders, 960px reading width, sticky header, bottom nav).
+   Color is deliberately withheld — evergreen/bronze/theming arrive at Stage 8. */
+
+:root {
+  --bg: #f7f7f6;        /* stands in for warm stone paper */
+  --bg-soft: #eeeeec;   /* stands in for deeper stone */
+  --card: #ffffff;
+  --border: #e3e3e0;
+  --ink: #1b1b19;
+  --ink-soft: #6c6c66;
+  --ink-faint: #9a9a93;
+  --fill: #2c2c29;      /* button fill — stands in for evergreen */
+  --shadow-xs: 0 1px 2px rgba(27, 27, 25, 0.05);
+  --shadow-sm: 0 1px 2px rgba(27, 27, 25, 0.05), 0 4px 12px -4px rgba(27, 27, 25, 0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg); color: var(--ink);
+  font-size: 15px; line-height: 1.55;
+}
+.serif, h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; letter-spacing: -0.01em; }
+a { color: inherit; } /* greyscale stage — no browser blue */
+
+/* ---- page scaffold ------------------------------------------------------ */
+.page { min-height: 100vh; display: flex; flex-direction: column; }
+.content { flex: 1; width: 100%; max-width: 960px; margin: 0 auto; padding: 20px 16px 96px; }
+@media (min-width: 640px) { .content { padding: 32px 24px 48px; } }
+
+/* ---- chrome: header ------------------------------------------------------ */
+.hdr {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(255, 255, 255, 0.96); border-bottom: 1px solid var(--border);
+}
+.hdr-in {
+  max-width: 960px; margin: 0 auto; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.hdr .brand { font-family: Georgia, serif; font-size: 17px; font-weight: 600; }
+.hdr .brand .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--fill); margin-right: 7px; }
+.hdr-icons { display: flex; gap: 14px; color: var(--ink-soft); font-size: 16px; }
+
+/* ---- chrome: member bottom nav (390 first; hides on desk) --------------- */
+.bnav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  background: #fff; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-around; padding: 8px 0 12px;
+}
+.bnav span { font-size: 11px; color: var(--ink-soft); text-align: center; width: 64px; }
+.bnav .ico { display: block; font-size: 18px; margin-bottom: 2px; }
+.bnav .on { color: var(--ink); font-weight: 600; }
+@media (min-width: 640px) { .bnav { display: none; } }
+
+/* ---- primitives ---------------------------------------------------------- */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px; box-shadow: var(--shadow-xs);
+}
+.card + .card { margin-top: 16px; }
+.well { background: var(--bg-soft); border-radius: 12px; padding: 16px; }
+
+.btn {
+  display: inline-block; background: var(--fill); color: #fff;
+  border: 0; border-radius: 999px; padding: 10px 22px;
+  font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.btn-ghost {
+  display: inline-block; background: transparent; color: var(--ink);
+  border: 1px solid var(--border); border-radius: 999px; padding: 9px 20px;
+  font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.btn-sm { padding: 6px 14px; font-size: 13px; }
+.btn[disabled] { background: var(--bg-soft); color: var(--ink-faint); }
+
+.chip {
+  display: inline-block; border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--ink-soft); text-transform: uppercase; background: var(--bg);
+}
+.chip-dark { background: var(--fill); border-color: var(--fill); color: #fff; }
+
+.banner {
+  border: 1px solid var(--border);
+  background: var(--bg-soft); border-radius: 12px; padding: 12px 16px;
+  font-size: 14px; margin-bottom: 16px;
+}
+.banner strong { letter-spacing: 0.06em; font-size: 12px; }
+.banner .act { text-decoration: underline; font-weight: 600; margin-left: 8px; }
+
+h1 { font-size: 26px; line-height: 1.2; font-weight: 600; }
+.kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+.byline { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+.muted { color: var(--ink-soft); }
+.faint { color: var(--ink-faint); }
+.small { font-size: 13px; }
+.tiny { font-size: 11px; }
+
+/* ---- forms ---------------------------------------------------------------- */
+label.f { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 6px; }
+label.f:first-child { margin-top: 0; }
+.hint { font-size: 12px; color: var(--ink-faint); margin-top: 5px; }
+input[type="text"], textarea, select {
+  width: 100%; border: 1px solid var(--border); border-radius: 10px;
+  background: #fff; padding: 10px 12px; font: inherit; color: var(--ink);
+}
+textarea { min-height: 180px; resize: vertical; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.6; }
+.frow { display: flex; gap: 12px; align-items: center; }
+
+/* ---- prose well (the page body surface) ---------------------------------- */
+.prose { margin-top: 18px; }
+.prose h2 { font-size: 19px; margin-top: 26px; }
+.prose h3 { font-size: 16px; margin-top: 20px; }
+.prose p, .prose li { font-size: 15px; line-height: 1.7; color: rgba(27, 27, 25, 0.85); margin-top: 12px; }
+.prose ul, .prose ol { padding-left: 22px; }
+.prose li { margin-top: 6px; }
+.prose blockquote { border-left: 2px solid var(--border); padding-left: 14px; color: var(--ink-soft); margin-top: 12px; }
+.prose a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--ink-faint); }
+
+/* ---- list rows (manager, queue, index) ------------------------------------ */
+.row { display: flex; align-items: center; gap: 10px; padding: 14px 4px; border-top: 1px solid var(--border); }
+.row:first-of-type { border-top: 0; }
+.row .grip { color: var(--ink-faint); cursor: grab; }
+.row .t { flex: 1; min-width: 0; }
+.row .t .name { font-weight: 600; font-size: 15px; }
+.row .t .sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+.row .gear { color: var(--ink-soft); text-decoration: none; font-size: 15px; }
+
+/* index rows (member/anon /p/) */
+.irow { display: flex; align-items: center; gap: 10px; padding: 16px 4px; border-top: 1px solid var(--border); text-decoration: none; color: var(--ink); }
+.irow:first-of-type { border-top: 0; }
+.irow .arrow { color: var(--ink-faint); }
+.irow .name { font-family: Georgia, serif; font-size: 17px; font-weight: 600; flex: 1; }
+
+/* ---- scene placeholder (greyscale stand-in for a print) ------------------- */
+.scene {
+  border-radius: 12px; border: 1px solid var(--border); height: 120px;
+  background: repeating-linear-gradient(45deg, #efefec, #efefec 10px, #e7e7e4 10px, #e7e7e4 20px);
+  display: flex; align-items: flex-end; padding: 8px 10px;
+}
+.scene span { font-size: 10px; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; background: rgba(255,255,255,.85); border-radius: 6px; padding: 2px 8px; }
+
+/* ---- meta strip above the frame (labels the shot; not app UI) ------------- */
+.shotmeta {
+  font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+  color: var(--ink-faint); padding: 8px 16px; border-bottom: 1px dashed var(--border);
+  background: #fff;
+}
+
+/* ---- editor two-up on desk ------------------------------------------------ */
+.editwrap { display: block; }
+@media (min-width: 900px) { .editwrap { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; } }
+
+/* variant switching: html[data-v="x"] shows [data-on~="x"], hides [data-off~="x"] */
+[data-on] { display: none !important; }
