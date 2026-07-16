@@ -5,10 +5,10 @@ needs on them, so we treat every report seriously.
 
 ## How to reach us
 
-Email **jasiahcw9@gmail.com** with whatever you've found. Plain words are fine — you don't
-need a formal write-up. Tell us what you saw, where, and how to see it again if you know.
-This is the founder's monitored personal address; when the project deploys under its own
-domain, it'll move to a `security@` address and this file will say so.
+Email **usermegadatainfrastracture@proton.me** with whatever you've found. Plain words are
+fine — you don't need a formal write-up. Tell us what you saw, where, and how to see it
+again if you know. This address is monitored by the founder; when the project deploys under
+its own domain, it'll move to a `security@` address and this file will say so.
 
 We'll read it, write back as fast as we can, and tell you honestly what we're doing about it.
 
