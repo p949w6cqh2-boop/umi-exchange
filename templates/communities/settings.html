@@ -147,5 +147,16 @@
       {% endfor %}
     </div>
   </div>
+
+  {# Your pages (§E) — the community in its own words #}
+  <div class="umi-card">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <h2 class="font-serif text-lg font-semibold text-parish-ink">Your pages</h2>
+        <p class="text-sm text-parish-ink/60 mt-1">Your community in its own words — the story, the times, the ministries.</p>
+      </div>
+      <a href="{% url 'pages:manage' community.slug %}" class="btn-secondary text-sm whitespace-nowrap">Your pages ▸</a>
+    </div>
+  </div>
 </div>
 {% endblock %}

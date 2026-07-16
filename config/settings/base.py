@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "apps.federation",
     "apps.hub",
     "apps.moderation",
+    "apps.pages",
 ]
 
 # Optional: Django-Q2 (for background tasks — not required for basic operation)

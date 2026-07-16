@@ -5,6 +5,12 @@
 
 ## 2026-07-16
 
+- **Your community can start writing its own pages.** Coordinators and admins now have
+  "Your pages" in Settings: write a draft in plain text, preview it exactly as it will
+  look, and keep shaping it until it's right. Only an admin can publish — that's the
+  community signing its name. Pages are never deleted, only put away, and anything put
+  away can come back as a draft. Members will see the finished pages on the board in the
+  next update.
 - **The protocol has a home.** The footer's "Built on the UMI Protocol" line now goes to a
   real page on this very server: /protocol/, with the plain file beside it at
   /protocol/spec.md. No outside website needed — it reads fine on an offline laptop.
