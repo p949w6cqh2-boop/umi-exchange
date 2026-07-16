@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import CommunityPage
+from .models import RESERVED_SLUGS, CommunityPage
 
 
 class CommunityPageForm(forms.ModelForm):
@@ -25,6 +25,9 @@ class CommunityPageForm(forms.ModelForm):
 
     def clean_slug(self):
         slug = self.cleaned_data["slug"]
+        if slug in RESERVED_SLUGS:
+            # /p/manage/ belongs to the manager (§E) — a page there would be unreachable.
+            raise forms.ValidationError("That address is reserved. Pick a different slug.")
         if self.community:
             clash = CommunityPage.objects.filter(community=self.community, slug=slug).exclude(status="archived")
             if self.instance.pk:

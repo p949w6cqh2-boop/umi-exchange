@@ -1,0 +1,6 @@
+{% comment %}The join door (§I): the one CTA a logged-out or stranger reader
+   sees under community pages. Caller supplies outer margin.{% endcomment %}
+<div class="umi-card text-center">
+  <p class="font-serif text-lg text-parish-ink">Part of {{ community.name }}?</p>
+  <a href="{% url 'community-join' %}" class="btn-primary mt-3 inline-block">Join with your code</a>
+</div>

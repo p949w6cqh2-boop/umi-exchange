@@ -35,6 +35,14 @@
                 <a href="{% url 'need-detail' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">View the ask: {{ row.target.title }}</a>
               {% elif row.flag.target_type == "offer" %}
                 <a href="{% url 'offer-detail' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">View the offer: {{ row.target.title }}</a>
+              {% elif row.flag.target_type == "page" %}
+                {# Editor link by pk: a slug link would misdirect once archived or the slug is reclaimed. #}
+                <a href="{% url 'pages:edit' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">Open the page: {{ row.target.title }}</a>
+                {# Excerpt from content_md as plain escaped text — content_html never reaches the queue (§H). #}
+                <p class="text-sm text-parish-ink/70 mt-1 max-w-prose">&ldquo;{{ row.target.content_md|truncatechars:120 }}&rdquo;</p>
+                {% if row.target.created_by.is_active and row.target.created_by.is_coordinator %}
+                <p class="text-xs text-amber-900 mt-2">&#9888; The flagged page's author is a reviewer of this queue.</p>
+                {% endif %}
               {% else %}
                 <p class="text-sm text-parish-ink/70 mt-2">Member: {{ row.target.display_name }}</p>
               {% endif %}
