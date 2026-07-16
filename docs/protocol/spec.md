@@ -1,21 +1,21 @@
 # The UMI Protocol
 
-**Version 0.1 — DRAFT (awaiting founder key)**
+**Version 0.1 — CANONICAL (keyed by the steward, 2026-07-14)**
 United Moral Infrastructure · Steward: Jasiah, United Moral Infrastructure (a nonprofit being
 established as a 501(c)(3))
 
 License: [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). You may share and adapt this
 document with attribution.
 
-> **Status: DRAFT.** This document was written *from* the reference implementation
-> (`umi-exchange`), not the other way around: the citations throughout the codebase predate any
-> written specification, so the specification is being recovered from the behavior the code
-> already enforces. Section numbers are FIXED to
+> **Status: CANONICAL v0.1.** This document was written *from* the reference implementation
+> (`umi-exchange`): the citations throughout the codebase predate any written specification, so
+> the specification was recovered from the behavior the code already enforces, then read and
+> keyed by the steward. Section numbers are FIXED to
 > [`citation-inventory.md`](citation-inventory.md) — 60 sections, 529 citations — so every
-> existing reference resolves. Nothing here is canonical until the steward has read and keyed it.
-> Where a requirement is fully verified against code and tests it is stated normatively; where it
-> is derived from design documents only, it carries a **[derived]** marker for the steward's
-> confirmation. Unbuilt sections are reserved and marked non-normative.
+> existing reference resolves. **Change control:** this text is frozen at v0.1; any future edit
+> ships as a new version keyed by the steward. [derived] markers record which intents were
+> confirmed from design documents at the key (all confirmed, 2026-07-14); reserved sections
+> remain non-normative for v0.1.
 
 ---
 
@@ -111,11 +111,12 @@ reserved here and imposes no requirement at v0.1.
 - §4.2–§4.3 — A consent record names its grantee, its scope (an explicit set of fields), its
   purpose, and its state; a scope check MUST verify that every requested field is within the
   granted scope.
-- §4.4 — **Retention (normative, values [derived]).** Aged data MUST be shed on a schedule, by
-  crypto-shred (§12), not merely hidden. The reference implementation sheds aged-need PII at 365
-  days, closed casework at 7 years, and revealed contact snapshots at 72 hours; a conforming
-  implementation MUST publish its actual retention and MUST NOT claim a retention it does not
-  enforce.
+- §4.4 — **Retention (the rule is protocol; the values are policy).** Aged data MUST be shed on
+  a schedule, by crypto-shred (§12), not merely hidden, and the schedule MUST be bounded and
+  published. The specific values are each implementation's POLICY, not protocol constants; as the
+  existence proof, the reference implementation sheds aged-need PII at 365 days, closed casework
+  at 7 years, and revealed contact snapshots at 72 hours. A conforming implementation MUST publish
+  its actual retention and MUST NOT claim a retention it does not enforce.
 
 ---
 
