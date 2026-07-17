@@ -17,6 +17,7 @@ from django.views import View
 
 from apps.audit.services import emit
 from apps.common.state import TransitionConflict
+from apps.communities.identity import scene_template, signin_blurb
 from apps.communities.models import Community, Member
 
 from .forms import CommunityPageForm
@@ -233,10 +234,16 @@ class PagesIndexView(_PublicSurface):
 
     def get(self, request, slug):
         chips = None
+        extra = {}
         if self.member is None:
             pages = CommunityPage.objects.pre_auth_visible(self.community).order_by("sort_order", "title")
             if not pages.exists():
                 return self.refuse(request)
+            # §D/§J: the sign-in door wears the blurb and the chosen landing scene.
+            extra = {
+                "signin_blurb": signin_blurb(self.community),
+                "landing_scene": scene_template(self.community, "landing"),
+            }
         else:
             pages = CommunityPage.objects.member_visible(self.community).order_by("sort_order", "title")
             if self.is_coordinator:
@@ -248,7 +255,7 @@ class PagesIndexView(_PublicSurface):
         return render(
             request,
             "community_pages/index.html",
-            {"community": self.community, "pages": pages, "member": self.member, "chips": chips},
+            {"community": self.community, "pages": pages, "member": self.member, "chips": chips, **extra},
         )
 
 

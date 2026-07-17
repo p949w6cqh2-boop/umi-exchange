@@ -4,6 +4,14 @@
 <div class="max-w-3xl mx-auto py-8">
   <span class="umi-kicker">{{ community.name }}</span>
   <h1 class="font-serif text-3xl font-semibold tracking-tight text-parish-ink mt-1.5">Pages</h1>
+  {% if not member %}
+  {% if landing_scene %}
+  <div class="umi-plate p-2 mt-5 max-w-md">{% include landing_scene %}</div>
+  {% endif %}
+  {% if signin_blurb %}
+  <p class="text-parish-ink/70 mt-4 max-w-prose">{{ signin_blurb }}</p>
+  {% endif %}
+  {% endif %}
 
   {% if pages %}
   <div class="umi-card !p-2 mt-6 divide-y divide-parish-border">

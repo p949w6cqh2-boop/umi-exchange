@@ -99,6 +99,60 @@ NEEDS = [
     ),
 ]
 
+# §D/§J identity — set only when absent (additive; a demo admin's later edits win).
+IDENTITY = {
+    "patron": "St. Brigid",
+    "welcome_lines": [
+        "Bear one another's burdens.",
+        "The table is long; there is room.",
+    ],
+    "signin_blurb": (
+        "St. Brigid's neighbours asking and answering, quietly. If you have a code, you're already welcome."
+    ),
+    "scene_choices": {"hub": "well", "landing": "lakes"},
+}
+
+# The pages canon (pipeline §J): story live on the landing, times live,
+# ministries still a draft, the old bulletin put away. The story keeps
+# Matthew; the hub's welcome line carries Galatians — never the same verse.
+PAGES = [
+    (
+        "Our story",
+        "our-story",
+        "published",
+        True,
+        "St. Brigid's has kept a common table since 1928. When the mill closed, the parish fed "
+        "forty families out of one kitchen, and nobody wrote down who owed what. We still don't.\n\n"
+        '"Whatever you did for one of the least of these, you did for me." (Matthew 25:40)\n\n'
+        "This board is that same table, set out where every neighbour can reach it. Ask for what "
+        "you need. Offer what you have. Nobody keeps score.",
+    ),
+    (
+        "Mass times",
+        "mass-times",
+        "published",
+        False,
+        "Sundays at 8:00 and 11:00. Saturday vigil at 6:00.\n\n"
+        "Weekday Mass at 9:30, Tuesday to Friday, in the side chapel. "
+        "Confessions Saturday from 5:00, or knock on the sacristy door.",
+    ),
+    (
+        "Ministries",
+        "ministries",
+        "draft",
+        False,
+        "The meals rota, the visiting team, and lifts to Mass — who does what, and how to join in. "
+        "(Still being written.)",
+    ),
+    (
+        "Old bulletin",
+        "old-bulletin",
+        "archived",
+        False,
+        "The winter bulletin, kept for the record.",
+    ),
+]
+
 OFFERS = [
     # (offerer, category, title, description)
     ("dan", "Transport", "I can drive Sunday mornings", "Room for three in the car, and I don't mind an early start."),
@@ -230,6 +284,34 @@ class Command(BaseCommand):
             members["marta"],
             through=("accepted", "fulfilled"),
         )
+
+        # §D/§J — the parish identity, only filling keys that are absent.
+        community_settings = dict(community.settings or {})
+        missing = {k: v for k, v in IDENTITY.items() if k not in community_settings}
+        if missing:
+            community_settings.update(missing)
+            community.settings = community_settings
+            community.save(update_fields=["settings"])
+
+        # The pages canon — created once; transitions walked only at creation
+        # so a re-run never republishes what a demo admin has since changed.
+        from apps.pages.models import CommunityPage
+
+        for title, page_slug, status, on_landing, content in PAGES:
+            if CommunityPage.objects.filter(community=community, slug=page_slug).exists():
+                continue
+            page = CommunityPage.objects.create(
+                community=community,
+                title=title,
+                slug=page_slug,
+                content_md=content,
+                created_by=members["tomas"],
+                show_on_landing=on_landing,
+            )
+            if status in ("published", "archived"):
+                page.publish(by=members["marta"])
+            if status == "archived":
+                page.transition_to("archived")
 
         # Frank's verified Deacon tag: clergy tags are admin-verified, so Marta (admin) signs.
         tag, _ = Tag.objects.get_or_create(
