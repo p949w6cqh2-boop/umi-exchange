@@ -12,6 +12,10 @@ from apps.common.state import StateMachineMixin
 
 from .render import render_page_html
 
+# Slugs the /p/ URL space keeps for itself (§E: manage/ routes mount first).
+# Guarded at the form for new pages and inside restore() for legacy rows.
+RESERVED_SLUGS = {"manage"}
+
 
 class CommunityPageQuerySet(models.QuerySet):
     def member_visible(self, community):
@@ -100,7 +104,10 @@ class CommunityPage(StateMachineMixin, models.Model):
         return self.transition_to("published", extra_update_fields=("published_by", "first_published_at"))
 
     def restore(self):
-        """archived → draft — but never by silently taking a slug back (§C)."""
+        """archived → draft — but never by silently taking a slug back (§C),
+        and never into an address the manager shadows."""
+        if self.slug in RESERVED_SLUGS:
+            raise ValidationError("That address is reserved now. Start a new draft with a different slug.")
         with transaction.atomic():
             taken = (
                 type(self)

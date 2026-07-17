@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} · {{ community.name }}{% endblock %}
+{% block content %}
+<article class="max-w-3xl mx-auto py-8">
+  <p class="text-sm"><a href="{% url 'pages:index' community.slug %}" class="text-parish-ink/60 hover:text-parish-ink transition-colors">&larr; All pages</a></p>
+
+  {% if page.status == 'draft' %}
+  <div class="umi-card !p-4 mt-4 border-amber-300 bg-amber-50 text-sm text-amber-900">
+    Draft — members can't see this page. An admin publishes it when it's ready.
+  </div>
+  {% endif %}
+  {% if page.moderation_hidden %}
+  <div class="umi-card !p-4 mt-4 border-amber-300 bg-amber-50 text-sm text-amber-900 flex flex-wrap items-center justify-between gap-3">
+    <span>Hidden after a report. Members can't see this page.</span>
+    <form method="post" action="{% url 'pages:unhide' community.slug page.pk %}">
+      {% csrf_token %}
+      <button class="btn-secondary text-sm !min-h-[40px] !px-3.5" title="Put it back on the board">Unhide</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <header class="mt-6">
+    <span class="umi-kicker">{{ community.name }}</span>
+    <h1 class="font-serif text-3xl md:text-4xl font-semibold tracking-tight text-parish-ink mt-1.5">{{ page.title }}</h1>
+    <p class="text-sm text-parish-ink/55 mt-2">Written by the coordinators of {{ community.name }}</p>
+  </header>
+
+  <div class="page-prose mt-8">{{ page.content_html|safe }}</div>
+
+  {% if page.status == 'published' and not page.moderation_hidden %}
+  {% include "components/_flag_panel.html" with target_type="page" target_id=page.pk is_own=False noun="page" %}
+  {% endif %}
+</article>
+{% endblock %}

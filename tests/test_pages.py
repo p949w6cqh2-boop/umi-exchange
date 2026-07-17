@@ -407,3 +407,464 @@ class TestSettingsEntry:
         community, admin, _, _ = world
         body = _login(admin).get(reverse("community-settings", kwargs={"slug": community.slug})).content.decode()
         assert "Your pages" in body
+
+
+# ---------------------------------------------------------------------------
+# S3 §I — the front door: no-oracle landing, the index, page views, tombstone
+# ---------------------------------------------------------------------------
+
+from django.contrib.auth.views import redirect_to_login  # noqa: E402
+
+
+def _index(community):
+    return reverse("pages:index", kwargs={"slug": community.slug})
+
+
+def _view(community, page_slug):
+    return reverse("pages:view", kwargs={"slug": community.slug, "page_slug": page_slug})
+
+
+def _feed(community_slug):
+    return reverse("community-feed", kwargs={"slug": community_slug})
+
+
+def _login_redirect_for(path):
+    """What LoginRequiredMixin answers for this path — the no-oracle reference.
+    Every anonymous non-renderable case must equal this, byte for byte, so DB
+    state (missing vs private vs quiet) never shows through the redirect."""
+    return redirect_to_login(path)["Location"]
+
+
+def _open_world(world):
+    """Make the world's community public with one landing page + one members-only page."""
+    community, admin, coordinator, member = world
+    community.visibility = "public"
+    community.save(update_fields=["visibility"])
+    landing = _page(community, coordinator, show_on_landing=True)  # "Our story"
+    landing.publish(by=admin)
+    quiet = _page(community, coordinator, title="Mass times", slug="mass-times")
+    quiet.publish(by=admin)
+    return landing, quiet
+
+
+class TestPreAuthLanding:
+    def test_anon_feed_302s_to_pages_index_when_eligible(self, world):
+        community, *_ = world
+        _open_world(world)
+        resp = Client().get(_feed(community.slug))
+        assert resp.status_code == 302
+        assert resp["Location"] == _index(community)
+
+    def test_anon_feed_no_oracle_across_private_missing_and_quiet(self, world):
+        community, admin, coordinator, _ = world
+        # Private community WITH a landing-marked page: still invisible.
+        landing = _page(community, coordinator, show_on_landing=True)
+        landing.publish(by=admin)
+        # Public community with nothing marked for landing: nothing to show.
+        open_c = CommunityFactory(visibility="public")
+        for path in (_feed(community.slug), _feed("no-such-community"), _feed(open_c.slug)):
+            resp = Client().get(path)
+            assert resp.status_code == 302
+            assert resp["Location"] == _login_redirect_for(path)
+
+    def test_member_feed_unchanged(self, world):
+        community, _, _, member = world
+        _open_world(world)
+        assert _login(member).get(_feed(community.slug)).status_code == 200
+
+
+class TestPagesIndex:
+    def test_anon_sees_landing_pages_and_join_door_only(self, world):
+        community, *_ = world
+        landing, quiet = _open_world(world)
+        body = Client().get(_index(community)).content.decode()
+        assert landing.title in body
+        assert quiet.title not in body
+        assert reverse("community-join") in body
+        assert reverse("pages:manage", kwargs={"slug": community.slug}) not in body
+
+    def test_member_sees_all_published_without_join_door(self, world):
+        community, _, _, member = world
+        landing, quiet = _open_world(world)
+        body = _login(member).get(_index(community)).content.decode()
+        assert landing.title in body and quiet.title in body
+        assert reverse("community-join") not in body
+
+    def test_member_empty_state_speaks(self, world):
+        community, _, _, member = world
+        body = _login(member).get(_index(community)).content.decode()
+        assert "haven&#x27;t written any pages yet" in body or "haven't written any pages yet" in body
+
+    def test_coordinator_sees_chip_rows_for_the_unpublished(self, world):
+        community, admin, coordinator, _ = world
+        _open_world(world)
+        _page(community, coordinator, title="Drafted page", slug="drafted")
+        arch = _page(community, coordinator, title="Old bulletin", slug="old-bulletin")
+        arch.transition_to("archived")
+        body = _login(coordinator).get(_index(community)).content.decode()
+        assert "Drafted page" in body and "Old bulletin" in body
+        assert "Draft" in body and "Archived" in body
+
+    def test_coordinator_with_only_a_draft_is_not_told_nothing_is_written(self, world):
+        community, _, coordinator, _ = world
+        _page(community, coordinator, title="Drafted page", slug="drafted")
+        body = _login(coordinator).get(_index(community)).content.decode()
+        assert "Drafted page" in body  # the chip row carries it
+        assert "written any pages yet" not in body  # the empty line would contradict it
+
+    def test_anon_ineligible_index_is_the_login_redirect(self, world):
+        community, *_ = world  # private by default, no pages
+        path = _index(community)
+        resp = Client().get(path)
+        assert resp.status_code == 302
+        assert resp["Location"] == _login_redirect_for(path)
+
+    def test_stranger_sees_public_render_when_eligible_else_404(self, world):
+        community, *_ = world
+        stranger = MemberFactory()  # a member of some other community
+        assert _login(stranger).get(_index(community)).status_code == 404
+        landing, quiet = _open_world(world)
+        body = _login(stranger).get(_index(community)).content.decode()
+        assert landing.title in body and quiet.title not in body
+        assert reverse("community-join") in body
+
+    def test_unlisted_link_is_a_capability(self, world):
+        community, *_ = world
+        _open_world(world)
+        community.visibility = "unlisted"
+        community.save(update_fields=["visibility"])
+        assert Client().get(_index(community)).status_code == 200
+
+    def test_index_orders_by_sort_order_then_title(self, world):
+        community, admin, coordinator, member = world
+        _open_world(world)  # "Mass times", "Our story" — both sort_order 0
+        third = _page(community, coordinator, title="Weekday ministries", slug="ministries", sort_order=5)
+        third.publish(by=admin)
+        body = _login(member).get(_index(community)).content.decode()
+        assert body.index("Mass times") < body.index("Our story") < body.index("Weekday ministries")
+
+
+class TestPageView:
+    def test_member_reads_published_page_with_byline_and_flag_panel(self, world):
+        community, _, _, member = world
+        _, quiet = _open_world(world)
+        body = _login(member).get(_view(community, quiet.slug)).content.decode()
+        assert quiet.title in body
+        assert f"Written by the coordinators of {community.name}" in body
+        assert "Something wrong with this page?" in body
+
+    def test_draft_404_for_member_banner_for_coordinator(self, world):
+        community, _, coordinator, member = world
+        _page(community, coordinator, title="Drafted page", slug="drafted")
+        assert _login(member).get(_view(community, "drafted")).status_code == 404
+        body = _login(coordinator).get(_view(community, "drafted")).content.decode()
+        assert "Draft" in body and "members can" in body
+
+    def test_hidden_404_for_member_banner_for_coordinator(self, world):
+        community, _, coordinator, member = world
+        _, quiet = _open_world(world)
+        quiet.moderation_hidden = True
+        quiet.save(update_fields=["moderation_hidden"])
+        assert _login(member).get(_view(community, quiet.slug)).status_code == 404
+        body = _login(coordinator).get(_view(community, quiet.slug)).content.decode()
+        assert "Hidden after a report" in body
+
+    def test_anon_reads_landing_page_with_join_door_and_no_flag_control(self, world):
+        community, *_ = world
+        landing, _ = _open_world(world)
+        body = Client().get(_view(community, landing.slug)).content.decode()
+        assert landing.title in body
+        assert f"Written by the coordinators of {community.name}" in body
+        assert reverse("community-join") in body
+        assert "Something wrong with this page?" not in body
+
+    def test_anon_failures_all_wear_the_same_login_redirect(self, world):
+        community, admin, coordinator, _ = world
+        landing, quiet = _open_world(world)  # quiet is not landing-marked
+        _page(community, coordinator, title="Drafted page", slug="drafted")
+        landing.moderation_hidden = True
+        landing.save(update_fields=["moderation_hidden"])
+        for page_slug in (quiet.slug, "drafted", landing.slug, "no-such-page"):
+            path = _view(community, page_slug)
+            resp = Client().get(path)
+            assert resp.status_code == 302
+            assert resp["Location"] == _login_redirect_for(path)
+
+    def test_stranger_reads_eligible_page_else_404(self, world):
+        community, *_ = world
+        stranger = MemberFactory()
+        landing, quiet = _open_world(world)
+        assert _login(stranger).get(_view(community, landing.slug)).status_code == 200
+        assert _login(stranger).get(_view(community, quiet.slug)).status_code == 404
+
+
+class TestTombstone:
+    def _archived(self, world):
+        community, _, coordinator, _ = world
+        page = _page(community, coordinator, title="Old bulletin", slug="old-bulletin")
+        page.transition_to("archived")
+        return page
+
+    def test_member_gets_warm_tombstone_without_the_title(self, world):
+        community, _, _, member = world
+        self._archived(world)
+        resp = _login(member).get(_view(community, "old-bulletin"))
+        assert resp.status_code == 200
+        body = resp.content.decode()
+        assert "put this page away" in body
+        assert "Old bulletin" not in body  # put away, not teased
+        assert "ever deleted" in body
+        assert "My tags" in body  # the member keeps their header nav here too
+
+    def test_coordinator_sees_the_restore_pointer(self, world):
+        community, _, coordinator, _ = world
+        self._archived(world)
+        body = _login(coordinator).get(_view(community, "old-bulletin")).content.decode()
+        assert "Restore it from Your pages" in body
+
+    def test_anon_gets_the_no_oracle_redirect_never_the_tombstone(self, world):
+        community, *_ = world
+        self._archived(world)
+        community.visibility = "public"
+        community.save(update_fields=["visibility"])
+        path = _view(community, "old-bulletin")
+        resp = Client().get(path)
+        assert resp.status_code == 302
+        assert resp["Location"] == _login_redirect_for(path)
+
+    def test_stranger_404(self, world):
+        community, *_ = world
+        self._archived(world)
+        assert _login(MemberFactory()).get(_view(community, "old-bulletin")).status_code == 404
+
+    def test_live_draft_owns_the_slug_over_the_archived(self, world):
+        community, _, coordinator, member = world
+        self._archived(world)
+        _page(community, coordinator, title="New bulletin", slug="old-bulletin")  # draft retakes the slug
+        assert _login(member).get(_view(community, "old-bulletin")).status_code == 404
+
+
+class TestReservedSlug:
+    def test_restore_cannot_revive_a_reserved_slug(self, world):
+        # Legacy data path: an archived page holding "manage" (created before the
+        # reservation) must not restore into a URL the manager shadows.
+        community, _, coordinator, _ = world
+        page = _page(community, coordinator, title="Old manager", slug="manage")
+        page.transition_to("archived")
+        resp = _login(coordinator).post(
+            reverse("pages:restore", kwargs={"slug": community.slug, "pk": page.pk}), follow=True
+        )
+        page.refresh_from_db()
+        assert page.status == "archived"
+        assert "reserved" in resp.content.decode()
+
+    def test_manage_is_not_a_page_address(self, world):
+        community, _, coordinator, _ = world
+        resp = _login(coordinator).post(
+            reverse("pages:create", kwargs={"slug": community.slug}),
+            {"title": "Manage", "slug": "manage", "content_md": "x", "sort_order": 0},
+        )
+        assert resp.status_code == 200  # form re-rendered with the warm refusal
+        assert "reserved" in resp.content.decode()
+        assert not CommunityPage.objects.filter(community=community, slug="manage").exists()
+
+
+# ---------------------------------------------------------------------------
+# S3 §H — one moderation model: pages are flaggable, hide is reversible
+# ---------------------------------------------------------------------------
+
+from apps.moderation.models import Flag  # noqa: E402
+
+
+def _flag_page(client, community, page, reason="unsafe"):
+    return client.post(
+        reverse("moderation:flag", kwargs={"slug": community.slug}),
+        {"target_type": "page", "target_id": str(page.pk), "reason": reason, "detail": ""},
+    )
+
+
+class TestPageFlags:
+    def test_member_flags_a_published_page(self, world):
+        community, _, _, member = world
+        _, quiet = _open_world(world)
+        resp = _flag_page(_login(member), community, quiet)
+        assert resp.status_code == 302
+        assert resp["Location"] == _view(community, quiet.slug)
+        assert Flag.objects.filter(community=community, target_type="page", target_id=quiet.pk).exists()
+
+    def test_duplicate_open_flag_stays_single(self, world):
+        community, _, _, member = world
+        _, quiet = _open_world(world)
+        client = _login(member)
+        _flag_page(client, community, quiet)
+        _flag_page(client, community, quiet)
+        assert Flag.objects.filter(target_type="page", target_id=quiet.pk).count() == 1
+
+    def test_queue_shows_page_row_with_md_excerpt_never_html(self, world):
+        community, admin, coordinator, member = world
+        _open_world(world)
+        page = _page(
+            community,
+            coordinator,
+            title="Ministries",
+            slug="ministries",
+            content_md="We carry **meals** to the housebound every Friday. " + "More words. " * 30,
+        )
+        page.publish(by=admin)
+        _flag_page(_login(member), community, page)
+        body = _login(admin).get(reverse("moderation:queue", kwargs={"slug": community.slug})).content.decode()
+        assert "Ministries" in body
+        assert "We carry **meals** to the housebound" in body  # raw markdown, escaped as text
+        assert "<strong>" not in body  # content_html never reaches the queue
+        # The row links the EDITOR by pk: a slug link would open the tombstone
+        # once the page is archived — or a different page entirely if the slug
+        # was reclaimed. The pk always names the flagged row.
+        assert reverse("pages:edit", kwargs={"slug": community.slug, "pk": page.pk}) in body
+
+    def test_queue_names_the_conflict_when_the_author_reviews(self, world):
+        community, admin, coordinator, member = world
+        _, quiet = _open_world(world)  # authored by the coordinator
+        _flag_page(_login(member), community, quiet)
+        body = _login(admin).get(reverse("moderation:queue", kwargs={"slug": community.slug})).content.decode()
+        assert "reviewer of this queue" in body
+
+    def test_hide_pulls_the_page_from_every_surface(self, world):
+        community, admin, coordinator, member = world
+        community.visibility = "public"
+        community.save(update_fields=["visibility"])
+        # A distinct title — "Our story" would collide with the footer's mission nav.
+        landing = _page(community, coordinator, title="Parish festival", slug="festival", show_on_landing=True)
+        landing.publish(by=admin)
+        _flag_page(_login(member), community, landing)
+        flag = Flag.objects.get(target_type="page", target_id=landing.pk)
+        resp = _login(admin).post(
+            reverse("moderation:resolve", kwargs={"slug": community.slug, "pk": flag.pk}),
+            {"action": "hide"},
+        )
+        assert resp.status_code == 302
+        landing.refresh_from_db()
+        assert landing.moderation_hidden is True
+        assert AuditLog.objects.filter(action="content.hidden", details__target_type="page").exists()
+        # Member surfaces: view 404s, index no longer lists it.
+        assert _login(member).get(_view(community, landing.slug)).status_code == 404
+        index_body = _login(member).get(_index(community)).content.decode()
+        assert landing.title not in index_body
+        # Anonymous surfaces: it was the only landing page — the front door closes
+        # back to the identical login redirect.
+        for path in (_feed(community.slug), _index(community), _view(community, landing.slug)):
+            resp = Client().get(path)
+            assert resp.status_code == 302
+            assert resp["Location"] == _login_redirect_for(path)
+
+    def test_flag_on_a_later_archived_page_still_resolves(self, world):
+        community, admin, coordinator, member = world
+        _, quiet = _open_world(world)
+        _flag_page(_login(member), community, quiet)
+        quiet.transition_to("archived")
+        flag = Flag.objects.get(target_type="page", target_id=quiet.pk)
+        queue = _login(admin).get(reverse("moderation:queue", kwargs={"slug": community.slug}))
+        assert queue.status_code == 200
+        resp = _login(admin).post(
+            reverse("moderation:resolve", kwargs={"slug": community.slug, "pk": flag.pk}),
+            {"action": "dismiss"},
+        )
+        assert resp.status_code == 302
+        flag.refresh_from_db()
+        assert flag.status == "dismissed"
+
+    def test_coordinator_unhides_and_the_page_returns(self, world):
+        community, admin, coordinator, member = world
+        _, quiet = _open_world(world)
+        quiet.moderation_hidden = True
+        quiet.save(update_fields=["moderation_hidden"])
+        resp = _login(coordinator).post(reverse("pages:unhide", kwargs={"slug": community.slug, "pk": quiet.pk}))
+        assert resp.status_code == 302
+        quiet.refresh_from_db()
+        assert quiet.moderation_hidden is False
+        assert AuditLog.objects.filter(action="content.unhidden", details__slug=quiet.slug).exists()
+        assert _login(member).get(_view(community, quiet.slug)).status_code == 200
+
+    def test_hidden_banner_offers_unhide_to_coordinators(self, world):
+        community, _, coordinator, _ = world
+        _, quiet = _open_world(world)
+        quiet.moderation_hidden = True
+        quiet.save(update_fields=["moderation_hidden"])
+        body = _login(coordinator).get(_view(community, quiet.slug)).content.decode()
+        assert reverse("pages:unhide", kwargs={"slug": community.slug, "pk": quiet.pk}) in body
+
+
+# ---------------------------------------------------------------------------
+# S3 §I — nav anchors: the hub pill and the footer column
+# ---------------------------------------------------------------------------
+
+
+class TestPagesNav:
+    def test_hub_gains_the_pages_pill_when_something_is_published(self, world):
+        community, _, _, member = world
+        hub = reverse("hub:community", kwargs={"slug": community.slug})
+        body = _login(member).get(hub).content.decode()
+        assert ">Pages</a>" not in body  # nothing published yet
+        _open_world(world)
+        body = _login(member).get(hub).content.decode()
+        assert ">Pages</a>" in body
+        assert _index(community) in body
+
+    def test_hidden_only_pages_do_not_light_the_pill(self, world):
+        community, _, _, member = world
+        landing, quiet = _open_world(world)
+        for p in (landing, quiet):
+            p.moderation_hidden = True
+            p.save(update_fields=["moderation_hidden"])
+        body = _login(member).get(reverse("hub:community", kwargs={"slug": community.slug})).content.decode()
+        assert ">Pages</a>" not in body
+
+    def test_footer_lists_member_visible_pages_capped_at_six(self, world):
+        community, admin, coordinator, member = world
+        _open_world(world)  # "Our story" + "Mass times"
+        for i in range(6):
+            p = _page(community, coordinator, title=f"Extra page {i}", slug=f"extra-{i}")
+            p.publish(by=admin)
+        body = _login(member).get(_feed(community.slug)).content.decode()
+        assert "All pages" in body
+        assert _index(community) in body
+        # Eight published, capped at six: the extras (alphabetically first) fill
+        # the column; "Mass times" falls past the cap.
+        assert body.count("/p/extra-") == 6
+        assert "Mass times" not in body
+
+    def test_anon_footer_shows_only_preauth_pages(self, world):
+        community, admin, coordinator, _ = world
+        community.visibility = "public"
+        community.save(update_fields=["visibility"])
+        landing = _page(community, coordinator, title="Parish festival", slug="festival", show_on_landing=True)
+        landing.publish(by=admin)
+        quiet = _page(community, coordinator, title="Mass times", slug="mass-times")
+        quiet.publish(by=admin)
+        body = Client().get(_index(community)).content.decode()
+        assert "Parish festival" in body
+        assert "Mass times" not in body
+
+    def test_footer_column_absent_off_community_and_when_empty(self, world):
+        community, _, _, member = world
+        # A community surface with nothing published: no column.
+        body = _login(member).get(_feed(community.slug)).content.decode()
+        assert "All pages" not in body
+        # A mission page carries no community at all: no column.
+        body = Client().get(reverse("about")).content.decode()
+        assert "All pages" not in body
+
+
+class TestFederationGuard:
+    def test_pages_never_cross_the_wire(self):
+        """§I not-do: local-only v1 — no federation serialization of pages.
+        The guard is a source scan: the federation app must never name the
+        pages app, its model, or its content column."""
+        from pathlib import Path
+
+        fed = Path("apps/federation")
+        offenders = [
+            str(p)
+            for p in fed.rglob("*.py")
+            if any(marker in p.read_text() for marker in ("CommunityPage", "apps.pages", "content_md"))
+        ]
+        assert offenders == []

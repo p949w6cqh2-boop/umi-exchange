@@ -266,6 +266,19 @@ class FeedView(LoginRequiredMixin, ListView):
     # bounded-list pattern used by the casework list view.
     feed_per_type_cap = 500
 
+    def dispatch(self, request, *args, **kwargs):
+        # §I: the ONE anonymous branch. A community that chose a front door
+        # (≥1 pre-auth page, not private, active) sends logged-out visitors to
+        # it; every other anonymous case falls through to LoginRequiredMixin's
+        # redirect unchanged, so missing and private stay indistinguishable.
+        if not request.user.is_authenticated:
+            from apps.pages.models import CommunityPage
+
+            community = Community.objects.filter(slug=kwargs["slug"], is_active=True).first()
+            if community is not None and CommunityPage.objects.pre_auth_visible(community).exists():
+                return redirect("pages:index", slug=community.slug)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
         self.member = get_object_or_404(Member, user=self.request.user, community=self.community, is_active=True)

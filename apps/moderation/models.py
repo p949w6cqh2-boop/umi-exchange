@@ -12,7 +12,7 @@ from django.db import models
 
 
 class Flag(models.Model):
-    TARGET_CHOICES = [("need", "Need"), ("offer", "Offer"), ("member", "Member")]
+    TARGET_CHOICES = [("need", "Need"), ("offer", "Offer"), ("member", "Member"), ("page", "Page")]
     REASON_CHOICES = [
         ("fake", "Seems fake or misleading"),
         ("unsafe", "Unsafe or threatening"),

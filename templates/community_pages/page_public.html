@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} · {{ community.name }}{% endblock %}
+{% block content %}
+<article class="max-w-3xl mx-auto py-8">
+  <header>
+    <span class="umi-kicker">{{ community.name }}</span>
+    <h1 class="font-serif text-3xl md:text-4xl font-semibold tracking-tight text-parish-ink mt-1.5">{{ page.title }}</h1>
+    <p class="text-sm text-parish-ink/55 mt-2">Written by the coordinators of {{ community.name }}</p>
+  </header>
+
+  <div class="page-prose mt-8">{{ page.content_html|safe }}</div>
+
+  <div class="mt-10">{% include "community_pages/_join_door.html" %}</div>
+</article>
+{% endblock %}

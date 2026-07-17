@@ -38,6 +38,9 @@
       <a class="umi-pill" href="{% url 'offer-create' slug=community.slug %}">Post an offer</a>
       <a class="umi-pill" href="{% url 'community-feed' slug=community.slug %}">Browse the feed</a>
       <a class="umi-pill" href="{% url 'community-resources' slug=community.slug %}">Resources</a>
+      {% if pages_live %}
+      <a class="umi-pill" href="{% url 'pages:index' slug=community.slug %}">Pages</a>
+      {% endif %}
     </nav>
   </header>
 

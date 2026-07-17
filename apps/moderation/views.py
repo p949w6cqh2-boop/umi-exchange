@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -22,11 +23,12 @@ from apps.communities.models import Community, Member
 from apps.needs.models import Need
 from apps.notifications.adapter import NotificationAdapter
 from apps.offers.models import Offer
+from apps.pages.models import CommunityPage
 
 from .forms import FlagForm
 from .models import Flag
 
-TARGET_MODELS = {"need": Need, "offer": Offer, "member": Member}
+TARGET_MODELS = {"need": Need, "offer": Offer, "member": Member, "page": CommunityPage}
 
 
 def _resolve_target(community, target_type, target_id):
@@ -34,6 +36,9 @@ def _resolve_target(community, target_type, target_id):
     model = TARGET_MODELS[target_type]
     if target_type == "member":
         return get_object_or_404(model, pk=target_id, community=community, is_active=True)
+    if target_type == "page":
+        # The queue row names the author (conflict-of-interest line) — fetch it with the page.
+        return get_object_or_404(model.objects.select_related("created_by"), pk=target_id, community=community)
     return get_object_or_404(model, pk=target_id, community=community)
 
 
@@ -42,6 +47,8 @@ def _target_url(community, target_type, target):
         return f"/c/{community.slug}/needs/{target.pk}/"
     if target_type == "offer":
         return f"/c/{community.slug}/offers/{target.pk}/"
+    if target_type == "page":
+        return reverse("pages:view", kwargs={"slug": community.slug, "page_slug": target.slug})
     return f"/c/{community.slug}/"
 
 
