@@ -5,6 +5,9 @@
 
 ## 2026-07-17
 
+- **The Identity form no longer eats your words.** Type a patron line that's a touch too
+  long and the page now hands everything back — your welcome lines, your blurb, all of it —
+  with a note about what to shorten, instead of bouncing you to a fresh form.
 - **Every screen passes the readability bar now.** The darker quiet-grey text reached the
   last six older screens — the landing page, the join page, the board's offer cards, and
   the match pages. The automated check that runs with the demo gallery now measures zero

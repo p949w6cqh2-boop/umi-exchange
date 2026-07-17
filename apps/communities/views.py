@@ -23,7 +23,7 @@ from django.views.generic import CreateView, FormView, ListView, TemplateView
 
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
-from apps.communities.identity import SCENE_SLUGS, parse_identity_post
+from apps.communities.identity import SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -467,8 +467,21 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         if action == "set_identity":
             updates, errors = parse_identity_post(request.POST)
             if errors:
+                # Keep the admin's words on the page — re-render the form with
+                # exactly what they typed instead of redirecting it away.
                 messages.error(request, " ".join(errors))
-                return redirect("community-settings", slug=self.community.slug)
+                ctx = self.get_context_data()
+                stored = ctx["identity"]
+                ctx["identity"] = {
+                    "patron": request.POST.get("patron", stored["patron"]),
+                    "welcome_lines": request.POST.get("welcome_lines", stored["welcome_lines"]),
+                    "signin_blurb": request.POST.get("signin_blurb", stored["signin_blurb"]),
+                    "scene_choices": {
+                        surface: request.POST.get(f"scene_{surface}", stored["scene_choices"].get(surface, ""))
+                        for surface in SCENE_SURFACES
+                    },
+                }
+                return self.render_to_response(ctx)
             scene_updates = updates.pop("scene_choices", None)
             changed = []
             # settings is a shared JSON blob with two writers (theme + identity):
