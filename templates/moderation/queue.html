@@ -7,14 +7,14 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="font-serif text-2xl text-parish-ink">Reports</h1>
-      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }}: concerns raised by neighbours</p>
+      <p class="text-sm text-parish-ink/70 mt-0.5">{{ community.name }}: concerns raised by neighbours</p>
     </div>
     <a href="{% url 'community-feed' community.slug %}"
        class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
   </div>
 
   <section aria-label="Open reports">
-    <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">
+    <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-3">
       Open ({{ rows|length }})
     </h2>
     {% if rows %}
@@ -24,7 +24,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="font-medium text-parish-ink">{{ row.flag.get_reason_display }}</p>
-            <p class="text-sm text-parish-ink/60 mt-0.5">
+            <p class="text-sm text-parish-ink/70 mt-0.5">
               {{ row.flag.get_target_type_display }} · reported {{ row.flag.created_at|timesince }} ago
             </p>
             {% if row.flag.detail %}
@@ -47,7 +47,7 @@
                 <p class="text-sm text-parish-ink/70 mt-2">Member: {{ row.target.display_name }}</p>
               {% endif %}
             {% else %}
-            <p class="text-sm text-parish-ink/50 mt-2">The reported item is no longer available.</p>
+            <p class="text-sm text-parish-ink/70 mt-2">The reported item is no longer available.</p>
             {% endif %}
           </div>
           <form method="post" action="{% url 'moderation:resolve' community.slug row.flag.pk %}"
@@ -59,7 +59,7 @@
             <button name="action" value="keep" class="btn-secondary text-sm !min-h-[40px] !px-3.5"
                     title="Reviewed; the post stays up">Looks fine</button>
             {% endif %}
-            <button name="action" value="dismiss" class="text-sm text-parish-ink/60 hover:text-parish-ink min-h-[40px] px-2 focus-ring rounded-lg"
+            <button name="action" value="dismiss" class="text-sm text-parish-ink/70 hover:text-parish-ink min-h-[40px] px-2 focus-ring rounded-lg"
                     title="Close the report without action">Dismiss</button>
           </form>
         </div>
@@ -67,7 +67,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="umi-card p-8 text-center text-parish-ink/50">
+    <div class="umi-card p-8 text-center text-parish-ink/70">
       <p>No open reports. A quiet board is a good board.</p>
     </div>
     {% endif %}
@@ -75,12 +75,12 @@
 
   {% if recent %}
   <section aria-label="Recently handled reports">
-    <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">Recently handled</h2>
+    <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-3">Recently handled</h2>
     <ul class="umi-card divide-y divide-[var(--umi-border)]">
       {% for flag in recent %}
       <li class="px-4 py-3 text-sm text-parish-ink/70 flex flex-wrap justify-between gap-2">
         <span>{{ flag.get_reason_display }} · {{ flag.get_target_type_display }}</span>
-        <span class="text-parish-ink/50">{{ flag.resolution }} by {{ flag.resolved_by.display_name|default:"—" }} · {{ flag.resolved_at|timesince }} ago</span>
+        <span class="text-parish-ink/70">{{ flag.resolution }} by {{ flag.resolved_by.display_name|default:"—" }} · {{ flag.resolved_at|timesince }} ago</span>
       </li>
       {% endfor %}
     </ul>

@@ -27,7 +27,7 @@
           <span class="font-semibold">{{ e.actor }}</span> joined the community
         {% endif %}
       </p>
-      <p class="text-xs text-parish-ink/45 mt-0.5">{{ e.when|timesince }} ago</p>
+      <p class="text-xs text-parish-ink/70 mt-0.5">{{ e.when|timesince }} ago</p>
     </div>
     {% if e.kind == 'need_posted' %}
     <a href="{{ e.url }}" class="shrink-0 text-[13px] font-semibold text-umi-primary hover:text-umi-primary-hover min-h-[44px] inline-flex items-center px-1 focus-ring rounded-lg">Help</a>
@@ -40,7 +40,7 @@
   <div class="umi-vignette text-parish-ink" aria-hidden="true">
     {% include "illustrations/_board.html" %}
   </div>
-  <p class="text-sm text-parish-ink/55">
+  <p class="text-sm text-parish-ink/70">
     Quiet so far. The pulse picks up as neighbours start asking and offering.
   </p>
 </div>

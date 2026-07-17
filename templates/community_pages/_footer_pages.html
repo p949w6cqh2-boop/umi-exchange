@@ -1,6 +1,6 @@
 {% if pages %}
 <div>
-  <p class="text-xs uppercase tracking-wide text-[#EDEAE2]/45 font-semibold">{{ community.name }}</p>
+  <p class="text-xs uppercase tracking-wide text-[#EDEAE2]/60 font-semibold">{{ community.name }}</p>
   <nav class="flex flex-col gap-1.5 mt-3 text-sm" aria-label="Community pages">
     {% for page in pages %}
     <a href="{% url 'pages:view' community.slug page.slug %}" class="text-[#EDEAE2]/70 hover:text-[#EDEAE2] transition-colors duration-300">{{ page.title }}</a>

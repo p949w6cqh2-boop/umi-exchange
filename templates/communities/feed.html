@@ -33,7 +33,7 @@
       <a href="{% url 'federation_admin:listings' community.slug %}" class="umi-tab">Beyond this community &rarr;</a>
       {% endif %}
     </nav>
-    <select name="category" hx-get="{% url 'community-feed' community.slug %}"
+    <select name="category" aria-label="Filter by category" hx-get="{% url 'community-feed' community.slug %}"
             hx-target="#feed-results" hx-swap="innerHTML" hx-include="[name='urgency'],[name='q']"
             class="umi-input !w-auto !py-2 !px-3 text-[15px]">
       <option value="">All categories</option>
@@ -41,7 +41,7 @@
       <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
       {% endfor %}
     </select>
-    <select name="urgency" hx-get="{% url 'community-feed' community.slug %}"
+    <select name="urgency" aria-label="Filter by urgency" hx-get="{% url 'community-feed' community.slug %}"
             hx-target="#feed-results" hx-swap="innerHTML" hx-include="[name='category'],[name='q']"
             class="umi-input !w-auto !py-2 !px-3 text-[15px]">
       <option value="">Any urgency</option>

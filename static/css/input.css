@@ -107,7 +107,8 @@
   .umi-bottomnav__tab {
     @apply flex flex-1 flex-col items-center justify-center gap-1 py-2;
     min-height: 56px;
-    color: color-mix(in srgb, var(--umi-text) 52%, transparent);
+    /* 66%: the lowest mix that keeps AA (4.5:1) for these small labels on stone. */
+    color: color-mix(in srgb, var(--umi-text) 66%, transparent);
     transition: color 200ms var(--umi-ease);
   }
   .umi-bottomnav__tab svg { @apply w-6 h-6; }

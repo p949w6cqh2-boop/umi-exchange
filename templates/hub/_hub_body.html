@@ -27,10 +27,10 @@
       <span class="umi-kicker">{{ community.name }}</span>
       <h1 id="hub-heading" class="umi-h1 mt-1.5">Welcome back, {{ member.display_name.split.0 }}.</h1>
       {% if welcome_line %}
-      <p class="text-sm text-parish-ink/60 mt-1.5">{{ welcome_line }}</p>
+      <p class="text-sm text-parish-ink/70 mt-1.5">{{ welcome_line }}</p>
       {% endif %}
       {% if season_impact %}
-      <p class="text-sm text-parish-ink/60 mt-2">
+      <p class="text-sm text-parish-ink/70 mt-2">
         Through you this season: <span class="font-semibold text-umi-primary tabular">{{ season_impact }}</span>
         neighbour{{ season_impact|pluralize }} helped.
       </p>
@@ -61,7 +61,7 @@
     <p class="mt-2.5 text-sm text-parish-ink/80">
       {% for page in hub_pages %}<a href="{% url 'pages:view' slug=community.slug page_slug=page.slug %}" class="font-medium text-umi-primary hover:underline">{{ page.title }}</a>{% if not forloop.last %} <span class="text-parish-ink/30">&middot;</span> {% endif %}{% endfor %}
     </p>
-    <p class="mt-2.5"><a href="{% url 'pages:index' slug=community.slug %}" class="text-sm text-parish-ink/55 hover:text-parish-ink transition-colors">All pages &#9656;</a></p>
+    <p class="mt-2.5"><a href="{% url 'pages:index' slug=community.slug %}" class="text-sm text-parish-ink/70 hover:text-parish-ink transition-colors">All pages &#9656;</a></p>
   </section>
   {% endif %}
 
@@ -69,7 +69,7 @@
   <section class="umi-card umi-rise" style="--rise-delay: 160ms" aria-labelledby="hub-pulse-h">
     <div class="flex items-center justify-between gap-3 mb-2">
       <h2 id="hub-pulse-h" class="umi-h2 !mb-0">The pulse</h2>
-      <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-parish-ink/45">
+      <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-parish-ink/70">
         <span class="w-1.5 h-1.5 rounded-full bg-[var(--umi-primary)] animate-pulse" aria-hidden="true"></span> live
       </span>
     </div>
@@ -83,7 +83,7 @@
     <h2 id="hub-corner-h" class="umi-h2">Your corner</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 mt-1">
       <div>
-        <h3 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wider mb-2.5">Open matches</h3>
+        <h3 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wider mb-2.5">Open matches</h3>
         {% if open_matches %}
           <ul class="space-y-2">
             {% for match in open_matches %}
@@ -94,11 +94,11 @@
             {% endfor %}
           </ul>
         {% else %}
-          <p class="text-sm text-parish-ink/50">None right now.</p>
+          <p class="text-sm text-parish-ink/70">None right now.</p>
         {% endif %}
       </div>
       <div>
-        <h3 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wider mb-2.5">Notifications</h3>
+        <h3 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wider mb-2.5">Notifications</h3>
         {% if notifications %}
           <ul class="space-y-2">
             {% for n in notifications|slice:":5" %}
@@ -106,11 +106,11 @@
             {% endfor %}
           </ul>
         {% else %}
-          <p class="text-sm text-parish-ink/50">Nothing new.</p>
+          <p class="text-sm text-parish-ink/70">Nothing new.</p>
         {% endif %}
       </div>
       <div>
-        <h3 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wider mb-2.5">Your tags</h3>
+        <h3 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wider mb-2.5">Your tags</h3>
         {% if member_tags %}
           <ul class="flex flex-wrap gap-1.5">
             {% for mt in member_tags %}
@@ -118,8 +118,8 @@
             {% endfor %}
           </ul>
         {% else %}
-          <p class="text-sm text-parish-ink/50">
-            None yet. <a href="{% url 'tags:my-tags' community.slug %}" class="text-umi-primary hover:underline">Claim one</a>.
+          <p class="text-sm text-parish-ink/70">
+            None yet. <a href="{% url 'tags:my-tags' community.slug %}" class="text-umi-primary underline underline-offset-2">Claim one</a>.
           </p>
         {% endif %}
       </div>
@@ -132,17 +132,17 @@
     <div class="grid grid-cols-3 gap-3">
       <div class="umi-card !p-4 md:!p-5 text-center">
         <p class="font-serif text-3xl md:text-4xl font-semibold tabular text-parish-ink">{{ week_stats.hands_raised }}</p>
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/50 mt-1">Hands raised</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/70 mt-1">Hands raised</p>
       </div>
       <div class="umi-card !p-4 md:!p-5 text-center">
         <p class="font-serif text-3xl md:text-4xl font-semibold tabular text-umi-primary">{{ week_stats.asks_answered }}</p>
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/50 mt-1">Asks answered</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/70 mt-1">Asks answered</p>
       </div>
       <div class="umi-card !p-4 md:!p-5 text-center">
         <p class="font-serif text-3xl md:text-4xl font-semibold tabular text-emerald-700">{{ week_stats.fulfilled }}</p>
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/50 mt-1">Fulfilled</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-parish-ink/70 mt-1">Fulfilled</p>
       </div>
     </div>
-    <p class="text-center text-xs text-parish-ink/45 mt-3">This week, all of {{ community.name }} together.</p>
+    <p class="text-center text-xs text-parish-ink/70 mt-3">This week, all of {{ community.name }} together.</p>
   </section>
 </section>

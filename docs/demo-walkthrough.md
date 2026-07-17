@@ -1,6 +1,6 @@
 # Demo walkthrough — showing UMI Exchange to Father Mac
 
-The board, alive and in hand. Eight screens at phone width (390px), in the order to demo them.
+The board, alive and in hand. Eleven screens at phone width (390px), in the order to demo them.
 Everything below is the fictional St. Brigid's — no real people, no real parish specifics.
 
 ## Before the demo (five minutes)
@@ -32,7 +32,9 @@ The threshold print above the choice every parish makes once.
 ![Join](demo/02-join.webp)
 
 ### 3. The hub — a living parish
-Nuala's morning: a greeting by name, one ask in the spotlight, the pulse of the week below.
+Nuala's morning: a greeting by name with the parish's own line under it ("Bear one another's
+burdens." — it turns over daily through lines the coordinators wrote), one ask in the spotlight,
+the parish's pages a card away, the pulse of the week below.
 
 ![Hub](demo/03-hub.webp)
 
@@ -62,6 +64,26 @@ Both said yes. The page settles, warms, and shares contact between the two of th
 
 ![Connected](demo/08-connected.webp)
 
+### 9. The front door — the parish before you sign in
+St. Brigid's chose a scene, a line of welcome, and one page for the world. A visitor reads the
+story and finds the join door; a private parish shows nothing at all — and looks exactly like
+no parish.
+
+![Front door](demo/09-front-door.webp)
+
+### 10. A page in the parish's own words
+"We still don't." Every page is signed "Written by the coordinators of St. Brigid's" — always.
+Drafted by a coordinator, published only by an admin: the priest signs, and signs again after
+every fix.
+
+![Our story](demo/10-page.webp)
+
+### 11. The floor everything stands on
+The footer's "Built on the UMI Protocol" lands here, on this very instance — the whole promise,
+readable on an offline laptop.
+
+![Protocol](demo/11-protocol.webp)
+
 ## If Father Mac pokes around
 
 - A typo'd address gets the warm 404, not an error dump (that's why the demo runs `DEBUG=0`).
@@ -71,7 +93,19 @@ Both said yes. The page settles, warms, and shares contact between the two of th
 
 ## Accessibility note
 
-Focus rings, reduced-motion, and AA contrast are built into the design system (see DESIGN.md's
-verified contrast table). An automated axe pass wasn't run for this gallery (toolchain not installed offline); screens
-were checked by eye against the token contrast table. This gallery was captured with
-`DEBUG=0`, the same conditions as the demo recipe above.
+An automated **axe pass (WCAG 2.1 AA tags) now runs with the gallery shoot** —
+`node docs/demo/shoot-demo.mjs` captures these screens and audits nineteen (the gallery plus the
+manager, editor, settings-identity, tombstone, and moderation queue) in one go, writing
+`docs/demo/axe-report.json`. As of the Stage-8 close-out, **every Layer C surface, the hub, the
+settings page, the moderation queue, and /protocol/ pass with zero violations**; fixes included
+the feed filters' missing accessible names, the bottom-nav label contrast, the footer's protocol
+line, and the muted-text family on the new surfaces (small muted text now sits at 70% ink —
+60% composites to 4.2:1 on stone, under AA's 4.5:1).
+
+**Known remainder (pre-existing screens, deliberately left for a keyed design pass):** the
+landing page's rotated notice-card metas, two sign-in links on /join/, the board's offer-card
+meta rows, a need-detail meta block, and two match-page lines (including `text-emerald-800/70`)
+still use the older muted tints — 6 violations, all `color-contrast`, none on Layer C. Raising
+the global muted tokens changes the keyed Wellspring look everywhere, so that's the founder's
+call, not a close-out default. Gallery captured with `DEBUG=0`, the same conditions as the demo
+recipe above.
