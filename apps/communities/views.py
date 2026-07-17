@@ -23,7 +23,7 @@ from django.views.generic import CreateView, FormView, ListView, TemplateView
 
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
-from apps.communities.identity import SCENE_SLUGS, parse_identity_post
+from apps.communities.identity import SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -406,13 +406,14 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         ctx["role_choices"] = Member.ROLE_CHOICES
         ctx["current_theme"] = (self.community.settings or {}).get("theme", THEME_DEFAULT)
         ctx["theme_custom"] = (self.community.settings or {}).get("theme_custom", {})
-        s = self.community.settings or {}
-        ctx["identity"] = {
-            "patron": s.get("patron", ""),
-            "welcome_lines": "\n".join(s.get("welcome_lines", [])),
-            "signin_blurb": s.get("signin_blurb", ""),
-            "scene_choices": s.get("scene_choices", {}),
-        }
+        if "identity" not in ctx:
+            s = self.community.settings or {}
+            ctx["identity"] = {
+                "patron": s.get("patron", ""),
+                "welcome_lines": "\n".join(s.get("welcome_lines", [])),
+                "signin_blurb": s.get("signin_blurb", ""),
+                "scene_choices": s.get("scene_choices", {}),
+            }
         ctx["scene_slugs"] = SCENE_SLUGS
         if "form" not in ctx:
             ctx["form"] = CommunitySettingsForm(instance=self.community)
@@ -467,8 +468,21 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         if action == "set_identity":
             updates, errors = parse_identity_post(request.POST)
             if errors:
+                # Re-render with the typed words still in the fields — a
+                # redirect here costs the writer their prose (form-invalid
+                # branch's shape). Absent fields echo the saved values.
                 messages.error(request, " ".join(errors))
-                return redirect("community-settings", slug=self.community.slug)
+                saved = self.community.settings or {}
+                typed = {
+                    "patron": request.POST.get("patron", saved.get("patron", "")),
+                    "welcome_lines": request.POST.get("welcome_lines", "\n".join(saved.get("welcome_lines", []))),
+                    "signin_blurb": request.POST.get("signin_blurb", saved.get("signin_blurb", "")),
+                    "scene_choices": {
+                        surface: request.POST.get(f"scene_{surface}", (saved.get("scene_choices") or {}).get(surface))
+                        for surface in SCENE_SURFACES
+                    },
+                }
+                return self.render_to_response(self.get_context_data(identity=typed))
             scene_updates = updates.pop("scene_choices", None)
             changed = []
             # settings is a shared JSON blob with two writers (theme + identity):

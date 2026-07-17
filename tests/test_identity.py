@@ -105,6 +105,22 @@ class TestIdentityWrite:
             community.refresh_from_db()
             assert "patron" not in (community.settings or {}), overrides
 
+    def test_rejected_identity_write_keeps_the_typed_words_on_screen(self, world):
+        """Close-out follow-up: a validation error re-renders the settings page
+        with everything the writer typed still in the fields — the old shape
+        redirected and threw their prose away. Mirrors the form-invalid branch."""
+        community, admin, _, _ = world
+        client = _login(admin)
+        long_patron = "x" * 81
+        resp = client.post(_settings_url(community), _identity_payload(patron=long_patron))
+        assert resp.status_code == 200, "error must re-render, not redirect the input away"
+        body = resp.content.decode()
+        assert long_patron in body, "the typed patron line survives in its field"
+        assert "Bear one another&#x27;s burdens." in body, "untouched typed fields survive too"
+        assert "stays under 80" in body, "the warm error shows on the same page"
+        community.refresh_from_db()
+        assert "patron" not in (community.settings or {}), "nothing half-lands"
+
     def test_blank_clears_each_key(self, world):
         community, admin, _, _ = world
         client = _login(admin)

@@ -5,6 +5,10 @@
 
 ## 2026-07-17
 
+- **The Identity form no longer loses your words.** If something you typed in
+  Settings → Identity ran past a limit — a welcome line too long, one line too many —
+  the page used to show the warning but hand back an empty form. Now everything you
+  typed stays right where you left it, with the note about what to trim.
 - **Every screen passes the readability bar now.** The darker quiet-grey text reached the
   last six older screens — the landing page, the join page, the board's offer cards, and
   the match pages. The automated check that runs with the demo gallery now measures zero
