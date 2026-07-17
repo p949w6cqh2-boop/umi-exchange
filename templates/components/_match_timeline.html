@@ -8,7 +8,7 @@
       {% if match.status != 'proposed' %}<span class="umi-fade">&#10003;</span>{% endif %}
     </div>
     <p class="text-sm font-medium text-parish-ink">Proposed</p>
-    <p class="text-sm text-parish-ink/55">{{ match.proposed_by.display_name }} &middot; {{ match.proposed_at|date:"M j, Y g:i A" }}</p>
+    <p class="text-sm text-parish-ink/70">{{ match.proposed_by.display_name }} &middot; {{ match.proposed_at|date:"M j, Y g:i A" }}</p>
   </div>
 
   {# Step 2: Accepted #}
@@ -20,7 +20,7 @@
       {% if match.status == 'fulfilled' %}<span class="umi-fade">&#10003;</span>{% endif %}
     </div>
     <p class="text-sm font-medium text-parish-ink">Accepted</p>
-    {% if match.accepted_at %}<p class="text-sm text-parish-ink/55">{{ match.accepted_at|date:"M j, Y g:i A" }}</p>{% endif %}
+    {% if match.accepted_at %}<p class="text-sm text-parish-ink/70">{{ match.accepted_at|date:"M j, Y g:i A" }}</p>{% endif %}
   </div>
   {% elif match.status == 'proposed' %}
   <div class="relative" role="listitem">
@@ -34,7 +34,7 @@
   <div class="relative" role="listitem">
     <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs"><span class="umi-fade">&#10003;</span></div>
     <p class="text-sm font-medium text-parish-ink">Fulfilled</p>
-    {% if match.fulfilled_at %}<p class="text-sm text-parish-ink/55">{{ match.fulfilled_at|date:"M j, Y g:i A" }}</p>{% endif %}
+    {% if match.fulfilled_at %}<p class="text-sm text-parish-ink/70">{{ match.fulfilled_at|date:"M j, Y g:i A" }}</p>{% endif %}
     {% if match.notes %}<p class="text-sm text-parish-ink/70 mt-1">{{ match.notes|linebreaksbr }}</p>{% endif %}
   </div>
   {% elif match.status in 'accepted,proposed' %}
@@ -49,12 +49,12 @@
   <div class="relative" role="listitem">
     <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">&#10007;</div>
     <p class="text-sm font-medium text-red-700">Cancelled</p>
-    <p class="text-sm text-parish-ink/55">{{ match.cancelled_at|date:"M j, Y g:i A" }}</p>
+    <p class="text-sm text-parish-ink/70">{{ match.cancelled_at|date:"M j, Y g:i A" }}</p>
   </div>
   {% elif match.status == 'expired' %}
   <div class="relative" role="listitem">
-    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-parish-soft text-parish-ink/50 flex items-center justify-center text-xs">&#8856;</div>
-    <p class="text-sm text-parish-ink/55">Expired</p>
+    <div class="absolute -left-[21px] w-6 h-6 rounded-full bg-parish-soft text-parish-ink/70 flex items-center justify-center text-xs">&#8856;</div>
+    <p class="text-sm text-parish-ink/70">Expired</p>
   </div>
   {% endif %}
 </div>

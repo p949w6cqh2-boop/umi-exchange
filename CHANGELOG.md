@@ -5,6 +5,11 @@
 
 ## 2026-07-17
 
+- **Every screen passes the readability bar now.** The darker quiet-grey text reached the
+  last six older screens — the landing page, the join page, the board's offer cards, and
+  the match pages. The automated check that runs with the demo gallery now measures zero
+  accessibility violations across all nineteen screens it audits, and a test keeps the
+  too-faint tints from coming back.
 - **Easier to read, for everyone.** The quiet grey text across the newer screens is a
   shade darker now — enough that tired eyes and bright sunlight don't lose it. The
   filters on the board finally introduce themselves to screen readers, and the labels

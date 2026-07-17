@@ -3,9 +3,9 @@
 {% block title %}Record a visit · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-xl mx-auto px-4 py-6">
-  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/60 hover:underline">&larr; Case files</a>
+  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/70 hover:underline">&larr; Case files</a>
   <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mt-2 mb-1">Record a visit</h1>
-  <p class="text-sm text-parish-ink/55 mb-4">Three minutes, tops. Works offline. Drafts queue on your
+  <p class="text-sm text-parish-ink/70 mb-4">Three minutes, tops. Works offline. Drafts queue on your
     phone (codes only, no names) and sync when you're back in signal.</p>
 
   {% if saved %}
@@ -34,18 +34,18 @@
       {{ form.case }} {{ form.case.errors }}
     </div>
     <div class="grid grid-cols-2 gap-3 text-sm">
-      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Kind</label>{{ form.kind }}</div>
-      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">When</label>{{ form.occurred_at }}</div>
-      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Minutes</label>{{ form.duration_minutes }}</div>
-      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Where</label>{{ form.location_kind }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Kind</label>{{ form.kind }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">When</label>{{ form.occurred_at }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Minutes</label>{{ form.duration_minutes }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Where</label>{{ form.location_kind }}</div>
     </div>
     <div>
       <span class="umi-label">Quick actions: tap what you did</span>
       <div class="flex flex-wrap gap-2 text-sm">{{ form.actions }}</div>
     </div>
     <div class="grid grid-cols-2 gap-3 text-sm">
-      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Aid value ($)</label>{{ form.aid_amount }}</div>
-      <div><label class="block text-xs font-medium text-parish-ink/55 mb-1">Co-visitor</label>{{ form.co_visitor }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Aid value ($)</label>{{ form.aid_amount }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Co-visitor</label>{{ form.co_visitor }}</div>
     </div>
     <div>
       <label class="umi-label">Notes (encrypted at rest)</label>
@@ -57,7 +57,7 @@
       <button type="submit" name="finalize" value="1"
               class="flex-1 px-4 py-3 bg-parish-ink text-white rounded-lg font-semibold hover:bg-parish-ink/90">Save &amp; finalize</button>
     </div>
-    <noscript><p class="text-xs text-parish-ink/45">Offline queueing needs JavaScript; with it off,
+    <noscript><p class="text-xs text-parish-ink/70">Offline queueing needs JavaScript; with it off,
       this form still saves normally while you're online.</p></noscript>
   </form>
 </div>

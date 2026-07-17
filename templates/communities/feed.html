@@ -9,7 +9,7 @@
     <h1 class="umi-display mt-2">The board</h1>
     {% if week_stats %}
     <a href="{% url 'hub:community' community.slug %}"
-       class="inline-flex items-center gap-2 mt-3 text-sm text-parish-ink/60 hover:text-umi-primary transition-colors duration-300 focus-ring rounded-lg">
+       class="inline-flex items-center gap-2 mt-3 text-sm text-parish-ink/70 hover:text-umi-primary transition-colors duration-300 focus-ring rounded-lg">
       <span class="w-1.5 h-1.5 rounded-full bg-[var(--umi-primary)] animate-pulse" aria-hidden="true"></span>
       <span class="tabular">{{ week_stats.asks_answered }}</span> answered &middot;
       <span class="tabular">{{ week_stats.hands_raised }}</span> hands raised this week

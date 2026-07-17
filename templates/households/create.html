@@ -4,13 +4,13 @@
 <div class="max-w-md mx-auto mt-8">
   <div class="umi-card">
     <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-4">Create a household</h1>
-    <p class="text-sm text-parish-ink/60 mb-6">Parishes think in families, not individuals.
+    <p class="text-sm text-parish-ink/70 mb-6">Parishes think in families, not individuals.
       A household groups yours under one roof, so coordinators can see and serve the whole
       family as one. You'll get a private code to share with your family.</p>
     <form method="post" class="space-y-4">
       {% csrf_token %}
       <div>
-        <label for="id_name" class="umi-label">Household name <span class="text-parish-ink/45">(optional)</span></label>
+        <label for="id_name" class="umi-label">Household name <span class="text-parish-ink/70">(optional)</span></label>
         {{ form.name }}
       </div>
       <button type="submit" class="w-full btn-primary">Create Household</button>

@@ -20,21 +20,21 @@
   {% if grouped %}
     {% for category, items in grouped.items %}
     <section aria-label="{{ category }}">
-      <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">{{ category }}</h2>
+      <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-3">{{ category }}</h2>
       <ul class="umi-card divide-y divide-[var(--umi-border)]">
         {% for r in items %}
         <li class="px-4 sm:px-5 py-4 flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">
             <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer"
                class="font-medium text-[var(--umi-primary)] hover:underline break-words">{{ r.title }}</a>
-            {% if r.blurb %}<p class="text-sm text-parish-ink/60 mt-1 max-w-prose">{{ r.blurb }}</p>{% endif %}
+            {% if r.blurb %}<p class="text-sm text-parish-ink/70 mt-1 max-w-prose">{{ r.blurb }}</p>{% endif %}
           </div>
           {% if member.is_coordinator %}
           <form method="post" class="shrink-0">
             {% csrf_token %}
             <input type="hidden" name="action" value="archive">
             <input type="hidden" name="resource_id" value="{{ r.pk }}">
-            <button class="text-sm text-parish-ink/50 hover:text-parish-ink min-h-[40px] px-2 focus-ring rounded-lg"
+            <button class="text-sm text-parish-ink/70 hover:text-parish-ink min-h-[40px] px-2 focus-ring rounded-lg"
                     title="Archive. Reversible; nothing is deleted.">Archive</button>
           </form>
           {% endif %}
@@ -47,7 +47,7 @@
     <div class="max-w-sm mx-auto py-10 text-center">
       <div class="umi-plate p-2 mb-6">{% include "illustrations/_carrying.html" with class="w-full h-auto" %}</div>
       <p class="font-serif text-xl text-parish-ink/75">Nothing gathered yet.</p>
-      <p class="text-sm text-parish-ink/60 mt-2">{% if member.is_coordinator %}Add the first place a neighbour in a hard week should know about.{% else %}Your coordinators are gathering trusted places to turn to. Check back soon.{% endif %}</p>
+      <p class="text-sm text-parish-ink/70 mt-2">{% if member.is_coordinator %}Add the first place a neighbour in a hard week should know about.{% else %}Your coordinators are gathering trusted places to turn to. Check back soon.{% endif %}</p>
     </div>
   {% endif %}
 
@@ -77,7 +77,7 @@
         </select>
       </div>
       <div>
-        <label for="id_res_blurb" class="umi-label">One helpful line <span class="text-parish-ink/45">(optional)</span></label>
+        <label for="id_res_blurb" class="umi-label">One helpful line <span class="text-parish-ink/70">(optional)</span></label>
         <input id="id_res_blurb" name="blurb" maxlength="280"
                class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]"
                placeholder="Free consults on Tuesdays; ask for the intake desk.">

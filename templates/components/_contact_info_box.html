@@ -11,25 +11,25 @@
     {% if contact_info.parties %}
       {% for party in contact_info.parties %}
         <p class="text-base text-parish-ink font-medium {% if not forloop.first %}mt-3{% endif %}">{{ party.display_name }}</p>
-        {% if party.email %}<p class="text-sm text-parish-ink/60 mt-1">Email: {{ party.email }}</p>{% endif %}
-        {% if party.phone %}<p class="text-sm text-parish-ink/60 mt-1">Phone: {{ party.phone }}</p>{% endif %}
-        {% if not party.email and not party.phone %}<p class="text-sm text-parish-ink/60 mt-1">Prefers to arrange things through the community. A coordinator can pass a message.</p>{% endif %}
+        {% if party.email %}<p class="text-sm text-parish-ink/70 mt-1">Email: {{ party.email }}</p>{% endif %}
+        {% if party.phone %}<p class="text-sm text-parish-ink/70 mt-1">Phone: {{ party.phone }}</p>{% endif %}
+        {% if not party.email and not party.phone %}<p class="text-sm text-parish-ink/70 mt-1">Prefers to arrange things through the community. A coordinator can pass a message.</p>{% endif %}
       {% endfor %}
     {% else %}
       <p class="text-base text-parish-ink font-medium">{{ contact_info.display_name }}</p>
-      {% if contact_info.email %}<p class="text-sm text-parish-ink/60 mt-1">Email: {{ contact_info.email }}</p>{% endif %}
-      {% if contact_info.phone %}<p class="text-sm text-parish-ink/60 mt-1">Phone: {{ contact_info.phone }}</p>{% endif %}
+      {% if contact_info.email %}<p class="text-sm text-parish-ink/70 mt-1">Email: {{ contact_info.email }}</p>{% endif %}
+      {% if contact_info.phone %}<p class="text-sm text-parish-ink/70 mt-1">Phone: {{ contact_info.phone }}</p>{% endif %}
       {% if not contact_info.email and not contact_info.phone %}
-      <p class="text-sm text-parish-ink/60 mt-1">They prefer to arrange things through the community. A coordinator can pass a message along.</p>
+      <p class="text-sm text-parish-ink/70 mt-1">They prefer to arrange things through the community. A coordinator can pass a message along.</p>
       {% endif %}
     {% endif %}
-    <p class="text-xs text-emerald-800/70 mt-3">Reach out kindly and arrange the rest together.</p>
+    <p class="text-xs text-emerald-800 mt-3">Reach out kindly and arrange the rest together.</p>
   </div>
 {% else %}
   <div class="bg-parish-soft border border-parish-border rounded-lg p-4 mt-4 flex items-center gap-3">
     <svg class="w-5 h-5 text-parish-ink/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
     </svg>
-    <span class="text-sm text-parish-ink/60">Contact info will appear here after this match is accepted.</span>
+    <span class="text-sm text-parish-ink/70">Contact info will appear here after this match is accepted.</span>
   </div>
 {% endif %}

@@ -2,7 +2,7 @@
 {% block title %}Open a case · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-6">
-  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/60 hover:underline">&larr; Case files</a>
+  <a href="{% url 'casework:list' slug=community.slug %}" class="text-sm text-parish-ink/70 hover:underline">&larr; Case files</a>
   <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mt-2 mb-4">Open a case</h1>
 
   {% if form.non_field_errors %}
@@ -22,7 +22,7 @@
         <div><label class="umi-label">{{ form.new_person_contact.label }}</label>
           {{ form.new_person_contact }} {{ form.new_person_contact.errors }}</div>
       </div>
-      <p class="text-xs text-parish-ink/45">Name and contact are encrypted at rest.</p>
+      <p class="text-xs text-parish-ink/70">Name and contact are encrypted at rest.</p>
     </section>
 
     <section class="bg-white border border-[var(--umi-border)] rounded-lg p-4 space-y-3">

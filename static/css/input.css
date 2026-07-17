@@ -30,6 +30,7 @@
   --umi-primary-hover: #1c4739;
   --umi-primary-soft: #e8efe9;   /* whisper of the accent for tints */
   --umi-accent: #9c7a3c;         /* muted bronze — offers only, never decoration */
+  --umi-accent-ink: #7a5f2e;     /* bronze legible as TEXT (AA on white/stone); surfaces keep --umi-accent */
   --umi-bg: #f6f4ee;             /* warm stone paper */
   --umi-bg-soft: #edeae2;        /* deeper stone (wells, shells) */
   --umi-card: #ffffff;           /* true white — real elevation on stone */

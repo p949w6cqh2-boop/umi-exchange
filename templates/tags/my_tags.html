@@ -7,13 +7,13 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="font-serif text-2xl text-parish-ink">My tags</h1>
-      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }}</p>
+      <p class="text-sm text-parish-ink/70 mt-0.5">{{ community.name }}</p>
     </div>
     <a href="{% url 'community-feed' community.slug %}"
        class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
   </div>
 
-  <p class="text-sm text-parish-ink/60">
+  <p class="text-sm text-parish-ink/70">
     Tags tell your neighbours what you can do: <em>Driver</em>, <em>Cook</em>,
     <em>Nurse</em>. A grey tag is self-reported; a green one means a
     coordinator confirmed it. Only verified tags ever appear beside your name
@@ -38,7 +38,7 @@
             <span class="font-medium text-parish-ink">{{ mt.tag.label }}</span>
             {% include "tags/_badge.html" with mt=mt %}
           </div>
-          <p class="text-xs text-parish-ink/50 mt-1 capitalize">
+          <p class="text-xs text-parish-ink/70 mt-1 capitalize">
             {{ mt.tag.get_category_display }}
             &middot;
             {% if mt.status == "verified" %}
@@ -73,7 +73,7 @@
                 {% csrf_token %}
                 <div class="mb-3">
                   {{ request_verify_form.evidence_note }}
-                  <p class="text-xs text-parish-ink/50 mt-1">No personal details needed. A coordinator confirms independently.</p>
+                  <p class="text-xs text-parish-ink/70 mt-1">No personal details needed. A coordinator confirms independently.</p>
                 </div>
                 <button type="submit" class="btn-primary w-full text-sm py-2">Submit request</button>
               </form>
@@ -123,7 +123,7 @@
     </div>
   </section>
   {% else %}
-  <div class="umi-card p-8 text-center text-parish-ink/50">
+  <div class="umi-card p-8 text-center text-parish-ink/70">
     <p class="text-base">You haven't added any tags yet.</p>
     <p class="text-sm mt-1">Tags let the community know your role, skills, and background.</p>
   </div>
@@ -156,7 +156,7 @@
             <div>
               <label for="{{ claim_form.visibility.id_for_label }}" class="block text-sm font-medium text-parish-ink mb-1">Visibility</label>
               {{ claim_form.visibility }}
-              <p class="text-xs text-parish-ink/50 mt-1">"All community members" = any signed-in member. Logged-out visitors never see tags.</p>
+              <p class="text-xs text-parish-ink/70 mt-1">"All community members" = any signed-in member. Logged-out visitors never see tags.</p>
             </div>
             <button type="submit" class="btn-primary text-sm py-2.5 px-5">Add tag</button>
           </div>

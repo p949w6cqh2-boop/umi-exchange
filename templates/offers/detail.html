@@ -2,7 +2,7 @@
 {% block title %}{{ offer.title }} · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto">
-  <a href="{% url 'community-feed' community.slug %}" class="inline-flex items-center gap-1.5 text-sm font-medium text-parish-ink/60 hover:text-parish-ink transition-colors">&larr; Back to the board</a>
+  <a href="{% url 'community-feed' community.slug %}" class="inline-flex items-center gap-1.5 text-sm font-medium text-parish-ink/70 hover:text-parish-ink transition-colors">&larr; Back to the board</a>
 
   {# The notice, pinned to the board — bronze edge for an offer #}
   <div class="umi-shell mt-4 umi-rise">
@@ -15,7 +15,7 @@
         <span class="umi-pill">{{ offer.get_status_display }}</span>
       </div>
       <h1 class="font-serif text-3xl font-semibold tracking-tight text-parish-ink mt-4">{{ offer.title }}</h1>
-      <p class="text-sm text-parish-ink/55 mt-2.5">{{ offer.offerer.display_name }}{% include "tags/_badges_inline.html" with badges=poster_badges %} &middot; {{ offer.created_at|timesince }} ago</p>
+      <p class="text-sm text-parish-ink/70 mt-2.5">{{ offer.offerer.display_name }}{% include "tags/_badges_inline.html" with badges=poster_badges %} &middot; {{ offer.created_at|timesince }} ago</p>
       {% if offer.description %}<p class="text-base text-parish-ink/80 leading-relaxed mt-5 umi-measure">{{ offer.description }}</p>{% endif %}
       {% if is_own_offer or member.role == 'admin' or member.role == 'coordinator' %}
       <div class="mt-5 pt-4 border-t border-[var(--umi-border)] flex justify-end">
@@ -41,7 +41,7 @@
       <div class="umi-card umi-need-card !p-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
           <h3 class="text-base font-serif font-semibold text-parish-ink truncate">{{ need.title }}</h3>
-          <p class="text-sm text-parish-ink/55 mt-0.5">{{ need.requester.display_name }} &middot; {{ need.get_urgency_display }}</p>
+          <p class="text-sm text-parish-ink/70 mt-0.5">{{ need.requester.display_name }} &middot; {{ need.get_urgency_display }}</p>
         </div>
         {% if is_own_offer %}
         <form method="post" action="{% url 'match-propose' community.slug %}">
@@ -53,7 +53,7 @@
         {% endif %}
       </div>
       {% empty %}
-      <p class="text-sm text-parish-ink/55">No open needs in this category yet.</p>
+      <p class="text-sm text-parish-ink/70">No open needs in this category yet.</p>
       {% endfor %}
     </div>
   </div>

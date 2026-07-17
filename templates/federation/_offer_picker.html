@@ -12,7 +12,7 @@
              class="accent-[var(--umi-primary)] w-4 h-4" {% if forloop.first %}checked{% endif %}>
       <span class="flex-1">
         <span class="block text-base font-medium text-parish-ink">{{ offer.title }}</span>
-        <span class="block text-xs text-parish-ink/60 mt-0.5">{{ offer.category.icon }} {{ offer.category.name }}</span>
+        <span class="block text-xs text-parish-ink/70 mt-0.5">{{ offer.category.icon }} {{ offer.category.name }}</span>
       </span>
     </label>
     {% endfor %}
@@ -23,7 +23,7 @@
             onclick="this.closest('[id^=picker-]').innerHTML=''"
             aria-label="Close the offer picker">Not now</button>
   </div>
-  <p class="text-xs text-parish-ink/55">
+  <p class="text-xs text-parish-ink/70">
     They'll see your offer's title and category. Nothing else crosses until a match is accepted.
   </p>
 </form>

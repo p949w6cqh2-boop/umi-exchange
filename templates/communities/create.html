@@ -9,7 +9,7 @@
       </div>
       <span class="umi-kicker">Two minutes, honestly</span>
       <h1 class="umi-display !text-3xl mt-2">Start a community</h1>
-      <p class="text-sm text-parish-ink/60 mt-3 mb-7">
+      <p class="text-sm text-parish-ink/70 mt-3 mb-7">
         You'll be its first admin, and you'll get an invite code to hand out.
         Colours and settings can change any time.
       </p>
@@ -19,13 +19,13 @@
         <div>
           <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}</label>
           {{ field }}
-          {% if field.help_text %}<p class="text-xs text-parish-ink/50 mt-1.5">{{ field.help_text }}</p>{% endif %}
+          {% if field.help_text %}<p class="text-xs text-parish-ink/70 mt-1.5">{{ field.help_text }}</p>{% endif %}
           {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
         </div>
         {% endfor %}
         <button type="submit" class="w-full btn-primary !mt-7">Create the community</button>
       </form>
-      <p class="text-sm text-parish-ink/55 mt-6 pt-5 border-t border-[var(--umi-border)] text-center">
+      <p class="text-sm text-parish-ink/70 mt-6 pt-5 border-t border-[var(--umi-border)] text-center">
         Have a code instead? <a href="{% url 'community-join' %}" class="font-semibold text-umi-primary hover:text-umi-primary-hover">Join a community</a>
       </p>
     </div>

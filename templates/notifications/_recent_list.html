@@ -3,11 +3,11 @@
 <a href="{% if n.link %}{{ n.link }}{% else %}{% url 'notification-list' %}{% endif %}"
    class="block px-4 py-3 hover:bg-parish-soft transition-colors border-b border-[var(--umi-border)] last:border-0 {% if not n.is_read %}bg-[#E8F2F1]/60{% endif %}">
   <p class="text-sm font-medium text-parish-ink truncate">{{ n.title }}</p>
-  <p class="text-xs text-parish-ink/55 mt-0.5 truncate">{{ n.body }}</p>
-  <span class="text-xs text-parish-ink/45">{{ n.created_at|timesince }} ago</span>
+  <p class="text-xs text-parish-ink/70 mt-0.5 truncate">{{ n.body }}</p>
+  <span class="text-xs text-parish-ink/70">{{ n.created_at|timesince }} ago</span>
 </a>
 {% empty %}
-<p class="p-4 text-sm text-parish-ink/55 text-center">No notifications yet.</p>
+<p class="p-4 text-sm text-parish-ink/70 text-center">No notifications yet.</p>
 {% endfor %}
 {% if notifications %}
 <a href="{% url 'notification-list' %}" class="block text-center text-xs text-umi-primary hover:text-umi-primary-hover py-2 border-t border-[var(--umi-border)]">View all notifications</a>
