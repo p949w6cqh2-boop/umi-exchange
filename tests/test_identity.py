@@ -91,6 +91,21 @@ class TestIdentityWrite:
         community.refresh_from_db()
         assert "patron" not in (community.settings or {})
 
+    def test_error_rerenders_with_the_typed_words_kept(self, world):
+        # The founder's queued follow-up: a validation error must not discard
+        # what the admin typed — re-render the form with their words in it.
+        community, admin, _, _ = world
+        resp = _login(admin).post(
+            _settings_url(community),
+            _identity_payload(patron="x" * 81, welcome_lines="The kettle is always on."),
+        )
+        assert resp.status_code == 200  # re-rendered, not redirected away
+        body = resp.content.decode()
+        assert "x" * 81 in body  # the over-long patron, still there to shorten
+        assert "The kettle is always on." in body  # the good lines, not retyped
+        community.refresh_from_db()
+        assert "patron" not in (community.settings or {})  # still nothing half-landed
+
     def test_lengths_enforced_warmly(self, world):
         community, admin, _, _ = world
         client = _login(admin)
