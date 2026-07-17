@@ -217,7 +217,9 @@ class Command(BaseCommand):
 
         community, _ = Community.objects.get_or_create(
             slug=DEMO_SLUG,
-            defaults={"name": "St. Brigid's", "created_by": users["marta"]},
+            # Public: the demo's front door (§I pre-auth landing) must render
+            # for a signed-out visitor — that's the screen that shows it.
+            defaults={"name": "St. Brigid's", "created_by": users["marta"], "visibility": "public"},
         )
 
         members = {}

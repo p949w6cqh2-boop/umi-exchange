@@ -334,6 +334,7 @@ class TestSeedIdentity:
         call_command("seed_demo_parish", verbosity=0)
         call_command("seed_demo_parish", verbosity=0)  # idempotent
         community = Community.objects.get(slug="st-brigids")
+        assert community.visibility == "public"  # the demo front door renders for visitors
         assert community.settings.get("patron") == "St. Brigid"
         lines = community.settings.get("welcome_lines", [])
         assert any("Bear one another" in line for line in lines)  # Gal 6:2 on the hub

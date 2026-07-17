@@ -470,3 +470,43 @@ greeting, content varies by day). S2/S3 merged to main on his keys (S3 via PR #7
 superseding auto-closed #76); the Stage-8 CLOSE-OUT (full styling pass, axe WCAG-AA,
 gallery re-shoot DEBUG-off, walkthrough update) runs after S4 and ends at his
 ✋ FINAL STOP on the completed pipeline doc + gallery.
+
+---
+
+# THE CLOSE-OUT (2026-07-17) — ✋ FINAL STOP: the pipeline ends on the founder's closing key
+
+Every stage above is keyed; every slice is merged (S0 `00021b2` · S1 via PR #73 · S2 via
+PR #75 · S3 via PR #77 · S4 via PR #78 — each on the founder's explicit key, CI green
+before each merge). What the close-out did:
+
+1. **Styling pass.** The built surfaces already carried the Wellspring finals' structure;
+   the pass tightened what a live axe audit could measure: the Identity fields adopted the
+   design system's `.umi-input` (44px touch targets), the manager dropped a row-opacity
+   trick that crushed contrast, and the muted small-text family on every Layer C surface,
+   the hub, the footer, and /protocol/ moved to 70% ink — 60% composites to 4.2:1 on
+   stone, under AA's 4.5:1. Bottom-nav labels went from a 52% to a 66% mix for the same
+   reason. Bronze stays offer-coding only; no keyed print or composition changed.
+2. **axe WCAG-AA, automated and repeatable.** `docs/demo/shoot-demo.mjs` (playwright +
+   axe-core, both pinned dev-deps) audits nineteen screens seeded at DEBUG=0 and writes
+   `docs/demo/axe-report.json`. **Layer C surfaces, the hub, settings, the moderation
+   queue, and /protocol/: zero violations.** Six violations remain on pre-existing
+   screens (landing, join, board, need-detail, two match pages) — all `color-contrast`
+   in the old muted tints; raising those tokens re-tints the keyed Wellspring look
+   app-wide, so it is named here as the founder's call, not defaulted.
+3. **The gallery, re-shot.** Eleven 390px screens (was eight), captured live at DEBUG=0
+   from the seeded parish: the original golden path now shows the hub wearing the
+   identity (rotating line, "Your community" card), plus three new moments — the front
+   door a visitor sees, a page in the parish's own words, and the footer landing on the
+   instance's own /protocol/. `docs/demo-walkthrough.md` carries all eleven with the
+   demo script; St. Brigid's being St. Brigid's.
+4. **Demo canon note.** The build order said "St. Patrick's seed"; the demo parish
+   remains the fictional **St. Brigid's** — St. Patrick is the real parish and the
+   keyring keeps real-parish specifics out of git. The rename is the founder's explicit
+   call if ever wanted. The seeded community is public so the front door renders.
+
+Open at this stop: the six pre-existing contrast spots above; the settings error-redirect
+discarding typed input (all settings actions share the shape); PR #71 (person blind
+index) held for its owning loop.
+
+**This document + the walkthrough gallery are the deliverable. The pipeline ends only on
+the founder's closing key. ✋**

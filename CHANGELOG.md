@@ -5,6 +5,14 @@
 
 ## 2026-07-17
 
+- **Easier to read, for everyone.** The quiet grey text across the newer screens is a
+  shade darker now — enough that tired eyes and bright sunlight don't lose it. The
+  filters on the board finally introduce themselves to screen readers, and the labels
+  on the bottom bar are clearer too. An automated accessibility check now runs with
+  every demo gallery, so this doesn't quietly slip back.
+- **The demo walkthrough grew three screens.** What a visitor sees at a community's
+  front door, a page in the parish's own words, and the protocol page every footer
+  points home to.
 - **The board wears your community's own face.** Settings gains an Identity section:
   your patron, your welcome lines, your sign-in blurb, and which of the board's scenes
   greet people on the hub and the front door. Blank keeps the warm default — nothing

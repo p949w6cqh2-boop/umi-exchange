@@ -2,7 +2,7 @@
 {% block title %}{{ page.title }} · {{ community.name }}{% endblock %}
 {% block content %}
 <article class="max-w-3xl mx-auto py-8">
-  <p class="text-sm"><a href="{% url 'pages:index' community.slug %}" class="text-parish-ink/60 hover:text-parish-ink transition-colors">&larr; All pages</a></p>
+  <p class="text-sm"><a href="{% url 'pages:index' community.slug %}" class="text-parish-ink/70 hover:text-parish-ink transition-colors">&larr; All pages</a></p>
 
   {% if page.status == 'draft' %}
   <div class="umi-card !p-4 mt-4 border-amber-300 bg-amber-50 text-sm text-amber-900">
@@ -22,7 +22,7 @@
   <header class="mt-6">
     <span class="umi-kicker">{{ community.name }}</span>
     <h1 class="font-serif text-3xl md:text-4xl font-semibold tracking-tight text-parish-ink mt-1.5">{{ page.title }}</h1>
-    <p class="text-sm text-parish-ink/55 mt-2">Written by the coordinators of {{ community.name }}</p>
+    <p class="text-sm text-parish-ink/70 mt-2">Written by the coordinators of {{ community.name }}</p>
   </header>
 
   <div class="page-prose mt-8">{{ page.content_html|safe }}</div>

@@ -2,7 +2,7 @@
 {% block title %}{% if page %}{{ page.title }}{% else %}New page{% endif %} · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto py-8">
-  <p class="text-sm"><a href="{% url 'pages:manage' community.slug %}" class="text-parish-ink/60 hover:text-parish-ink transition-colors">← Your pages</a></p>
+  <p class="text-sm"><a href="{% url 'pages:manage' community.slug %}" class="text-parish-ink/70 hover:text-parish-ink transition-colors">← Your pages</a></p>
 
   {% if page and page.status == 'published' %}
   <div class="mt-4 rounded-xl border border-parish-border bg-parish-soft px-4 py-3 text-sm text-parish-ink/80">
@@ -33,7 +33,7 @@
     <input type="text" name="slug" id="id_slug" maxlength="80" value="{{ form.slug.value|default:'' }}"
            class="mt-1.5 w-full rounded-lg border border-parish-border px-3 py-2.5 text-parish-ink"
            {% if form.fields.slug.disabled or page and page.status != 'draft' %}disabled{% endif %}>
-    <p class="text-xs text-parish-ink/45 mt-1.5">
+    <p class="text-xs text-parish-ink/70 mt-1.5">
       Link: /c/{{ community.slug }}/p/{{ form.slug.value|default:"…" }}.
       {% if form.fields.slug.disabled %}Links are promises: this one froze at first publish.{% else %}You can change it until first publish.{% endif %}
     </p>
@@ -50,14 +50,14 @@
       </label>
     </div>
     {% if community.visibility == 'private' %}
-    <p class="text-xs text-parish-ink/45 mt-1.5">Your community is private, so this stays members-only.</p>
+    <p class="text-xs text-parish-ink/70 mt-1.5">Your community is private, so this stays members-only.</p>
     {% endif %}
 
     <label class="block text-sm font-semibold text-parish-ink mt-4" for="id_content_md">Body (markdown)</label>
     <textarea name="content_md" id="id_content_md" rows="14"
               class="mt-1.5 w-full rounded-lg border border-parish-border px-3 py-2.5 font-mono text-sm text-parish-ink"
               {% if page and page.status != 'draft' %}disabled{% endif %}>{{ form.content_md.value|default:'' }}</textarea>
-    <p class="text-xs text-parish-ink/45 mt-1.5">Up to 20,000 characters. Images become links when the page renders. The words carry the page.</p>
+    <p class="text-xs text-parish-ink/70 mt-1.5">Up to 20,000 characters. Images become links when the page renders. The words carry the page.</p>
 
     {% if not page or page.status == 'draft' %}
     <div class="flex items-center gap-3 mt-5">
@@ -73,7 +73,7 @@
 
   {% if page %}
   <div class="umi-card mt-4">
-    <p class="text-xs font-bold uppercase tracking-wider text-parish-ink/50">Only admins publish</p>
+    <p class="text-xs font-bold uppercase tracking-wider text-parish-ink/70">Only admins publish</p>
     {% if member.role == 'admin' %}
     <div class="flex flex-wrap items-center gap-3 mt-3">
       {% if page.status == 'draft' %}
@@ -93,9 +93,9 @@
       <form method="post" action="{% url 'pages:toggle-landing' community.slug page.pk %}">{% csrf_token %}
         <button type="submit" class="btn-secondary text-sm">{% if page.show_on_landing %}Take off landing{% else %}Show on landing{% endif %}</button></form>
     </div>
-    <p class="text-xs text-parish-ink/45 mt-3">Publishing signs this page in the community's name.</p>
+    <p class="text-xs text-parish-ink/70 mt-3">Publishing signs this page in the community's name.</p>
     {% else %}
-    <p class="text-sm text-parish-ink/60 mt-2">
+    <p class="text-sm text-parish-ink/70 mt-2">
       {% if page.status == 'draft' %}Your draft is saved. It's waiting on an admin to publish it.
       {% elif page.status == 'archived' %}
       <form method="post" action="{% url 'pages:restore' community.slug page.pk %}" class="inline">{% csrf_token %}
