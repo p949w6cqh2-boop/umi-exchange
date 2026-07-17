@@ -3,6 +3,22 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-17
+
+- **The board wears your community's own face.** Settings gains an Identity section:
+  your patron, your welcome lines, your sign-in blurb, and which of the board's scenes
+  greet people on the hub and the front door. Blank keeps the warm default — nothing
+  needs filling in for the board to feel finished.
+- **The hub greets with your words, and they turn over daily.** Write up to ten welcome
+  lines and the greeting under a member's name rotates through them, one per day — the
+  same line for everyone all day. Only words your coordinators wrote ever appear.
+- **The hub carries your pages.** A quiet "Your community" card shows the first few
+  pages with a door to the rest. Belong to two communities? Each hub wears its own
+  face, whole.
+- **The demo parish tells its story.** St. Brigid's now seeds with its patron, its
+  welcome lines, and four pages — the story on the front door, Mass times live, a
+  ministries draft, and an old bulletin put away.
+
 ## 2026-07-16
 
 - **Community pages are on the board.** The pages your coordinators write now show up:

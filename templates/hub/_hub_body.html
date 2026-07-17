@@ -21,11 +21,14 @@
 
   <header class="relative flex flex-wrap items-end justify-between gap-4 overflow-hidden">
     <div class="umi-scene-wash text-parish-ink" aria-hidden="true">
-      {% include "illustrations/_well.html" %}
+      {% include hub_scene %}
     </div>
     <div class="relative">
       <span class="umi-kicker">{{ community.name }}</span>
       <h1 id="hub-heading" class="umi-h1 mt-1.5">Welcome back, {{ member.display_name.split.0 }}.</h1>
+      {% if welcome_line %}
+      <p class="text-sm text-parish-ink/60 mt-1.5">{{ welcome_line }}</p>
+      {% endif %}
       {% if season_impact %}
       <p class="text-sm text-parish-ink/60 mt-2">
         Through you this season: <span class="font-semibold text-umi-primary tabular">{{ season_impact }}</span>
@@ -50,6 +53,17 @@
   <div id="hub-spotlight" class="umi-rise" style="--rise-delay: 80ms">
     {% include "hub/_spotlight.html" %}
   </div>
+
+  {% if hub_pages %}
+  {# §J — the community's own pages, first four by the coordinators' order #}
+  <section class="umi-card umi-rise" style="--rise-delay: 120ms" aria-labelledby="hub-pages-h">
+    <p class="umi-kicker" id="hub-pages-h">Your community</p>
+    <p class="mt-2.5 text-sm text-parish-ink/80">
+      {% for page in hub_pages %}<a href="{% url 'pages:view' slug=community.slug page_slug=page.slug %}" class="font-medium text-umi-primary hover:underline">{{ page.title }}</a>{% if not forloop.last %} <span class="text-parish-ink/30">&middot;</span> {% endif %}{% endfor %}
+    </p>
+    <p class="mt-2.5"><a href="{% url 'pages:index' slug=community.slug %}" class="text-sm text-parish-ink/55 hover:text-parish-ink transition-colors">All pages &#9656;</a></p>
+  </section>
+  {% endif %}
 
   {# The living stream — refreshes itself every minute #}
   <section class="umi-card umi-rise" style="--rise-delay: 160ms" aria-labelledby="hub-pulse-h">

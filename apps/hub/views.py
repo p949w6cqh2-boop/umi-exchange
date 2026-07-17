@@ -62,10 +62,16 @@ class HubView(LoginRequiredMixin, TemplateView):
         ctx["cycle"] = 0
         ctx["season_impact"] = selectors.season_impact(self.member)
         ctx["week_stats"] = selectors.week_stats(self.community)
-        # §I nav anchor: the quick-actions row gains "Pages" once something is live.
+        # §I nav anchor + §J identity: the hub wears the community's own facts.
+        from apps.communities.identity import scene_template, welcome_line_for_today
         from apps.pages.models import CommunityPage
 
-        ctx["pages_live"] = CommunityPage.objects.member_visible(self.community).exists()
+        ctx["hub_pages"] = list(
+            CommunityPage.objects.member_visible(self.community).order_by("sort_order", "title")[:4]
+        )
+        ctx["pages_live"] = bool(ctx["hub_pages"])
+        ctx["welcome_line"] = welcome_line_for_today(self.community)
+        ctx["hub_scene"] = scene_template(self.community, "hub", default="well")
         return ctx
 
 

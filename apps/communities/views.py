@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.validators import URLValidator
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -22,6 +23,7 @@ from django.views.generic import CreateView, FormView, ListView, TemplateView
 
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
+from apps.communities.identity import SCENE_SLUGS, parse_identity_post
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -404,6 +406,14 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         ctx["role_choices"] = Member.ROLE_CHOICES
         ctx["current_theme"] = (self.community.settings or {}).get("theme", THEME_DEFAULT)
         ctx["theme_custom"] = (self.community.settings or {}).get("theme_custom", {})
+        s = self.community.settings or {}
+        ctx["identity"] = {
+            "patron": s.get("patron", ""),
+            "welcome_lines": "\n".join(s.get("welcome_lines", [])),
+            "signin_blurb": s.get("signin_blurb", ""),
+            "scene_choices": s.get("scene_choices", {}),
+        }
+        ctx["scene_slugs"] = SCENE_SLUGS
         if "form" not in ctx:
             ctx["form"] = CommunitySettingsForm(instance=self.community)
         return ctx
@@ -419,21 +429,25 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             return redirect("community-settings", slug=self.community.slug)
 
         if action == "set_theme":
-            settings = dict(self.community.settings or {})
             key = request.POST.get("theme", THEME_DEFAULT)
-            settings["theme"] = key if key in THEMES else THEME_DEFAULT
             # Optional custom overrides — only accept valid #RRGGBB hex.
             custom = {}
             for var in ("primary", "accent"):
                 val = (request.POST.get(f"custom_{var}") or "").strip()
                 if re.fullmatch(r"#[0-9A-Fa-f]{6}", val):
                     custom[var] = val
-            if custom:
-                settings["theme_custom"] = custom
-            else:
-                settings.pop("theme_custom", None)
+            # Same shared-blob rule as set_identity: mutate under the row lock.
+            with transaction.atomic():
+                community = Community.objects.select_for_update().get(pk=self.community.pk)
+                settings = dict(community.settings or {})
+                settings["theme"] = key if key in THEMES else THEME_DEFAULT
+                if custom:
+                    settings["theme_custom"] = custom
+                else:
+                    settings.pop("theme_custom", None)
+                community.settings = settings
+                community.save(update_fields=["settings"])
             self.community.settings = settings
-            self.community.save(update_fields=["settings"])
             emit(
                 "community.theme_set",
                 self.community,
@@ -448,6 +462,57 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             # which browsers normalize to a protocol-relative //evil.com).
             if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
                 return redirect(nxt)
+            return redirect("community-settings", slug=self.community.slug)
+
+        if action == "set_identity":
+            updates, errors = parse_identity_post(request.POST)
+            if errors:
+                messages.error(request, " ".join(errors))
+                return redirect("community-settings", slug=self.community.slug)
+            scene_updates = updates.pop("scene_choices", None)
+            changed = []
+            # settings is a shared JSON blob with two writers (theme + identity):
+            # read-modify-write under a row lock or concurrent saves clobber
+            # each other's keys (CLAUDE.md: contended writes use select_for_update).
+            with transaction.atomic():
+                community = Community.objects.select_for_update().get(pk=self.community.pk)
+                settings = dict(community.settings or {})
+                for key, value in updates.items():
+                    if value:
+                        if settings.get(key) != value:
+                            settings[key] = value
+                            changed.append(key)
+                    elif key in settings:
+                        # Blank clears the key — zero customization is today's warm default.
+                        settings.pop(key)
+                        changed.append(key)
+                if scene_updates is not None:
+                    scenes = dict(settings.get("scene_choices") or {})
+                    for surface, slug in scene_updates.items():
+                        if slug in SCENE_SLUGS:
+                            if scenes.get(surface) != slug:
+                                scenes[surface] = slug
+                                changed.append("scene_choices")
+                        elif slug == "" and surface in scenes:
+                            scenes.pop(surface)
+                            changed.append("scene_choices")
+                        # Unknown slug: silent no-op (resolve_theme posture).
+                    if scenes:
+                        settings["scene_choices"] = scenes
+                    else:
+                        settings.pop("scene_choices", None)
+                community.settings = settings
+                community.save(update_fields=["settings"])
+            self.community.settings = settings
+            emit(
+                "community.identity_set",
+                self.community,
+                user=request.user,
+                request=request,
+                # PII-free: the key names only, never the parish's words.
+                details={"keys": sorted(set(changed))},
+            )
+            messages.success(request, "Identity saved. The hub wears it now.")
             return redirect("community-settings", slug=self.community.slug)
 
         if action == "change_role":

@@ -109,6 +109,55 @@
     <p class="text-xs text-parish-ink/50 mt-2">Leave the custom colours untouched to use the preset exactly. Changes apply to everyone in this community.</p>
   </form>
 
+  {# Identity (§D) — the four small facts; pages carry the rest #}
+  <form method="post" class="umi-card">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="set_identity">
+    <h2 class="text-lg text-parish-ink">Identity</h2>
+    <p class="text-sm text-parish-ink/60 mt-1">The small facts the board wears — your patron, your welcome, your scenes. Blank keeps the warm default.</p>
+
+    <div class="mt-4 space-y-4">
+      <div>
+        <label for="id_patron" class="umi-label">Patron</label>
+        <input type="text" id="id_patron" name="patron" value="{{ identity.patron }}" maxlength="80"
+               class="umi-input" placeholder="St. Brigid">
+      </div>
+      <div>
+        <label for="id_welcome_lines" class="umi-label">Welcome lines</label>
+        <textarea id="id_welcome_lines" name="welcome_lines" rows="3" class="umi-input"
+                  placeholder="Bear one another's burdens.">{{ identity.welcome_lines }}</textarea>
+        <p class="text-xs text-parish-ink/50 mt-1">One line per row, up to 10 — the hub greeting rotates through them by the day. Your words; nothing rotates in that you didn't write.</p>
+      </div>
+      <div>
+        <label for="id_signin_blurb" class="umi-label">Sign-in blurb</label>
+        <textarea id="id_signin_blurb" name="signin_blurb" rows="2" maxlength="300" class="umi-input"
+                  placeholder="A parish board for asking and answering, quietly.">{{ identity.signin_blurb }}</textarea>
+        <p class="text-xs text-parish-ink/50 mt-1">Shown to neighbours on your public pages door{% if community.visibility == 'private' %} — your community is private, so nobody sees this yet{% endif %}.</p>
+      </div>
+      <div class="flex flex-wrap items-end gap-4">
+        <div>
+          <label for="id_scene_hub" class="block text-sm text-parish-ink/70 mb-1">Hub scene</label>
+          <select id="id_scene_hub" name="scene_hub" class="text-sm border border-[var(--umi-border)] rounded-lg px-3 py-2 bg-white min-h-[44px]">
+            <option value="">Warm default (the well)</option>
+            {% for slug in scene_slugs %}
+            <option value="{{ slug }}" {% if identity.scene_choices.hub == slug %}selected{% endif %}>{{ slug }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="id_scene_landing" class="block text-sm text-parish-ink/70 mb-1">Landing scene</label>
+          <select id="id_scene_landing" name="scene_landing" class="text-sm border border-[var(--umi-border)] rounded-lg px-3 py-2 bg-white min-h-[44px]">
+            <option value="">Warm default (none)</option>
+            {% for slug in scene_slugs %}
+            <option value="{{ slug }}" {% if identity.scene_choices.landing == slug %}selected{% endif %}>{{ slug }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-primary">Save identity</button>
+      </div>
+    </div>
+  </form>
+
   {# Members #}
   <div class="umi-card">
     <h2 class="font-serif text-lg font-semibold text-parish-ink">Members ({{ members.count }})</h2>

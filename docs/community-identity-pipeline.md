@@ -439,7 +439,7 @@ deploy-workflow gating ruled the same day → PR #74.)
 
 ---
 
-# STAGE 8 — THE FINAL PASS ✋ AWAITING KEY
+# ✋ STAGE 8 — KEYED (Jasiah, 2026-07-17) — the final pass
 
 The Wellspring on the Commons geometry: `docs/wireframes/identity/final/` — nine screens
 (01 shipped real in S1, not flagged for revisit), evergreen/bronze/stone/espresso, the
@@ -460,3 +460,13 @@ as the hub default — final shows the real well print and says so.
 
 Layer C slices S2–S4 open per the keyed chain (Stage-7 key text): S2 `slice/pages-core`
 first; each slice ends /gate + the founder's merge key on its PR.
+
+**Keyed 2026-07-17 on the 27 shots ("i think i flipped the 27 shots so key the stage-8
+shots").** Post-key amendments carried into S4 by the founder's later words: the hub
+greeting sub-line is **ROTATING, not static** (his call, overriding the recommendation
+presented above) — day cadence through parish-authored lines only (≤10 × ≤140, §D key
+`welcome_lines`); the shots' layout is unchanged by this (same quiet line under the
+greeting, content varies by day). S2/S3 merged to main on his keys (S3 via PR #77,
+superseding auto-closed #76); the Stage-8 CLOSE-OUT (full styling pass, axe WCAG-AA,
+gallery re-shoot DEBUG-off, walkthrough update) runs after S4 and ends at his
+✋ FINAL STOP on the completed pipeline doc + gallery.
