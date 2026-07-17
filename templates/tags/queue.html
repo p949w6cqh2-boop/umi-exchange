@@ -7,7 +7,7 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="font-serif text-2xl text-parish-ink">Verification queue</h1>
-      <p class="text-sm text-parish-ink/60 mt-0.5">{{ community.name }}</p>
+      <p class="text-sm text-parish-ink/70 mt-0.5">{{ community.name }}</p>
     </div>
     <a href="{% url 'community-feed' community.slug %}"
        class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
@@ -15,7 +15,7 @@
 
   {# ── Pending requests ──────────────────────────────────────────── #}
   <section aria-label="Pending verification requests">
-    <h2 class="text-sm font-semibold text-parish-ink/60 uppercase tracking-wide mb-3">
+    <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-3">
       Pending ({{ queue_items|length }})
     </h2>
     {% if queue_items %}
@@ -25,7 +25,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="umi-card p-8 text-center text-parish-ink/50">
+    <div class="umi-card p-8 text-center text-parish-ink/70">
       <p>Nobody's waiting on a yes right now.</p>
     </div>
     {% endif %}

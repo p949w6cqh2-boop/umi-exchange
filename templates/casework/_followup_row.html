@@ -1,9 +1,9 @@
 <li id="fu-{{ fu.pk }}" class="bg-white border border-[var(--umi-border)] rounded-lg p-3 flex items-center justify-between gap-3 text-sm">
   <div>
     <p class="font-medium text-parish-ink/90">{{ fu.title }}</p>
-    <p class="text-xs text-parish-ink/55">Due {{ fu.due_date }} · {{ fu.assigned_to.display_name }}
+    <p class="text-xs text-parish-ink/70">Due {{ fu.due_date }} · {{ fu.assigned_to.display_name }}
       {% if fu.status != "open" %}· <span class="uppercase">{{ fu.status }}</span>{% endif %}</p>
-    {% if fu.detail %}<p class="text-xs text-parish-ink/60 mt-1">{{ fu.detail }}</p>{% endif %}
+    {% if fu.detail %}<p class="text-xs text-parish-ink/70 mt-1">{{ fu.detail }}</p>{% endif %}
   </div>
   {% if fu.status == "open" %}
   <div class="flex gap-1">

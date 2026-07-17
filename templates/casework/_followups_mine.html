@@ -6,7 +6,7 @@
       <div>
         <p class="font-medium text-parish-ink/90">{{ fu.title }}
           {% if fu.due_date < today %}<span class="text-xs text-red-700 font-semibold ml-1">OVERDUE</span>{% endif %}</p>
-        <p class="text-xs text-parish-ink/55">Due {{ fu.due_date }} ·
+        <p class="text-xs text-parish-ink/70">Due {{ fu.due_date }} ·
           <a class="underline" href="{% url 'casework:detail' slug=community.slug pk=fu.case_id %}">case {{ fu.case.short_code }}</a></p>
       </div>
       <form method="post" action="{% url 'casework:followup-status' slug=community.slug pk=fu.pk %}"
@@ -20,5 +20,5 @@
   {% endfor %}
 </ul>
 {% else %}
-<p class="text-sm text-parish-ink/55">No open follow-ups. Well done.</p>
+<p class="text-sm text-parish-ink/70">No open follow-ups. Well done.</p>
 {% endif %}

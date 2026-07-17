@@ -2,7 +2,7 @@
 {% block title %}{{ need.title }} · {{ community.name }}{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto">
-  <a href="{% url 'community-feed' community.slug %}" class="inline-flex items-center gap-1.5 text-sm font-medium text-parish-ink/60 hover:text-parish-ink transition-colors">&larr; Back to the board</a>
+  <a href="{% url 'community-feed' community.slug %}" class="inline-flex items-center gap-1.5 text-sm font-medium text-parish-ink/70 hover:text-parish-ink transition-colors">&larr; Back to the board</a>
 
   {# The notice, pinned to the board #}
   <div class="umi-shell mt-4 umi-rise">
@@ -25,7 +25,7 @@
         </div>
       </div>
       <h1 class="font-serif text-3xl font-semibold tracking-tight text-parish-ink mt-4">{{ need.title }}</h1>
-      <div class="text-sm text-parish-ink/55 mt-2.5">
+      <div class="text-sm text-parish-ink/70 mt-2.5">
         Posted by {{ need.requester.display_name }}
         {% include "tags/_badges_inline.html" with badges=poster_badges %}
         {% if need.neighborhood %}&middot; {{ need.neighborhood }}
@@ -74,7 +74,7 @@
       <div class="umi-card umi-offer-card !p-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
           <h3 class="text-base font-serif font-semibold text-parish-ink truncate">{{ offer.title }}</h3>
-          <p class="text-sm text-parish-ink/55 mt-0.5">{{ offer.offerer.display_name }}</p>
+          <p class="text-sm text-parish-ink/70 mt-0.5">{{ offer.offerer.display_name }}</p>
         </div>
         {% if not is_own_need %}
         <form method="post" action="{% url 'match-propose' community.slug %}">
@@ -84,11 +84,11 @@
           <button type="submit" class="btn-primary text-sm">Propose Match</button>
         </form>
         {% else %}
-        <span class="text-sm text-parish-ink/45 shrink-0">This is your need</span>
+        <span class="text-sm text-parish-ink/70 shrink-0">This is your need</span>
         {% endif %}
       </div>
       {% empty %}
-      <p class="text-sm text-parish-ink/55">No offers in this category yet.</p>
+      <p class="text-sm text-parish-ink/70">No offers in this category yet.</p>
       {% endfor %}
     </div>
   </div>
@@ -102,7 +102,7 @@
     <a href="{% url 'match-detail' community.slug m.id %}" class="umi-card umi-card-hover !p-4 block mt-3">
       <div class="flex items-center justify-between gap-3">
         <span class="text-sm font-medium text-parish-ink">{{ m.proposed_by.display_name }} &rarr; {{ need.title }}</span>
-        <span class="text-xs px-2 py-0.5 rounded-full {% if m.status == 'proposed' %}bg-amber-100 text-amber-800{% elif m.status == 'accepted' %}bg-blue-100 text-blue-800{% elif m.status == 'fulfilled' %}bg-green-100 text-green-800{% else %}bg-parish-soft text-parish-ink/60{% endif %}">{{ m.get_status_display }}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full {% if m.status == 'proposed' %}bg-amber-100 text-amber-800{% elif m.status == 'accepted' %}bg-blue-100 text-blue-800{% elif m.status == 'fulfilled' %}bg-green-100 text-green-800{% else %}bg-parish-soft text-parish-ink/70{% endif %}">{{ m.get_status_display }}</span>
       </div>
     </a>
     {% endfor %}

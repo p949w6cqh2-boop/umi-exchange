@@ -4,7 +4,7 @@
 <div class="max-w-2xl mx-auto space-y-6">
   <div>
     <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">What you've shared</h1>
-    <p class="text-sm text-parish-ink/60 mt-2">Every yes you've given, in one place. You can stop
+    <p class="text-sm text-parish-ink/70 mt-2">Every yes you've given, in one place. You can stop
       any of them whenever you want.</p>
   </div>
 
@@ -14,17 +14,17 @@
     <div class="p-4 flex items-center justify-between gap-4">
       <div>
         <p class="text-sm font-medium text-parish-ink">{{ c.granted_to }}</p>
-        <p class="text-xs text-parish-ink/55 mt-0.5">{{ c.purpose }}</p>
-        <p class="text-xs text-parish-ink/60 mt-1.5">
+        <p class="text-xs text-parish-ink/70 mt-0.5">{{ c.purpose }}</p>
+        <p class="text-xs text-parish-ink/70 mt-1.5">
           They can see{% for token in c.scope %}{% if forloop.first %} {% elif forloop.last %} and {% else %}, {% endif %}{% include "consent/_scope_word.html" %}{% endfor %}.
         </p>
         <p class="text-xs mt-1">
           {% if c.status == "active" %}
           <span class="text-emerald-700 font-medium">Sharing now</span>
           {% elif c.status == "revoked" %}
-          <span class="text-parish-ink/55">Stopped {{ c.revoked_at|date:"M j, Y" }}</span>
+          <span class="text-parish-ink/70">Stopped {{ c.revoked_at|date:"M j, Y" }}</span>
           {% else %}
-          <span class="text-parish-ink/55">Lapsed</span>
+          <span class="text-parish-ink/70">Lapsed</span>
           {% endif %}
         </p>
       </div>
@@ -38,7 +38,7 @@
     </div>
     {% endfor %}
   </div>
-  <p class="text-xs text-parish-ink/45">Stopping a share takes effect straight away. Anything the
+  <p class="text-xs text-parish-ink/70">Stopping a share takes effect straight away. Anything the
     two of you already exchanged stays with them, the same as a conversation would.</p>
   {% else %}
   <div class="umi-card !p-8">

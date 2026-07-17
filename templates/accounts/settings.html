@@ -8,7 +8,7 @@
   <form method="post" class="umi-card space-y-4">
     {% csrf_token %}
     <h2 class="font-serif text-lg font-semibold text-parish-ink">Profile</h2>
-    <p class="text-sm text-parish-ink/55">Username: <strong>{{ user.username }}</strong> (cannot be changed)</p>
+    <p class="text-sm text-parish-ink/70">Username: <strong>{{ user.username }}</strong> (cannot be changed)</p>
 
     <div>
       <label for="id_email" class="umi-label">Email</label>
@@ -25,7 +25,7 @@
       {{ form.email_notifications }}
       <span>
         <span class="text-parish-ink font-medium">{{ form.email_notifications.label }}</span>
-        <span class="block text-sm text-parish-ink/60 mt-0.5">{{ form.email_notifications.help_text }}</span>
+        <span class="block text-sm text-parish-ink/70 mt-0.5">{{ form.email_notifications.help_text }}</span>
       </span>
     </label>
 
@@ -49,10 +49,10 @@
         Enabled
       </span>
     </div>
-    <p class="text-sm text-parish-ink/60 mt-2">Your account is protected with TOTP two-factor authentication.</p>
+    <p class="text-sm text-parish-ink/70 mt-2">Your account is protected with TOTP two-factor authentication.</p>
     <a href="{% url 'two_factor:profile' %}" class="inline-block mt-3 text-sm text-umi-primary hover:text-umi-primary-hover">Manage 2FA devices</a>
     {% else %}
-    <p class="text-sm text-parish-ink/60 mt-3">Add an extra layer of security to your account with a TOTP authenticator app.</p>
+    <p class="text-sm text-parish-ink/70 mt-3">Add an extra layer of security to your account with a TOTP authenticator app.</p>
     <a href="{% url 'two_factor:setup' %}"
        class="inline-block mt-3 btn-primary text-sm transition-colors">
       Set up two-step sign-in
@@ -65,9 +65,9 @@
   <div class="umi-card">
     <h2 class="font-serif text-lg font-semibold text-parish-ink">Household</h2>
     {% if memberships.0.household %}
-    <p class="text-sm text-parish-ink/60 mt-2">{{ memberships.0.household }} (Code: {{ memberships.0.household.join_code }})</p>
+    <p class="text-sm text-parish-ink/70 mt-2">{{ memberships.0.household }} (Code: {{ memberships.0.household.join_code }})</p>
     {% else %}
-    <p class="text-sm text-parish-ink/60 mt-2">Not in a household.</p>
+    <p class="text-sm text-parish-ink/70 mt-2">Not in a household.</p>
     <div class="flex gap-3 mt-3">
       <a href="{% url 'household-create' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Create household</a>
       <a href="{% url 'household-join' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Join household</a>
@@ -81,21 +81,21 @@
     {% for m in memberships %}
     <div class="flex items-center justify-between py-2 border-b border-[var(--umi-border)] last:border-0">
       <a href="{% url 'community-feed' m.community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">{{ m.community.name }}</a>
-      <span class="text-xs text-parish-ink/45">{{ m.get_role_display }}</span>
+      <span class="text-xs text-parish-ink/70">{{ m.get_role_display }}</span>
     </div>
     {% empty %}
-    <p class="text-sm text-parish-ink/55 mt-2"><a href="{% url 'community-join' %}" class="text-umi-primary">Join a community</a></p>
+    <p class="text-sm text-parish-ink/70 mt-2"><a href="{% url 'community-join' %}" class="text-umi-primary">Join a community</a></p>
     {% endfor %}
   </div>
 
   <div class="bg-parish-soft rounded-xl border border-[var(--umi-border)] p-6">
     <h2 class="text-sm font-semibold text-parish-ink/70">About this board</h2>
-    <p class="text-sm text-parish-ink/55 mt-2">Runs on the open UMI Protocol (v0.1), so your community owns its board. Free and open source (AGPL-3.0).</p>
+    <p class="text-sm text-parish-ink/70 mt-2">Runs on the open UMI Protocol (v0.1), so your community owns its board. Free and open source (AGPL-3.0).</p>
   </div>
 
   <div class="umi-card" x-data="{ confirming: false }">
     <h2 class="font-serif text-lg font-semibold text-parish-ink">Sign out</h2>
-    <p class="text-sm text-parish-ink/60 mt-2">Sign out of your Reciprocal Aid Network account on this device.</p>
+    <p class="text-sm text-parish-ink/70 mt-2">Sign out of your Reciprocal Aid Network account on this device.</p>
     <form method="post" action="{% url 'logout' %}" class="mt-4">
       {% csrf_token %}
       <button type="button" @click="confirming = true"
@@ -105,7 +105,7 @@
       <div x-show="confirming" x-cloak class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6" @click.away="confirming = false">
           <h3 class="font-serif text-lg font-semibold text-parish-ink">Sign out?</h3>
-          <p class="text-sm text-parish-ink/60 mt-2">Are you sure you want to sign out of the Reciprocal Aid Network?</p>
+          <p class="text-sm text-parish-ink/70 mt-2">Are you sure you want to sign out of the Reciprocal Aid Network?</p>
           <div class="flex gap-3 mt-6 justify-end">
             <button type="button" @click="confirming = false" class="btn-secondary text-sm">Cancel</button>
             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px] transition-colors">Yes, sign out</button>

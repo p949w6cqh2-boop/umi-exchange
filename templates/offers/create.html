@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <div class="flex items-center gap-3 py-4">
-    <a href="{% url 'community-feed' community.slug %}" class="text-parish-ink/55 hover:text-parish-ink min-h-[44px] flex items-center">&larr;</a>
+    <a href="{% url 'community-feed' community.slug %}" class="text-parish-ink/70 hover:text-parish-ink min-h-[44px] flex items-center">&larr;</a>
     <h1 class="font-serif text-2xl font-semibold text-parish-ink">Post an offer</h1>
   </div>
   <form method="post" class="space-y-6">
@@ -26,7 +26,7 @@
       {% if form.title.errors %}<p class="text-sm text-red-600 mt-1">{{ form.title.errors.0 }}</p>{% endif %}
     </div>
     <div>
-      <label for="id_description" class="umi-label">Description <span class="text-parish-ink/45">(optional)</span></label>
+      <label for="id_description" class="umi-label">Description <span class="text-parish-ink/70">(optional)</span></label>
       {{ form.description }}
     </div>
     <fieldset>

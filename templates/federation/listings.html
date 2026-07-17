@@ -15,7 +15,7 @@
 
 <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
   <a href="{% url 'community-feed' community.slug %}"
-     class="inline-flex items-center gap-1.5 text-sm text-parish-ink/60 hover:text-parish-ink focus-ring rounded-lg min-h-[44px] px-2 -ml-2"
+     class="inline-flex items-center gap-1.5 text-sm text-parish-ink/70 hover:text-parish-ink focus-ring rounded-lg min-h-[44px] px-2 -ml-2"
      aria-label="Back to this community's board">
     <span aria-hidden="true">&larr;</span> The board
   </a>
@@ -46,7 +46,7 @@
     <h2 class="text-lg font-serif font-semibold text-parish-ink mt-3">
       Someone is asking for <span class="lowercase">{{ shadow.category|default:"help" }}</span>
     </h2>
-    <div class="flex items-center gap-2 mt-2 text-sm text-parish-ink/55 flex-wrap">
+    <div class="flex items-center gap-2 mt-2 text-sm text-parish-ink/70 flex-wrap">
       {% if shadow.locality %}<span>{{ shadow.locality }}</span><span>&middot;</span>{% endif %}
       <span>week of {{ shadow.freshness|default:"recently" }}</span>
     </div>
@@ -77,7 +77,7 @@
 {% endif %}
 
 {# Trust strip — say the quiet part out loud (consent, not surveillance). #}
-<p class="text-xs text-parish-ink/55 text-center mt-12 max-w-xl mx-auto">
+<p class="text-xs text-parish-ink/70 text-center mt-12 max-w-xl mx-auto">
   Only what you see here travels between communities. Names and contact details are
   exchanged just once: between the two people in a match, after both sides accept.
 </p>

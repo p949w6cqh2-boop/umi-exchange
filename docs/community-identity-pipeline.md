@@ -510,3 +510,14 @@ index) held for its owning loop.
 
 **This document + the walkthrough gallery are the deliverable. The pipeline ends only on
 the founder's closing key. ✋**
+
+# ✋ THE CLOSING KEY — GIVEN (Jasiah, 2026-07-17)
+
+"Stage 8 close-out accepted: the axe instrument, zero violations on every new surface, the
+eleven-step walkthrough, the close-out section." PR #79 merged on CI green (`d9ca11f`).
+**The two-layer identity pipeline — Stage 0 through close-out, S0→S4, every stage on his
+key — is COMPLETE.** Follow-ups ordered outside the pipeline: the app-wide muted-ink
+re-tint to 70% (this PR — closes the six pre-existing contrast spots; goal zero AA
+violations measured app-wide), then the settings error-redirect. St. Brigid's stays
+fictional in the seed; the real parish name enters only at a real deploy, on his word.
+PR #71 stays held.

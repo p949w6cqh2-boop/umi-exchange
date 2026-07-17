@@ -13,15 +13,15 @@
         {% endif %}
         {% for field in form %}
         <div>
-          <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}{% if not field.field.required %} <span class="font-normal text-parish-ink/45">(optional)</span>{% endif %}</label>
+          <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}{% if not field.field.required %} <span class="font-normal text-parish-ink/70">(optional)</span>{% endif %}</label>
           {{ field }}
-          {% if field.help_text %}<p class="text-xs text-parish-ink/50 mt-1.5">{{ field.help_text }}</p>{% endif %}
+          {% if field.help_text %}<p class="text-xs text-parish-ink/70 mt-1.5">{{ field.help_text }}</p>{% endif %}
           {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
         </div>
         {% endfor %}
         <button type="submit" class="w-full btn-primary !mt-7">Create account</button>
       </form>
-      <p class="text-sm text-parish-ink/55 mt-6 pt-5 border-t border-[var(--umi-border)] text-center">
+      <p class="text-sm text-parish-ink/70 mt-6 pt-5 border-t border-[var(--umi-border)] text-center">
         Already have an account? <a href="{% url 'login' %}" class="font-semibold text-umi-primary hover:text-umi-primary-hover">Sign in</a>
       </p>
     </div>

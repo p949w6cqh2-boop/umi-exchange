@@ -1,12 +1,12 @@
 <article class="bg-white border {% if note.status == 'draft' %}border-dashed border-amber-300{% else %}border-[var(--umi-border)]{% endif %} rounded-lg p-4">
-  <div class="flex flex-wrap items-center gap-2 text-xs text-parish-ink/55 mb-1">
+  <div class="flex flex-wrap items-center gap-2 text-xs text-parish-ink/70 mb-1">
     <span class="font-medium text-parish-ink/80">{{ note.get_kind_display }}</span>
     <span>· {{ note.occurred_at|date:"M j, Y H:i" }}</span>
     <span>· {{ note.author.display_name }}</span>
     {% if note.co_visitor %}<span>+ {{ note.co_visitor.display_name }}</span>{% endif %}
     {% if note.duration_minutes %}<span>· {{ note.duration_minutes }} min</span>{% endif %}
     {% if note.status == "draft" %}<span class="text-amber-700 font-semibold">DRAFT</span>{% endif %}
-    {% if note.amends %}<span class="text-parish-ink/45">amends {{ note.amends.occurred_at|date:"M j" }}</span>{% endif %}
+    {% if note.amends %}<span class="text-parish-ink/70">amends {{ note.amends.occurred_at|date:"M j" }}</span>{% endif %}
   </div>
   {% if note.duplicate_suspects.exists %}
   <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-2">
@@ -18,7 +18,7 @@
   </div>
   {% endif %}
   {% if note.aid_value_cents %}
-  <p class="text-xs text-parish-ink/60 mb-1">Aid value: ${{ note.aid_value_dollars }}</p>
+  <p class="text-xs text-parish-ink/70 mb-1">Aid value: ${{ note.aid_value_dollars }}</p>
   {% endif %}
   <p class="text-sm text-parish-ink/90 whitespace-pre-line">{{ note.body }}</p>
 
@@ -38,7 +38,7 @@
   </div>
   {% elif note.status == "final" and can_contribute %}
   <details class="mt-2">
-    <summary class="text-xs text-parish-ink/55 cursor-pointer">Amend…</summary>
+    <summary class="text-xs text-parish-ink/70 cursor-pointer">Amend…</summary>
     <form method="post" action="{% url 'casework:note-amend' slug=community.slug pk=case.pk note_id=note.pk %}"
           hx-post="{% url 'casework:note-amend' slug=community.slug pk=case.pk note_id=note.pk %}"
           hx-target="#notes-list" hx-swap="afterbegin" class="mt-2 space-y-2">

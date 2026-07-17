@@ -1,9 +1,9 @@
 {# Metric card: single stat with label. #}
 {# Usage: {% include "components/_metric_card.html" with label="Active Needs" value=42 %} #}
 <div class="umi-card !p-4 umi-card-hover">
-  <p class="text-sm text-parish-ink/55 font-medium">{{ label }}</p>
+  <p class="text-sm text-parish-ink/70 font-medium">{{ label }}</p>
   <p class="font-serif text-3xl font-semibold text-parish-ink mt-1 tabular-nums">{{ value }}</p>
   {% if subtitle %}
-  <p class="text-xs text-parish-ink/45 mt-1">{{ subtitle }}</p>
+  <p class="text-xs text-parish-ink/70 mt-1">{{ subtitle }}</p>
   {% endif %}
 </div>

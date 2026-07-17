@@ -15,7 +15,7 @@
               <span class="ml-1 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">emergency · consent pending</span>
             {% endif %}
           </p>
-          <p class="text-sm text-parish-ink/55">
+          <p class="text-sm text-parish-ink/70">
             {{ row.case.get_status_display }} ·
             {% if row.case.assigned_to %}{{ row.case.assigned_to.display_name }}{% else %}unassigned{% endif %}
             · intake {{ row.case.intake_date }}
@@ -31,6 +31,6 @@
   {% endfor %}
 </ul>
 {% else %}
-<p class="text-sm text-parish-ink/55 bg-white border border-[var(--umi-border)] rounded-lg p-6 text-center">
+<p class="text-sm text-parish-ink/70 bg-white border border-[var(--umi-border)] rounded-lg p-6 text-center">
   No case files match. Open one to get started.</p>
 {% endif %}

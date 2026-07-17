@@ -16,9 +16,9 @@
         {% if not n.is_read %}<span class="w-2 h-2 rounded-full bg-[var(--umi-primary)] shrink-0" aria-hidden="true"></span>{% endif %}
         {{ n.title }}
       </p>
-      <p class="text-sm text-parish-ink/60 mt-1">{{ n.body }}</p>
+      <p class="text-sm text-parish-ink/70 mt-1">{{ n.body }}</p>
       <div class="flex items-center justify-between mt-2">
-        <span class="text-xs text-parish-ink/45">{{ n.created_at|timesince }} ago</span>
+        <span class="text-xs text-parish-ink/70">{{ n.created_at|timesince }} ago</span>
         {% if n.link %}<a href="{{ n.link }}" class="text-xs text-umi-primary hover:text-umi-primary-hover">View &rarr;</a>{% endif %}
       </div>
     </div>

@@ -5,7 +5,7 @@
    should feel safe and ordinary, not dramatic.{% endcomment %}
 {% if member and not is_own %}
 <details class="mt-6 group">
-  <summary class="inline-flex items-center gap-1.5 text-sm text-parish-ink/50 hover:text-parish-ink cursor-pointer focus-ring rounded-lg px-1 py-1 min-h-[44px] list-none">
+  <summary class="inline-flex items-center gap-1.5 text-sm text-parish-ink/70 hover:text-parish-ink cursor-pointer focus-ring rounded-lg px-1 py-1 min-h-[44px] list-none">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-16 M3 5l12 -1 -2.5 4 2.5 4 -12 1"/>
     </svg>
@@ -30,7 +30,7 @@
       <textarea name="detail" rows="2" maxlength="500"
                 class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]"
                 placeholder="Optional. What should the coordinator know?"></textarea>
-      <p class="text-xs text-parish-ink/50 mt-1">No names or private details needed. The coordinator can see the {{ noun|default:"post" }}. Only coordinators see your report.</p>
+      <p class="text-xs text-parish-ink/70 mt-1">No names or private details needed. The coordinator can see the {{ noun|default:"post" }}. Only coordinators see your report.</p>
     </div>
     <button type="submit" class="btn-secondary text-sm !min-h-[42px]">Send to a coordinator</button>
   </form>

@@ -2,35 +2,12 @@
   {
     "url": "/",
     "as": "visitor",
-    "violations": [
-      {
-        "id": "color-contrast",
-        "impact": "serious",
-        "help": "Elements must meet minimum color contrast ratio thresholds",
-        "nodes": 8,
-        "targets": [
-          ".text-parish-ink\\/45",
-          ".-rotate-1 > .gap-2.justify-between.flex > .gap-1\\.5.text-parish-ink\\/60.text-\\[11px\\]",
-          ".-rotate-1 > .text-\\[13px\\].text-parish-ink\\/55.mt-1"
-        ]
-      }
-    ]
+    "violations": []
   },
   {
     "url": "/join/",
     "as": "visitor",
-    "violations": [
-      {
-        "id": "color-contrast",
-        "impact": "serious",
-        "help": "Elements must meet minimum color contrast ratio thresholds",
-        "nodes": 2,
-        "targets": [
-          "a[href$=\"reset/\"]",
-          ".text-parish-ink\\/55:nth-child(2)"
-        ]
-      }
-    ]
+    "violations": []
   },
   {
     "url": "/hub/st-brigids/",
@@ -45,67 +22,22 @@
   {
     "url": "/c/st-brigids/",
     "as": "nuala",
-    "violations": [
-      {
-        "id": "color-contrast",
-        "impact": "serious",
-        "help": "Elements must meet minimum color contrast ratio thresholds",
-        "nodes": 18,
-        "targets": [
-          ".umi-offer-card.umi-card.umi-card-hover:nth-child(1) > .text-parish-ink\\/55.mt-3.flex-wrap > span:nth-child(1)",
-          ".umi-offer-card.umi-card.umi-card-hover:nth-child(1) > .text-parish-ink\\/55.mt-3.flex-wrap > span:nth-child(3)",
-          ".umi-offer-card.umi-card.umi-card-hover:nth-child(2) > .text-parish-ink\\/55.mt-3.flex-wrap > span:nth-child(1)"
-        ]
-      }
-    ]
+    "violations": []
   },
   {
     "url": "/c/st-brigids/needs/d740478e-9d8e-4488-94cd-63f4bd82d535/",
     "as": "nuala",
-    "violations": [
-      {
-        "id": "color-contrast",
-        "impact": "serious",
-        "help": "Elements must meet minimum color contrast ratio thresholds",
-        "nodes": 4,
-        "targets": [
-          ".mt-2\\.5",
-          ".bg-parish-soft > .text-parish-ink\\/60.text-sm",
-          ".text-parish-ink\\/55.mt-0\\.5"
-        ]
-      }
-    ]
+    "violations": []
   },
   {
     "url": "/c/st-brigids/matches/fc1c4868-1c39-4e6e-a38e-b6c2df9d38ea/",
     "as": "nuala",
-    "violations": [
-      {
-        "id": "color-contrast",
-        "impact": "serious",
-        "help": "Elements must meet minimum color contrast ratio thresholds",
-        "nodes": 1,
-        "targets": [
-          ".border-parish-border > .text-parish-ink\\/60"
-        ]
-      }
-    ]
+    "violations": []
   },
   {
     "url": "/c/st-brigids/matches/5b7998aa-bdee-4ee2-a559-08ead88efb48/",
     "as": "aggie",
-    "violations": [
-      {
-        "id": "color-contrast",
-        "impact": "serious",
-        "help": "Elements must meet minimum color contrast ratio thresholds",
-        "nodes": 2,
-        "targets": [
-          ".mt-1.text-parish-ink\\/60",
-          ".text-emerald-800\\/70"
-        ]
-      }
-    ]
+    "violations": []
   },
   {
     "url": "/c/st-brigids/p/",
