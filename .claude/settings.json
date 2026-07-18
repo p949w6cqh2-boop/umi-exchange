@@ -6,9 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path') or d.get('tool_response',{}).get('filePath') or '')\"); case \"$f\" in *.py) /home/umi/umi-exchange/.venv/bin/ruff check --fix \"$f\" 2>/dev/null; /home/umi/umi-exchange/.venv/bin/ruff format \"$f\" 2>/dev/null || true;; esac",
+            "command": "f=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path') or d.get('tool_response',{}).get('filePath') or '')\"); case \"$f\" in *.py) /home/umi/umi-exchange/.venv/bin/ruff check --fix \"$f\" 2>/dev/null; /home/umi/umi-exchange/.venv/bin/ruff format \"$f\" 2>/dev/null || true; python3 -m py_compile \"$f\";; esac",
             "timeout": 20,
-            "statusMessage": "ruff auto-heal"
+            "statusMessage": "ruff + py_compile syntax guard"
           }
         ]
       }

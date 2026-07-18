@@ -173,6 +173,11 @@ prefix; never assume the shell is where you left it.
   **`/gate` skill** (canonical sequence: ruff check + `ruff format .`, `makemigrations --check`,
   FULL `pytest` on Postgres with the count read from a file, bandit/semgrep vs `main`,
   `check --deploy` = 0).
+- **Checkpoint long pipelines** (`/checkpoint`): for any multi-stage flow (spec→TDD→PR→merge→deploy,
+  a migration series, a batch of merges), write a handoff checkpoint to `.claude/checkpoint.md`
+  (gitignored scratch) BEFORE stage 1 and update it after every stage/merge — remaining stages +
+  current branch/PR/CI state + the literal resume command — so a rate-limit or session cutoff leaves
+  a recoverable point, not a half-finished merge.
 - **Update `CHANGELOG.md` with every merge** — plain language, written for the people who use the
   board; all product copy checks against the brain's `identity/voice.md`.
 - **Safe-fail defaults:** archive not delete, draft not send, read not edit. Never send real
