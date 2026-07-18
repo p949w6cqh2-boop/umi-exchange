@@ -25,9 +25,9 @@ MEMBERS = [
     # (username, display name, role)
     ("marta", "Marta Keane", "admin"),
     ("nuala", "Nuala Doyle", "member"),
-    ("tomas", "Tomás Byrne", "coordinator"),
-    ("frank", "Frank Ó Sé", "member"),  # the verified deacon
-    ("sile", "Síle Brennan", "member"),
+    ("tom", "Tom Byrne", "coordinator"),
+    ("frank", "Frank O'Shea", "member"),  # the verified deacon
+    ("sheila", "Sheila Brennan", "member"),
     ("joe", "Joe Callahan", "member"),
     ("rosa", "Rosa Alvarez", "member"),
     ("pete", "Pete Whelan", "member"),
@@ -51,7 +51,7 @@ NEEDS = [
     (
         "nuala",
         "Transport",
-        "A lift to half-nine Mass on Sunday",
+        "A ride to the 9:30 Mass on Sunday",
         "My hip is healing well, but I can't manage the walk yet. Any Sunday would help.",
         "high",
     ),
@@ -65,35 +65,35 @@ NEEDS = [
     (
         "aggie",
         "Home Repair",
-        "Someone to look at a leaky kitchen tap",
+        "Someone to look at a leaky kitchen faucet",
         "It drips all night. I have the washers, I just can't get under the sink anymore.",
         "medium",
     ),
     (
         "rosa",
         "Tutoring",
-        "Maths help for Cian, Tuesday evenings",
-        "He's in fifth class and losing heart over fractions. An hour a week would change things.",
+        "Math help for Marco, Tuesday evenings",
+        "He's in fifth grade and losing heart over fractions. An hour a week would change things.",
         "medium",
     ),
     (
         "joe",
         "Company",
-        "Company for a cup of tea now and then",
-        "The house got very quiet this year. I put the kettle on around three most days.",
+        "Company for a cup of coffee now and then",
+        "The house got very quiet this year. I put the coffee on around three most days.",
         "low",
     ),
     (
-        "sile",
+        "sheila",
         "Groceries",
-        "A hand with the big shop this Friday",
-        "I can pay for the messages, I just can't carry them up the hill anymore.",
+        "A hand with the grocery run this Friday",
+        "I can pay for the groceries, I just can't carry them up the hill anymore.",
         "medium",
     ),
     (
         "grace",
         "Home Repair",
-        "A cot for the new baby",
+        "A crib for the new baby",
         "Second-hand is perfect. We just need it before the end of the month.",
         "high",
     ),
@@ -132,7 +132,7 @@ PAGES = [
         "mass-times",
         "published",
         False,
-        "Sundays at 8:00 and 11:00. Saturday vigil at 6:00.\n\n"
+        "Sundays at 8:00, 9:30, and 11:00. Saturday vigil at 6:00.\n\n"
         "Weekday Mass at 9:30, Tuesday to Friday, in the side chapel. "
         "Confessions Saturday from 5:00, or knock on the sacristy door.",
     ),
@@ -141,7 +141,7 @@ PAGES = [
         "ministries",
         "draft",
         False,
-        "The meals rota, the visiting team, and lifts to Mass — who does what, and how to join in. "
+        "The meal train, the visiting team, and rides to Mass — who does what, and how to join in. "
         "(Still being written.)",
     ),
     (
@@ -160,31 +160,31 @@ OFFERS = [
         "pete",
         "Meals",
         "Two extra dinners most weeks",
-        "I always cook too much on Mondays and Thursdays. Happy to drop a plate over.",
+        "I always cook too much on Mondays and Thursdays. Happy to drop a plate off.",
     ),
     (
         "liam",
         "Home Repair",
-        "Handy with taps, hinges, and shelves",
-        "Forty years a fitter. Small jobs are no trouble at all.",
+        "Handy with faucets, hinges, and shelves",
+        "Forty years as a pipefitter. Small jobs are no trouble at all.",
     ),
     (
         "frank",
         "Tutoring",
         "Retired teacher, happy to tutor",
-        "Maths and Irish, primary or secondary. Patience included.",
+        "Math and Spanish, elementary or high school. Patience included.",
     ),
     (
         "marta",
         "Company",
         "A free hour most afternoons",
-        "I walk the green around three and I'm always glad of the chat.",
+        "I walk the park around three and I'm always glad for the company.",
     ),
     (
         "nuala",
         "Home Repair",
-        "An outgrown cot, in good nick",
-        "Our youngest is in a bed now. The cot is clean and solid, and it needs a home.",
+        "An outgrown crib, in great shape",
+        "Our youngest is in a bed now. The crib is clean and solid, and it needs a home.",
     ),
 ]
 
@@ -269,20 +269,20 @@ class Command(BaseCommand):
 
         # Three matches: one proposed, one accepted, one fulfilled — the board mid-life.
         self._match(
-            needs["A lift to half-nine Mass on Sunday"],
+            needs["A ride to the 9:30 Mass on Sunday"],
             offers["I can drive Sunday mornings"],
             members["marta"],
             through=(),
         )
         self._match(
-            needs["Someone to look at a leaky kitchen tap"],
-            offers["Handy with taps, hinges, and shelves"],
+            needs["Someone to look at a leaky kitchen faucet"],
+            offers["Handy with faucets, hinges, and shelves"],
             members["marta"],
             through=("accepted",),
         )
         self._match(
-            needs["A cot for the new baby"],
-            offers["An outgrown cot, in good nick"],
+            needs["A crib for the new baby"],
+            offers["An outgrown crib, in great shape"],
             members["marta"],
             through=("accepted", "fulfilled"),
         )
@@ -307,7 +307,7 @@ class Command(BaseCommand):
                 title=title,
                 slug=page_slug,
                 content_md=content,
-                created_by=members["tomas"],
+                created_by=members["tom"],
                 show_on_landing=on_landing,
             )
             if status in ("published", "archived"):
@@ -324,7 +324,7 @@ class Command(BaseCommand):
         member_tag, created = MemberTag.objects.get_or_create(member=members["frank"], tag=tag)
         if created or member_tag.status not in ("verified",):
             if member_tag.status == "self_claimed":
-                member_tag.request_verification(evidence_note="Ordained 2011, serves at the 11am.")
+                member_tag.request_verification(evidence_note="Ordained 2011, serves at the 11:00 Mass.")
             if member_tag.status == "pending":
                 member_tag.verify(members["marta"], evidence_note="Known to the parish office.")
 
@@ -334,7 +334,7 @@ class Command(BaseCommand):
                 f"{Need.objects.filter(community=community).count()} needs, "
                 f"{Offer.objects.filter(community=community).count()} offers, "
                 f"{Match.objects.filter(need__community=community).count()} matches. "
-                f"Sign in as marta (admin), tomas (coordinator), "
+                f"Sign in as marta (admin), tom (coordinator), "
                 f"or nuala (member) — password {DEMO_PASSWORD!r} for all."
             )
         )
