@@ -2,9 +2,11 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `4b086ed` (2026-07-14).
+> Reflects `main` @ `53d0356` (2026-07-18).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
+> **LIVE in production at reciprocalaid.network, serving FICTIONAL demo data only** (St. Brigid's).
+> Real PII does NOT onboard until the `docs/ethics-and-safety.md` gate passes — the fictional line is policy.
 
 ## Protocol & conformance
 - **UMI Protocol v0.1 — Core ✅ + Casework ✅ + Federation v1 ✅** (default-OFF per community;
@@ -15,9 +17,16 @@
   `FederatedShare` (member-owned, §4.1 one-action consent), signed outbox/polling delivery,
   shadow records with tombstone/TTL death, cross-instance matching + §8.2 exchange,
   **attestations**. `manage.py federation_status` reports link/share/outbox health.
-- **Moderation:** `Flag` (audit-style target refs; one open flag per reporter per target) →
-  coordinator queue → hide (reversible) / keep / dismiss; hidden content vanishes from
-  feed/pulse/search, 404s for members; coordinators unhideable; reporter anonymous.
+- **Moderation & member safety:** `Flag` (audit-style target refs; one open flag per reporter per
+  target) → coordinator queue → hide (reversible) / keep / dismiss; hidden content vanishes from
+  feed/pulse/search, 404s for members; coordinators unhideable; reporter anonymous. **Report a member**
+  from the match detail page (shown once identities are known, §8.2). **Member↔member `Block`**
+  (member-initiated, preventative): blocks a future match (propose → **409**), hides the two from each
+  other's feed + detail (**404**), does NOT recall contact already revealed by a past match (§3.6),
+  and the blocked person is not notified; self-serve "blocked neighbours" unblock list. **Durable
+  coordinator removal:** sets `Member.removed_at`/`removed_by` so a removed member can't rejoin on the
+  same still-valid code; ripples (their open needs/active offers off the board, in-flight matches
+  cancelled) and is reversible via a coordinator **reinstate** action in the queue. All audited (§8.3).
 - **Not implemented:** referrals; in-app chat (**by design** — brokered contact + §8.2
   revelation is the model; chat only ships with reporting/retention/moderation around it).
 - **Match state machine:** `proposed → accepted | cancelled | expired`; `accepted → fulfilled | unfulfilled | cancelled`. Terminal states enforced via `transition_to()`.
@@ -81,29 +90,58 @@
 - Product copy voice governed by the brain's `identity/voice.md`; user-facing patch notes in `CHANGELOG.md` (updated every merge).
 
 ## Testing / CI / Deploy
-- **855 tests passing** on **Postgres 16 + Redis** (CI matrix; SQLite works locally); `ruff check` + `ruff format --check` clean (ruff **pinned** in CI; `hgit_sync.py` excluded via `pyproject.toml`); bandit baseline 1 Medium / 3 Low known-accepted; `check --deploy` **0 issues** under production settings.
+- **≈1006 tests** green on **Postgres 16 + Redis** (CI; SQLite works locally, minus one Postgres-only
+  full-text relevance test in `test_search_area.py` that needs PG — `apps/needs/search.py` gates
+  relevance on `vendor == "postgresql"`); `ruff check` + `ruff format --check` clean (ruff **pinned** in
+  CI; `hgit_sync.py` excluded via `pyproject.toml`); bandit baseline known-accepted (non-blocking);
+  `check --deploy` **0 issues** under production settings.
 - Verification gate = the **`/gate` skill** (full suite count read from a file — never a piped tail). Pre-commit hook runs ruff/format/migrations/bandit.
-- CI (`.github/workflows/ci.yml`) green from `17d1320`. Deploy: `Dockerfile` + compose (+ prod compose, Caddy, logrotate); scripts `harden.sh`, `backup.sh`, `restore.sh`, `security_check.sh`; `docs/deployment-checklist.md` incl. **DB-role separation step 0**.
-- Docs: `CLAUDE.md` (agent guide + gotchas), `docs/federation-dark-launch-runbook.md`, `docs/envelope-rollout-runbook.md`, `docs/privacy-retention.md`, `docs/deployment-checklist.md`, `docs/threat-model.md`, `docs/guides/` (get-a-tag, start-your-own-community), `docs/INTEGRATION-PLAN.md`.
+- **CI green** (`.github/workflows/ci.yml`): three jobs — Lint & Security Scan, Test & Coverage (PG16+Redis), Docker Build Test.
+- **DEPLOYED (2026-07-18):** DigitalOcean droplet `143.244.167.7` (~960 MB + 2 GB swap), docker compose
+  **Caddy → gunicorn → postgres:16 + redis:7**, TLS via Let's Encrypt, repo at `/opt/umi-exchange`.
+  Deploy is **hand-run** (image built on the box, no ghcr push); secrets in a git-ignored `.env`.
+  Serves the **fictional St. Brigid's** demo (`seed_demo_parish`). Deploy scaffolding: `Dockerfile` +
+  compose (+ prod compose, Caddy, logrotate); scripts `harden.sh`, `backup.sh` (30-day `RETENTION_DAYS`
+  + B2), `restore.sh`, `security_check.sh`; `docs/deployment-checklist.md` incl. **DB-role separation step 0**.
+- Docs: `CLAUDE.md` (agent guide + gotchas), **`docs/protocol/spec.md`** (UMI Protocol v0.1 CANONICAL),
+  **`docs/ethics-and-safety.md`** (harm analysis + onboarding gate), **`docs/monitoring-decision.md`**,
+  `docs/federation-dark-launch-runbook.md`, `docs/envelope-rollout-runbook.md`, `docs/privacy-retention.md`,
+  `docs/deployment-checklist.md`, `docs/threat-model.md`, `docs/guides/` (get-a-tag, start-your-own-community), `docs/INTEGRATION-PLAN.md`.
 
 ## NOT in this codebase (guard against scope creep)
 Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog, scheduled email digests (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 
 ## Repo state / open items
-- **Identity pipeline Stages 0–2 KEYED, doc MERGED `4b086ed` (PR #72, Ultraplan-refined, his keys):** `docs/community-identity-pipeline.md` = canonical. Two-layer model: Layer P platform floor (/protocol/ page serving the spec, all dead domains repointed, security.txt via one Django view — cloud verification found TWO conflicting unserved copies + a second dead domain `umi-exchange.org`, both now denylisted), Slice 0 = write UMI Protocol v0.1 FROM the implementation (59 §-citations fixed, RFC-2119, founder-keys the draft), Layer C = CommunityPage CMS-lite (apps/pages, draft/published/archived, markdown+nh3 pinned, coordinators draft / admins publish, flaggable, no-oracle pre-auth landing). Next: Stage 3 outline ✋. Gate was PASS 858.
-- **Bread restored `f131886` (his word 2026-07-14):** the realism scan re-rolled the exchange print unasked; the original (one hand gives, two receive) is back. Lesson: scan findings on keyed art get his per-image yes before swapping.
-- **Beliefs-heart MERGED `132a6e5` (his standing key 2026-07-14):** beliefs opening rebuilt three times to his flags (final: "This board is a lake, the first of many." — concrete-first, sayings resolved plainly, litany scratched, closer kept); product name unified to **Reciprocal Aid Network** (UMI = infrastructure, Lake 0 at heart); full realism scan of the print suite (exchange re-rolled with correct hands; fake AI signature removed; spring retired for reeds-from-rock; lakes re-rolled with the boat afloat and his composition; hill idea returned as a SACRED print: a Black priest planting on the terraced hillside at dawn, his representation rule now standing in the brain). 390px header fixed for the longer name; output.css recompiled. Gate was PASS 858.
-- **Consent-voice MERGED `2bbe17a` (his key 2026-07-14):** triage 1–14 all confirmed shipped; consent FILLED state speaks parish (scope tokens → words, Stop sharing, honest footnote); gallery recaptured under real `DEBUG=0` conditions (recipe verified live). Gate was PASS 858.
-- **Demo-polish MERGED `fc7f7e5` (his key 2026-07-14):** the Father Mac pass — `seed_demo_parish` (fictional St. Brigid's, DEBUG-only, 3 tests), 38-screen triage (`docs/demo-triage-2026-07-14.md`), app-wide spoken copy (72 em-dash rewrites + sentence-case sweep), swatch defaults, warm 403 + human 500 + DEBUG env toggle, `docs/demo-walkthrough.md` (8-screen golden path). Gate was PASS 858.
-- **Spoken-flow copy MERGED `ce56d1b` (his standing key 2026-07-14):** mission copy passes the say-it-aloud test — contractions back, comma-chains broken into spoken sentences (impeccable clarify). Say-aloud rule = master formatting rule in brain voice.md. Gate was PASS 855. Branch deleted.
-- **CarePortal-form copy MERGED `f6ac2b3` (his key 2026-07-14):** mission-page body rewritten as flowing sentences from studying careportal.org directly; 37 em-dash constructions gone (testimony quote keeps its one, never edited); form rules recorded in brain `identity/voice.md` §Grammar. Gate was PASS 855. Branch deleted on his key.
-- **Widow-copy-pass MERGED `d9bdea4` (his key 2026-07-14):** widow print regenerated to the suite's bare-paper style; heading grammar pass (verbless fragments → complete sentences, his CarePortal-form direction, recorded in the brain's `identity/voice.md`). Gate was PASS 855.
-- **Print-polish MERGED `bb6a12c` (his key 2026-07-14):** insights rules in CLAUDE.md, prints cropped to frame, the widow scene (first figure, his key), "why lakes" passage on beliefs. Gate was PASS 855 on PG16+Redis.
-- All feature work merged to `main`: Lakes 1+2, envelope A–E + retention sweeps, Federation v1
-  (A–E), moderation, hub v2, the full 2026-07 product backlog (onboarding, search, connect
-  moment, wizard, resources, consented email), The Commons design system + illustration suite.
-- **Next manual/ops steps (founder):** deploy with SMTP creds; run the DB-role step-0 check on
-  the real host; real two-instance federation dark launch (runbook ready); old-KEK retirement
-  (runbook Phase 5) once censuses are clean in prod.
-- **Open governance:** 501(c)(3) filing (site copy flips on grant — test pinned).
-- **Roadmap (DESIGNED, not built):** Person blind index (`person_name_bidx`, §12.3), Lakes 3–8, mobile companion (React Native/Expo, design PR #33) + LLM need classifier.
+- **LIVE IN PRODUCTION (2026-07-18):** reciprocalaid.network deployed and serving (apex + www 200, TLS).
+  Overturns every older "nothing deployed" claim. Droplet `143.244.167.7`, hand-run docker compose
+  (Caddy → gunicorn → postgres:16 + redis:7). Serves the **fictional St. Brigid's** demo
+  (`seed_demo_parish`, DEBUG-only). **Demo creds must rotate before any real parish onboards.**
+- **Identity pipeline CLOSED (#73–#79, 2026-07-17):** two-layer — Layer P platform floor (`/protocol/`
+  page, one true security.txt via a Django view, dead-domain denylist) + Layer C `apps/pages`
+  CommunityPage CMS-lite (draft/published/archived, markdown + nh3 pinned, coordinators draft / admins
+  publish, flaggable, no-oracle pre-auth landing). **UMI Protocol v0.1 CANONICAL** = `docs/protocol/spec.md`
+  (RFC-2119, citation inventory pinned). §D community-identity + §J hub personalization; muted-ink
+  re-tinted → 70% app-wide (#80, axe **zero** AA violations, `test_a11y.py` enforces no sub-70 muted ink).
+- **Moderation report/block/removal (#90, 2026-07-18):** member reporting UI on the match page,
+  member↔member `Block`, and durable coordinator removal + reinstate — details in the *Moderation &
+  member safety* bullet above. ~29 TDD tests. Also corrected an ethics-doc §8.2 overclaim (an accepted
+  offer-less volunteer match DOES reveal contact to an unvouched volunteer — not yet guarded).
+- **Ethics & safety gate (2026-07-18):** `docs/ethics-and-safety.md` — honest harm analysis + a hard,
+  **unchecked** precondition gate (monitoring wired, tested backups, key custody off root, breach/
+  subpoena plan, on-behalf consent, governance beyond a solo steward). Policy: the reference instance
+  stays fictional-only until every box passes. Pointer from `CLAUDE.md`.
+- **Monitoring DECIDED (#86/#87):** UptimeRobot only, **Sentry OFF** (`SENTRY_DSN` empty) — rationale
+  (PII-leak in error payloads) in `docs/monitoring-decision.md`. Founder still to create the monitor.
+- **Ops/infra merges:** docker collectstatic-under-prod fix (#83), droplet-config reconcile (#89),
+  CC tooling — `py_compile` guard + `/checkpoint` + `/merge-pr` (#85), protocol comment-leak fix (#88).
+- **Design/art:** The Commons system + 7-scene Higgsfield linocut print suite (fixed-palette webp);
+  spoken-copy + CarePortal-grammar passes recorded in the brain's `identity/voice.md`.
+- **Next manual/ops steps (founder):** create the UptimeRobot monitor; **rotate demo creds** before a
+  real parish; SMTP creds so consented email leaves the console backend; real two-instance federation
+  dark launch (runbook ready); old-KEK retirement (runbook Phase 5) once prod censuses are clean;
+  DB-role step-0 check on the host. **The `docs/ethics-and-safety.md` gate must pass before real PII.**
+- **Open governance:** 501(c)(3) filing (site copy flips on grant — test pinned); governance beyond a
+  solo steward is an open ethics-gate item.
+- **Roadmap (DESIGNED, not built):** Person blind index (`person_name_bidx`, §12.3, PR #71 draft),
+  Lakes 3–8, mobile companion (React Native/Expo, design PR #33) + LLM need classifier. Moderation
+  follow-ups: federation-share revoke on removal, graduated "freeze", report-abuse throttles, on-behalf dedupe.
