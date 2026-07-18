@@ -49,8 +49,11 @@ const SCREENS = [
 
 // UUIDs differ per seed run. Pass them explicitly (fast path):
 //   LIFT=… PROPOSED=… ACCEPTED=… MINISTRIES=… node docs/demo/shoot-demo.mjs
-// or let the script walk real links to find them (an accepted match's need
-// leaves the open feed, so the walk goes via the requester's own screens).
+// or let the script walk real links to find them. The walk goes via each
+// requester's HUB, not the board: "Your corner" lists their proposed AND
+// accepted matches (linked by need title), while the open board drops a
+// need as soon as its match is accepted — walking the board for the
+// accepted case times out.
 async function resolveIds(page) {
   const fromEnv = ["LIFT", "PROPOSED", "ACCEPTED", "MINISTRIES"].every((k) => process.env[k]);
   if (fromEnv) {
@@ -67,7 +70,7 @@ async function resolveIds(page) {
 async function resolveIdsByWalking(page) {
   const ids = {};
   await login(page, "nuala");
-  await page.goto(`${BASE}/c/st-brigids/`);
+  await page.goto(`${BASE}/hub/st-brigids/`);
   const lift = await page.locator('a[href*="/needs/"]', { hasText: "9:30 Mass" }).first().getAttribute("href");
   ids.LIFT = lift.match(/needs\/([0-9a-f-]{36})\//)[1];
   await page.goto(`${BASE}/c/st-brigids/needs/${ids.LIFT}/`);
@@ -76,7 +79,7 @@ async function resolveIdsByWalking(page) {
   await logout(page);
 
   await login(page, "aggie");
-  await page.goto(`${BASE}/c/st-brigids/`);
+  await page.goto(`${BASE}/hub/st-brigids/`);
   const tap = await page.locator('a[href*="/needs/"]', { hasText: "leaky kitchen faucet" }).first().getAttribute("href");
   await page.goto(`${BASE}${tap}`);
   const accepted = await page.locator('a[href*="/matches/"]').first().getAttribute("href");
@@ -92,10 +95,19 @@ async function resolveIdsByWalking(page) {
 }
 
 async function login(page, username) {
-  await page.goto(`${BASE}/auth/login/`);
-  await page.fill('input[name="username"]', username);
-  await page.fill('input[name="password"]', PASSWORD);
-  await Promise.all([page.waitForLoadState("networkidle"), page.click('button[type="submit"], input[type="submit"]')]);
+  // Login is IP-throttled (5/min). Walking-resolver mode needs 7 logins per
+  // run, so a mid-run 429 is expected — wait out the fixed window and retry
+  // instead of carrying a dead session into the next screen.
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    await page.goto(`${BASE}/auth/login/`);
+    await page.fill('input[name="username"]', username);
+    await page.fill('input[name="password"]', PASSWORD);
+    await Promise.all([page.waitForLoadState("networkidle"), page.click('button[type="submit"], input[type="submit"]')]);
+    if (!page.url().includes("/auth/login/")) return;
+    console.log(`  login as ${username} throttled/rejected, retrying in 21s (attempt ${attempt}/4)`);
+    await page.waitForTimeout(21000);
+  }
+  throw new Error(`login as ${username} failed after 4 attempts (throttle window never cleared?)`);
 }
 
 async function logout(page) {
