@@ -3,6 +3,7 @@ area keywords hit (neighborhood was invisible to the tsvector), and results
 rank by relevance instead of pure recency when a query is present."""
 
 import pytest
+from django.db import connection
 from django.test import Client
 from django.urls import reverse
 
@@ -39,6 +40,10 @@ def test_area_keyword_finds_the_need(board):
     assert b"Groceries once a week" in resp.content
 
 
+@pytest.mark.skipif(
+    connection.vendor != "postgresql",
+    reason="relevance ranking needs Postgres FTS (ts_rank); SQLite has no ranking, so ordering falls back to recency",
+)
 def test_relevance_beats_recency_when_searching(board):
     community, member, category = board
     strong = NeedFactory(
