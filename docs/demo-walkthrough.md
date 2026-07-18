@@ -102,10 +102,9 @@ the feed filters' missing accessible names, the bottom-nav label contrast, the f
 line, and the muted-text family on the new surfaces (small muted text now sits at 70% ink —
 60% composites to 4.2:1 on stone, under AA's 4.5:1).
 
-**Known remainder (pre-existing screens, deliberately left for a keyed design pass):** the
-landing page's rotated notice-card metas, two sign-in links on /join/, the board's offer-card
-meta rows, a need-detail meta block, and two match-page lines (including `text-emerald-800/70`)
-still use the older muted tints — 6 violations, all `color-contrast`, none on Layer C. Raising
-the global muted tokens changes the keyed Wellspring look everywhere, so that's the founder's
-call, not a close-out default. Gallery captured with `DEBUG=0`, the same conditions as the demo
-recipe above.
+**The former known remainder is gone.** The six `color-contrast` violations that survived the
+Stage-8 close-out (landing notice-card metas, /join/ sign-in links, board offer-card metas, a
+need-detail meta block, two match-page lines) were cleared by the keyed muted-ink raise (#80);
+the 2026-07-18 re-shoot (American-English demo strings) measures **zero violations across all
+nineteen screens**. Gallery captured with `DEBUG=0`, the same conditions as the demo recipe
+above.
