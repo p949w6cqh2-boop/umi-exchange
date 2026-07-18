@@ -17,9 +17,24 @@ COPY --from=builder /install /usr/local
 WORKDIR /app
 COPY --chown=umi:umi . .
 RUN mkdir -p /app/logs /app/staticfiles && chown -R umi:umi /app/logs /app/staticfiles
-RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
 USER umi
+
+# collectstatic MUST run under production settings so the WhiteNoise manifest
+# (CompressedManifestStaticFilesStorage) is generated. The dev default uses a non-manifest
+# storage and would ship an EMPTY manifest -> prod 500s "Missing staticfiles manifest entry".
+# USER umi is set first so the collected tree is owned by the runtime user. Errors are NOT
+# swallowed: a broken static build must fail the image build, not ship silently. The throwaway
+# build-only env just lets production settings import (there is no .env at build time); the
+# running container reads the real .env via compose.
+RUN DJANGO_SETTINGS_MODULE=config.settings.production \
+    SECRET_KEY=build-only-not-used-at-runtime \
+    ENCRYPTION_KEY="$(python -c 'import base64; print(base64.urlsafe_b64encode(b"0"*32).decode())')" \
+    DATABASE_URL="postgres://u:p@localhost:5432/db" \
+    REDIS_URL="redis://localhost:6379/0" \
+    ALLOWED_HOSTS="localhost" \
+    DEBUG="False" \
+    python manage.py collectstatic --noinput
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -sf http://localhost:8000/health/ || exit 1
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
