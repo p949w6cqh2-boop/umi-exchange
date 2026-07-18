@@ -1,0 +1,65 @@
+{% comment %}Report or block the neighbour you were matched with. Shown only to
+a participant, only once contact is revealed (§8.2), for a local counterpart.
+Requires: community, counterpart (Member), can_flag_member. Quiet by design:
+an ordinary safety control, not a siren.{% endcomment %}
+{% if can_flag_member and counterpart %}
+<details class="mt-8 group border-t border-[var(--umi-border)] pt-4">
+  <summary class="inline-flex items-center gap-1.5 text-sm text-parish-ink/70 hover:text-parish-ink cursor-pointer focus-ring rounded-lg px-1 py-1 min-h-[44px] list-none">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-16 M3 5l12 -1 -2.5 4 2.5 4 -12 1"/>
+    </svg>
+    Something not right with this neighbour?
+  </summary>
+
+  <div class="mt-3 space-y-4 max-w-md">
+    {# Report to a coordinator — reuses the moderation Flag backend (member target). #}
+    <form method="post" action="{% url 'moderation:flag' community.slug %}" class="umi-card p-4 space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="target_type" value="member">
+      <input type="hidden" name="target_id" value="{{ counterpart.pk }}">
+      <p class="text-sm font-medium text-parish-ink">Report {{ counterpart.display_name }} to a coordinator</p>
+      <div>
+        <label for="id_member_flag_reason" class="umi-label">What's the concern?</label>
+        <select name="reason" id="id_member_flag_reason"
+                class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]">
+          <option value="unsafe">Unsafe or threatening</option>
+          <option value="fake">Seems fake or misleading</option>
+          <option value="spam">Spam or off-topic</option>
+          <option value="other">Something else</option>
+        </select>
+      </div>
+      <textarea name="detail" rows="2" maxlength="500"
+                class="w-full border border-[var(--umi-border)] rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[var(--umi-primary)]"
+                placeholder="Optional. What should the coordinator know?"></textarea>
+      <p class="text-xs text-parish-ink/70">No names or private details needed. Only coordinators see your report.</p>
+      <button type="submit" class="btn-secondary text-sm !min-h-[42px]">Send to a coordinator</button>
+    </form>
+
+    {# Block, member-initiated: preventative, quiet, not a recall. #}
+    <form method="post" action="{% url 'moderation:block' community.slug %}" class="umi-card p-4 space-y-2"
+          x-data="{ confirm: false }">
+      {% csrf_token %}
+      <input type="hidden" name="blocked_id" value="{{ counterpart.pk }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <p class="text-sm font-medium text-parish-ink">Block {{ counterpart.display_name }}</p>
+      <p class="text-xs text-parish-ink/70">
+        You won't be matched with this neighbour again, and you won't see each other on the board.
+        They aren't told. This doesn't undo contact you've already shared.
+      </p>
+      <button type="button" @click="confirm = true" class="btn-secondary text-sm !min-h-[42px]">Block this neighbour</button>
+      <div x-show="confirm" x-cloak class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.away="confirm = false">
+          <h3 class="font-serif text-lg font-semibold text-parish-ink">Block {{ counterpart.display_name }}?</h3>
+          <p class="text-base text-parish-ink/70 mt-2">
+            You won't be matched again, and you won't see each other on the board. They aren't told.
+          </p>
+          <div class="flex gap-3 mt-6 justify-end">
+            <button type="button" @click="confirm = false" class="btn-secondary text-sm">Cancel</button>
+            <button type="submit" class="btn-primary text-sm">Yes, block</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</details>
+{% endif %}

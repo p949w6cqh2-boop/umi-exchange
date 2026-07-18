@@ -18,6 +18,7 @@ from apps.audit.models import AuditLog
 from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.communities.validators import sanitize_text_field
+from apps.moderation.services import is_blocked_between
 from apps.needs.models import Need
 from apps.notifications.adapter import NotificationAdapter
 from apps.offers.models import Offer
@@ -59,6 +60,14 @@ class MatchProposeView(LoginRequiredMixin, View):
             offer.offerer_id == need.requester_id or offer.offerer.user_id == need.requester.user_id
         ):
             return _reject(request, slug, need_id, "An offer cannot be matched to its owner's own need.", 400)
+
+        # Block: two neighbours who've blocked each other are not matched. The
+        # proposer must not be blocked-with the need's requester, nor (when an
+        # offer is supplied) with the offer's owner. Preventative, not a recall.
+        if is_blocked_between(member, need.requester) or (
+            offer is not None and is_blocked_between(member, offer.offerer)
+        ):
+            return _reject(request, slug, need_id, "You can't propose a match with this neighbour.", 409)
 
         # H-2: a member may only propose an OFFER THEY OWN — UNLESS they are a
         # coordinator/admin brokering the match on a member's behalf.
@@ -146,6 +155,19 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         # Contact revelation (Protocol Section 8.2)
         ctx["contact_info"] = match.get_contact_info_for(member)
         ctx["show_contact"] = ctx["contact_info"] is not None
+
+        # Report/block this neighbour: only for a participant, only once
+        # identities are known (the accepted/fulfilled reveal), and only when the
+        # counterpart is a local, active member (skips federated proxies).
+        counterpart = match.counterpart_member_for(member)
+        ctx["counterpart"] = counterpart
+        ctx["can_flag_member"] = bool(
+            ctx["is_participant"]
+            and ctx["show_contact"]
+            and counterpart
+            and counterpart.community_id == community.id
+            and counterpart.is_active
+        )
 
         # Federation (Stage C2): on a federated match the proxy member carries
         # no channels — the counterpart's exchanged §8.2 dict lives on the

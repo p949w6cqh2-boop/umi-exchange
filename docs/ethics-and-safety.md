@@ -159,9 +159,11 @@ human vouching, meaning coordinator verification and member tags (`apps/tags`), 
 reviews, because reviews get gamed and they shame the person receiving help. Second, and this is
 policy, no money ever moves through the platform. UMI brokers a connection, not a transaction. The
 moment the board handles a payment it becomes a fraud target and a money-transmission problem, and it
-stops being a noticeboard. What is still missing and belongs on the build list: a way to report or
-block a member, a coordinator power to freeze or remove an abuser, and dedupe of repeated on-behalf
-spam.
+stops being a noticeboard. A neighbour can now report the person they were matched with, block a
+neighbour so the two are never matched and are hidden from each other, and a coordinator can durably
+remove an abuser (their content leaves the board and their in-flight matches are cancelled) and
+reinstate someone later. What is still on the build list: a graduated freeze that is softer than a
+full removal, dedupe of repeated on-behalf spam, and throttles against weaponized reporting.
 
 **The stranger at the door.** Some exchanges end with two people meeting in person, and sometimes at a
 home. This will happen, and it cannot be engineered away, because people meeting is the whole point.
@@ -172,10 +174,12 @@ locality crossing a boundary before that. On top of that floor, the load-bearing
 plain statement, made in the terms and at the moment of connection: UMI brokers introductions between
 neighbours, and it does not vet people, run background checks, supervise meetings, or guarantee
 anyone's safety. That sentence is honest and it is protective, because it is the difference between
-introducing two neighbours and vouching for a stranger. Two design defaults support it. Lean toward a
-neutral or public handoff rather than a home address, especially for higher-risk categories, and never
-reveal contact to a self-proposed volunteer who has no standing offer and no vouch (the §8.2 rule
-already guards this). A neighbour who chooses to open their door has real agency; the tool's duty is
+introducing two neighbours and vouching for a stranger. One design default supports it: lean toward a
+neutral or public handoff rather than a home address, especially for higher-risk categories. And one
+gap has to be named honestly. When a volunteer proposes on a need without a standing offer, accepting
+that match still reveals the asker's contact to a person the board has not vouched for. The §8.2 rule
+does not yet guard this, and closing it, for example by requiring a vouch on higher-risk categories,
+is on the build list. A neighbour who chooses to open their door has real agency; the tool's duty is
 to make sure the choice was made knowingly, the reveal was logged, and safety was never oversold.
 
 ---

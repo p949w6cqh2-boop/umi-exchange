@@ -97,6 +97,12 @@ class Member(models.Model):
     role = models.CharField(max_length=15, default="member", choices=ROLE_CHOICES)
     display_name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
+    # Moderation removal (distinct from a voluntary leave, which is is_active=False
+    # with removed_at NULL). When removed_at is set, the join flow refuses to
+    # silently reactivate the row — a removed member cannot walk back in on the
+    # same code. Cleared by a coordinator reinstate (archive > delete).
+    removed_at = models.DateTimeField(null=True, blank=True)
+    removed_by = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     notification_prefs = models.JSONField(default=dict)
     joined_at = models.DateTimeField(auto_now_add=True)
 

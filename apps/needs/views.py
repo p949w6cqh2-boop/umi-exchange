@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DeleteView, DetailView
 
 from apps.audit.services import emit
 from apps.communities.models import Community, Member
+from apps.moderation.services import is_blocked_between
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
 
@@ -65,6 +66,8 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         if viewer is None:
             raise Http404("You are not a member of this community.")
         if obj.moderation_hidden and not viewer.is_coordinator:
+            raise Http404("This post is no longer available.")
+        if is_blocked_between(viewer, obj.requester):
             raise Http404("This post is no longer available.")
         return obj
 

@@ -58,3 +58,36 @@ class Flag(models.Model):
 
     def __str__(self):
         return f"{self.get_reason_display()} · {self.target_type} · {self.status}"
+
+
+class Block(models.Model):
+    """One neighbour choosing not to be matched with or shown another.
+
+    Member-initiated and preventative: it stops future matches between the two
+    and hides each from the other on the board. It is NOT a recall — contact
+    already revealed by a past accepted match is not taken back (§3.6 mental
+    model: stops new, doesn't un-happen the past). Directed (blocker → blocked)
+    for a clear "you blocked X" in the UI; enforcement is symmetric.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    community = models.ForeignKey("communities.Community", on_delete=models.CASCADE, related_name="blocks")
+    blocker = models.ForeignKey("communities.Member", on_delete=models.CASCADE, related_name="blocks_made")
+    blocked = models.ForeignKey("communities.Member", on_delete=models.CASCADE, related_name="blocks_received")
+    # Private to the blocker; never shown to the blocked person or the crowd.
+    reason = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "moderation_block"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["blocker", "blocked"], name="mod_block_unique_pair"),
+        ]
+        indexes = [
+            models.Index(fields=["community", "blocker"], name="mod_block_blocker_idx"),
+            models.Index(fields=["community", "blocked"], name="mod_block_blocked_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.blocker_id} ⊘ {self.blocked_id}"

@@ -24,6 +24,7 @@ from django.views.generic import CreateView, FormView, ListView, TemplateView
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
 from apps.communities.identity import SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
+from apps.moderation.services import blocked_member_ids
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -63,6 +64,15 @@ class JoinCommunityView(LoginRequiredMixin, FormView):
 
         existing = Member.objects.filter(user=self.request.user, community=community).first()
         if existing is not None:
+            if existing.removed_at is not None:
+                # Removed by a coordinator. Removal is durable: a removed member
+                # cannot silently walk back in by re-entering the still-valid
+                # code. Reinstatement is a coordinator action, not a rejoin.
+                messages.error(
+                    self.request,
+                    "You can't rejoin this community right now. Please reach out to a coordinator.",
+                )
+                return redirect("landing")
             if not existing.is_active:
                 # Returning member: reactivate the archived row (Member is unique
                 # per (user, community), so a stale is_active=False row can't be
@@ -291,6 +301,13 @@ class FeedView(LoginRequiredMixin, ListView):
         offers = Offer.objects.filter(
             community=self.community, status="active", moderation_hidden=False
         ).select_related("category", "offerer")
+
+        # Block: hide the viewer and anyone they've blocked (either direction)
+        # from each other's board. Preventative, symmetric.
+        blocked_ids = blocked_member_ids(self.member)
+        if blocked_ids:
+            needs = needs.exclude(requester_id__in=blocked_ids)
+            offers = offers.exclude(offerer_id__in=blocked_ids)
 
         cat = self.request.GET.get("category")
         urg = self.request.GET.get("urgency")
