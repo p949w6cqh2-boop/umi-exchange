@@ -1,7 +1,7 @@
 # Production deployment: docker compose -f docker/docker-compose.prod.yml up -d
 services:
   app:
-    image: ghcr.io/your-org/umi-exchange:latest  # Update after first CI build
+    image: umi-exchange:local  # built locally on the droplet (docker build -t umi-exchange:local .)
     restart: unless-stopped
     env_file: ../.env
     environment:
