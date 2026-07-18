@@ -1,58 +1,30 @@
-# Replace {$DOMAIN} with your actual domain, or set DOMAIN env var.
-# For initial setup without a domain, use :80 instead.
-{$DOMAIN:localhost} {
-    # Reverse proxy to Django.
-    # header_up X-Real-IP {remote_host} makes X-Real-IP trustworthy: Caddy
-    # REPLACES (not appends) this header on every request, so a client-supplied
-    # X-Real-IP is overwritten with the real connecting IP. Django trusts this
-    # header for rate-limiting AND salted audit-log IP hashing.
-    # EDGE-PROXY ASSUMPTION: this is only safe while Caddy is the EDGE. If a CDN
-    # or another load balancer sits in front of Caddy, {remote_host} is THAT
-    # intermediary's IP, not the client's — re-opening the spoof hole. Behind a
-    # CDN, derive the client IP from the trusted forwarded header the CDN sets
-    # instead (and keep the app's single-source-of-IP-truth in client_ip()).
-    reverse_proxy app:8000 {
-        header_up X-Real-IP {remote_host}
-    }
-
-    # Compression
+# Production Caddyfile — reciprocalaid.network (live).
+# This reflects the deployed configuration (see docs/deploy/vps-runbook.md §5):
+#   - domain hardcoded (apex + www); certs auto-provisioned by Let's Encrypt
+#   - NO /static/* file_server: static is served by the app's WhiteNoise, and
+#     /srv/static is not mounted into the Caddy container (an old /static block
+#     404'd every asset)
+#   - logs go to stdout (docker logs), NOT /var/log/caddy (that path is unmounted
+#     and Caddy errors trying to write it)
+#   - header_up X-Real-IP {remote_host}: load-bearing for Django's audit-log IP
+#     hashing + rate limiting; safe only while Caddy is the edge proxy.
+reciprocalaid.network, www.reciprocalaid.network {
     encode gzip zstd
 
-    # Security headers (supplements Django's own headers)
+    log {
+        output stdout
+        format console
+    }
+
     header {
-        # Remove server identification
         -Server
-        # Additional security headers
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-        # CSP is set by Django; Caddy does not override it
     }
 
-    # Static files (served directly by Caddy, bypassing Django)
-    handle_path /static/* {
-        root * /srv/static
-        file_server
-        header Cache-Control "public, max-age=31536000, immutable"
-    }
-
-    # Health check (no auth required). Same X-Real-IP replacement as the main
-    # block — the health probe path must not be an X-Real-IP spoofing bypass.
-    handle /health/* {
-        reverse_proxy app:8000 {
-            header_up X-Real-IP {remote_host}
-        }
-    }
-
-    # /.well-known/ requests proxy through to Django, which serves the single
-    # RFC 9116 source of truth (apps/communities/views.py, pipeline §B4).
-
-    # Logging
-    log {
-        output file /var/log/caddy/access.log {
-            roll_size 10mb
-            roll_keep 5
-        }
+    reverse_proxy app:8000 {
+        header_up X-Real-IP {remote_host}
     }
 }
