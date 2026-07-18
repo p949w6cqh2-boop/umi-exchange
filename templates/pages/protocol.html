@@ -3,9 +3,20 @@
 {% block content %}
 <div class="max-w-3xl mx-auto py-8">
 
-  {# Keyed reading order: the document's own head (h1, version, license, status), then
-     this intro, then the TOC, then the sections. #}
-  <div id="protocol-doc">{{ spec_head|safe }}</div>
+  {% comment %}Keyed reading order: the document's own head (h1, version, license, status), then
+     this intro, then the TOC, then the sections.{% endcomment %}
+
+  {# Friendly framing so a normal visitor isn't dropped straight into the raw standard. #}
+  <div class="umi-card !p-6 sm:!p-8">
+    <span class="umi-eyebrow">The technical standard</span>
+    <p class="text-base text-parish-ink/80 leading-relaxed mt-3">This is the formal specification
+      UMI is built on — written for developers and people implementing the protocol. If you just
+      want to understand, in plain words, how we protect the people who use these boards, read
+      Privacy &amp; retention.</p>
+    <div class="mt-4"><a href="{% url 'privacy' %}" class="btn-secondary">Privacy &amp; retention</a></div>
+  </div>
+
+  <div id="protocol-doc" class="mt-6">{{ spec_head|safe }}</div>
 
   <div class="umi-card !p-6 sm:!p-8 mt-6">
     <p class="text-base text-parish-ink/80 leading-relaxed">Every promise this board makes is
