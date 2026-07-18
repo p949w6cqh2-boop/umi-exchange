@@ -41,10 +41,10 @@ const SCREENS = [
   { url: "/c/st-brigids/p/our-story/", as: "nuala", shot: null },
   { url: "/c/st-brigids/p/old-bulletin/", as: "nuala", shot: null }, // tombstone
   { url: "/c/st-brigids/settings/", as: "marta", shot: null }, // identity section
-  { url: "/c/st-brigids/p/manage/", as: "tomas", shot: null },
-  { url: "/c/st-brigids/p/manage/new/", as: "tomas", shot: null },
-  { url: "/c/st-brigids/p/manage/{MINISTRIES}/edit/", as: "tomas", shot: null },
-  { url: "/c/st-brigids/moderation/", as: "tomas", shot: null },
+  { url: "/c/st-brigids/p/manage/", as: "tom", shot: null },
+  { url: "/c/st-brigids/p/manage/new/", as: "tom", shot: null },
+  { url: "/c/st-brigids/p/manage/{MINISTRIES}/edit/", as: "tom", shot: null },
+  { url: "/c/st-brigids/moderation/", as: "tom", shot: null },
 ];
 
 // UUIDs differ per seed run. Pass them explicitly (fast path):
@@ -68,7 +68,7 @@ async function resolveIdsByWalking(page) {
   const ids = {};
   await login(page, "nuala");
   await page.goto(`${BASE}/c/st-brigids/`);
-  const lift = await page.locator('a[href*="/needs/"]', { hasText: "half-nine Mass" }).first().getAttribute("href");
+  const lift = await page.locator('a[href*="/needs/"]', { hasText: "9:30 Mass" }).first().getAttribute("href");
   ids.LIFT = lift.match(/needs\/([0-9a-f-]{36})\//)[1];
   await page.goto(`${BASE}/c/st-brigids/needs/${ids.LIFT}/`);
   const match = await page.locator('a[href*="/matches/"]').first().getAttribute("href");
@@ -77,13 +77,13 @@ async function resolveIdsByWalking(page) {
 
   await login(page, "aggie");
   await page.goto(`${BASE}/c/st-brigids/`);
-  const tap = await page.locator('a[href*="/needs/"]', { hasText: "leaky kitchen tap" }).first().getAttribute("href");
+  const tap = await page.locator('a[href*="/needs/"]', { hasText: "leaky kitchen faucet" }).first().getAttribute("href");
   await page.goto(`${BASE}${tap}`);
   const accepted = await page.locator('a[href*="/matches/"]').first().getAttribute("href");
   ids.ACCEPTED = accepted.match(/matches\/([0-9a-f-]{36})\//)[1];
   await logout(page);
 
-  await login(page, "tomas");
+  await login(page, "tom");
   await page.goto(`${BASE}/c/st-brigids/p/manage/`);
   const edit = await page.locator('a[href*="/manage/"][href*="/edit/"]').nth(2).getAttribute("href");
   ids.MINISTRIES = edit.match(/manage\/([0-9a-f-]{36})\/edit\//)[1];

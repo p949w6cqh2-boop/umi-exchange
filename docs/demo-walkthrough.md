@@ -14,7 +14,7 @@ DEBUG=0 python manage.py collectstatic --noinput
 DEBUG=0 python manage.py runserver
 ```
 
-Sign-ins (password `demo-parish` for all): **marta** (admin) · **tomas** (coordinator) ·
+Sign-ins (password `demo-parish` for all): **marta** (admin) · **tom** (coordinator) ·
 **nuala** (member).
 
 ## The demo, in order
@@ -45,12 +45,12 @@ nothing about you is shared until you accept a match.
 ![Post an ask](demo/04-post-ask.webp)
 
 ### 5. The board — asks and offers side by side
-Bread-and-butter mutual aid: a lift to Mass, two extra dinners, a retired teacher.
+Bread-and-butter mutual aid: a ride to Mass, two extra dinners, a retired teacher.
 
 ![The board](demo/05-board.webp)
 
 ### 6. One ask, up close
-Nuala's lift to half-nine Mass — and Dan's offer already waiting beside it.
+Nuala's ride to the 9:30 Mass — and Dan's offer already waiting beside it.
 
 ![Ask detail](demo/06-ask-detail.webp)
 

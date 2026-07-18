@@ -3,6 +3,14 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-18
+
+- **The demo parish now speaks American English.** St. Brigid's sample notices traded their
+  Irish turns of phrase for American ones — a ride to the 9:30 Mass instead of a lift to
+  half-nine, math help instead of maths, a crib instead of a cot, the grocery run instead of
+  the big shop — so a first-time American reader never mistakes the wording for a typo. Same
+  twelve neighbours, same warmth; the coordinator sign-in is now **tom** (was tomas).
+
 ## 2026-07-17
 
 - **The Identity form no longer eats your words.** Type a patron line that's a touch too
