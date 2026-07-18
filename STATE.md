@@ -116,6 +116,16 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   Overturns every older "nothing deployed" claim. Droplet `143.244.167.7`, hand-run docker compose
   (Caddy → gunicorn → postgres:16 + redis:7). Serves the **fictional St. Brigid's** demo
   (`seed_demo_parish`, DEBUG-only). **Demo creds must rotate before any real parish onboards.**
+- **Demo localized to American English (#92, 2026-07-18):** all St. Brigid's demo strings (seed +
+  landing mock cards + walkthrough + shoot script, in lockstep) trade Irish idiom for American —
+  ride to the 9:30 Mass / math / crib / grocery run; Tomás→Tom, Síle→Sheila, Ó Sé→O'Shea. Counts
+  stay 12/7/6/3; **coordinator demo sign-in is now `tom`** (was `tomas`). Brand voice (neighbour)
+  untouched. Gallery re-shot same day: **axe zero violations across all 19 screens** (the Stage-8
+  "known remainder" 6 are gone via #80). Droplet still serves the OLD strings until the founder
+  runs `docs/demo-reseed-runbook.md` (backup → deploy → PROTECT-ordered flush → re-seed). IDEA
+  parked (brain inbox): geo/locale-aware demo packs. Gotcha: the walking ID-resolver in
+  `shoot-demo.mjs` can't find matched needs on the board (they leave the open feed) — use the
+  documented env fast path (`LIFT=… PROPOSED=… ACCEPTED=… MINISTRIES=…`).
 - **Identity pipeline CLOSED (#73–#79, 2026-07-17):** two-layer — Layer P platform floor (`/protocol/`
   page, one true security.txt via a Django view, dead-domain denylist) + Layer C `apps/pages`
   CommunityPage CMS-lite (draft/published/archived, markdown + nh3 pinned, coordinators draft / admins
