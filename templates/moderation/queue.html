@@ -73,6 +73,30 @@
     {% endif %}
   </section>
 
+  {% if removed_members %}
+  <section aria-label="Removed members">
+    <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-3">
+      Removed members ({{ removed_members|length }})
+    </h2>
+    <ul class="umi-card divide-y divide-[var(--umi-border)]">
+      {% for m in removed_members %}
+      <li class="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm text-parish-ink">
+          {{ m.display_name }}
+          <span class="text-parish-ink/70">· removed {{ m.removed_at|timesince }} ago</span>
+        </span>
+        <form method="post" action="{% url 'moderation:reinstate' community.slug %}">
+          {% csrf_token %}
+          <input type="hidden" name="member_id" value="{{ m.pk }}">
+          <button class="btn-secondary text-sm !min-h-[40px] !px-3.5"
+                  title="Bring them and their content back on the board.">Reinstate</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   {% if recent %}
   <section aria-label="Recently handled reports">
     <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-3">Recently handled</h2>

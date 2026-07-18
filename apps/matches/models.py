@@ -107,6 +107,21 @@ class Match(models.Model):
 
         self.save()
 
+    def counterpart_member_for(self, member):
+        """The other participant Member (the one whose contact is revealed to
+        `member`), or None if `member` is not a participant. Mirrors the
+        requester/offerer split in get_contact_info_for; used to hang the
+        report/block-this-neighbour controls on the match detail page."""
+        if member is None:
+            return None
+        requester = self.need.requester
+        offering = self.offer.offerer if self.offer else self.proposed_by
+        if requester == member:
+            return offering
+        if offering == member:
+            return requester
+        return None
+
     @staticmethod
     def _contact_dict(member, pref):
         # Canonical §8.2 contact shape now lives on Member (shared with the

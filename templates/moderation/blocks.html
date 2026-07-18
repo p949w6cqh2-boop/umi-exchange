@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Blocked neighbours · {{ community.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="font-serif text-2xl text-parish-ink">Neighbours you've blocked</h1>
+      <p class="text-sm text-parish-ink/70 mt-0.5">
+        You won't be matched with anyone here, and you won't see each other on the board.
+      </p>
+    </div>
+    <a href="{% url 'community-feed' community.slug %}"
+       class="text-sm text-[var(--umi-primary)] hover:underline">&larr; Back to feed</a>
+  </div>
+
+  {% if blocks %}
+  <ul class="umi-card divide-y divide-[var(--umi-border)]">
+    {% for block in blocks %}
+    <li class="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <span class="text-sm text-parish-ink">
+        {{ block.blocked.display_name }}
+        <span class="text-parish-ink/70">· blocked {{ block.created_at|timesince }} ago</span>
+      </span>
+      <form method="post" action="{% url 'moderation:unblock' community.slug %}">
+        {% csrf_token %}
+        <input type="hidden" name="blocked_id" value="{{ block.blocked.pk }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="btn-secondary text-sm !min-h-[40px] !px-3.5"
+                title="You can be matched and see each other again.">Unblock</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="umi-card p-8 text-center text-parish-ink/70">
+    <p>You haven't blocked anyone. That's the quiet, ordinary case.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
