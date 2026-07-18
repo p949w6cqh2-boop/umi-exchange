@@ -63,3 +63,6 @@ Thumbs.db
 /umi-exchange/
 /umi-brain/
 /umi-brain.bundle
+
+# transient pipeline handoff (see /checkpoint)
+.claude/checkpoint.md
