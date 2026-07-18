@@ -1,10 +1,11 @@
 # Error-monitoring & uptime: decision record
 
-> STATUS: **DECISION PENDING (Jasiah).** Recommendation below is sourced where marked and
-> CST-analytical where marked. Context: UMI Exchange in production on a ~960 MB DigitalOcean
-> droplet, prototype stage, budget-sensitive, handling vulnerable community members' PII.
-> Produced from a fan-out, adversarially-verified research pass (24 sources, 25 claims verified,
-> 22 confirmed / 3 refuted), 2026-07-18.
+> STATUS: **DECIDED 2026-07-18 (Jasiah): Option C — UptimeRobot only; Sentry stays off
+> (`SENTRY_DSN` empty); no aggregation SaaS at prototype stage.** Revisit self-hosted GlitchTip only
+> if real error blind spots appear. Rationale + sources below (sourced where marked, CST-analytical
+> where marked). Context: UMI Exchange in production on a ~960 MB DigitalOcean droplet, prototype
+> stage, budget-sensitive, handling vulnerable community members' PII. Produced from a fan-out,
+> adversarially-verified research pass (24 sources, 25 claims verified, 22 confirmed / 3 refuted).
 
 ## TL;DR
 
