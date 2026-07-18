@@ -182,6 +182,9 @@ prefix; never assume the shell is where you left it.
   board; all product copy checks against the brain's `identity/voice.md`.
 - **Safe-fail defaults:** archive not delete, draft not send, read not edit. Never send real
   email/SMS, spend money, delete data, or touch live community data without explicit approval.
+- **Ethics & safety posture:** `docs/ethics-and-safety.md` — the harm analysis and the hard,
+  unchecked gate that must pass before any real community with real PII onboards (fictional data only
+  until then).
 - **Sensitive personal data** (real names, parish specifics, settlement details) stays out of git.
 - **Tests** use `factory_boy` factories in `tests/conftest.py` and `apps/casework/tests/conftest.py`
   (`world`, `make_note`, `auth`, `u` fixtures). Add a regression test with every fix.
