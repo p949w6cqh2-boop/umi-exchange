@@ -428,6 +428,36 @@ Then in a browser:
 
 ---
 
+## §8.1 — External uptime + SSL monitoring (UptimeRobot)
+
+Local structured logs (in `config/settings/production.py`) capture errors on the box. For
+outside-in "is it up + is the cert valid" monitoring, use **UptimeRobot** (free tier: 50 monitors,
+5-min checks). It only pings the public `/health/` endpoint — **no parishioner data leaves the box**.
+(Decision + rationale, incl. why not hosted Sentry/GlitchTip, is in `docs/monitoring-decision.md`.)
+
+1. Sign up at **uptimerobot.com**, then verify an email **Alert Contact**
+   (My Settings → Add Alert Contact → Email).
+2. Dashboard → **+ New Monitor**:
+   - **Monitor Type:** `HTTP(s)`
+   - **Friendly Name:** `Reciprocal Aid Network`
+   - **URL:** `https://<your DOMAIN>/health/`
+   - **Monitoring Interval:** `5 minutes`
+   - **Alert Contacts:** tick your email
+3. **Enable the SSL / certificate-expiry alert** on the monitor (notify before expiry). Caddy
+   auto-renews the Let's Encrypt cert, so this is a backstop, not the primary renewal path.
+4. **Optional (recommended):** add **Keyword monitoring** — type `exists`, keyword `ok` — so a
+   `200` with a broken body still alerts (the health endpoint returns `{"status": "ok"}`).
+5. **Create Monitor.**
+
+**Healthy:** the monitor shows green **Up**, pinging `/health/` every 5 min; you get an email if it
+goes down or the cert nears expiry.
+
+> `/health/` is intentionally public and unauthenticated (returns 200 without a token) so an external
+> pinger can reach it. If you ever set `HEALTH_CHECK_TOKEN` in `.env`, the endpoint stops being open
+> and this monitor breaks — point the monitor at the apex `/` instead, or leave the token empty.
+
+---
+
 ## §9 — Daily backups
 
 `scripts/backup.sh` dumps the Postgres DB (gzip) to `/var/backups/umi/`. It expects the DB
