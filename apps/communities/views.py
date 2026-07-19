@@ -401,6 +401,8 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
     template_name = "communities/settings.html"
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         self.community = get_object_or_404(Community, slug=self.kwargs["slug"])
         self.member = Member.objects.filter(
             user=request.user,
