@@ -42,3 +42,13 @@ cut point between beats 6 and 7 happens in the edit, not the recording.
 - Nothing here touches production, posts anything, or leaves the local machine.
 - Timing sync: each scene's Secs column matches its script beat's second-range; the rig tags
   each clip with scene number so Stage 5's cut-down map can reference clips by name.
+
+## Appendix — deltas discovered at Stage 3 (recorded reality vs this spec)
+
+S2 records as an off-camera-signed-in member (`/join/` is auth-gated for visitors; clip still
+opens on the two doors). S4 continues one click past the post — board → her ask — because the
+promise string lives on `needs/detail.html`, not the form. All passes record with
+`reducedMotion: "reduce"` (full-motion hub animation wedges the headless renderer). The 9:16
+pass hides `.umi-bottomnav` (still-gallery chrome convention; at phone width the nav z-orders
+over the fixed submit — real stacking bug, flagged as a queue candidate). Full rationale:
+`04-contact-sheet.md`.
