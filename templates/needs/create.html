@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Post an ask · {{ community.name }}{% endblock %}
+{# Focused task: no thumb bar under a form — its tabs intercepted the fixed
+   submit at phone width, and a mis-tap discards a half-filled ask. #}
+{% block bottom_nav %}{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <div class="flex items-center gap-3 py-4">
