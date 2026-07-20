@@ -39,8 +39,8 @@ the parish's pages a card away, the pulse of the week below.
 ![Hub](demo/03-hub.webp)
 
 ### 4. Posting an ask — a line or two is plenty
-Categories as pictures, urgency in plain words, and the promise printed right on the form:
-nothing about you is shared until you accept a match.
+Categories as pictures, urgency in plain words — and the moment you post, the promise is
+printed right on your ask: nothing about you is shared until you accept a match.
 
 ![Post an ask](demo/04-post-ask.webp)
 
