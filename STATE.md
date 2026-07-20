@@ -116,6 +116,17 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   Overturns every older "nothing deployed" claim. Droplet `143.244.167.7`, hand-run docker compose
   (Caddy → gunicorn → postgres:16 + redis:7). Serves the **fictional St. Brigid's** demo
   (`seed_demo_parish`, DEBUG-only). **Demo creds must rotate before any real parish onboards.**
+- **The #93–#99 span (2026-07-19/20):** **#93** search-relevance test marked postgres-only
+  (SQLite FTS divergence stopped impersonating regressions) · **#95** demo-gallery walking
+  resolver goes via the hub + throttle-hardened login · **#96** anonymous gated-screen GETs
+  302 to login, never 500 (all four screens regression-locked) · **#97** create screens drop
+  the bottom nav (it z-ordered over the fixed submit at phone width; focused-task pattern) ·
+  **#98** walkthrough §4 promise-location wording · **#99** the founder-gated tutorial-video
+  pipeline lands in `docs/tutorial/` (six keyed stages: script, shot list, hardened Playwright
+  rig + cycle runner, contact sheet, cut-down map + SRTs, assembly handoff — footage
+  disposable, rig durable). Gate count now **1012 on PG16**. Rig gotchas recorded: reduce-
+  motion for headless capture; port-ownership verification (leaked-server phantom throttles);
+  per-scene watchdogs — a hang is a red.
 - **Demo localized to American English (#92, 2026-07-18):** all St. Brigid's demo strings (seed +
   landing mock cards + walkthrough + shoot script, in lockstep) trade Irish idiom for American —
   ride to the 9:30 Mass / math / crib / grocery run; Tomás→Tom, Síle→Sheila, Ó Sé→O'Shea. Counts
