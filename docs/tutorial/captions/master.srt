@@ -9,7 +9,7 @@ runs on the internet.
 
 3
 00:00:06,600 --> 00:00:14,000
-It works like the corkboard in the back of the
+It works like the corkboard in the front of the
 church, except it can let you know when someone answers.
 
 4
