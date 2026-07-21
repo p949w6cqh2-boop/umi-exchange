@@ -18,3 +18,7 @@ gitignored, never committed):
 
 Rule: never start stage N+1 without updating the checkpoint for stage N. A rate-limit or context
 cutoff must leave `.claude/checkpoint.md` accurate enough to resume blind.
+
+**Output-token guard (insights 2026-07-20):** commit after EVERY stage; between stages report a
+one-line status only. An interrupted run resumes by verifying commits, never by redoing work —
+and short statuses keep long pipelines clear of output-limit deaths.
