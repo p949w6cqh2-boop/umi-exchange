@@ -154,6 +154,10 @@ prefix; never assume the shell is where you left it.
   POST them repeatedly need a distinct `REMOTE_ADDR` per request or they collect 429s.
 - **Known flake:** `test_reauth_returns_429_after_five_attempts` straddles a fixed-window minute
   boundary (~rare). Green in isolation ⇒ flake; anything else failing ⇒ real.
+- **Prefer Edit over sed/heredoc for source changes** — sed has mangled apostrophes and
+  duplicated content here; any quote in the text makes sed fragile. Edit tool, always, for code.
+- **Crontab/scheduled jobs: absolute paths + explicit `cd /abs/repo/path &&` prefix, written
+  via heredoc** — the missing-prefix bug has recurred (nightly brain-refresh took several tries).
 - **No smart/curly quotes in Python source or f-strings** — they read as normal quotes to the eye
   and cascade into suite-wide syntax failures (~70 tests once).
 - **No Tailwind opacity modifiers on arbitrary CSS-var colors** — `text-[var(--umi-accent)]/70`
