@@ -30,6 +30,7 @@ USER umi
 RUN DJANGO_SETTINGS_MODULE=config.settings.production \
     SECRET_KEY=build-only-not-used-at-runtime \
     ENCRYPTION_KEY="$(python -c 'import base64; print(base64.urlsafe_b64encode(b"0"*32).decode())')" \
+    BLIND_INDEX_KEY=build-only-blind-index-not-a-kek \
     DATABASE_URL="postgres://u:p@localhost:5432/db" \
     REDIS_URL="redis://localhost:6379/0" \
     ALLOWED_HOSTS="localhost" \
