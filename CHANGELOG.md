@@ -3,7 +3,7 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased
+## 2026-07-22
 
 - **Groundwork for finding a person by name.** Nothing changes on screen yet. Names on
   file stay locked (encrypted), and the board now keeps a scrambled fingerprint of each
