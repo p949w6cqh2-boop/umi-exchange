@@ -21,10 +21,17 @@ Keys come from settings.ENCRYPTION_KEYS (list, primary first), falling back
 to the legacy single settings.ENCRYPTION_KEY. Read at call time on purpose:
 tests and rotations may swap keys mid-process; the cost is negligible at
 this scale.
+
+A third key class rides beside the two layers: settings.BLIND_INDEX_KEY, a
+DEDICATED HMAC secret for the §12.3 name blind index (normalize_name /
+name_blind_index below). It never encrypts anything and must never equal an
+encryption key — the helper refuses a shared value.
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
@@ -128,6 +135,37 @@ def envelope_decrypt_str(ciphertext: bytes | None, wrapped_dek: bytes | None) ->
         return Fernet(dek).decrypt(bytes(ciphertext)).decode("utf-8")
     except InvalidToken as exc:
         raise ValueError("DEK does not match this ciphertext.") from exc
+
+
+# ------------------------------------------------------- name blind index
+def normalize_name(value: str | None) -> str:
+    """§12.3 canonical form: casefold, strip, collapse internal whitespace."""
+    if value is None:
+        return ""
+    return " ".join(str(value).casefold().split())
+
+
+def name_blind_index(value: str | None) -> bytes | None:
+    """Keyed HMAC-SHA256 of the normalized name — equality lookups only,
+    NEVER authorization. Returns None for empty input. Fails closed when
+    BLIND_INDEX_KEY is unset, and refuses a key that matches any configured
+    encryption key (the whole point is that the two are separate secrets)."""
+    normalized = normalize_name(value)
+    if not normalized:
+        return None
+    key = getattr(settings, "BLIND_INDEX_KEY", "") or ""
+    if not key:
+        raise ImproperlyConfigured("BLIND_INDEX_KEY not set; the name blind index is unavailable.")
+    # Deliberately the UNION of both settings (not _keks() precedence): a
+    # retired ENCRYPTION_KEY still in the env must also be refused — it may
+    # still decrypt old backups, so it is not an acceptable blind-index key.
+    encryption_keys = list(getattr(settings, "ENCRYPTION_KEYS", None) or [])
+    single = getattr(settings, "ENCRYPTION_KEY", "") or ""
+    if single:
+        encryption_keys.append(single)
+    if any(hmac.compare_digest(_key_bytes(key), _key_bytes(k)) for k in encryption_keys):
+        raise ImproperlyConfigured("BLIND_INDEX_KEY must be a dedicated key, distinct from every encryption key.")
+    return hmac.new(_key_bytes(key), normalized.encode("utf-8"), hashlib.sha256).digest()
 
 
 def envelope_encrypt_json(value) -> tuple[bytes | None, bytes | None]:

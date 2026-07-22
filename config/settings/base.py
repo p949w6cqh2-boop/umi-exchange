@@ -24,6 +24,11 @@ ENCRYPTION_KEY = env("ENCRYPTION_KEY", default="")
 # (set ENCRYPTION_KEYS="<new>,<old>", rotate, then drop to "<new>"). crypto._keks()
 # uses this list when present, falling back to ENCRYPTION_KEY otherwise.
 ENCRYPTION_KEYS = env.list("ENCRYPTION_KEYS", default=[])
+# §12.3 name blind index: DEDICATED HMAC key, deliberately SEPARATE from the
+# encryption KEKs (a shared key would let an encryption-key holder test name
+# equality, and vice versa). crypto.name_blind_index() fails closed when unset
+# and refuses a value that matches any configured encryption key.
+BLIND_INDEX_KEY = env("BLIND_INDEX_KEY", default="")
 UMI_CONFORMANCE_LEVEL = env("UMI_CONFORMANCE_LEVEL", default="core")
 DEBUG = env.bool("DEBUG", default=False)
 # Runtime app DB role the append-only REVOKE targets (audit migration 0002 +
