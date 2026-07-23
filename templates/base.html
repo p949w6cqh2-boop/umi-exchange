@@ -119,9 +119,9 @@
     {% block content %}{% endblock %}
   </main>
 
-  {# Focused-task screens (the create forms) override this empty: their fixed
+  {% comment %}Focused-task screens (the create forms) override this empty: their fixed
      submit strip owns the bottom edge, and the nav's tabs were intercepting it
-     at phone width (plus one mis-tap discards a half-filled form). #}
+     at phone width (plus one mis-tap discards a half-filled form).{% endcomment %}
   {% block bottom_nav %}{% include "components/_bottom_nav.html" %}{% endblock %}
 
   {% load pages_nav %}
