@@ -19,7 +19,7 @@ def test_mission_page_public_for_anonymous(client, name):
 
 def test_about_carries_founder_and_mission(client):
     body = client.get(reverse("about")).content.decode()
-    assert "Jasiah" in body
+    assert "Jasiah Williams" in body
     assert "Founder" in body
     assert "iron sharpens iron" in body.lower()  # reciprocity, in his words
     assert "Acts" in body  # Acts 4:32 — the blueprint

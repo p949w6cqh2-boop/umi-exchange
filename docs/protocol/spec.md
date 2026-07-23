@@ -1,7 +1,7 @@
 # The UMI Protocol
 
 **Version 0.1 — CANONICAL (keyed by the steward, 2026-07-14)**
-United Moral Infrastructure · Steward: Jasiah, United Moral Infrastructure (a nonprofit being
+United Moral Infrastructure · Steward: Jasiah Williams, United Moral Infrastructure (a nonprofit being
 established as a 501(c)(3))
 
 License: [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). You may share and adapt this
