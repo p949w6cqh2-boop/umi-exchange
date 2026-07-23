@@ -221,7 +221,7 @@ class TestSelfMatchPrevention:
         assert Match.objects.filter(need=need, offer=offer, proposed_by=offerer).count() == 1
 
     def test_coordinator_can_broker_offer_they_do_not_own(self):
-        """Subsidiarity (Jasiah's call): a coordinator MAY broker a match with a
+        """Subsidiarity (Jasiah Williams's call): a coordinator MAY broker a match with a
         member's offer they don't own — and the offerer is signaled so they keep
         the right to accept or decline (the consent that makes brokering
         *assist*, not *substitution*)."""

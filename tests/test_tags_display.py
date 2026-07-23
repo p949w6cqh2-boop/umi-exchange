@@ -212,7 +212,7 @@ class TestBadgeTerminalStates:
 
 
 class TestKeepAndExplainCopy:
-    """Jasiah's 2026-07-11 decision: tags and household stay — and the UI
+    """Jasiah Williams's 2026-07-11 decision: tags and household stay — and the UI
     says plainly what each is for."""
 
     def test_my_tags_page_explains_tags(self, community, viewer):

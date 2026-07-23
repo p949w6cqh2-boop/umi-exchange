@@ -78,7 +78,7 @@ def register_schedule():
     )
 
 
-# Retention policy (Jasiah's yes, 2026-07-11): terminal needs keep their
+# Retention policy (Jasiah Williams's yes, 2026-07-11): terminal needs keep their
 # encrypted on-behalf-of name for one year, then it is crypto-shredded.
 NEED_PII_RETENTION_DAYS = 365
 

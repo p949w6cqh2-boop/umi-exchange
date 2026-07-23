@@ -21,7 +21,7 @@ from .models import FederatedMatch, FederatedShare
 
 # M-4: max concurrent non-terminal (proposed/accepted) proposals against one
 # Need from one link. Mechanism is the guard below; the NUMBER is a product call
-# (§11 suggests 3) — flagged for Jasiah, not silently authoritative.
+# (§11 suggests 3) — flagged for Jasiah Williams, not silently authoritative.
 MAX_OPEN_PROPOSALS_PER_NEED_PER_LINK = 3
 
 

@@ -629,7 +629,7 @@ class AboutView(TemplateView):
 
 class PrivacyView(TemplateView):
     """Public: the retention/privacy promise in plain language (policy set
-    by Jasiah 2026-07-11; enforcement = crypto-shred sweeps + backup aging)."""
+    by Jasiah Williams 2026-07-11; enforcement = crypto-shred sweeps + backup aging)."""
 
     template_name = "pages/privacy.html"
 
