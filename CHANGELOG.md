@@ -5,6 +5,9 @@
 
 ## 2026-07-22
 
+- **The founder's name now shows in full.** The About page signature and the protocol's
+  steward line read **Jasiah Williams** now, not just the first name. Nothing else on those
+  pages moved.
 - **Groundwork for finding a person by name.** Nothing changes on screen yet. Names on
   file stay locked (encrypted), and the board now keeps a scrambled fingerprint of each
   name that can't be turned back into the name itself. When the lookup screen arrives
