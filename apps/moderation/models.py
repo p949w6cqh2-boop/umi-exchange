@@ -2,7 +2,7 @@
 
 A platform holding vulnerable people must let a neighbour say "this isn't
 right" and route that to a human the community already trusts (threat-model
-follow-up; Jasiah's P1, 2026-07-12). Flags reference their target the same
+follow-up; Jasiah Williams's P1, 2026-07-12). Flags reference their target the same
 way the audit log does — type string + UUID — every model here has a UUID pk.
 """
 

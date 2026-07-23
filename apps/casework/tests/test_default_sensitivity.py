@@ -1,4 +1,4 @@
-"""Threat-model must-fix #4 (Jasiah's go, 2026-07-11): a case that nobody
+"""Threat-model must-fix #4 (Jasiah Williams's go, 2026-07-11): a case that nobody
 explicitly classifies must land RESTRICTED, not standard — coordinators read
 all standard-case PII by design, so the unsafe default was the leak."""
 

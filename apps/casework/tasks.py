@@ -112,7 +112,7 @@ def register_schedule():
     )
 
 
-# Retention policy (Jasiah's yes, 2026-07-11): closed cases keep their
+# Retention policy (Jasiah Williams's yes, 2026-07-11): closed cases keep their
 # encrypted narrative for seven years, then it is crypto-shredded.
 CASE_RETENTION_DAYS = 7 * 365
 

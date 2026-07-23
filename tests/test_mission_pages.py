@@ -28,7 +28,7 @@ def test_about_carries_founder_and_mission(client):
 
 @pytest.mark.parametrize("name", MISSION_PAGES)
 def test_no_granted_501c3_claim_while_filing_pending(client, name):
-    """The 501(c)(3) filing is not complete (Jasiah, 2026-07-10) — no page may
+    """The 501(c)(3) filing is not complete (Jasiah Williams, 2026-07-10) — no page may
     claim the status as granted, only 'being established as'. Covers the shared
     footer too, since it renders on every page."""
     body = client.get(reverse(name)).content.decode()
