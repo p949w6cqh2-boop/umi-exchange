@@ -45,10 +45,15 @@ class Command(BaseCommand):
             self.stdout.write(f"{pending.count()} row(s) would be {'reverted' if reverse else 'backfilled'}.")
             return
 
-        total, failed = 0, []
+        total, failed, failed_pks = 0, [], set()
         while True:
             with transaction.atomic():
-                rows = list(pending.select_for_update(skip_locked=True)[: opts["batch_size"]])
+                # Exclude rows we already failed to decrypt: they never get a
+                # DEK written, so without this they keep matching `pending` and
+                # would be re-selected forever (skip_locked can't help — nothing
+                # else holds them). Advancing past them lets the loop terminate.
+                batch = pending.exclude(pk__in=failed_pks) if failed_pks else pending
+                rows = list(batch.select_for_update(skip_locked=True)[: opts["batch_size"]])
                 if not rows:
                     break
                 for need in rows:
@@ -62,8 +67,9 @@ class Command(BaseCommand):
                             (need.on_behalf_of, need.on_behalf_of_dek) = crypto.envelope_encrypt_str(plain)
                         need.save(update_fields=["on_behalf_of", "on_behalf_of_dek"])
                         total += 1
-                    except ValueError as exc:  # undecryptable row: report, continue
+                    except ValueError as exc:  # undecryptable row: report, skip permanently
                         failed.append((str(need.pk), str(exc)))
+                        failed_pks.add(need.pk)
             self.stdout.write(f"  …{total} done")
             if opts["sleep"]:
                 time.sleep(opts["sleep"])

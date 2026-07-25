@@ -18,6 +18,7 @@ ENVELOPE_DEK_FIELDS = [
     # (app_label, model_name, dek_field)
     ("needs", "Need", "on_behalf_of_dek"),
     ("casework", "CaseFile", "summary_enc_dek"),
+    ("casework", "CaseFile", "emergency_justification_enc_dek"),
     ("casework", "CaseNote", "body_enc_dek"),
     ("casework", "FollowUp", "detail_enc_dek"),
     ("casework", "WarmHandoff", "summary_enc_dek"),
@@ -61,8 +62,12 @@ class Command(BaseCommand):
                         break
                     for obj in rows:
                         wrapped = getattr(obj, dek_field)
-                        setattr(obj, dek_field, crypto.rewrap_dek(wrapped))
-                        obj.save(update_fields=[dek_field])
+                        # .update() bypasses Model.save() — and with it the
+                        # CaseNote A7 immutability guard, which would raise on a
+                        # finalized note and abort rotation partway (leaving later
+                        # models un-rotated). We touch only the wrapped-DEK token;
+                        # the row is already locked by select_for_update above.
+                        model.objects.filter(pk=obj.pk).update(**{dek_field: crypto.rewrap_dek(wrapped)})
                         total += 1
                         last_pk = obj.pk
                 if opts["sleep"]:

@@ -3,6 +3,15 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-25
+
+- **Steadier locks on personal information.** Quiet, under-the-hood repairs to the system that
+  keeps names and case notes encrypted. Changing the master key used to stop halfway if it met a
+  finalized case note; it now finishes cleanly. A case's emergency safety note is now covered by
+  that key change too. And the one-time upgrade that moves older records onto the stronger lock
+  can no longer snag on a single unreadable record and stall. Nothing looks different on the
+  board — these keep the protections whole.
+
 ## 2026-07-22
 
 - **The founder's name now shows in full.** The About page signature and the protocol's

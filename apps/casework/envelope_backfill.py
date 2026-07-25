@@ -31,14 +31,21 @@ CENSUS_ONLY_FIELDS = [
 ]
 
 
-def _iterate_pending(model, ct, dek, reverse):
+def _iterate_pending(model, ct, dek, reverse, failed=None):
     """Yield locked batches still needing conversion. Forward: ciphertext
     present + DEK NULL. Reverse: DEK present. The shrinking selector makes
-    the loop terminate and the whole operation idempotent/resumable."""
+    the loop terminate and the whole operation idempotent/resumable.
+
+    `failed` is a live set of pks the caller couldn't decrypt; they never get a
+    DEK written, so without excluding them they'd keep matching the selector and
+    re-select forever (an unreadable row = infinite loop). Excluding them lets
+    the selector shrink to empty."""
     while True:
         with transaction.atomic():
             qs = model.objects.filter(**{f"{ct}__isnull": False})
             qs = qs.filter(**{f"{dek}__isnull": False}) if reverse else qs.filter(**{f"{dek}__isnull": True})
+            if failed:
+                qs = qs.exclude(pk__in=failed)
             rows = list(qs.select_for_update(skip_locked=True).only("pk", ct, dek)[:BATCH_SIZE])
             if not rows:
                 return
@@ -54,13 +61,15 @@ def forward_func(apps, schema_editor=None):
     for model_name, ct, dek in FIELD_MAP:
         model = apps.get_model("casework", model_name)
         converted = failed = 0
-        for rows in _iterate_pending(model, ct, dek, reverse=False):
+        failed_pks = set()
+        for rows in _iterate_pending(model, ct, dek, reverse=False, failed=failed_pks):
             for obj in rows:
                 try:
                     plain = crypto.decrypt_str(getattr(obj, ct))
                     ct_val, dek_val = crypto.envelope_encrypt_str(plain)
                 except ValueError as exc:
                     failed += 1
+                    failed_pks.add(obj.pk)
                     logger.warning(
                         "casework envelope backfill: %s %s unreadable, skipped (%s)",
                         model_name,
@@ -140,13 +149,15 @@ def reverse_func(apps, schema_editor=None):
     for model_name, ct, dek in FIELD_MAP:
         model = apps.get_model("casework", model_name)
         reverted = failed = 0
-        for rows in _iterate_pending(model, ct, dek, reverse=True):
+        failed_pks = set()
+        for rows in _iterate_pending(model, ct, dek, reverse=True, failed=failed_pks):
             for obj in rows:
                 try:
                     plain = crypto.envelope_decrypt_str(getattr(obj, ct), getattr(obj, dek))
                     ct_val = crypto.encrypt_str(plain)
                 except ValueError as exc:
                     failed += 1
+                    failed_pks.add(obj.pk)
                     logger.warning(
                         "casework envelope reverse: %s %s unreadable, skipped (%s)",
                         model_name,
