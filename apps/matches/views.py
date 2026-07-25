@@ -50,6 +50,14 @@ class MatchProposeView(LoginRequiredMixin, View):
         need = get_object_or_404(Need, id=need_id, community=community)
         offer = get_object_or_404(Offer, id=offer_id, community=community) if offer_id else None
 
+        # Moderation containment: a hidden need/offer — a coordinator-hidden post
+        # or a removed member's — is not matchable by ordinary members (mirrors
+        # the read gate in needs/views.py). Coordinators keep oversight. Without
+        # this, a hidden post stays matchable and its owner's contact is disclosed
+        # on accept, defeating the hide.
+        if (need.moderation_hidden or (offer is not None and offer.moderation_hidden)) and not member.is_coordinator:
+            return _reject(request, slug, need_id, "This post is no longer available.", 404)
+
         # Self-matching prevention (Protocol Section 8.6): the proposer must not
         # be the need's requester, and an offer owned by the requester cannot be
         # matched to that same person's need.  Check both Member-level AND
@@ -254,6 +262,28 @@ class MatchUpdateView(LoginRequiredMixin, View):
             # accepts of two matches sharing one offer cannot both pass.
             if new_status == "accepted" and match.offer is not None and match.offer.status != "active":
                 return _reject(request, slug, pk, "That offer has already been matched.", 409)
+
+            # Moderation containment on accept (mirrors the propose-time guard and
+            # the read gate): a need/offer hidden AFTER this match was proposed
+            # must not be acceptable by an ordinary member — otherwise the reveal
+            # that the hide was meant to prevent still happens. Coordinators keep
+            # oversight.
+            if (
+                new_status == "accepted"
+                and (need.moderation_hidden or (match.offer is not None and match.offer.moderation_hidden))
+                and not member.is_coordinator
+            ):
+                return _reject(request, slug, pk, "This post is no longer available.", 409)
+
+            # Block on accept: a block created after the proposal must stop the
+            # §8.2 contact reveal — the exact recall a block promises. Party-based
+            # (requester ↔ offering member), no actor exemption, mirroring the
+            # propose-time block guard. The propose-time check can't cover a block
+            # made while the match already sits in 'proposed'.
+            if new_status == "accepted":
+                offering_member = match.offer.offerer if match.offer is not None else match.proposed_by
+                if is_blocked_between(need.requester, offering_member):
+                    return _reject(request, slug, pk, "You can't accept a match with this neighbour.", 409)
 
             # Persist an optional note alongside the status change (saved by
             # transition_to()'s final save()). Blank input leaves notes intact.
