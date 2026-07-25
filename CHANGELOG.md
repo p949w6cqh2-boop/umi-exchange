@@ -5,6 +5,11 @@
 
 ## 2026-07-25
 
+- **Hidden and blocked posts stay out of matches.** If a coordinator has hidden a notice — or
+  removed the neighbour who posted it — it can no longer be picked up as a match, and a match on
+  it can't be accepted after the fact. And when two neighbours have blocked each other, a match
+  between them can't be completed, even one that was already waiting, so contact details are never
+  shared across a block.
 - **Steadier locks on personal information.** Quiet, under-the-hood repairs to the system that
   keeps names and case notes encrypted. Changing the master key used to stop halfway if it met a
   finalized case note; it now finishes cleanly. A case's emergency safety note is now covered by
