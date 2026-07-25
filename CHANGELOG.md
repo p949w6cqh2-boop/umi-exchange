@@ -5,6 +5,10 @@
 
 ## 2026-07-25
 
+- **Tougher on password guessing and lockout tricks.** Repeated sign-in attempts on one account are
+  now counted properly — a small trick that used to reset the counter no longer works — and the admin
+  sign-in door is covered by the same limit. A burst of sign-up attempts using your name can no longer
+  lock you out of your own sign-in. And a new password can't be the same as your username.
 - **Hidden and blocked posts stay out of matches.** If a coordinator has hidden a notice — or
   removed the neighbour who posted it — it can no longer be picked up as a match, and a match on
   it can't be accepted after the fact. And when two neighbours have blocked each other, a match

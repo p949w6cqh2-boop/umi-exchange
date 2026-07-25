@@ -59,8 +59,13 @@ class RegistrationForm(forms.ModelForm):
         if password != cleaned.get("password_confirm"):
             self.add_error("password_confirm", "Passwords do not match.")
         if password:
+            # Validate against a user carrying the SUBMITTED username/email:
+            # self.instance isn't populated until _post_clean(), which runs AFTER
+            # clean(), so passing it here gave UserAttributeSimilarityValidator an
+            # empty username and a password equal to the username slipped through.
+            probe = User(username=cleaned.get("username") or "", email=cleaned.get("email") or "")
             try:
-                password_validation.validate_password(password, self.instance)
+                password_validation.validate_password(password, probe)
             except forms.ValidationError as exc:
                 self.add_error("password", exc)
         return cleaned
