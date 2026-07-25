@@ -123,13 +123,18 @@ class AuthRateLimitMiddleware:
             allowed, remaining, reset = check(f"auth:ip:{_h(_client_ip(request))}", AUTH_IP_LIMIT, AUTH_IP_WINDOW)
             if not allowed:
                 return _too_many(request, AUTH_IP_LIMIT, remaining, reset)
-            ident = (
-                (request.POST.get("login") or request.POST.get("username") or request.POST.get("email") or "")
-                .strip()
-                .lower()
-            )
+            # Identify the account by the field the auth backend actually uses.
+            # The legacy 'login' alias is gone: no form here submits it, so
+            # reading it first let an attacker send login=<random> per request
+            # and mint a fresh bucket every time, neutering this throttle.
+            ident = (request.POST.get("username") or request.POST.get("email") or "").strip().lower()
             if ident:
-                allowed, remaining, reset = check(f"auth:acct:{_h(ident)}", AUTH_ACCT_LIMIT, AUTH_ACCT_WINDOW)
+                # Scope the per-account bucket by PATH so login / register / reset
+                # each get their own counter. Sharing one let a /register/ flood
+                # naming a victim lock that victim out of /login/.
+                allowed, remaining, reset = check(
+                    f"auth:acct:{_h(ident)}:{request.path}", AUTH_ACCT_LIMIT, AUTH_ACCT_WINDOW
+                )
                 if not allowed:
                     return _too_many(request, AUTH_ACCT_LIMIT, remaining, reset)
         return self.get_response(request)
