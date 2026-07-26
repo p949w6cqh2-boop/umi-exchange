@@ -90,9 +90,18 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         from apps.federation.sharing import share_panel
 
         ctx["share_panel"] = share_panel(offer, member)
-        ctx["matching_needs"] = Need.objects.filter(
-            community=offer.community, category=offer.category, status="open"
-        ).exclude(requester=member)[:5]
+        # Same two filters the feed and the hub apply. Without them this panel
+        # re-listed coordinator-hidden asks (with a working Propose Match button)
+        # and asks from neighbours the viewer has blocked.
+        from apps.moderation.services import blocked_member_ids
+
+        ctx["matching_needs"] = (
+            Need.objects.filter(
+                community=offer.community, category=offer.category, status="open", moderation_hidden=False
+            )
+            .exclude(requester=member)
+            .exclude(requester_id__in=blocked_member_ids(member))[:5]
+        )
         return ctx
 
 

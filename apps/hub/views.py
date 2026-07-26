@@ -55,8 +55,9 @@ class HubView(LoginRequiredMixin, TemplateView):
         ctx["open_matches"] = selectors.open_matches_for(self.member)
         ctx["notifications"] = selectors.recent_notifications(self.request.user)
         ctx["member_tags"] = selectors.own_tags(self.member)
-        # The Pulse (hub v2): witnessed generosity + immediate agency.
-        ctx["pulse"] = selectors.pulse_events(self.community)
+        # The Pulse (hub v2): witnessed generosity + immediate agency. viewer is
+        # required for the block filter — this is the post-login landing screen.
+        ctx["pulse"] = selectors.pulse_events(self.community, viewer=self.member)
         ctx["spotlight"] = selectors.spotlight_need(self.member)
         ctx["first_steps"] = selectors.first_steps(self.member)
         ctx["cycle"] = 0
@@ -94,7 +95,7 @@ class HubPulseView(HubPartialView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["community"] = self.community
-        ctx["pulse"] = selectors.pulse_events(self.community)
+        ctx["pulse"] = selectors.pulse_events(self.community, viewer=self.member)
         return ctx
 
 

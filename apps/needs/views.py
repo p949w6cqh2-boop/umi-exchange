@@ -99,16 +99,32 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         from apps.federation.sharing import share_panel
 
         ctx["share_panel"] = share_panel(need, member)
-        # Suggested offers: same category, active
+        # Suggested offers: same category, active. The own-need branch lists other
+        # members' offers, so it carries the same two filters as the feed and the
+        # hub — a coordinator-hidden offer, or one from a blocked neighbour, must
+        # not be re-listed here. The else branch is self-scoped (offerer=member) so
+        # it needs no block filter, but it does filter hidden: propose already 404s
+        # on hidden content (apps/matches/views.py:58), so listing your own hidden
+        # offer is a dead button, and its own detail page 404s you out anyway
+        # (apps/offers/views.py:62). Keyed by Jasiah 2026-07-25.
+        from apps.moderation.services import blocked_member_ids
+
         if ctx["is_own_need"]:
             ctx["suggested_offers"] = (
-                Offer.objects.filter(community=community, category=need.category, status="active")
+                Offer.objects.filter(
+                    community=community, category=need.category, status="active", moderation_hidden=False
+                )
                 .exclude(offerer=member)
+                .exclude(offerer_id__in=blocked_member_ids(member))
                 .select_related("offerer")[:5]
             )
         else:
             ctx["suggested_offers"] = Offer.objects.filter(
-                community=community, category=need.category, status="active", offerer=member
+                community=community,
+                category=need.category,
+                status="active",
+                moderation_hidden=False,
+                offerer=member,
             ).select_related("offerer")[:5]
         # Active matches on this need
         ctx["matches"] = need.matches.select_related("offer", "proposed_by").order_by("-proposed_at")
