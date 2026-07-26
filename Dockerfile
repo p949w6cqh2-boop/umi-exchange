@@ -1,11 +1,14 @@
 # ── Multi-stage Dockerfile for UMI Exchange ──
-# This is the root Dockerfile for convenience. The canonical production
-# Dockerfile lives at docker/Dockerfile.
+# Convenience alias so a bare `docker build .` works. The canonical production
+# Dockerfile is docker/Dockerfile — it is what CI's Docker Build Test and the
+# GHCR push both build (.github/workflows/ci.yml, deploy.yml). KEEP THE TWO
+# IDENTICAL: this copy once carried an extra libffi-dev, so a droplet built
+# from here shipped an image CI had never proved.
 
 # ── Stage 1: Build dependencies ──
 FROM python:3.12-slim AS builder
 WORKDIR /build
-RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev libffi-dev gcc && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 

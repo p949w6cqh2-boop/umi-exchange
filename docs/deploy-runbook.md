@@ -40,6 +40,10 @@ bash scripts/backup.sh          # -> /var/backups/umi/umi-<timestamp>.sql.gz
 #    the app code is baked in via COPY (no source bind-mount, only a logs volume),
 #    so pull + restart alone serves the OLD page. Unchanged layers stay cached, so
 #    a no-op rebuild is fast.
+#    Always pass -f docker/Dockerfile: that is the file CI's Docker Build Test and
+#    the GHCR push build, so this is the image CI has actually proved. The root
+#    Dockerfile is a convenience alias kept identical to it — a bare `docker build .`
+#    is fine, but name the canonical one here so the two can never quietly diverge.
 docker build -t umi-exchange:local -f docker/Dockerfile .
 
 # 5. Recreate the app container. ALWAYS pass --env-file .env — without it, compose

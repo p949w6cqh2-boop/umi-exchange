@@ -1,7 +1,7 @@
 # Production deployment: docker compose -f docker/docker-compose.prod.yml up -d
 services:
   app:
-    image: umi-exchange:local  # built locally on the droplet (docker build -t umi-exchange:local .)
+    image: umi-exchange:local  # built on the droplet: docker build -t umi-exchange:local -f docker/Dockerfile .
     restart: unless-stopped
     env_file: ../.env
     environment:
