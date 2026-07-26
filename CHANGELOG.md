@@ -5,6 +5,12 @@
 
 ## 2026-07-25
 
+- **What you write in a note stays where it can be erased.** The board keeps a permanent record of
+  *actions* — who accepted a match, when a tag was reviewed — that by design can never be altered.
+  Three spots were copying the actual words people typed (a match note, a tag-review reason) into
+  that permanent record, where no erasure request could ever reach them. The record now only notes
+  *that* something was written; the words themselves stay on the post, where they can still be
+  corrected or removed.
 - **The waiting-asks list no longer loses the asks that need it most.** On the coordinator
   dashboard, an ask where a helper had stepped up and then stepped back was counted as "already
   matched" forever — so the very asks most at risk of being forgotten never appeared in the

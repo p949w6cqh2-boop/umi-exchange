@@ -274,7 +274,10 @@ class MemberTag(StateMachineMixin, models.Model):
             self.id,
             details={
                 "tag_slug": self.tag.slug,
-                "reason": reason,
+                # THAT a reason was given, never the text — the audit log is
+                # append-only and unshreddable; the text stays on the redactable
+                # rejection_reason field.
+                "reason_provided": bool(reason),
                 "rejection_count": self.rejection_count,
             },
             request=request,
@@ -297,7 +300,8 @@ class MemberTag(StateMachineMixin, models.Model):
             details={
                 "tag_slug": self.tag.slug,
                 "revoked_by": str(revoker.id),
-                "reason": reason,
+                # Same rule as reject above: flag, not free text.
+                "reason_provided": bool(reason),
             },
             request=request,
         )

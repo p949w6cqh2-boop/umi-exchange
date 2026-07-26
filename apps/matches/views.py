@@ -305,10 +305,14 @@ class MatchUpdateView(LoginRequiredMixin, View):
 
             queue_match_event(match, new_status)
 
-        # Audit log
+        # Audit log. Record THAT a note was provided, never the note: the audit
+        # table is append-only (UPDATE/DELETE revoked), so free text here could
+        # never be corrected or crypto-shredded — the note itself lives on
+        # Match.notes, which a shred can reach. Mirrors the casework
+        # emergency-open discipline ({"justification_provided": True}).
         details = {"status": new_status}
         if notes:
-            details["notes"] = notes
+            details["notes_provided"] = True
         AuditLog.log(member.user, "update", "match", match.id, details=details, request=request)
 
         # Dotted state-change audit (§8.3) for the need/offer that transition_to()
