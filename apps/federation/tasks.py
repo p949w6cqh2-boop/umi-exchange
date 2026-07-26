@@ -77,6 +77,13 @@ def auto_suspend_unreachable_links() -> int:
         except TransitionConflict:
             continue  # raced with an admin action — their call wins
         emit("fed.link_suspended", link, details={"reason": "auto_unreachable", "peer": link.peer.instance_id})
+        # Same reasoning as the admin suspend path: once the link leaves
+        # 'active', pending events can never deliver or be cleared, so their
+        # contact payloads must go now. This is the case where rows sit
+        # longest — the peer went dark 7 days ago.
+        from .outbox import shred_link_event_payloads
+
+        shred_link_event_payloads(link)
         notify_coordinators(
             link.community,
             "Federation link suspended",
@@ -125,6 +132,14 @@ def register_schedule():
         },
     )
     Schedule.objects.update_or_create(
+        name="federation-sweep-event-payloads",
+        defaults={
+            "func": "apps.federation.tasks.sweep_stale_event_payloads",
+            "schedule_type": Schedule.DAILY,
+            "repeats": -1,
+        },
+    )
+    Schedule.objects.update_or_create(
         name="federation-auto-suspend",
         defaults={
             "func": "apps.federation.tasks.auto_suspend_unreachable_links",
@@ -132,3 +147,17 @@ def register_schedule():
             "repeats": -1,
         },
     )
+
+
+def sweep_stale_event_payloads() -> int:
+    """§4.4 retention backstop for outbound event contact payloads.
+
+    Deliberately NOT gated on FEDERATION_ENABLED, unlike its sibling tasks: the
+    other tasks move data around and must stop when the feature is off, but this
+    one only DESTROYS data that should no longer exist. Gating it would make
+    switching federation off a way to freeze requester PII decryptable forever —
+    the opposite of what turning it off should mean.
+    """
+    from .outbox import sweep_stale_event_payloads as _sweep
+
+    return _sweep()

@@ -330,3 +330,36 @@ def sweep_expired_contacts(now=None) -> int:
         emit("fed.contact_shredded", fmatch, details={"role": fmatch.role})
         shredded += 1
     return shredded
+
+
+def shred_link_event_payloads(link) -> int:
+    """Shred the contact payloads of every still-pending outbound event on this
+    link. Called when a link is suspended or revoked: delivery is gated on
+    link__status='active', so from that moment the row can never be delivered,
+    acked, or given up on — and both of the normal clears sit behind that same
+    gate. Without this the requester's name+email stay decryptable under the
+    instance KEK forever (§4.4)."""
+    shredded = 0
+    for ev in FederationEvent.objects.filter(link=link, direction="out", payload_enc__isnull=False).exclude(
+        state__in=("acked", "failed")
+    ):
+        ev.shred_payload()
+        emit("fed.event_payload_shredded", ev, details={"reason": "link_inactive", "link": str(link.pk)})
+        shredded += 1
+    return shredded
+
+
+def sweep_stale_event_payloads(now=None) -> int:
+    """Backstop for the same PII, independent of link status AND of the feature
+    flag. An event older than the give-up window can never legitimately deliver,
+    so its contact payload has no reason to exist — whatever happened to the
+    link, and whether or not federation is still switched on. Turning the
+    feature off must not be a way to strand decryptable PII."""
+    now = now or timezone.now()
+    cutoff = now - timedelta(hours=GIVE_UP_HOURS)
+    shredded = 0
+    for ev in FederationEvent.objects.filter(created_at__lt=cutoff, payload_enc__isnull=False):
+        ev.shred_payload()
+        emit("fed.event_payload_shredded", ev, details={"reason": "retention", "link": str(ev.link_id)})
+        shredded += 1
+    return shredded

@@ -89,7 +89,12 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None)
     try:
         with transaction.atomic():
             need = Need.objects.select_for_update().get(pk=share.need_id)
-            if need.status != "open":
+            # moderation_hidden as well as status: a hidden need must not gain a
+            # brand-new authoritative Match a coordinator could then accept,
+            # which would trigger the §8.2 cross-boundary contact exchange the
+            # hide exists to prevent. Discovery no longer advertises it, but a
+            # stale peer can still hold the listing — this is the real gate.
+            if need.status != "open" or need.moderation_hidden:
                 return {"status": "rejected", "reason": "gone"}
             if _is_requester_self_match(need, link, blind_token):
                 return {"status": "rejected", "reason": "self_match"}
