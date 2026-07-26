@@ -90,21 +90,30 @@ SEASON_DAYS = 90
 URGENCY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
 
-def pulse_events(community, cap=PULSE_CAP):
+def pulse_events(community, cap=PULSE_CAP, viewer=None):
     """The community's recent life, merged newest-first: asks and offers
     landing, asks being answered, needs fulfilled, neighbours joining.
-    Helpers are never named here — public celebration stays §8.2-shaped."""
+    Helpers are never named here — public celebration stays §8.2-shaped.
+
+    `viewer` is the member reading the Pulse. Pass it: this is the first screen
+    after login (LOGIN_REDIRECT_URL=/hub/), and without it a blocked neighbour's
+    name, ask and arrival all show up there — breaking the block's plain promise
+    that the two of them stop seeing each other on the board.
+    """
     from datetime import timedelta
 
     from django.utils import timezone
 
+    from apps.moderation.services import blocked_member_ids
     from apps.needs.models import Need
     from apps.offers.models import Offer
 
     since = timezone.now() - timedelta(days=PULSE_WINDOW_DAYS)
+    blocked = blocked_member_ids(viewer) if viewer is not None else set()
     events = []
     needs = (
         Need.objects.filter(community=community, created_at__gte=since, moderation_hidden=False)
+        .exclude(requester_id__in=blocked)
         .select_related("requester", "category")
         .order_by("-created_at")[:cap]
     )
@@ -121,6 +130,7 @@ def pulse_events(community, cap=PULSE_CAP):
         )
     offers = (
         Offer.objects.filter(community=community, created_at__gte=since, moderation_hidden=False)
+        .exclude(offerer_id__in=blocked)
         .select_related("offerer", "category")
         .order_by("-created_at")[:cap]
     )
@@ -136,6 +146,7 @@ def pulse_events(community, cap=PULSE_CAP):
         )
     answered = (
         Match.objects.filter(need__community=community, accepted_at__isnull=False, accepted_at__gte=since)
+        .exclude(need__requester_id__in=blocked)
         .select_related("need")
         .order_by("-accepted_at")[:cap]
     )
@@ -151,6 +162,7 @@ def pulse_events(community, cap=PULSE_CAP):
         )
     fulfilled = (
         Match.objects.filter(need__community=community, fulfilled_at__isnull=False, fulfilled_at__gte=since)
+        .exclude(need__requester_id__in=blocked)
         .select_related("need")
         .order_by("-fulfilled_at")[:cap]
     )
@@ -164,9 +176,11 @@ def pulse_events(community, cap=PULSE_CAP):
                 "url": f"/c/{community.slug}/needs/{match.need_id}/",
             }
         )
-    joined = Member.objects.filter(community=community, is_active=True, joined_at__gte=since).order_by("-joined_at")[
-        :cap
-    ]
+    joined = (
+        Member.objects.filter(community=community, is_active=True, joined_at__gte=since)
+        .exclude(id__in=blocked)
+        .order_by("-joined_at")[:cap]
+    )
     for member in joined:
         events.append(
             {
@@ -188,11 +202,16 @@ def spotlight_need(member, cycle=0):
     dead-ends."""
     from django.db.models import Case, IntegerField, Value, When
 
+    from apps.moderation.services import blocked_member_ids
     from apps.needs.models import Need
 
     qs = (
         Need.objects.filter(community=member.community, status="open", moderation_hidden=False)
         .exclude(requester=member)
+        # The Spotlight hands the ask an "I can help" button. Offering a blocked
+        # neighbour's ask breaks the block twice over: it names them on the first
+        # screen after login, and the button 404s when pressed.
+        .exclude(requester_id__in=blocked_member_ids(member))
         .exclude(matches__status__in=OPEN_MATCH_STATUSES)
         .select_related("requester", "category")
         .annotate(

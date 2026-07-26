@@ -5,6 +5,11 @@
 
 ## 2026-07-25
 
+- **A block now holds everywhere on the board.** Blocking a neighbour was already keeping the two of
+  you from being matched, but their name and posts could still turn up in a few places: the Pulse and
+  the spotlight ask on your home screen — the first thing you see after signing in — and the
+  suggestion panels on ask and offer pages. Those all respect the block now, both ways. The same
+  panels also stop showing posts a coordinator has hidden.
 - **Field notes sync again after a bad entry, and a lost edit now says so.** One malformed entry in
   a batch of offline visit notes used to fail the whole batch — and because the phone keeps trying,
   syncing could stay stuck for good. Bad entries are now reported one by one and the rest go
