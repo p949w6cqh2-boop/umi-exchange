@@ -5,6 +5,14 @@
 
 ## 2026-07-25
 
+- **Withdrawn consent now stops a handoff too.** When someone withdraws consent, their case freezes:
+  no new notes can be written. Handing the case to another visitor was the one path that slipped
+  past that freeze, and it carried a written summary with it. It's now frozen like everything else —
+  the case can still be closed. Two related repairs: the daily overdue-reminder email now re-checks
+  that the person still has access to the case before it goes out (someone who left, was removed, or
+  had their access ended kept getting it), and it honours the email opt-out. And a case can no
+  longer be deleted outright from the admin screens — closing a case is the only path, so finalized
+  notes stay intact and the record of what happened stays whole.
 - **Two rare timing faults that could undo work already done.** If a coordinator removed a neighbour
   at the same moment someone marked a match complete, the finished match could be quietly flipped
   back to cancelled and the ask put back on the board. And the hourly tidy-up that closes out

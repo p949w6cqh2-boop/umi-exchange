@@ -354,6 +354,13 @@ class CaseAssignView(CommunityMixin, View):
         case = self.get_case(pk)
         if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
             return _forbidden("Only an admin or the current assignee can hand off.")
+        # Revocation freeze (§3.6). A handoff summary is new subject narrative —
+        # envelope-encrypted, often the most acute detail in the case — and the
+        # reassignment widens read access. Every other narrative-write path checks
+        # this; without it a coordinator whose note-create is 403'd could still
+        # push that narrative into a fresh WarmHandoff.
+        if self._consent_frozen(case):
+            return _forbidden("Consent was revoked — the case is frozen; close it via status instead.")
         form = AssignForm(self.community, exclude_member=case.assigned_to, data=request.POST)
         if not form.is_valid():
             return HttpResponse(form.errors.as_text(), status=400)
