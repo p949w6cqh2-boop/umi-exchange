@@ -602,10 +602,34 @@ class VisitCaptureView(CommunityMixin, View):
             client_uuid=d["client_uuid"] or None,
         )
         note.body = d["body"]
+        saved_url = f"{reverse('casework:visit', kwargs={'slug': slug})}?saved={case.short_code}"
         try:
-            note.save()
+            with transaction.atomic():  # savepoint: the IntegrityError must not poison the request txn
+                note.save()
         except IntegrityError:
-            return redirect(f"{reverse('casework:visit', kwargs={'slug': slug})}?saved={case.short_code}")
+            # client_uuid is globally unique. Scope the lookup to the authorized
+            # case, like SyncView: an unscoped one would leak whether a uuid exists
+            # in a case this visitor can't see. An identical resubmit is the ordinary
+            # double-tap and stays idempotent; anything else — a bfcache Back that
+            # restored a used uuid under edited text, or a collision with another
+            # case — means this note was NOT stored, and saying "saved" would lose
+            # the visitor's correction silently.
+            existing = (
+                CaseNote.objects.filter(client_uuid=note.client_uuid, case=case).first() if note.client_uuid else None
+            )
+            if existing is not None and existing.body == d["body"]:
+                return redirect(saved_url)
+            form.add_error(
+                None,
+                "This visit wasn't saved — a note was already sent from this device. "
+                "Open the case and amend that note instead, so nothing you've written is lost.",
+            )
+            return render(
+                request,
+                "casework/visit.html",
+                {"community": self.community, "form": form, "saved": ""},
+                status=409,
+            )
         if "finalize" in request.POST:
             note.transition_to(CaseNote.STATUS_FINAL)
             audit.emit("note.finalized", note, user=request.user, request=request)
@@ -685,11 +709,20 @@ class SyncView(CommunityMixin, View):
             cu = str(uuid.UUID(str(raw_cu)))
         except (ValueError, TypeError, AttributeError):
             return {"client_uuid": None, "status": "error", "error": "invalid client_uuid"}
+        # Same pre-validation as client_uuid above, and for the same reason: a
+        # non-uuid case_id (a legacy short_code, a corrupted IndexedDB entry) makes
+        # UUIDField raise django.core.exceptions.ValidationError — not ValueError or
+        # TypeError — which escaped this except and 500'd the whole batch. The client
+        # keeps the queue on failure and re-POSTs, so that wedges offline sync for good.
+        try:
+            case_pk = uuid.UUID(str(item.get("case_id")))
+        except (ValueError, TypeError, AttributeError):
+            return {"client_uuid": cu, "status": "error", "error": "unknown case"}
         try:
             case = CaseFile.objects.select_related("consent", "subject_person").get(
-                pk=item.get("case_id"), community=self.community
+                pk=case_pk, community=self.community
             )
-        except (CaseFile.DoesNotExist, ValueError, TypeError):
+        except CaseFile.DoesNotExist:
             return {"client_uuid": cu, "status": "error", "error": "unknown case"}
         if access.case_access(self.membership, case) < access.CONTRIBUTOR:
             return {"client_uuid": cu, "status": "error", "error": "forbidden"}
