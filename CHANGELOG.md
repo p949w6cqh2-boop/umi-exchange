@@ -5,6 +5,13 @@
 
 ## 2026-07-25
 
+- **The app can no longer report itself healthy when it isn't.** The built-in health probe used to
+  answer "fine" even if the database was unreachable — a redirect fooled it before it ever really
+  checked. It now checks for real, and honours the optional health token. And a safety catch for
+  later: the optional error-reporting service (currently switched off) is now configured so that if
+  it's ever switched on, it cannot send request contents or in-memory data off the server — the
+  places a decrypted case note would sit at the moment of a crash. The old setting only *looked*
+  like it promised that.
 - **A block now holds everywhere on the board.** Blocking a neighbour was already keeping the two of
   you from being matched, but their name and posts could still turn up in a few places: the Pulse and
   the spotlight ask on your home screen — the first thing you see after signing in — and the
