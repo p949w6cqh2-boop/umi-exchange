@@ -5,6 +5,10 @@
 
 ## 2026-07-25
 
+- **Two-step sign-in now actually guards your account.** If you've set up an authenticator app,
+  signing in now asks for your 6-digit code (or a saved recovery code) after your password — as the
+  settings page always said it would. Before this, the code was never asked for, so the extra
+  protection existed on paper only. Nothing changes if you haven't set up an authenticator.
 - **What you write in a note stays where it can be erased.** The board keeps a permanent record of
   *actions* — who accepted a match, when a tag was reviewed — that by design can never be altered.
   Three spots were copying the actual words people typed (a match note, a tag-review reason) into

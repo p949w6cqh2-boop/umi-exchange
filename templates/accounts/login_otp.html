@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Verification code{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 md:mt-20 umi-rise">
+  <div class="umi-shell">
+    <div class="umi-card !p-7 md:!p-9">
+      <span class="umi-kicker">One more step</span>
+      <h1 class="umi-display !text-3xl mt-2 mb-3">Enter your code</h1>
+      <p class="text-sm text-parish-ink/70 mb-7">Open your authenticator app and type the 6-digit code — or use one of your saved recovery codes.</p>
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <p class="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{{ form.non_field_errors.0 }}</p>
+        {% endif %}
+        {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="w-full btn-primary !mt-7">Verify</button>
+      </form>
+      <div class="mt-6 pt-5 border-t border-[var(--umi-border)]">
+        <a href="{% url 'login' %}" class="text-sm text-parish-ink/70 hover:text-parish-ink transition-colors duration-300">Back to sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
