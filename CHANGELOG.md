@@ -5,6 +5,12 @@
 
 ## 2026-07-25
 
+- **Groundwork: the last of the linked-community repairs.** Still switched off everywhere, so
+  nothing changes for you today. A community asking to link a second board now actually reaches an
+  admin who can approve it, instead of waiting on an approval that could never arrive. And three
+  hardening fixes underneath: a linked community must prove it holds the key it publishes, a
+  malformed request now gets a clean refusal instead of an error, and a flood of confused updates
+  can no longer tie up the server.
 - **Groundwork: what crosses to a linked community, and what must never.** Linking two communities
   is still switched off everywhere, so nothing here changes what you see today — these are repairs
   made before it can ever be switched on. A post a coordinator has hidden now stops being offered to

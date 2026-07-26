@@ -359,6 +359,11 @@ class MatchEventsView(FederationGateMixin, View):
             return JsonResponse({"error": "unknown_match"}, status=404)
 
         results = []
+        # One synchronous re-sync per REQUEST, not per event: resync_mirror makes
+        # a blocking 10s outbound call, and the conflict path writes no
+        # FederationEvent, so a stalling peer could otherwise pin every worker
+        # with a batch of state-invalid events.
+        resync_budget = mirror.ResyncBudget()
         for item in (payload.get("events") or [])[:50]:
             if not isinstance(item, dict):
                 results.append({"status": "error", "error": "invalid item"})
@@ -377,7 +382,9 @@ class MatchEventsView(FederationGateMixin, View):
                     result = {"status": "error", "error": "invalid_event"}
             else:
                 contact = item.get("contact") if isinstance(item.get("contact"), dict) else None
-                result = mirror.apply_match_event(fmatch, event_uuid=event_uuid, kind=kind, contact=contact)
+                result = mirror.apply_match_event(
+                    fmatch, event_uuid=event_uuid, kind=kind, contact=contact, resync_budget=resync_budget
+                )
             result["event_uuid"] = str(event_uuid)
             results.append(result)
         return JsonResponse({"results": results})
@@ -452,10 +459,20 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
         # M-1: scope pending inbound requests to THIS community — a peer that
         # named a target community only shows to that community's admins. Empty
         # target (unspecified/legacy) still shows to all (backward-compat).
+        # status__in rather than "pending": an ALREADY-ACTIVE peer asking to link a
+        # SECOND community keeps status="active" (HandshakeView only assigns status
+        # when constructing a new peer), so a pending-only filter meant that request
+        # appeared in no admin's list and could never be approved — while the wire
+        # caller was told to wait for an approval that could not happen. Live pairing
+        # material IS the request: _approve clears it, so an approved peer drops out.
+        # The already-linked-here exclusion keeps this from resurfacing the peer of
+        # an existing link.
         inbound = (
-            FederationPeer.objects.filter(status="pending")
+            FederationPeer.objects.filter(status__in=("pending", "active"))
             .exclude(pairing_hash="")
+            .exclude(links__community=self.community)
             .filter(Q(target_community_slug=self.community.slug) | Q(target_community_slug=""))
+            .distinct()
         )
         # Pinned one-time pairing codes for links this admin just initiated
         # (session-popped: rendered exactly once, on this page, not a toast).
