@@ -5,6 +5,12 @@
 
 ## 2026-07-25
 
+- **Two rare timing faults that could undo work already done.** If a coordinator removed a neighbour
+  at the same moment someone marked a match complete, the finished match could be quietly flipped
+  back to cancelled and the ask put back on the board. And the hourly tidy-up that closes out
+  past-due asks could close one a neighbour had just accepted — leaving them on their way to help
+  while the person who asked was told it had lapsed. Both now re-read the current state before
+  writing anything, so whoever acted first wins and nothing gets overwritten.
 - **Tidier, safer edges around your community.** A community's name is now handled safely inside the
   "Leave this community?" prompt, so a name containing something that looks like code can't act on
   your screen. An admin who leaves can no longer pull up the community's live join code — rotating
