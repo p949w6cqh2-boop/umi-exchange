@@ -43,6 +43,10 @@ def send_proposal(shadow, offer, *, actor_user):
         raise ProposalError("offer does not belong to the link's community")
     if offer.status != "active":
         raise ProposalError("offer is not active")
+    if offer.moderation_hidden:
+        # A hidden offer is off the local board; sending it abroad would put its
+        # title on a peer instance, outside this community's moderation reach.
+        raise ProposalError("offer is not active")
     if offer.offerer.user_id != actor_user.id:
         raise ProposalError("only the offer's owner can propose it to a peer")
 
@@ -217,6 +221,11 @@ def _apply_mirror_state(fmatch, new_status, contact=None, *, include_contact=Tru
                 "A cancel was requested automatically.",
             )
             result["reason"] = reason
+            # Deliberately NOT setting mirror_status='accepted' here. Nothing was
+            # exchanged: contact was withheld and a cancel queued. _duplicate_result
+            # re-derives disclosure from (mirror_status, offer.status) alone, so
+            # marking a refusal 'accepted' made the §6.3 lost-ack replay hand the
+            # peer the very contact this branch just refused (#12).
         else:
             if clean and include_contact:
                 fmatch.contact_payload = clean
@@ -235,8 +244,8 @@ def _apply_mirror_state(fmatch, new_status, contact=None, *, include_contact=Tru
                     # single-use across the boundary (the §8.7 offer guard)
                     offer.status = "matched"
                     offer.save(update_fields=["status", "updated_at"])
-        fmatch.mirror_status = "accepted"
-        fmatch.save(update_fields=["mirror_status", "contact_payload_enc", "contact_payload_dek"])
+            fmatch.mirror_status = "accepted"
+            fmatch.save(update_fields=["mirror_status", "contact_payload_enc", "contact_payload_dek"])
     else:
         fmatch.mirror_status = new_status
         fmatch.contact_expires_at = timezone.now() + timezone.timedelta(hours=outbox.CONTACT_GRACE_HOURS)

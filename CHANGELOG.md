@@ -5,6 +5,13 @@
 
 ## 2026-07-25
 
+- **Groundwork: what crosses to a linked community, and what must never.** Linking two communities
+  is still switched off everywhere, so nothing here changes what you see today — these are repairs
+  made before it can ever be switched on. A post a coordinator has hidden now stops being offered to
+  a linked community straight away, and can't be picked up by one; an offer taken off the board
+  can't be sent to one. When a match across communities can't go ahead, the other side is no longer
+  handed contact details on a retry. And when a link is paused or ended, contact details still
+  waiting to be sent are erased rather than sitting there indefinitely.
 - **Two-step sign-in now actually guards your account.** If you've set up an authenticator app,
   signing in now asks for your 6-digit code (or a saved recovery code) after your password — as the
   settings page always said it would. Before this, the code was never asked for, so the extra

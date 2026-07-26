@@ -211,8 +211,17 @@ class DiscoveryView(FederationGateMixin, View):
             return JsonResponse({"error": e.code}, status=403)
         if _peer_over_cap("discovery", peer):
             return JsonResponse({"error": "rate_limited"}, status=429)
-        shares = FederatedShare.objects.filter(link__peer=peer, link__status="active", status="active").select_related(
-            "link__community", "need__category", "offer__category"
+        # The share row being active is not enough: nothing revokes it when the
+        # underlying record is hidden, matched or withdrawn, so a removed
+        # member's need kept being advertised to the peer indefinitely. Gate on
+        # the live record too — the same two filters the local board applies.
+        live_record = Q(need__status="open", need__moderation_hidden=False) | Q(
+            offer__status="active", offer__moderation_hidden=False
+        )
+        shares = (
+            FederatedShare.objects.filter(link__peer=peer, link__status="active", status="active")
+            .filter(live_record)
+            .select_related("link__community", "need__category", "offer__category")
         )
         listings = [redact(s) for s in shares]
         emit("fed.discovery_served", peer, request=request, details={"count": len(listings)})
@@ -611,6 +620,17 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
                 # Suspend is a temporary pause — the link__status="active" gate
                 # already stops serving while suspended, and resume restores the
                 # still-active shares, so suspend deliberately leaves them.
+                if target in ("revoked", "suspended"):
+                    # Delivery is gated on link__status="active", so from this
+                    # moment a pending outbound event can never deliver, ack, or
+                    # give up — and both normal payload clears sit behind that
+                    # same gate. Shred now, or the requester's name+email stay
+                    # decryptable under the instance KEK indefinitely (§4.4).
+                    # Applies to suspend too: an unreachable peer auto-suspends,
+                    # which is exactly when rows sit longest.
+                    from .outbox import shred_link_event_payloads
+
+                    shred_link_event_payloads(link)
                 if target == "revoked":
                     link.shares.filter(status="active").update(status="revoked", revoked_at=timezone.now())
                     # Cancel in-flight authoritative Matches created via this link:
@@ -716,7 +736,12 @@ class FederatedOfferPickerView(LoginRequiredMixin, FederationGateMixin, View):
         )
         from apps.offers.models import Offer
 
-        offers = Offer.objects.filter(community=community, offerer=member, status="active").select_related("category")
+        # moderation_hidden: a coordinator-hidden offer must not be offered up
+        # for sending across a boundary — send_proposal refuses it, and listing
+        # it would put a hidden title one click from a peer instance.
+        offers = Offer.objects.filter(
+            community=community, offerer=member, status="active", moderation_hidden=False
+        ).select_related("category")
         return render(request, self.template_name, {"community": community, "shadow": shadow, "offers": offers})
 
 
