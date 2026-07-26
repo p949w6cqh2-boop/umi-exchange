@@ -16,6 +16,7 @@ from django.utils import timezone
 from apps.audit.services import emit
 from apps.common.state import TransitionConflict
 
+from . import access
 from .models import FollowUp
 from .notify import notify
 
@@ -29,12 +30,19 @@ def followup_overdue_digest():
 
     today = timezone.localdate()
     overdue = (
-        FollowUp.objects.filter(status="open", due_date__lt=today)
+        FollowUp.objects.filter(status="open", due_date__lt=today, assigned_to__is_active=True)
         .select_related("assigned_to__user", "case__community")
         .order_by("due_date")
     )
     by_assignee: dict = {}
     for fu in overdue:
+        # Re-check access at send time, as both sibling views do: an assignment
+        # made weeks ago is not standing authorization. A revoked or expired
+        # grant, a case turned restricted, or a membership that ended (filtered
+        # above) must stop the digest — otherwise someone who lost the case keeps
+        # receiving its title, due date and short_code daily, with no way to stop it.
+        if access.case_access(fu.assigned_to, fu.case) <= access.NONE:
+            continue
         by_assignee.setdefault(fu.assigned_to, []).append(fu)
 
     sent = 0
@@ -47,7 +55,12 @@ def followup_overdue_digest():
         lines = [f"• {fu.title} — due {fu.due_date} (case {fu.case.short_code})" for fu in items[:20]]
         body = "\n".join(lines)
         notify(user, "followup_overdue", title=f"{len(items)} overdue follow-up(s)", body=body, link=link)
-        if user.email:
+        # Honour the email opt-out, the way NotificationAdapter does on every other
+        # send. Kept as a direct send_mail rather than routed through the adapter:
+        # the adapter re-brands the subject "[UMI] …", and Lake 2's mail is
+        # deliberately "[Case Notes]" with a plaintext-only body (§3.6 — nothing
+        # decrypts in email).
+        if user.email and getattr(user, "email_notifications", True):
             try:
                 send_mail(
                     subject=f"[Case Notes] {len(items)} overdue follow-up(s)",

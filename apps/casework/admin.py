@@ -21,6 +21,14 @@ class CaseFileAdmin(admin.ModelAdmin):
     readonly_fields = ("id", "created_at", "updated_at", "closed_at", "summary_enc")
     date_hierarchy = "intake_date"
 
+    def has_delete_permission(self, request, obj=None):
+        # A case is closed, never destroyed. Admin delete drives Django's
+        # Collector: bulk SQL that never calls each child's delete()/save()
+        # guard, so it would cascade through finalized (immutable, A7) notes,
+        # follow-ups, handoffs and grants — and record it only in the mutable
+        # django_admin_log, not the append-only audit that crypto-shred rests on.
+        return False
+
 
 @admin.register(CaseNote)
 class CaseNoteAdmin(admin.ModelAdmin):
