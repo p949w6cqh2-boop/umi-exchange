@@ -5,6 +5,8 @@ audited (§8.3) with PII-free details. Hiding is reversible: a boolean the
 coordinator can flip back, never a delete (keyring: archive over delete).
 """
 
+import uuid
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -33,9 +35,20 @@ from .services import reinstate_member, remove_member
 TARGET_MODELS = {"need": Need, "offer": Offer, "member": Member, "page": CommunityPage}
 
 
+def _uuid_or_404(raw):
+    """A POSTed id, parsed. A malformed string makes UUIDField raise
+    ValidationError, which get_object_or_404 does not catch (only DoesNotExist),
+    so it escaped as a 500 — a junk id is a miss, not a server error."""
+    try:
+        return uuid.UUID(str(raw))
+    except (ValueError, TypeError, AttributeError):
+        raise Http404("malformed id")
+
+
 def _resolve_target(community, target_type, target_id):
     """The flagged thing, scoped HARD to this community (IDOR guard)."""
     model = TARGET_MODELS[target_type]
+    target_id = _uuid_or_404(target_id)
     if target_type == "member":
         return get_object_or_404(model, pk=target_id, community=community, is_active=True)
     if target_type == "page":
@@ -224,7 +237,7 @@ class BlockCreateView(LoginRequiredMixin, View):
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug, is_active=True)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
-        target = get_object_or_404(Member, pk=request.POST.get("blocked_id"), community=community)
+        target = get_object_or_404(Member, pk=_uuid_or_404(request.POST.get("blocked_id")), community=community)
         if target.id == member.id:
             messages.error(request, "You can't block yourself.")
             return _safe_redirect(request, community)
@@ -250,7 +263,7 @@ class BlockDeleteView(LoginRequiredMixin, View):
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug, is_active=True)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
-        target = get_object_or_404(Member, pk=request.POST.get("blocked_id"), community=community)
+        target = get_object_or_404(Member, pk=_uuid_or_404(request.POST.get("blocked_id")), community=community)
         deleted, _ = Block.objects.filter(community=community, blocker=member, blocked=target).delete()
         if deleted:
             emit("member.unblocked", target, user=request.user, request=request, details={})
@@ -291,7 +304,10 @@ class ReinstateMemberView(LoginRequiredMixin, View):
         if not member.is_coordinator:
             raise PermissionDenied("Only coordinators and admins can reinstate a member.")
         target = get_object_or_404(
-            Member, pk=request.POST.get("member_id"), community=community, removed_at__isnull=False
+            Member,
+            pk=_uuid_or_404(request.POST.get("member_id")),
+            community=community,
+            removed_at__isnull=False,
         )
         reinstate_member(target, by=member, request=request)
         messages.success(request, "Reinstated — they're back on the board.")

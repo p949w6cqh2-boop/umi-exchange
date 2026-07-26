@@ -67,7 +67,7 @@
 
 {# Leave community — quiet, confirm before posting. #}
 <form method="post" action="{% url 'community-leave' community.slug %}" class="mt-6"
-      onsubmit="return confirm('Leave {{ community.name }}? You can rejoin later with the code.');">
+      onsubmit="return confirm('Leave {{ community.name|escapejs }}? You can rejoin later with the code.');">
   {% csrf_token %}
   <button type="submit" class="text-xs text-parish-ink/40 hover:text-red-600 min-h-[44px]">Leave this community</button>
 </form>

@@ -595,9 +595,11 @@ class JoinCodeQRView(LoginRequiredMixin, View):
     """Generate QR code PNG for community join URL."""
 
     def get(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
-        # Check admin permission
-        member = Member.objects.filter(user=request.user, community=community, role="admin").first()
+        community = get_object_or_404(Community, slug=slug, is_active=True)
+        # Check admin permission. is_active matters: leaving is soft and keeps
+        # the role, so without it an admin who left kept serving the live join
+        # code — and rotating it no longer locked them out.
+        member = Member.objects.filter(user=request.user, community=community, role="admin", is_active=True).first()
         if not member:
             return HttpResponse(status=403)
 
