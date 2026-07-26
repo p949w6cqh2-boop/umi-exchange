@@ -7,6 +7,8 @@ import sentry_sdk
 from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 
+from config.sentry import sentry_options
+
 from .base import *  # noqa: F401, F403
 
 DEBUG = False
@@ -89,15 +91,19 @@ USE_X_FORWARDED_PORT = True
 # system check passes.
 
 # ── Sentry (optional: only active if SENTRY_DSN is set) ──
+# Options live in config/sentry.py, with the reasoning: send_default_pii=False on
+# its own does NOT mean "no PII" — request bodies and frame locals are sent by
+# default, and those are where decrypted casework narrative sits. Off in this
+# deployment by decision (docs/monitoring-decision.md).
 SENTRY_DSN = env("SENTRY_DSN", default="")
 if SENTRY_DSN:
     sentry_sdk.init(
-        dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        traces_sample_rate=0.1,  # 10% of requests for performance monitoring
-        send_default_pii=False,  # Never send PII to Sentry
-        environment=env("SENTRY_ENVIRONMENT", default="production"),
-        release=env("GIT_SHA", default="unknown"),
+        **sentry_options(
+            SENTRY_DSN,
+            environment=env("SENTRY_ENVIRONMENT", default="production"),
+            release=env("GIT_SHA", default="unknown"),
+        ),
     )
 
 # ── Health Check Token ────────────────────────────────

@@ -44,5 +44,10 @@ RUN DJANGO_SETTINGS_MODULE=config.settings.production \
     DEBUG="False" \
     python manage.py collectstatic --noinput
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -sf http://localhost:8000/health/ || exit 1
+# X-Forwarded-Proto: production sets SECURE_SSL_REDIRECT, so a plain-HTTP probe is
+# 301'd by SecurityMiddleware before any app code runs — and `curl --fail` only trips
+# on >=400, so the old probe exited 0 without ever reaching the DB check and the
+# container reported healthy while every request 500'd. The token suffix keeps the
+# probe honest the other way: /health/ 403s without ?token= once one is configured.
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -sf -H 'X-Forwarded-Proto: https' "http://localhost:8000/health/${HEALTH_CHECK_TOKEN:+?token=$HEALTH_CHECK_TOKEN}" || exit 1
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
