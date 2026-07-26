@@ -5,6 +5,11 @@
 
 ## 2026-07-25
 
+- **The waiting-asks list no longer loses the asks that need it most.** On the coordinator
+  dashboard, an ask where a helper had stepped up and then stepped back was counted as "already
+  matched" forever — so the very asks most at risk of being forgotten never appeared in the
+  waiting list. Only genuinely in-progress matches count now. Also closed a small door that let a
+  signed-out visitor tell which community addresses exist by how the page failed.
 - **The app can no longer report itself healthy when it isn't.** The built-in health probe used to
   answer "fine" even if the database was unreachable — a redirect fooled it before it ever really
   checked. It now checks for real, and honours the optional health token. And a safety catch for

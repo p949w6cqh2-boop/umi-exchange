@@ -5,7 +5,7 @@ import json
 from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Avg, Count, F
+from django.db.models import Avg, Count, F, Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -36,6 +36,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard/index.html"
 
     def dispatch(self, request, *args, **kwargs):
+        # Anonymous first, BEFORE the community lookup and the Member filter:
+        # AnonymousUser in a UUID FK filter raises ValidationError (a 500), and a
+        # 500-on-real-slug vs 404-on-missing-slug split is a community-existence
+        # oracle for signed-out probes. Same guard as every sibling gated view.
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         self.community = get_object_or_404(Community, slug=kwargs["slug"])
         self.member = Member.objects.filter(
             user=request.user,
@@ -79,15 +85,19 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         avg_td = avg["avg_hours"]
         ctx["avg_time_to_match"] = round(avg_td.total_seconds() / 3600, 1) if avg_td else 0
 
-        # Stale needs: open 7+ days, no matches
+        # Stale needs: open 7+ days, no LIVE match. The status predicate matters:
+        # cancelled/expired/unfulfilled Match rows survive forever (transition_to
+        # reopens the need but never deletes the dead row), so a bare Count hid
+        # exactly the ask this list exists to catch — one a helper tried and
+        # withdrew from.
         ctx["stale_needs"] = (
             Need.objects.filter(
                 community=c,
                 status="open",
                 created_at__lt=timezone.now() - timedelta(days=7),
             )
-            .annotate(match_count=Count("matches"))
-            .filter(match_count=0)
+            .annotate(live_matches=Count("matches", filter=Q(matches__status__in=("proposed", "accepted"))))
+            .filter(live_matches=0)
             .order_by("created_at")[:20]
         )
 
@@ -131,6 +141,9 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
     """Export community data as CSV. Coordinator/admin only."""
 
     def dispatch(self, request, *args, **kwargs):
+        # Anonymous first — same reasoning and same order as DashboardView above.
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         self.community = get_object_or_404(Community, slug=kwargs["slug"])
         self.member = Member.objects.filter(
             user=request.user,
