@@ -119,7 +119,7 @@ def send_proposal(shadow, offer, *, actor_user):
 MIRROR_TERMINAL = ("fulfilled", "unfulfilled", "cancelled", "expired")
 
 
-def apply_match_event(fmatch, *, event_uuid, kind, contact=None):
+def apply_match_event(fmatch, *, event_uuid, kind, contact=None, resync_budget=None):
     """Apply one signed authority event to this mirror. Idempotent on
     (link, event_uuid); an event invalid for the mirror's current state
     answers `conflict` and triggers a re-sync — the authority never yields,
@@ -135,7 +135,9 @@ def apply_match_event(fmatch, *, event_uuid, kind, contact=None):
     if FederationEvent.objects.filter(link=fmatch.link, event_uuid=event_uuid).exists():
         return _duplicate_result(fmatch, kind)
     if kind not in Match.VALID_TRANSITIONS.get(fmatch.mirror_status, []):
-        _try_resync(fmatch)
+        # Bounded: 50 conflicting events in one POST must not become 50 blocking
+        # outbound fetches (see ResyncBudget).
+        _try_resync(fmatch, budget=resync_budget)
         return {"status": "conflict", "state": fmatch.mirror_status}
     try:
         with transaction.atomic():
@@ -288,10 +290,33 @@ def resync_mirror(fmatch):
     return status
 
 
-def _try_resync(fmatch):
+class ResyncBudget:
+    """How many synchronous re-syncs one inbound request may perform.
+
+    resync_mirror makes a blocking outbound get_match (10s). MatchEventsView
+    loops up to 50 events, and a peer that stalls its own get_match while POSTing
+    a batch of state-invalid events could keep every gunicorn worker busy — the
+    conflict path writes no FederationEvent, so there is no per-item cost to
+    throttle it. One re-sync per request is enough for §6.3 convergence: the
+    snapshot it fetches covers the whole match, not one event.
+    """
+
+    def __init__(self, limit=1):
+        self.remaining = limit
+
+    def spend(self) -> bool:
+        if self.remaining <= 0:
+            return False
+        self.remaining -= 1
+        return True
+
+
+def _try_resync(fmatch, budget=None):
     """Best-effort — a failed re-sync just waits for the next event/poll."""
     import logging
 
+    if budget is not None and not budget.spend():
+        return
     try:
         resync_mirror(fmatch)
     except Exception:  # noqa: BLE001  # nosec B110 — never let re-sync break the wire response

@@ -130,7 +130,18 @@ def verify_instance_document(token: str) -> dict:
         raise
     except Exception as e:
         raise FederationAuthError("bad_document") from e
+    if not isinstance(payload, dict):
+        # json.loads can return a scalar; .get() on it is an AttributeError, which
+        # the wire views don't catch — an unauthenticated 500 instead of a 403.
+        raise FederationAuthError("bad_document")
     if payload.get("umi_federation") != "1" or payload.get("instance_id") != jwk_thumbprint(embedded):
+        raise FederationAuthError("bad_document")
+    if payload.get("jwk") != embedded:
+        # The signature only proves possession of the HEADER key, and instance_id
+        # is checked against that key — but callers pin payload["jwk"]. Without
+        # this, a peer can self-sign with its own key while advertising someone
+        # else's, and we would pin a key it cannot sign with, breaking the
+        # instance_id == thumbprint(jwk) invariant every trust decision rests on.
         raise FederationAuthError("bad_document")
     return payload
 
@@ -173,6 +184,11 @@ def verify_signed_request(request):
         unverified = json.loads(_b64url_decode(token.split(".")[1]))
     except Exception as e:
         raise FederationAuthError("bad_signature") from e
+    if not isinstance(unverified, dict):
+        # A payload segment that decodes to a scalar (42, "x", []) would make the
+        # .get() below raise AttributeError — not FederationAuthError — so every
+        # /federation/v1/ endpoint answered an unauthenticated 500 instead of 403.
+        raise FederationAuthError("bad_signature")
 
     peer = (
         FederationPeer.objects.filter(instance_id=str(unverified.get("iss", ""))[:64]).exclude(status="blocked").first()
@@ -189,6 +205,8 @@ def verify_signed_request(request):
         claims = json.loads(obj.payload)
     except Exception:
         raise _reject("bad_jws") from None
+    if not isinstance(claims, dict):
+        raise _reject("bad_jws")  # a validly-signed scalar is still not a claim set
     if claims.get("aud") != my_instance_id():
         raise _reject("bad_aud")
     iat = claims.get("iat")
