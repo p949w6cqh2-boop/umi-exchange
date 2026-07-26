@@ -5,6 +5,13 @@
 
 ## 2026-07-25
 
+- **Field notes sync again after a bad entry, and a lost edit now says so.** One malformed entry in
+  a batch of offline visit notes used to fail the whole batch — and because the phone keeps trying,
+  syncing could stay stuck for good. Bad entries are now reported one by one and the rest go
+  through. Separately: if you went Back on your phone and re-sent an edited visit note, the edit
+  could be dropped while the page still said "Visit saved". Now an identical re-send is quietly
+  ignored as before, but an edit that can't be stored tells you plainly and points you to the note
+  to amend, so nothing you wrote goes missing without you knowing.
 - **Withdrawn consent now stops a handoff too.** When someone withdraws consent, their case freezes:
   no new notes can be written. Handing the case to another visitor was the one path that slipped
   past that freeze, and it carried a written summary with it. It's now frozen like everything else —
