@@ -5,6 +5,12 @@
 
 ## 2026-07-25
 
+- **Tidier, safer edges around your community.** A community's name is now handled safely inside the
+  "Leave this community?" prompt, so a name containing something that looks like code can't act on
+  your screen. An admin who leaves can no longer pull up the community's live join code — rotating
+  the code now truly closes that door. On a phone, the bottom bar no longer follows you to a
+  community you aren't part of and leave you tapping links that go nowhere. And a malformed report
+  or block now answers with a plain "not found" instead of an error page.
 - **Tougher on password guessing and lockout tricks.** Repeated sign-in attempts on one account are
   now counted properly — a small trick that used to reset the counter no longer works — and the admin
   sign-in door is covered by the same limit. A burst of sign-up attempts using your name can no longer
