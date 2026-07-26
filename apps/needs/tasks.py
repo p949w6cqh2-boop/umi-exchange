@@ -7,6 +7,7 @@ Register once (mirrors apps/casework, apps/matches, apps/federation):
     python manage.py shell -c "from apps.needs.tasks import register_schedule; register_schedule()"
 """
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
@@ -19,26 +20,49 @@ from .models import Need
 def expire_stale_needs():
     """Expire open needs past their expiration date (without accepted matches)."""
     now = timezone.now()
-    expirable = Need.objects.filter(
-        status="open",
-        expires_at__lt=now,
-    ).exclude(
-        matches__status="accepted"  # Protocol Section 4.1: MUST NOT expire with accepted match
+    # Candidates are listed as ids, then each row is locked and re-checked below.
+    # The sweep sends a notification per need, so minutes can pass between this
+    # query and a late row — blind-writing 'expired' on the stale candidate set
+    # overwrote needs accepted or reposted in that window, orphaning an accepted
+    # match and telling the requester their need expired while a neighbour was on
+    # the way. Same lock-and-recheck shape as apps/matches/tasks.py.
+    candidate_ids = list(
+        Need.objects.filter(
+            status="open",
+            expires_at__lt=now,
+        )
+        .exclude(
+            matches__status="accepted"  # Protocol Section 4.1: MUST NOT expire with accepted match
+        )
+        .values_list("pk", flat=True)
     )
 
     count = 0
-    for need in expirable:
-        need.status = "expired"
-        need.save(update_fields=["status", "updated_at"])
+    for pk in candidate_ids:
+        with transaction.atomic():
+            need = Need.objects.select_for_update().get(pk=pk)
+            if (
+                need.status != "open"
+                or need.expires_at is None
+                or need.expires_at >= now
+                or need.matches.filter(status="accepted").exists()
+            ):
+                continue  # accepted, reposted or already closed while we swept
 
-        # Expire proposed matches individually so each leaves an audit entry
-        # (§8.3) — was a silent bulk .update() that bypassed the audit trail.
-        for m in need.matches.filter(status="proposed"):
-            m.status = "expired"
-            m.save(update_fields=["status"])
-            emit("match.expired", m, details={"reason": "need_expired"})
+            need.status = "expired"
+            need.save(update_fields=["status", "updated_at"])
 
-        # Notify requester
+            # Expire proposed matches individually so each leaves an audit entry
+            # (§8.3) — was a silent bulk .update() that bypassed the audit trail.
+            for m in need.matches.filter(status="proposed"):
+                m.status = "expired"
+                m.save(update_fields=["status"])
+                emit("match.expired", m, details={"reason": "need_expired"})
+
+            AuditLog.log(None, "update", "need", need.id, details={"status": ["open", "expired"]})
+
+        # Notify the requester outside the row lock: the send is synchronous, and
+        # holding a lock across it is what made the stale-candidate window wide.
         NotificationAdapter.send(
             need.requester.user,
             "need_expired",
@@ -46,8 +70,6 @@ def expire_stale_needs():
             "You can repost it if you still need help.",
             link=need.get_absolute_url(),
         )
-
-        AuditLog.log(None, "update", "need", need.id, details={"status": ["open", "expired"]})
         count += 1
 
     return f"Expired {count} needs"

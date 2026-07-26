@@ -46,13 +46,20 @@ def remove_member(member, *, by, request=None):
     with transaction.atomic():
         # In-flight matches where this member is any party → cancel. Cancelling
         # from "accepted" re-opens the counterpart's need/offer (see Match.transition_to).
-        in_flight = (
+        in_flight_ids = list(
             Match.objects.filter(status__in=("proposed", "accepted"))
             .filter(Q(need__requester=member) | Q(offer__offerer=member) | Q(proposed_by=member))
-            .select_related("need", "offer")
+            .values_list("pk", flat=True)
         )
         cancelled = 0
-        for match in in_flight:
+        for pk in in_flight_ids:
+            # Lock and re-read each row: the ids were listed before this loop, so a
+            # match fulfilled or cancelled in between must be left alone, not
+            # rewritten. (of=("self",): select_related pulls the nullable offer in
+            # as an outer join, and Postgres refuses FOR UPDATE on its nullable side.)
+            match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
+            if match.status not in ("proposed", "accepted"):
+                continue
             match.transition_to("cancelled")
             cancelled += 1
 

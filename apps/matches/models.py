@@ -7,8 +7,10 @@ This is the most important model in the entire application.
 import uuid
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
+
+from apps.common.state import TransitionConflict
 
 
 class Match(models.Model):
@@ -59,14 +61,37 @@ class Match(models.Model):
 
     def transition_to(self, new_status):
         """
-        Enforce the protocol state machine. Raises ValidationError on invalid transition.
-        Cascades status changes to the linked need and offer.
+        Enforce the protocol state machine. Raises ValidationError on an invalid
+        transition, TransitionConflict (409) when the row moved since this instance
+        was read. Cascades status changes to the linked need and offer.
         """
-        valid = self.VALID_TRANSITIONS.get(self.status, [])
-        if new_status not in valid:
-            raise ValidationError(f"Cannot transition match from '{self.status}' to '{new_status}'.")
+        snapshot = self.status
+        with transaction.atomic():
+            # Lock the row and re-read the committed status before validating.
+            # MatchUpdateView locks first, but the unlocked callers (moderation
+            # removal, federation revoke) hold snapshots that can be minutes old,
+            # and the bare save() below would rewrite whatever landed in between —
+            # cancelling a match somebody already fulfilled, or stranding the
+            # need/offer at 'matched'. Same lock-and-recheck contract as
+            # apps/common/state.py StateMachineMixin. Re-locking a row this
+            # transaction already holds is a no-op, so the locking callers are
+            # unaffected.
+            current = Match.objects.select_for_update().filter(pk=self.pk).values_list("status", flat=True).first()
+            if current is None:
+                raise ValidationError("This match no longer exists.")
+            if current != snapshot:
+                raise TransitionConflict(
+                    f"This match changed while you were viewing it (now '{current}'). Reload and try again.",
+                    current=current,
+                    target=new_status,
+                )
+            return self._apply_transition(current, new_status)
 
-        old_status = self.status
+    def _apply_transition(self, old_status, new_status):
+        valid = self.VALID_TRANSITIONS.get(old_status, [])
+        if new_status not in valid:
+            raise ValidationError(f"Cannot transition match from '{old_status}' to '{new_status}'.")
+
         self.status = new_status
         now = timezone.now()
 
