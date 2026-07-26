@@ -344,7 +344,10 @@ class TestAuditEvents:
         mt.reject(coord_member, reason="Insufficient evidence")
         log = AuditLog.objects.filter(action="tag.rejected", resource_id=mt.id).first()
         assert log is not None
-        assert log.details["reason"] == "Insufficient evidence"
+        # Flag, not free text (#21): the append-only log records THAT a reason was
+        # given; the text stays on the redactable rejection_reason field.
+        assert log.details["reason_provided"] is True
+        assert "reason" not in log.details
 
     @pytest.mark.django_db
     def test_revoke_emits_audit(self, member, coord_verified_tag, coord_member):
@@ -357,7 +360,9 @@ class TestAuditEvents:
         mt.revoke(coord_member, reason="Left ministry")
         log = AuditLog.objects.filter(action="tag.revoked", resource_id=mt.id).first()
         assert log is not None
-        assert log.details["reason"] == "Left ministry"
+        # Flag, not free text (#21) — same contract as the reject audit.
+        assert log.details["reason_provided"] is True
+        assert "reason" not in log.details
 
     @pytest.mark.django_db
     def test_remove_emits_audit(self, member, self_serve_tag):
