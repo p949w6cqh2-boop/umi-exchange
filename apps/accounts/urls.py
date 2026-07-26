@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     path("register/", views.RegisterView.as_view(), name="register"),
     path("login/", views.UMILoginView.as_view(), name="login"),
+    path("login/otp/", views.OTPVerifyView.as_view(), name="login-otp"),
     path("logout/", views.UMILogoutView.as_view(), name="logout"),
     # Password change (logged in)
     path(

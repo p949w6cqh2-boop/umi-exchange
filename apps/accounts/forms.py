@@ -133,3 +133,26 @@ class ProfileForm(forms.ModelForm):
             if qs.exists():
                 raise forms.ValidationError("This email is already in use.")
         return email or None  # Store empty as NULL (unique constraint)
+
+
+class OTPTokenForm(forms.Form):
+    """The second-factor code: 6 digits from the app, or a static recovery
+    token. Validation is match_token's job — this only normalizes input."""
+
+    token = forms.CharField(
+        min_length=6,
+        max_length=16,
+        label="Verification code",
+        widget=forms.TextInput(
+            attrs={
+                "class": "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]",
+                "placeholder": "6-digit code",
+                "autocomplete": "one-time-code",
+                "inputmode": "numeric",
+                "autofocus": True,
+            }
+        ),
+    )
+
+    def clean_token(self):
+        return self.cleaned_data["token"].strip().replace(" ", "")
