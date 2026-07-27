@@ -204,6 +204,17 @@ because they are not yet true. Each item names how you know it is done.
   checked, and the 30-day retention (`RETENTION_DAYS` plus the B2 lifecycle rule) is confirmed to work,
   meaning old backups actually disappear on schedule. An untested backup is a guess, not a safety net,
   and unbounded backups quietly defeat crypto-shred.
+  **Tooling ready 2026-07-27; the box stays open because nobody has run it yet.** `scripts/dr_sim.sh`
+  already existed and already refuses to touch prod, but it was referenced in **zero** documents, could
+  only pull from B2 (so an instance without a bucket could not rehearse at all), and **passed on a row
+  count of zero** — an empty restore reported success. It now restores from an explicit file, B2, or
+  the newest local backup; fails when the restore has no communities or members; asserts a known
+  community via `DR_EXPECT_SLUG`; and is written up in `docs/deploy/vps-runbook.md` §9.1 with the
+  retention check in §9.2. Guarded by `tests/test_dr_rehearsal.py`.
+  **What closes it is a person running it**, on the droplet, and pasting the output: the rehearsal
+  itself, and confirmation that old backups actually disappear — locally *and* in B2, where
+  `backup.sh` deletes nothing and relies on a bucket lifecycle rule that must be created by hand and
+  **does not exist yet**.
 
 - [ ] **Key custody is separated from root and is not all held by one person.** Done when the
   key-encryption key no longer sits in a plaintext file beside the database under the same root
