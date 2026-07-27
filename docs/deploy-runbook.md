@@ -32,6 +32,9 @@ cd /opt/umi-exchange
 
 # 2. Pull the merged code (fast-forwards cleanly since the PR #89 reconcile)
 git pull --ff-only origin main
+git rev-parse --short HEAD   # CHECK IT. Must equal the sha you are deploying.
+#   Skipping or silently failing this step is the failure mode that hides best:
+#   everything downstream then rebuilds and reports healthy from the OLD tree.
 
 # 3. Back up the DB FIRST — this is your rollback point
 bash scripts/backup.sh          # -> /var/backups/umi/umi-<timestamp>.sql.gz
@@ -56,7 +59,13 @@ docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T app \
 docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T app \
   python manage.py collectstatic --noinput
 
-# 7. Verify
+# 7. Verify — and make one check prove NEW code is running.
+#    On 2026-07-27 a deploy reported perfectly healthy while running the OLD tree:
+#    the pull step hadn't run, and `ps app` said healthy and the site returned 200
+#    the whole time, because nothing behaves differently when the code is merely
+#    stale. Health and status codes cannot tell "deployed" from "believed
+#    deployed". Always assert some string that ONLY exists in the new commit —
+#    and get its expected count by grepping the merged tree, never from memory.
 docker compose --env-file .env -f docker/docker-compose.prod.yml ps app   # want "healthy"
 curl -sf https://reciprocalaid.network/about/ | grep -o "<a string you changed>"
 ```
