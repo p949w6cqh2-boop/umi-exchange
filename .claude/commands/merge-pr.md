@@ -8,7 +8,8 @@ Codifies the standard umi-exchange merge flow. Do NOT merge to `main` without an
    `ruff check` + `ruff format --check`, `makemigrations --check`, bandit/semgrep `--baseline-commit
    main`, `check --deploy` = 0). Local PASS is necessary, NOT sufficient.
 2. **PR:** open a PR to `main`. Stage explicit paths only — never `git add -A`/`git add .` here
-   (`hgit_sync.py` must stay untracked). Body = what / why / tests. Update `CHANGELOG.md` in the
+   (blanket staging sweeps in untracked files nobody is looking at; hook-blocked). Body = what /
+   why / tests. Update `CHANGELOG.md` in the
    board's plain language if the change is user-facing (skip for infra/CI-only changes).
 3. **Hold for CI:** poll the PR's check runs (`pull_request_read` → `get_check_runs`). Do NOT merge
    until EVERY check is `completed` + `success`. Any `in_progress` or failure → hold and report;

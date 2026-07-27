@@ -93,7 +93,7 @@
 - **≈1006 tests** green on **Postgres 16 + Redis** (CI; SQLite works locally, minus one Postgres-only
   full-text relevance test in `test_search_area.py` that needs PG — `apps/needs/search.py` gates
   relevance on `vendor == "postgresql"`); `ruff check` + `ruff format --check` clean (ruff **pinned** in
-  CI; `hgit_sync.py` excluded via `pyproject.toml`); bandit baseline known-accepted (non-blocking);
+  CI); bandit baseline known-accepted (non-blocking);
   `check --deploy` **0 issues** under production settings.
 - Verification gate = the **`/gate` skill** (full suite count read from a file — never a piped tail). Pre-commit hook runs ruff/format/migrations/bandit.
 - **CI green** (`.github/workflows/ci.yml`): three jobs — Lint & Security Scan, Test & Coverage (PG16+Redis), Docker Build Test.
