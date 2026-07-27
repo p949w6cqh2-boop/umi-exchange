@@ -19,11 +19,14 @@
   <header class="bg-white border border-[var(--umi-border)] rounded-lg p-4">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 class="text-xl font-bold text-parish-ink">{{ case.short_code }} · {{ person_name }}
+        <h1 class="text-xl font-bold text-parish-ink">{{ case.short_code }} · {{ subject.label }}
           {% if case.sensitivity == "restricted" %}
           <span class="ml-1 align-middle text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">restricted</span>
           {% endif %}
         </h1>
+        {% if subject.limited %}
+        <p class="text-sm text-parish-ink/70 mt-1">{{ subject.note }}</p>
+        {% endif %}
         <p class="text-sm text-parish-ink/70 mt-1">
           Opened {{ case.intake_date }} by {{ case.opened_by.display_name }}
           · Assigned: {% if case.assigned_to %}{{ case.assigned_to.display_name }}{% else %}—{% endif %}

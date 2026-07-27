@@ -636,6 +636,19 @@ class PrivacyView(TemplateView):
     template_name = "pages/privacy.html"
 
 
+class TermsView(TemplateView):
+    """Public: what this board is, and what it is not.
+
+    Ethics gate item 5 requires the limits to be stated plainly where people can
+    read them — that UMI brokers introductions and does not vet people, run
+    background checks, supervise meetings, or guarantee anyone's safety. Promising
+    safety we do not provide is worse than promising nothing, because people act
+    on it. Logged-out visible, so someone can read it before deciding to join.
+    """
+
+    template_name = "pages/terms.html"
+
+
 class BeliefsView(TemplateView):
     """Public: what we believe — CST foundation, the vision, faithful citizenship."""
 

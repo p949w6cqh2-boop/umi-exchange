@@ -65,5 +65,9 @@
   </div>
   {% endif %}
   {% include "components/_flag_panel.html" with target_type="offer" target_id=offer.pk is_own=is_own_offer %}
+  {# Gate item 5 — see the note in needs/detail.html. #}
+  {% if member and not is_own_offer %}
+  {% include "components/_member_safety.html" with counterpart=offer.offerer can_flag_member=True %}
+  {% endif %}
 </div>
 {% endblock %}

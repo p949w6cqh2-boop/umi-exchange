@@ -4,8 +4,9 @@
 <div class="max-w-2xl mx-auto space-y-6">
   <div>
     <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">What you've shared</h1>
-    <p class="text-sm text-parish-ink/70 mt-2">Every yes you've given, in one place. You can stop
-      any of them whenever you want.</p>
+    <p class="text-sm text-parish-ink/70 mt-2">Every yes you've given, in one place, along with any
+      you wrote down for a neighbour who has no account here. You can stop any of them whenever you
+      want.</p>
   </div>
 
   {% if consents %}
@@ -14,6 +15,12 @@
     <div class="p-4 flex items-center justify-between gap-4">
       <div>
         <p class="text-sm font-medium text-parish-ink">{{ c.granted_to }}</p>
+        {% if c.is_on_behalf %}
+        <p class="text-xs text-parish-ink/70 mt-0.5">
+          Recorded for <span class="font-medium">{{ c.subject_label }}</span>, a neighbour with no account
+          here. They said yes to a coordinator; you wrote it down. You can stop it for them.
+        </p>
+        {% endif %}
         <p class="text-xs text-parish-ink/70 mt-0.5">{{ c.purpose }}</p>
         <p class="text-xs text-parish-ink/70 mt-1.5">
           They can see{% for token in c.scope %}{% if forloop.first %} {% elif forloop.last %} and {% else %}, {% endif %}{% include "consent/_scope_word.html" %}{% endfor %}.

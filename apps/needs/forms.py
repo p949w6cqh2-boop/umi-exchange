@@ -12,15 +12,14 @@ INPUT = "umi-input"
 
 
 class NeedForm(forms.ModelForm):
-    on_behalf_of_text = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": INPUT,
-                "placeholder": "\U0001f512 Their name (encrypted)",
-            }
-        ),
-    )
+    # No on-behalf field here, deliberately. One existed and was never rendered by
+    # templates/needs/create.html, so it could only be reached by a hand-crafted
+    # POST — a write-only sink for a third party's name that no screen ever showed
+    # and no member could ask to have removed. The Need.on_behalf_of column, its
+    # envelope property, the retention sweep and shred_on_behalf all remain for
+    # legacy rows. If Lake 1 ever needs posting on someone's behalf, it should be
+    # built with the same consent discipline as casework: a record naming THEM
+    # (consent.subject_person), and limited display until it exists.
 
     class Meta:
         model = Need
@@ -42,8 +41,6 @@ class NeedForm(forms.ModelForm):
         self.member = member
         if community:
             self.fields["category"].queryset = community.categories.filter(is_active=True)
-        if not member or not member.is_coordinator:
-            del self.fields["on_behalf_of_text"]
 
     def clean_title(self):
         """Strip HTML tags from title as defense-in-depth."""
@@ -73,8 +70,6 @@ class NeedForm(forms.ModelForm):
         need = super().save(commit=False)
         need.community = self.community
         need.requester = self.member
-        if hasattr(self, "cleaned_data") and self.cleaned_data.get("on_behalf_of_text"):
-            need.on_behalf_of_name = self.cleaned_data["on_behalf_of_text"]
         if commit:
             need.save()
         return need

@@ -3,6 +3,23 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-27
+
+- **If a neighbour hasn't been asked, the board no longer acts as though they have.** When a
+  coordinator opens a case for someone who has no account here, that person's name is now kept short
+  on the case — initials only, with a line saying plainly that they haven't been asked directly —
+  until their yes is actually recorded. And when it is recorded, it is written down as *theirs*, with
+  the coordinator noted as the person who heard it, rather than being filed under the coordinator's
+  own name as it was before. Whoever wrote it down can withdraw it on their behalf, and it shows up
+  in their list of shared things so it can't be quietly forgotten.
+- **The board now says plainly what it is, and isn't.** A new "What this is" page, linked in the
+  footer, states it directly: this board brokers introductions between neighbours, and it does not
+  vet people, run background checks, supervise meetings, or guarantee anyone's safety. The same words
+  appear when you're about to accept a match — before contact details are exchanged, not after.
+- **Reporting or blocking someone no longer requires matching with them first.** You can do both from
+  any ask or offer they've posted. The neighbours you've blocked are listed in your settings, and
+  coordinators have a standing link to the reports queue from their dashboard.
+
 ## 2026-07-25
 
 - **Groundwork: the last of the linked-community repairs.** Still switched off everywhere, so

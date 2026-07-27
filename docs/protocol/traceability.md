@@ -12,7 +12,7 @@
 | §3.5 | State only via transition fn; invalid → 409 | `apps/common/state.py::StateMachineMixin`; `apps/matches/models.py::transition_to` | `tests/test_matches.py` |
 | §3.6 | Consent revocation freeze | `apps/casework` consent gating; `apps/consent` | `apps/casework/tests/` (revocation) |
 | §3.11 | Separate DB roles for audit REVOKE | `manage.py restrict_audit_permissions`; `docs/deployment-checklist.md` | deploy check |
-| §4.1 | One-action, member-owned share; coordinators cannot consent for a member | `apps/federation/sharing.py`; `apps/federation/views.py` | `apps/federation/tests/` |
+| §4.1 | One-action, member-owned share; coordinators cannot consent for a member | `apps/federation/sharing.py`; `apps/federation/views.py`; `apps/casework/views.py` (intake records `subject_person` + `recorded_by`, never the coordinator as grantor); `apps/consent/models.py` | `apps/federation/tests/`; `apps/casework/tests/test_onbehalf_consent.py` |
 | §4.2–4.3 | Consent scope check | `apps/consent/models.py::Consent.covers()` | `apps/consent/tests/` |
 | §4.4 | Retention crypto-shred sweeps (365d/7y/72h) | retention sweep tasks; `docs/privacy-retention.md` | retention tests |
 | §5.4 | Attestation query; self-reported ≠ verified | `apps/federation` attestations; `apps/tags/models.py` | `apps/tags/tests/`, `apps/federation/tests/` |

@@ -27,6 +27,12 @@
       {% endfor %}
     </div>
 
+    {% comment %}Gate item 5: reports go nowhere if the only route to the queue is a
+       notification link that scrolls away. A coordinator needs a standing door.{% endcomment %}
+    <div class="mt-6">
+      <a href="{% url 'moderation:queue' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Moderation queue — reports from neighbours</a>
+    </div>
+
     {# Stale needs #}
     <div class="mt-8">
       <h2 class="font-serif text-lg font-semibold text-parish-ink">Waiting asks (7 days or more, no match yet)</h2>

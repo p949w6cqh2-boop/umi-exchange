@@ -81,7 +81,11 @@
     {% for m in memberships %}
     <div class="flex items-center justify-between py-2 border-b border-[var(--umi-border)] last:border-0">
       <a href="{% url 'community-feed' m.community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">{{ m.community.name }}</a>
-      <span class="text-xs text-parish-ink/70">{{ m.get_role_display }}</span>
+      <div class="flex items-center gap-3">
+        {# Gate item 5: blocking is only half a promise if you can never see or undo it. #}
+        <a href="{% url 'moderation:blocks' m.community.slug %}" class="text-xs text-parish-ink/70 hover:text-parish-ink">Neighbours you've blocked</a>
+        <span class="text-xs text-parish-ink/70">{{ m.get_role_display }}</span>
+      </div>
     </div>
     {% empty %}
     <p class="text-sm text-parish-ink/70 mt-2"><a href="{% url 'community-join' %}" class="text-umi-primary">Join a community</a></p>
