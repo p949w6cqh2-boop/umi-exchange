@@ -6,7 +6,8 @@
 > Companion docs it points to rather than repeats: `docs/protocol/spec.md` (the normative protocol),
 > `docs/threat-model.md` (application layer), `docs/network-security-addendum.md` (infrastructure),
 > `docs/umi_dev_security_protocol.md` (dev/host), `docs/privacy-retention.md` (the retention schedule),
-> `docs/monitoring-decision.md` (monitoring posture), and `SECURITY.md` (how to report a hole).
+> `docs/monitoring-decision.md` (monitoring posture), `docs/incident-response.md` (what we do when
+> data is exposed or someone official demands it), and `SECURITY.md` (how to report a hole).
 
 ## Why this document exists
 
@@ -210,13 +211,24 @@ because they are not yet true. Each item names how you know it is done.
   distinct roles are required to reach it. Today the key and the data it protects live on the same
   machine, which means whoever gets the machine gets both.
 
-- [ ] **There is a written incident, breach, and legal-request response plan.** Done when a document
+- [x] **There is a written incident, breach, and legal-request response plan.** Done when a document
   exists that names who is notified and within what timebox when data is exposed, who decides to refuse
   an overbroad or unlawful demand for data (including a subpoena or an ICE request) and by what path
   that refusal is made, and how affected neighbours are told. It also has to cover a meeting that goes
   wrong in person and a report of a scammer or an abuser on the board: who a neighbour tells, who can
   freeze or remove that account, and what the coordinator does next. The refusal and escalation paths
   have to be explicit and decided in advance, because they will be needed on the worst possible day.
+  **Written 2026-07-27: `docs/incident-response.md`.** It names the roles and admits all of them are
+  one person today; gives the exposure clock (immediate → 1h containment → 24h facts → 72h tell the
+  affected → 7d tell everyone) and a draft letter in the board's own voice; sets out the four kinds of
+  paper someone can arrive with and what each actually compels, with the judge-signature test for
+  telling a judicial warrant from an ICE Form I-200; gives a holding sentence for whoever is standing
+  there; puts the refusal decision with the steward, in writing, never on the spot. Guarded by
+  `tests/test_incident_response_plan.py`.
+  **Two things it does not pretend:** the sections marked ⚖️ need a lawyer before they are relied on,
+  and **there is no scoped legal-hold switch in the code** — suspending the deletion sweeps to
+  preserve evidence today means stopping the scheduler by hand, which also suspends erasure for
+  people who are not involved and are entitled to it.
 
 - [x] **The consent flow honestly handles the on-behalf-of third party, and the board states its own
   limits.** Done when a need or case that names a person who is not a user either captures a real path
