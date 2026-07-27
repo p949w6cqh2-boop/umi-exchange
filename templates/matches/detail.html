@@ -47,6 +47,11 @@
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.away="confirm = false">
           <h3 class="font-serif text-lg font-semibold text-parish-ink">Accept this match?</h3>
           <p class="text-base text-parish-ink/70 mt-2">Your contact info will be shared with the other party.</p>
+          {# Gate item 5: the limits are stated BEFORE contact is exchanged, not after. #}
+          <p class="text-sm text-parish-ink/70 mt-3">This board brokers introductions between
+            neighbours. It does not vet people, run background checks, supervise meetings, or
+            guarantee anyone's safety. Use the judgement you would with any neighbour you had just
+            met. <a href="{% url 'terms' %}" class="underline decoration-1 underline-offset-2 hover:text-parish-ink">What this is</a>.</p>
           <div class="flex gap-3 mt-6 justify-end">
             <button type="button" @click="confirm = false" class="btn-secondary text-sm">Cancel</button>
             <button type="submit" class="btn-primary text-sm">Yes, Accept</button>

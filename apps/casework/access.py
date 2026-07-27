@@ -48,6 +48,40 @@ def case_access(member, case) -> int:
     return NONE
 
 
+def subject_display(case) -> dict:
+    """How much of the subject's identity this case may show.
+
+    Gate item 5 (docs/ethics-and-safety.md): a person named in someone else's case
+    who has never consented gets what is stored and shown about them limited until
+    they can. Passing case_access() says a worker may see the FILE; it does not say
+    the person in it agreed to be named. Those are different questions and this is
+    the second one.
+
+    Full name only when the subject speaks for themselves — they hold the account,
+    or an active consent names THEM (not the coordinator who wrote it down).
+    Otherwise initials, which is what every casework list already uses.
+
+    Returns {"label", "limited", "note"} so templates render one thing.
+    """
+    person = case.subject_person
+    if person is None:
+        return {"label": "", "limited": False, "note": ""}
+
+    spoke_for_themselves = bool(person.linked_user_id) or any(
+        c.is_currently_active() for c in person.consents_about.all()
+    )
+    if spoke_for_themselves:
+        return {"label": person.display_name or person.short_code, "limited": False, "note": ""}
+
+    return {
+        "label": person.initials or person.short_code,
+        "limited": True,
+        "note": (
+            "Recorded by a coordinator. This person has not been asked directly, so their name is kept short here."
+        ),
+    }
+
+
 def is_coordinator(member) -> bool:
     return bool(member and member.role in COORDINATOR_ROLES)
 

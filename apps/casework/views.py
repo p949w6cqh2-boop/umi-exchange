@@ -186,19 +186,24 @@ class CaseCreateView(CommunityMixin, View):
             if d["consent_mode"] == "existing":
                 consent = d["existing_consent"]
             elif d["consent_mode"] == "record":
-                # A3: no-account subjects — coordinator stands as participant,
-                # the paper/verbal record is the legal instrument.
-                participant = person.linked_user if person.linked_user_id else request.user
+                # A3: most subjects have no account (Person.linked_user is never
+                # assigned in the running app), so the paper or verbal record IS
+                # the instrument. It is recorded AGAINST THEM, with the coordinator
+                # named only as the witness who wrote it down — never as the
+                # grantor, which §4.1 forbids and which left the subject unable to
+                # see or revoke their own consent.
+                on_behalf = not person.linked_user_id
                 scope = ["case_records"] + (["case_export"] if d["include_export"] else [])
                 consent = Consent.objects.create(
-                    participant=participant,
+                    participant=None if on_behalf else person.linked_user,
+                    subject_person=person if on_behalf else None,
+                    recorded_by=self.membership if on_behalf else None,
                     granted_to=self.community.name[:200],
                     grantee_type="community",
                     grantee_id=self.community.id,
                     scope=scope,
                     purpose=f"Case records for you at {self.community.name}"[:500],
                     method=d["record_method"],
-                    custom=({} if person.linked_user_id else {"on_behalf_person_id": str(person.id)}),
                 )
             else:
                 emergency = True
@@ -292,7 +297,9 @@ class CaseDetailView(CommunityMixin, View):
                 "membership": self.membership,
                 "case": case,
                 "level": level,
-                "person_name": case.subject_person.display_name or case.subject_person.short_code,
+                # Not the raw name: access.subject_display decides how much of a
+                # non-consenting third party's identity this page may show (gate 5).
+                "subject": access.subject_display(case),
                 "notes": visible_notes,
                 "followups": case.followups.filter(status="open").select_related("assigned_to"),
                 "grants": case.grants.filter(revoked_at__isnull=True).select_related("member"),

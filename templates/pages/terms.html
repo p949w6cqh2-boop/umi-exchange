@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}What this is · Reciprocal Aid Network{% endblock %}
+{% block content %}
+
+{% comment %}Terms — ethics gate item 5. The load-bearing sentence is the one about
+   brokering introductions and not vetting anyone; it comes straight from
+   docs/ethics-and-safety.md:173-176 and must stay plain. This is not a liability
+   shield written to be unread. It is the board telling people what it actually
+   does, so nobody trusts it for something it cannot do. Public, logged-out
+   visible — someone should be able to read this before deciding to join.{% endcomment %}
+<article class="max-w-4xl mx-auto">
+
+  <div class="pt-6">{% include "components/_mission_nav.html" with active="terms" %}</div>
+
+  <header class="pt-6 md:pt-10 umi-rise">
+    <span class="umi-eyebrow">What this is</span>
+    <h1 class="umi-display !text-4xl md:!text-5xl mt-3">A noticeboard, not a service</h1>
+    <p class="umi-lede mt-5 max-w-2xl">This board helps neighbours find each other. Everything that
+      happens after that happens between the two of you, the way it would if you'd met at the back
+      of church. Here is exactly what that means, so you can decide what to trust it with.</p>
+  </header>
+
+  <section class="mt-12 md:mt-16 umi-rise">
+    <div class="umi-card !p-7 md:!p-9">
+      <h2 class="font-serif text-2xl font-semibold text-parish-ink">The plain version</h2>
+      <p class="text-base text-parish-ink/80 mt-4 leading-relaxed">
+        <strong>UMI brokers introductions between neighbours. It does not vet people, run background
+        checks, supervise meetings, or guarantee anyone's safety.</strong>
+      </p>
+      <p class="text-sm text-parish-ink/70 mt-4 leading-relaxed">We would rather say this plainly
+        than let you assume otherwise. A board that implies it has checked people, when it has not,
+        is more dangerous than one that says nothing at all, because you would lower your guard on
+        the strength of it.</p>
+    </div>
+  </section>
+
+  <section class="mt-10 md:mt-14 grid md:grid-cols-2 gap-6 umi-rise">
+    <div class="umi-card !p-7">
+      <h2 class="font-serif text-xl font-semibold text-parish-ink">What the board does</h2>
+      <ul class="mt-4 space-y-3 text-sm text-parish-ink/80">
+        <li>Carries asks and offers between people in the same community.</li>
+        <li>Keeps your contact details private until you accept a match, and then shares them only
+          with the neighbour you accepted.</li>
+        <li>Gives a coordinator the tools to take a post down, and gives you the tools to report or
+          block someone.</li>
+        <li>Encrypts sensitive records and deletes them on a schedule we publish.</li>
+      </ul>
+    </div>
+    <div class="umi-card !p-7">
+      <h2 class="font-serif text-xl font-semibold text-parish-ink">What the board does not do</h2>
+      <ul class="mt-4 space-y-3 text-sm text-parish-ink/80">
+        <li><strong>It does not vet anyone.</strong> Nobody's identity, history, or intentions are
+          verified before they can post or reply.</li>
+        <li><strong>It does not run background checks.</strong> Not on members, not on coordinators.</li>
+        <li><strong>It does not supervise meetings.</strong> What happens when you meet is between
+          you; no one from the board is present or watching.</li>
+        <li><strong>It does not guarantee safety</strong>, or that anyone will follow through on
+          what they promised.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="mt-10 md:mt-14 umi-rise">
+    <div class="umi-card !p-7 md:!p-9">
+      <h2 class="font-serif text-2xl font-semibold text-parish-ink">Meeting someone</h2>
+      <p class="text-sm text-parish-ink/80 mt-4 leading-relaxed">Use the same judgement you would
+        with any neighbour you had just met. Meet somewhere public the first time if that feels
+        better. Tell someone where you are going. You are allowed to change your mind at any point,
+        for any reason, and you do not owe anyone an explanation for it.</p>
+      <p class="text-sm text-parish-ink/80 mt-4 leading-relaxed">If someone worries you, report or
+        block them from their post or from your match. A coordinator sees reports and can take a
+        post down or remove someone from the board. If you are in danger, that is what emergency
+        services are for, and this board is no substitute for them.</p>
+    </div>
+  </section>
+
+  <section class="mt-10 md:mt-14 umi-rise">
+    <div class="umi-card !p-7 md:!p-9">
+      <h2 class="font-serif text-2xl font-semibold text-parish-ink">Coordinators</h2>
+      <p class="text-sm text-parish-ink/80 mt-4 leading-relaxed">Coordinators are volunteers from
+        your own community, not staff and not professionals. They can see the asks and offers on
+        their board and, where a community keeps case records, the records they have been given
+        access to. They are trusted by the community, not certified by us.</p>
+    </div>
+  </section>
+
+  <section class="mt-10 md:mt-14 umi-rise">
+    <div class="umi-card !p-7 md:!p-9">
+      <h2 class="font-serif text-2xl font-semibold text-parish-ink">Your information</h2>
+      <p class="text-sm text-parish-ink/80 mt-4 leading-relaxed">What we keep, for how long, and how
+        you get it removed is set out on the <a href="{% url 'privacy' %}" class="underline decoration-1 underline-offset-2 hover:text-parish-ink">privacy and retention page</a>.
+        The commitments this software makes to every community that runs it are in the
+        <a href="{% url 'protocol' %}" class="underline decoration-1 underline-offset-2 hover:text-parish-ink">UMI Protocol</a>.</p>
+      <p class="text-sm text-parish-ink/70 mt-4 leading-relaxed">This board is run by the community
+        you joined it through. If something here is not being honoured, tell them, and tell us.</p>
+    </div>
+  </section>
+
+</article>
+{% endblock %}

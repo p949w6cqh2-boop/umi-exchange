@@ -9,24 +9,47 @@ from django.views.generic import ListView
 
 
 class ConsentListView(LoginRequiredMixin, ListView):
-    """User sees their own consents."""
+    """A user sees their own consents, plus the ones they recorded for a
+    neighbour who has no account.
+
+    Those second ones name nobody with a login, so without this they appear in no
+    list anywhere — and a consent nobody can find is a consent nobody can
+    withdraw. The person who wrote it down is the only one who can act on it, so
+    the duty to be able to withdraw it falls to them.
+    """
 
     template_name = "consent/list.html"
     context_object_name = "consents"
 
     def get_queryset(self):
-        return self.request.user.consents_given.all().order_by("-granted_at")
+        from django.db.models import Q
+
+        from .models import Consent
+
+        return (
+            Consent.objects.filter(Q(participant=self.request.user) | Q(recorded_by__user=self.request.user))
+            .select_related("subject_person", "recorded_by")
+            .order_by("-granted_at")
+        )
 
 
 class ConsentRevokeView(LoginRequiredMixin, View):
     """POST to revoke a consent."""
 
     def post(self, request, pk):
+        from django.db.models import Q
+
         from apps.audit.services import emit
 
         from .models import Consent
 
-        consent = get_object_or_404(Consent, pk=pk, participant=request.user, status="active")
+        # Either your own consent, or one you recorded for a neighbour with no
+        # account — see ConsentListView for why the recorder holds that duty.
+        consent = get_object_or_404(
+            Consent.objects.filter(Q(participant=request.user) | Q(recorded_by__user=request.user)),
+            pk=pk,
+            status="active",
+        )
         consent.status = "revoked"
         consent.revoked_at = timezone.now()
         consent.save(update_fields=["status", "revoked_at"])

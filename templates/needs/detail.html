@@ -115,5 +115,11 @@
   </div>
   {% endif %}
   {% include "components/_flag_panel.html" with target_type="need" target_id=need.pk is_own=is_own_need %}
+  {% comment %}Gate item 5: report or block the PERSON from the board itself, not only
+     from an accepted match. Flagging a post and being worried about who posted it are
+     different things, and the second should not require matching with them first.{% endcomment %}
+  {% if member and not is_own_need %}
+  {% include "components/_member_safety.html" with counterpart=need.requester can_flag_member=True %}
+  {% endif %}
 </div>
 {% endblock %}

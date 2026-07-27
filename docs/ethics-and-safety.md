@@ -96,19 +96,23 @@ freezes the case and sends delete-requests to any instance it was shared with (`
 
 **Where consent is thinner than the promise.**
 
-- **Coordinators can record consent on a member's behalf.** The protocol says coordinators must not
-  consent for a member (§4.1), and the code does not enforce that in the casework intake path. When a
-  coordinator records a case, the consent row names the member as the grantor while the coordinator is
-  the one acting, backed by an out-of-band paper or verbal record and the audit trail
-  (`apps/casework/views.py`). Nothing in the code checks that the member themselves took the action.
-  This is defensible for a neighbour who genuinely gave verbal consent across a table, and it is also
-  the exact spot where a rushed or well-meaning coordinator can record consent that was never really
-  given. The digital, owner-only consent that the protocol describes is enforced only for federation
-  sharing, not here.
-- **The on-behalf-of third party never consents.** A person named in someone else's need or case has
-  their name stored, encrypted, and shreddable, but no consent or attestation is ever captured from
-  them (`apps/needs/forms.py`, casework intake). The protocol requires the name be encrypted (§1); it
-  is silent on asking the person. This is the clearest consent gap in the system.
+- **A coordinator records the consent, and the record now says so.** The protocol says coordinators
+  must not consent for a member (§4.1). Until 2026-07-27 the casework intake violated that outright:
+  because `Consent.participant` could only be a user, a subject with no account was recorded with the
+  *coordinator* standing in as the grantor. The subject could not see it and could not revoke it.
+  A consent row can now name a person who holds no account (`consent.subject_person`), with the
+  coordinator recorded separately as `recorded_by` — a witness, not the grantor — and the person who
+  wrote it down can withdraw it on their behalf. What remains, and cannot be fixed in code, is that a
+  verbal yes across a table is still only as good as the coordinator who heard it. A rushed or
+  well-meaning volunteer can still record consent that was never really given.
+- **The on-behalf-of third party is asked, or shown less.** A person named in someone else's case has
+  their name stored encrypted and shreddable. Until 2026-07-27 no consent or attestation was ever
+  captured from them, and their full decrypted name was nonetheless the case page's heading. Now a
+  case shows only initials, with a line saying plainly that the person has not been asked directly,
+  until a consent naming *them* exists (`apps/casework/access.py:subject_display`). Lake 1's
+  unrendered on-behalf field, which could only be reached by a hand-crafted POST and which no screen
+  ever displayed, has been removed. The protocol requires the name be encrypted (§1) and is silent on
+  asking the person; the gate is not.
 - **Consent under duress looks like consent.** There is no code concept of duress. Consent given by
   someone who felt they had no choice is recorded identically to consent given freely. A tool cannot
   fix this on its own, but it should not pretend the record proves the freedom.
@@ -214,13 +218,22 @@ because they are not yet true. Each item names how you know it is done.
   freeze or remove that account, and what the coordinator does next. The refusal and escalation paths
   have to be explicit and decided in advance, because they will be needed on the worst possible day.
 
-- [ ] **The consent flow honestly handles the on-behalf-of third party, and the board states its own
+- [x] **The consent flow honestly handles the on-behalf-of third party, and the board states its own
   limits.** Done when a need or case that names a person who is not a user either captures a real path
   to their attestation or consent, or visibly limits what is stored and shown about them until they can
   consent, closing the §1/§4.1 gap in code rather than only in policy. Done, too, when the terms and
   the connect screen say plainly that UMI brokers introductions and does not vet people, run background
   checks, supervise meetings, or guarantee safety, and when reporting or blocking a member is possible
   from the board itself.
+  **Closed 2026-07-27.** Both routes, not one: `Consent.subject_person` lets a record name a person
+  who holds no account, with `recorded_by` naming the coordinator as witness rather than grantor
+  (ending the §4.1 violation), and `access.subject_display` shows only initials plus a plain line —
+  *"this person has not been asked directly"* — until a consent naming them exists. The terms page at
+  `/terms/` and the connect screen both carry the sentence, the accept dialog carries it *before*
+  contact is exchanged, and report/block now hang off need and offer detail with the block list linked
+  from settings and the moderation queue from the dashboard. Evidence:
+  `apps/casework/tests/test_onbehalf_consent.py` (16) and `tests/test_board_states_its_limits.py` (10).
+  What this does **not** fix: a verbal yes is still only as good as the volunteer who heard it.
 
 - [ ] **Governance extends beyond a solo steward.** Done when more than one person holds real authority
   over the live instance, meaning access to the data, custody of the keys, and the power to refuse a
