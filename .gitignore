@@ -67,3 +67,6 @@ Thumbs.db
 # transient pipeline handoff (see /checkpoint)
 .claude/checkpoint.md
 docs/tutorial/out/
+.gstack/
+# local /retro snapshots — machine-readable trend data for the next run, not shared state
+.context/
