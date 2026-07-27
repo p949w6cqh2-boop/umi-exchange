@@ -142,9 +142,12 @@ prefix; never assume the shell is where you left it.
   the suite's — chained `&& git commit` has shipped red gates. Write the summary line to a file,
   **Read the pass count**, then commit as a separate command (a PreToolUse hook warns on this; the
   `/gate` skill encodes the whole verified sequence).
-- **Never `git add -A` / `git add .` here.** The tree deliberately carries the untracked local
-  `hgit_sync.py` (Jasiah's WIP; excluded from ruff via `pyproject.toml extend-exclude`) — blanket
-  staging has committed it and broken CI lint twice. Stage explicit paths (hook-enforced).
+- **Never blanket-stage here** (`-A` / `.`). It sweeps in whatever untracked files happen to be in
+  the tree — scratch scripts, another session's WIP, secrets — none of which you are looking at when
+  you type it. That committed a foreign WIP file and broke CI lint twice (`hgit_sync.py`, archived
+  2026-07-27: the file is gone, the failure mode is not). Stage explicit paths (hook-enforced by
+  `~/.claude/hooks/git-guardrails.sh`, which matches at command position so quoting the phrase in a
+  commit message no longer trips it).
 - **`MatchFactory` auto-creates an Offer with its own offerer.** A volunteer-proposer test must pin
   `offer=None`, or the proposer is a stranger to the match and §8.2 correctly returns None.
 - **CI runs with `ENCRYPTION_KEY=""`.** Tests that write envelope PII need the hermetic autouse
