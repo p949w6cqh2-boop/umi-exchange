@@ -30,3 +30,11 @@ encryption and crypto-shred paths, federation, the deployment configs in `docker
 What the software promises about privacy, consent, and retention is written down in
 [the UMI Protocol](docs/protocol/spec.md) — served on every instance at `/protocol/`.
 If an instance breaks one of those promises, that's a security problem too. Tell us.
+
+## What we do on our side
+
+If data is exposed, or someone official demands it, we follow a written plan rather than improvising:
+[docs/incident-response.md](docs/incident-response.md). It sets out who is told and how quickly, how
+affected neighbours hear about it, and who decides to refuse a demand that is overbroad or not signed
+by a judge. It also says plainly which parts still need a lawyer, and where the plan is thinner than
+we would like.
