@@ -1,12 +1,6 @@
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-# hgit_sync.py is an untracked local WIP tool (not part of the app, never in
-# CI's checkout). It sits in the tree and made the tree-wide pre-commit
-# `ruff check .` fail on every commit → forced --no-verify everywhere, which
-# disabled the real lint gate and let failures reach main. Excluding it here
-# lets the hook pass so commits run clean without --no-verify.
-extend-exclude = ["hgit_sync.py"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
 [tool.ruff.lint.per-file-ignores]
