@@ -480,6 +480,54 @@ crontab -l
 Off-site copies (optional): fill `BACKUP_BUCKET` / `BACKUP_ACCESS_KEY` / `BACKUP_SECRET_KEY` /
 `BACKUP_ENDPOINT` in `.env` (Backblaze B2) — `backup.sh` uploads when those are set.
 
+### §9.1 — Rehearse the restore (an untested backup is a guess)
+
+Taking backups and never restoring one means you find out whether they work on the day you cannot
+afford to find out. `scripts/dr_sim.sh` restores into a **scratch** database and checks the result.
+It refuses to run without an explicit scratch target, and refuses outright if that target is the
+live database.
+
+```bash
+# a scratch database to restore into — NOT the app's
+docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
+  psql -U umi -c "CREATE DATABASE umi_scratch;"
+
+# rehearse from the newest LOCAL backup, asserting a known community survives
+cd /opt/umi-exchange
+DR_CONFIRM=yes-restore-into-scratch \
+DR_DATABASE_URL=postgres://umi:$DB_PASSWORD@localhost:5432/umi_scratch \
+DR_EXPECT_SLUG=st-brigids \
+  bash scripts/dr_sim.sh
+```
+
+It prints row counts, asserts the database is not empty, asserts your known community is present,
+and runs `migrate --check` so a restore onto a stale schema cannot report success. **A rehearsal
+from B2 is the stronger one** — it proves the off-box copy is real, not just that the dump parses.
+Add `DR_BUCKET` / `DR_ACCESS_KEY` / `DR_SECRET_KEY` to do that.
+
+Drop the scratch database afterwards: `psql -U umi -c "DROP DATABASE umi_scratch;"`.
+
+### §9.2 — Confirm old backups actually disappear
+
+Retention is a promise in `docs/privacy-retention.md`, and an unbounded pile of backups quietly
+defeats crypto-shred: a record erased from the live database still sits in every dump taken before
+the erasure. Two halves, and **both** have to be checked:
+
+```bash
+# local: backup.sh prunes on every run, so a file older than RETENTION_DAYS should be gone
+ls -la --time-style=long-iso /var/backups/umi/ | head
+# nothing here should be older than RETENTION_DAYS (default 30)
+```
+
+**The B2 half is not automatic.** `backup.sh` never deletes anything remote — it relies on a bucket
+**lifecycle rule** you must create by hand in the Backblaze console, set to the same age as
+`RETENTION_DAYS`. Until that rule exists, remote backups accumulate forever. Verify it by listing
+the bucket and confirming nothing predates the window:
+
+```bash
+aws s3 ls "s3://$BACKUP_BUCKET/umi-backups/" --endpoint-url "$BACKUP_ENDPOINT" | head
+```
+
 ---
 
 ## §10 — Updates & maintenance

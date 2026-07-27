@@ -104,7 +104,8 @@ from apps.casework.tasks import register_schedule as _c; _c()"
 - [ ] **SSL**: Verify with `curl -vI https://yourdomain.org` — look for `HTTP/2 200`
 - [ ] **Security headers**: Test at https://observatory.mozilla.org
 - [ ] **Create test community**: Register, create community, post need, propose match, accept, verify contact revelation
-- [ ] **Backup test**: Run `bash scripts/backup.sh`, then `bash scripts/restore.sh <file>` on a test database
+- [ ] **Backup test**: Run `bash scripts/backup.sh`, then rehearse the restore into a scratch database with `bash scripts/dr_sim.sh` (see vps-runbook §9.1 — it refuses to touch prod, asserts the restore is not empty, and checks a known record). `scripts/restore.sh` is the *production* restore, not the rehearsal.
+- [ ] **Retention check**: Confirm nothing in `/var/backups/umi/` is older than `RETENTION_DAYS`, **and** that the B2 bucket lifecycle rule exists — `backup.sh` never deletes remote copies (vps-runbook §9.2)
 - [ ] **Cron**: Schedule backups: `echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" | crontab -`
 - [ ] **Monitoring**: Set up Uptime Kuma or similar to ping `/health/` every 60 seconds
 

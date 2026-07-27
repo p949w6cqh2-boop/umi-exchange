@@ -102,7 +102,9 @@
   Deploy is **hand-run** (image built on the box, no ghcr push); secrets in a git-ignored `.env`.
   Serves the **fictional St. Brigid's** demo (`seed_demo_parish`). Deploy scaffolding: `Dockerfile` +
   compose (+ prod compose, Caddy, logrotate); scripts `harden.sh`, `backup.sh` (30-day `RETENTION_DAYS`
-  + B2), `restore.sh`, `security_check.sh`; `docs/deployment-checklist.md` incl. **DB-role separation step 0**.
+  + B2), `restore.sh` (**production** restore), **`dr_sim.sh`** (the DR *rehearsal*: restores into a
+  scratch DB, refuses to touch prod, fails an empty restore, checks a known record + `migrate --check`;
+  runbook §9.1), `security_check.sh`; `docs/deployment-checklist.md` incl. **DB-role separation step 0**.
 - Docs: `CLAUDE.md` (agent guide + gotchas), **`docs/protocol/spec.md`** (UMI Protocol v0.1 CANONICAL),
   **`docs/ethics-and-safety.md`** (harm analysis + onboarding gate), **`docs/monitoring-decision.md`**,
   `docs/federation-dark-launch-runbook.md`, `docs/envelope-rollout-runbook.md`, `docs/privacy-retention.md`,
