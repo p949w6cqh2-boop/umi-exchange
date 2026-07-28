@@ -70,7 +70,9 @@ class CaseCreateForm(forms.Form):
     ]
     consent_mode = forms.ChoiceField(choices=CONSENT_MODES, widget=forms.RadioSelect, initial="record")
     existing_consent = forms.ModelChoiceField(queryset=Consent.objects.none(), required=False, empty_label="— choose —")
-    record_method = forms.ChoiceField(choices=[("verbal", "Verbal"), ("paper", "Paper (filed)")], required=False)
+    # values must be a subset of Consent.METHOD_CHOICES — a paper form is
+    # "written" consent; objects.create() would store anything else unvalidated
+    record_method = forms.ChoiceField(choices=[("verbal", "Verbal"), ("written", "Paper (filed)")], required=False)
     include_export = forms.BooleanField(required=False, label="Consent also covers data export (case_export)")
     emergency_justification = forms.CharField(required=False, max_length=2000, widget=forms.Textarea(attrs={"rows": 2}))
 

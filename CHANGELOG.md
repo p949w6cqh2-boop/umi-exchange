@@ -5,6 +5,10 @@
 
 ## 2026-07-27
 
+- **A small bookkeeping repair to consent records.** When a coordinator recorded consent that was
+  given on a paper form, the record was filed under a label the system doesn't recognise. It is now
+  filed as written consent — which is what a signed paper form is — and any record already filed the
+  odd way has been corrected to match.
 - **If a neighbour hasn't been asked, the board no longer acts as though they have.** When a
   coordinator opens a case for someone who has no account here, that person's name is now kept short
   on the case — initials only, with a line saying plainly that they haven't been asked directly —
