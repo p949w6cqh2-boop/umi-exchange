@@ -466,19 +466,40 @@ compose project name defaults to the `docker/` directory), so it works as-is. No
 contains only KEK-wrapped ciphertext — it is **not** decryptable without `ENCRYPTION_KEY` from
 `.env`, so store backups somewhere that does **not** also hold that key.
 
-Run once to confirm it works, then schedule it:
+The script reads `BACKUP_BUCKET` / `BACKUP_ACCESS_KEY` / `BACKUP_SECRET_KEY` / `BACKUP_ENDPOINT`
+(plus `RETENTION_DAYS` and `BACKUP_REQUIRE_REMOTE`) from `/opt/umi-exchange/.env` itself whenever
+they are not already in its environment — cron runs it with a bare environment, so this fallback
+is what makes the nightly B2 upload actually happen.
 
-```bash
-bash /opt/umi-exchange/scripts/backup.sh
-ls -la /var/backups/umi/                         # you should see a umi-<timestamp>.sql.gz
+1. **Run it once by hand** and confirm a dump appears:
 
-# schedule daily at 03:00 (appends to root's crontab)
-( crontab -l 2>/dev/null; echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" ) | crontab -
-crontab -l
-```
+   ```bash
+   bash /opt/umi-exchange/scripts/backup.sh
+   ls -la /var/backups/umi/                      # you should see a umi-<timestamp>.sql.gz
+   ```
 
-Off-site copies (optional): fill `BACKUP_BUCKET` / `BACKUP_ACCESS_KEY` / `BACKUP_SECRET_KEY` /
-`BACKUP_ENDPOINT` in `.env` (Backblaze B2) — `backup.sh` uploads when those are set.
+2. **Install the cron job** — `crontab -e` and add this line (daily at 03:00, logged):
+
+   ```
+   0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1
+   ```
+
+   Non-interactive equivalent (appends to the current crontab):
+
+   ```bash
+   ( crontab -l 2>/dev/null; echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" ) | crontab -
+   ```
+
+3. **Verify it is installed**: `crontab -l` must show the line. A backup script that was never
+   scheduled looks exactly like one that works — until the day you need a dump.
+
+Off-site copies: fill `BACKUP_BUCKET` / `BACKUP_ACCESS_KEY` / `BACKUP_SECRET_KEY` /
+`BACKUP_ENDPOINT` in `.env` (Backblaze B2) — `backup.sh` uploads when all three credentials are
+set, and **fails loudly if they are only partially set**. The upload needs the aws CLI — on
+Ubuntu 24.04 install it with `sudo snap install aws-cli --classic` (there is no `awscli` apt
+package). Once B2 is provisioned, set `BACKUP_REQUIRE_REMOTE=1` in `.env` (**recommended in
+production**): any night the off-site copy cannot be made then exits nonzero into
+`/var/log/umi-backup.log` instead of quietly keeping a local-only backup.
 
 ### §9.1 — Rehearse the restore (an untested backup is a guess)
 
@@ -489,8 +510,10 @@ live database.
 
 ```bash
 # a scratch database to restore into — NOT the app's
+# (-d postgres is required: psql defaults the dbname to the user name, and no
+#  database called "umi" exists — without it this fails with FATAL: database "umi" does not exist)
 docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
-  psql -U umi -c "CREATE DATABASE umi_scratch;"
+  psql -U umi -d postgres -c "CREATE DATABASE umi_scratch;"
 
 # rehearse from the newest LOCAL backup, asserting a known community survives
 cd /opt/umi-exchange
@@ -505,7 +528,8 @@ and runs `migrate --check` so a restore onto a stale schema cannot report succes
 from B2 is the stronger one** — it proves the off-box copy is real, not just that the dump parses.
 Add `DR_BUCKET` / `DR_ACCESS_KEY` / `DR_SECRET_KEY` to do that.
 
-Drop the scratch database afterwards: `psql -U umi -c "DROP DATABASE umi_scratch;"`.
+Drop the scratch database afterwards: `psql -U umi -d postgres -c "DROP DATABASE umi_scratch;"`
+(same `-d postgres` reason as above).
 
 ### §9.2 — Confirm old backups actually disappear
 

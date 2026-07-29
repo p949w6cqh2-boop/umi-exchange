@@ -1,7 +1,16 @@
 #!/bin/bash
 # UMI Exchange — Database Backup Script
 # Supports local storage and optional Backblaze B2 upload.
-# Schedule via cron: 0 3 * * * /opt/umi-exchange/scripts/backup.sh
+# Schedule via cron: 0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1
+#
+# REMOTE UPLOAD (Backblaze B2) — BACKUP_BUCKET / BACKUP_ACCESS_KEY / BACKUP_SECRET_KEY /
+#   BACKUP_ENDPOINT are taken from the environment, falling back to the repo's .env
+#   (cron runs this script with a bare environment, so the .env fallback is what makes
+#   the nightly upload actually happen). The aws CLI on Ubuntu 24.04 is installed with
+#   `sudo snap install aws-cli --classic` (there is no awscli apt package).
+#   Set BACKUP_REQUIRE_REMOTE=1 in .env (recommended in production once B2 is
+#   provisioned): any night the off-site copy cannot be made then exits nonzero
+#   instead of quietly keeping a local-only backup.
 #
 # SECURITY — keys are NEVER in the dump. pg_dump captures the DATABASE only;
 #   ENCRYPTION_KEYS / SECRET_KEY live in the app's env, so a backup holds only
@@ -18,11 +27,53 @@
 #   lifecycle rule on the bucket prefix (set the B2 rule's age == RETENTION_DAYS).
 set -euo pipefail
 
+# ── Configuration ──────────────────────────────────────────────────────────────
+# Cron gives this script an almost-empty environment, so the B2 settings in .env
+# never used to reach it — the upload was silently skipped. Fall back to the
+# repo's .env for any BACKUP_* var the caller didn't provide. Do NOT `source`
+# .env: it holds non-shell lines (e.g. DEFAULT_FROM_EMAIL=UMI Exchange <…>).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${ENV_FILE:-$SCRIPT_DIR/../.env}"
+
+# Read one KEY=value from .env (last match wins). `|| true`: a missing key or
+# file must yield an empty string — grep's exit 1 would trip set -e/pipefail.
+env_file_val() {
+    grep -E "^${1}=" "$ENV_FILE" 2>/dev/null | tail -n 1 | cut -d= -f2- || true
+}
+
+# ${VAR-…} (no colon): a var the caller set — even set-but-empty — wins; only a
+# truly unset var falls back to .env (so `BACKUP_BUCKET= bash backup.sh` still
+# means "local-only this run").
+BACKUP_BUCKET="${BACKUP_BUCKET-$(env_file_val BACKUP_BUCKET)}"
+BACKUP_ACCESS_KEY="${BACKUP_ACCESS_KEY-$(env_file_val BACKUP_ACCESS_KEY)}"
+BACKUP_SECRET_KEY="${BACKUP_SECRET_KEY-$(env_file_val BACKUP_SECRET_KEY)}"
+BACKUP_ENDPOINT="${BACKUP_ENDPOINT-$(env_file_val BACKUP_ENDPOINT)}"
+BACKUP_REQUIRE_REMOTE="${BACKUP_REQUIRE_REMOTE-$(env_file_val BACKUP_REQUIRE_REMOTE)}"
+RETENTION_DAYS="${RETENTION_DAYS-$(env_file_val RETENTION_DAYS)}"
+
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/umi}"
 DB_CONTAINER="${DB_CONTAINER:-docker-db-1}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 FILENAME="umi-${TIMESTAMP}.sql.gz"
+
+# ── Preflight: the B2 credential trio must be all-set or all-empty ─────────────
+#   all empty → remote upload not configured (a fresh install); noticed below.
+#   all set   → remote upload configured.
+#   between   → a misconfiguration that can never upload anywhere. Fail fast and
+#               loud, before the dump, rather than let the nightly cron look green.
+B2_SET=0
+for _k in BACKUP_BUCKET BACKUP_ACCESS_KEY BACKUP_SECRET_KEY; do
+    if [ -n "${!_k:-}" ]; then B2_SET=$((B2_SET + 1)); fi
+done
+if [ "$B2_SET" -gt 0 ] && [ "$B2_SET" -lt 3 ]; then
+    echo "ERROR: B2 credentials are PARTIALLY configured — BACKUP_BUCKET, BACKUP_ACCESS_KEY and BACKUP_SECRET_KEY must be all set or all empty (checked the environment, then $ENV_FILE). Remote upload can never work like this; fix .env."
+    exit 1
+fi
+if [ "$B2_SET" -eq 0 ] && [ "${BACKUP_REQUIRE_REMOTE:-}" = "1" ]; then
+    echo "ERROR: BACKUP_REQUIRE_REMOTE=1 but no B2 credentials are configured (BACKUP_BUCKET/BACKUP_ACCESS_KEY/BACKUP_SECRET_KEY empty in the environment and $ENV_FILE) — refusing to call a local-only backup a success."
+    exit 1
+fi
 
 mkdir -p "$BACKUP_DIR"
 
@@ -55,9 +106,15 @@ done
 
 # Optional: Upload to Backblaze B2 (S3-compatible). Use a SCOPED B2 application
 # key — write access to THIS bucket/prefix only, never the master key.
-if [ -n "${BACKUP_BUCKET:-}" ] && [ -n "${BACKUP_ACCESS_KEY:-}" ] && [ -n "${BACKUP_SECRET_KEY:-}" ]; then
+# Every way this leg can silently not happen must say so on stdout — a local-only
+# backup that looks like a success is how prod ran 11 days without an off-site copy.
+if [ "$B2_SET" -eq 3 ]; then
     if ! command -v aws &> /dev/null; then
-        echo "WARNING: aws CLI not installed; skipping remote upload (Install: pip install awscli)."
+        if [ "${BACKUP_REQUIRE_REMOTE:-}" = "1" ]; then
+            echo "ERROR: B2 credentials are set but the aws CLI is not installed — remote upload impossible (Ubuntu 24.04: sudo snap install aws-cli --classic). BACKUP_REQUIRE_REMOTE=1, so this is fatal."
+            exit 1
+        fi
+        echo "WARNING: aws CLI not installed; skipping remote upload — this backup exists on this machine ONLY (Ubuntu 24.04: sudo snap install aws-cli --classic)."
     else
         REMOTE_KEY="umi-backups/$FILENAME"
         ENDPOINT="${BACKUP_ENDPOINT:-https://s3.us-west-001.backblazeb2.com}"
@@ -79,8 +136,10 @@ if [ -n "${BACKUP_BUCKET:-}" ] && [ -n "${BACKUP_ACCESS_KEY:-}" ] && [ -n "${BAC
             exit 1
         fi
     fi
-elif [ -n "${BACKUP_BUCKET:-}" ]; then
-    echo "WARNING: BACKUP_BUCKET set but BACKUP_ACCESS_KEY/BACKUP_SECRET_KEY missing; skipping remote upload."
+else
+    # B2_SET is 0 here (partial config already failed in preflight; REQUIRE_REMOTE
+    # with no creds too). A fresh install lands here — notice, not error.
+    echo "NOTICE: remote (B2) upload NOT configured — this backup exists on this machine ONLY. Set BACKUP_BUCKET/BACKUP_ACCESS_KEY/BACKUP_SECRET_KEY in .env for off-site copies."
 fi
 
 # Rotate old backups
