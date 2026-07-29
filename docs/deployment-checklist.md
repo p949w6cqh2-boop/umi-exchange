@@ -106,7 +106,8 @@ from apps.casework.tasks import register_schedule as _c; _c()"
 - [ ] **Create test community**: Register, create community, post need, propose match, accept, verify contact revelation
 - [ ] **Backup test**: Run `bash scripts/backup.sh`, then rehearse the restore into a scratch database with `bash scripts/dr_sim.sh` (see vps-runbook §9.1 — it refuses to touch prod, asserts the restore is not empty, and checks a known record). `scripts/restore.sh` is the *production* restore, not the rehearsal.
 - [ ] **Retention check**: Confirm nothing in `/var/backups/umi/` is older than `RETENTION_DAYS`, **and** that the B2 bucket lifecycle rule exists — `backup.sh` never deletes remote copies (vps-runbook §9.2)
-- [ ] **Cron**: Schedule backups: `echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" | crontab -`
+- [ ] **Backup cron installed**: `( crontab -l 2>/dev/null; echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" ) | crontab -` — then confirm `crontab -l` shows the line (the append form matters: a bare `echo … | crontab -` replaces the whole crontab)
+- [ ] **B2 upload verified**: at least one run has printed `Remote upload verified` (in `/var/log/umi-backup.log` or a manual `bash scripts/backup.sh`); once B2 is provisioned, set `BACKUP_REQUIRE_REMOTE=1` in `.env` so a night without an off-site copy exits nonzero instead of passing silently (vps-runbook §9)
 - [ ] **Monitoring**: Set up Uptime Kuma or similar to ping `/health/` every 60 seconds
 
 ## Rollback Procedure
