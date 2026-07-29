@@ -3,6 +3,15 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-29
+
+- **The board's records are now proven recoverable.** We took a real backup, carried it off this
+  machine to a separate storage service, brought it back, and rebuilt a working copy of the board
+  from it — the whole drill, start to finish, not just in theory. Old backups now also clean
+  themselves up on schedule, both here and at the off-site copy, so nothing lingers longer than the
+  thirty days we promise. And if a night ever comes when the off-site copy can't be made, the backup
+  job now says so loudly instead of quietly carrying on.
+
 ## 2026-07-27
 
 - **A small bookkeeping repair to consent records.** When a coordinator recorded consent that was

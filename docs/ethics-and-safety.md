@@ -199,7 +199,7 @@ because they are not yet true. Each item names how you know it is done.
   tripping it once and watching the alert arrive. The posture is already decided
   (`docs/monitoring-decision.md`); this item is about it actually being on.
 
-- [ ] **Backups are tested with a real restore, and the retention promise is verified.** Done when a
+- [x] **Backups are tested with a real restore, and the retention promise is verified.** Done when a
   backup made by `scripts/backup.sh` has been restored into a scratch database and its contents
   checked, and the 30-day retention (`RETENTION_DAYS` plus the B2 lifecycle rule) is confirmed to work,
   meaning old backups actually disappear on schedule. An untested backup is a guess, not a safety net,
@@ -215,6 +215,22 @@ because they are not yet true. Each item names how you know it is done.
   itself, and confirmation that old backups actually disappear — locally *and* in B2, where
   `backup.sh` deletes nothing and relies on a bucket lifecycle rule that must be created by hand and
   **does not exist yet**.
+  **✅ CLOSED 2026-07-29 — run by the founder on the droplet, output pasted and agent-verified.**
+  The rehearsal ran **twice** into a scratch database: (1) newest local backup — restore succeeded,
+  `migrate` applied the pending `consent.0005` (the backup honestly predated that evening's deploy
+  migration), then `migrate --check` exit 0; (2) the **first-ever B2 object**
+  (`umi-backups/umi-20260729-194609.sql.gz`), pulled back down and restored — 5 communities,
+  16 members, `st-brigids` present, `migrate --check` exit 0 first try. Retention: local prune
+  observed live; the B2 lifecycle rule now exists and was verified by
+  `aws s3api get-bucket-lifecycle-configuration` (Expiration 30 days, prefix `umi-backups/`,
+  Status Enabled — matches `RETENTION_DAYS`). Found and fixed on the way, because the box was
+  honest: **B2 had never been provisioned** (creds empty since deploy; zero off-box copies existed
+  until this night), **no backup cron existed** (installed 2026-07-29, append-form), and
+  `backup.sh` could skip the remote leg silently (**#130**: creds now self-load from `.env`,
+  partial config is a hard error, `BACKUP_REQUIRE_REMOTE=1` makes a local-only night exit red).
+  Honest caveat: `dr_sim.sh` itself is host-mode (host psql + host Django) and cannot run as-is on
+  the dockerized droplet — the rehearsal executed the script's documented steps through the
+  containers instead; a docker-mode patch for the script is tracked in the brain ledger.
 
 - [ ] **Key custody is separated from root and is not all held by one person.** Done when the
   key-encryption key no longer sits in a plaintext file beside the database under the same root
