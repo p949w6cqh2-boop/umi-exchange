@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `a0441fd` (2026-07-27).
+> Reflects `main` @ `e4cb3cc` (2026-07-29).
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 > **LIVE in production at reciprocalaid.network, serving FICTIONAL demo data only** (St. Brigid's).
@@ -159,10 +159,19 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   affected / 7d tell everyone), judicial-warrant-vs-ICE-I-200 test, no-volunteer rule; names the known
   gap: **no scoped legal-hold switch exists** (the retention sweeps auto-delete; the only preserve today
   is stopping the scheduler). Guarded by `tests/test_incident_response_plan.py`. **Box 2 groundwork
-  (#122, box still UNCHECKED):** `dr_sim.sh` now runs without B2 (explicit `DR_BACKUP_FILE` / B2 / newest
+  (#122):** `dr_sim.sh` now runs without B2 (explicit `DR_BACKUP_FILE` / B2 / newest
   local), **fails on an empty restore**, and asserts a known record via `DR_EXPECT_SLUG`; refusal paths
-  tested (`tests/test_dr_rehearsal.py`, 9). §9.2 found the **B2 lifecycle rule does not exist** — remote
-  backups accumulate unbounded, outliving crypto-shred, until the founder creates it.
+  tested (`tests/test_dr_rehearsal.py`, 9). **Box 2 CLOSED 2026-07-29 (#131):** the founder ran the
+  rehearsal on the droplet twice (newest local backup + the first-ever B2 object; `migrate --check`
+  exit 0 both) — §9.2's suspicion understated reality: **B2 had never been provisioned at all** (creds
+  empty since deploy, zero off-box copies existed) and no backup cron existed. Same night: bucket +
+  scoped key + 30-day lifecycle rule created and verified, backup cron installed (03:00 UTC, PATH incl
+  `/snap/bin`), and **#130** made the silent local-only failure impossible — `backup.sh` self-loads
+  `BACKUP_*` from `.env` (cron's bare environment was why uploads never happened), partial creds are a
+  hard error, and `BACKUP_REQUIRE_REMOTE=1` (set in the droplet `.env`) turns a missed off-site copy
+  into a red exit. Receipts in `docs/ethics-and-safety.md` box 2. Guarded by
+  `tests/test_backup_script.py` (6). Known gap: `dr_sim.sh` itself is host-mode (host psql/Django,
+  published db port) and can't run as-is on the dockerized droplet — docker-mode patch tracked.
 - **§12.3 Person blind index MERGED (PR #71 → `623faa1`, 2026-07-22):** Stages A/B/D on main — details in
   the Encryption section; Stage C backfill remains gated/not run (`person_bidx_status` reports the wait).
 - **The #93–#99 span (2026-07-19/20):** **#93** search-relevance test marked postgres-only
@@ -197,8 +206,8 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   member safety* bullet above. ~29 TDD tests. Also corrected an ethics-doc §8.2 overclaim (an accepted
   offer-less volunteer match DOES reveal contact to an unvouched volunteer — not yet guarded).
 - **Ethics & safety gate (2026-07-18):** `docs/ethics-and-safety.md` — honest harm analysis + a hard
-  precondition gate. **Now 2 of 6 boxes checked** (breach/legal-demand plan #121, on-behalf consent #120
-  — see the 2026-07-27 bullet above); still open: monitoring wired, tested backups + verified retention,
+  precondition gate. **Now 3 of 6 boxes checked** (breach/legal-demand plan #121, on-behalf consent #120,
+  tested restore + verified retention #131 — see the dated bullets above); still open: monitoring wired,
   key custody off root, governance beyond a solo steward. Policy: the reference instance
   stays fictional-only until every box passes. Pointer from `CLAUDE.md`.
 - **Monitoring DECIDED (#86/#87):** UptimeRobot only, **Sentry OFF** (`SENTRY_DSN` empty) — rationale
@@ -213,15 +222,16 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   (`tests/test_template_comments.py`, #103), Dockerfile parity — hand deploys build the file CI proves
   (#109), runbook sha-verify hardening (#123), hygiene sweep — `.context/` ignored (#124),
   blanket-staging rule restated on its own reasoning (#125), dead ruff exclude dropped (#126), stale
-  `hgit_sync.py` references retired (#127).
+  `hgit_sync.py` references retired (#127), this file refreshed to `a0441fd` (#129), backup.sh
+  loud-fail + `.env` self-load + runbook §9 rewrite (#130), ethics box 2 closed with receipts (#131).
 - **Design/art:** The Commons system + 7-scene Higgsfield linocut print suite (fixed-palette webp);
   spoken-copy + CarePortal-grammar passes recorded in the brain's `identity/voice.md`.
-- **Next manual/ops steps (founder):** create the UptimeRobot monitor; run the DR rehearsal on the
-  droplet (`dr_sim.sh`, vps-runbook §9.1) and **create the B2 lifecycle rule — it does not exist, so
-  remote backups currently accumulate unbounded** (§9.2, ethics box 2); **rotate demo creds** before a
+- **Next manual/ops steps (founder):** fix the UptimeRobot alert channel + re-trip (ethics box 1 —
+  monitor exists, detection proven, the alert email never arrives); **rotate demo creds** before a
   real parish; SMTP creds so consented email leaves the console backend; real two-instance federation
   dark launch (runbook ready); old-KEK retirement (runbook Phase 5) once prod censuses are clean;
-  DB-role step-0 check on the host. **The `docs/ethics-and-safety.md` gate must pass before real PII.**
+  DB-role step-0 check on the host. ~~DR rehearsal + B2 lifecycle rule~~ ✅ done 2026-07-29 (#131).
+  **The `docs/ethics-and-safety.md` gate must pass before real PII.**
 - **Open governance:** 501(c)(3) filing (site copy flips on grant — test pinned); governance beyond a
   solo steward is an open ethics-gate item.
 - **Roadmap (DESIGNED, not built):** §12.3 Stage C bidx backfill (Stages A/B/D are BUILT — PR #71),
