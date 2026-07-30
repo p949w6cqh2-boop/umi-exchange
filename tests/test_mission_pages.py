@@ -26,6 +26,18 @@ def test_about_carries_founder_and_mission(client):
     assert "being established as a 501(c)(3)" in body
 
 
+def test_about_scopes_the_forgetting_promise(client):
+    """`docs/ethics-and-safety.md` names the unscoped "we can forget you" claim as one of
+    the self-deceptions to guard against: crypto-shred covers the designated sensitive
+    material, while member display names, account contact details, and the free-text
+    titles of needs sit in plain columns. The story may promise what the code does and
+    must name the line, the way /privacy/ already scopes it to sensitive details."""
+    body = client.get(reverse("about")).content.decode()
+    assert "it can actually forget them" not in body  # the unscoped promise
+    assert "plain text" in body  # the line is named, not implied
+    assert "we destroy that key" in body  # and what shredding actually is
+
+
 @pytest.mark.parametrize("name", MISSION_PAGES)
 def test_no_granted_501c3_claim_while_filing_pending(client, name):
     """The 501(c)(3) filing is not complete (Jasiah Williams, 2026-07-10) — no page may
