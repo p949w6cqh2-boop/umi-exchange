@@ -4,6 +4,8 @@
 <article class="max-w-3xl mx-auto py-8">
   <p class="text-sm"><a href="{% url 'pages:index' community.slug %}" class="text-parish-ink/70 hover:text-parish-ink transition-colors">&larr; All pages</a></p>
 
+  <div class="mt-4">{% include "community_pages/_page_rail.html" %}</div>
+
   {% if page.status == 'draft' %}
   <div class="umi-card !p-4 mt-4 border-amber-300 bg-amber-50 text-sm text-amber-900">
     Draft — members can't see this page. An admin publishes it when it's ready.
