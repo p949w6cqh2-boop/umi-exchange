@@ -264,13 +264,28 @@ class PageView(_PublicSurface):
     (draft or published) owns its slug; the tombstone answers only when nothing
     lives there and something archived did."""
 
+    def _siblings(self, pre_auth):
+        """The rail's row (§I lateral nav). Built from the same predicate as the
+        surface it renders on, so the rail can never name a page this reader could
+        not open. A coordinator previewing a draft simply has no active tab."""
+        qs = (
+            CommunityPage.objects.pre_auth_visible(self.community)
+            if pre_auth
+            else CommunityPage.objects.member_visible(self.community)
+        )
+        return list(qs.order_by("sort_order", "title"))
+
     def get(self, request, slug, page_slug):
         if self.member is None:
             # Anonymous and strangers: only the pre-auth-eligible page renders.
             page = CommunityPage.objects.pre_auth_visible(self.community).filter(slug=page_slug).first()
             if page is None:
                 return self.refuse(request)
-            return render(request, "community_pages/page_public.html", {"community": self.community, "page": page})
+            return render(
+                request,
+                "community_pages/page_public.html",
+                {"community": self.community, "page": page, "siblings": self._siblings(pre_auth=True)},
+            )
 
         live = CommunityPage.objects.filter(community=self.community, slug=page_slug).exclude(status="archived").first()
         if live is not None:
@@ -279,7 +294,12 @@ class PageView(_PublicSurface):
             return render(
                 request,
                 "community_pages/page.html",
-                {"community": self.community, "page": live, "member": self.member},
+                {
+                    "community": self.community,
+                    "page": live,
+                    "member": self.member,
+                    "siblings": self._siblings(pre_auth=False),
+                },
             )
 
         archived_here = CommunityPage.objects.filter(

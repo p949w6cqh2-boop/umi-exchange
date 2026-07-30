@@ -3,6 +3,20 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-07-30
+
+- **A community's pages now link to each other.** Before, getting from "Our story" to "Mass times"
+  meant going back to the list of pages and starting again. Each page now carries a row of its
+  sibling pages across the top, in whatever order the coordinators put them in, with the one you're
+  reading marked. It only ever shows pages you're allowed to open: a draft, or a page hidden after a
+  report, never appears there, not even for the coordinator who can see it themselves.
+- **Our story now says plainly what "forget me" does and doesn't cover.** The page used to say the
+  software can simply forget someone who asks. That was more than we can promise. It now names what
+  is encrypted with its own destroyable key — a case note, the identity behind a request, the name of
+  the neighbour someone was asking for — and then says outright that everyday things like a display
+  name, an email, or the title of an ask are still held in plain text. A promise only belongs on a
+  page if the code keeps it.
+
 ## 2026-07-29
 
 - **The board's records are now proven recoverable.** We took a real backup, carried it off this

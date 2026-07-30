@@ -598,6 +598,72 @@ class TestPageView:
         assert _login(stranger).get(_view(community, quiet.slug)).status_code == 404
 
 
+class TestPageRail:
+    """§I lateral nav: a page names its siblings so the index stops being the only
+    corridor between them (the mission pages have carried this rail since S1).
+    The rail runs on the SAME predicates as the read surface it sits on, so it can
+    never name a page its reader could not open."""
+
+    RAIL = 'aria-label="Pages in this community"'
+
+    def _rail(self, body):
+        """Just the rail's own markup — the footer column links to pages too, so a
+        whole-body count would measure both."""
+        start = body.index(self.RAIL)
+        return body[start : body.index("</nav>", start)]
+
+    def test_member_page_rails_to_its_siblings_and_marks_the_current_one(self, world):
+        community, _, _, member = world
+        landing, quiet = _open_world(world)
+        body = _login(member).get(_view(community, quiet.slug)).content.decode()
+        assert self.RAIL in body
+        assert _view(community, landing.slug) in body  # the sibling is reachable sideways
+        assert 'aria-current="page"' in body
+
+    def test_rail_never_names_a_draft_or_hidden_sibling_even_for_a_coordinator(self, world):
+        community, admin, coordinator, _ = world
+        _, quiet = _open_world(world)
+        _page(community, coordinator, title="Drafted page", slug="drafted")
+        hidden = _page(community, coordinator, title="Hidden page", slug="hidden-page")
+        hidden.publish(by=admin)
+        hidden.moderation_hidden = True
+        hidden.save(update_fields=["moderation_hidden"])
+        body = _login(coordinator).get(_view(community, quiet.slug)).content.decode()
+        assert self.RAIL in body
+        assert "Drafted page" not in body
+        assert "Hidden page" not in body
+
+    def test_anon_rail_holds_only_preauth_siblings(self, world):
+        community, admin, coordinator, _ = world
+        landing, quiet = _open_world(world)  # quiet ("Mass times") is members-only
+        second = _page(community, coordinator, title="Parish festival", slug="festival", show_on_landing=True)
+        second.publish(by=admin)
+        body = Client().get(_view(community, landing.slug)).content.decode()
+        assert self.RAIL in body
+        assert "Parish festival" in body
+        assert "Mass times" not in body
+
+    def test_rail_absent_when_the_reader_can_see_only_this_page(self, world):
+        community, admin, coordinator, member = world
+        only = _page(community, coordinator, title="Our story", slug="our-story")
+        only.publish(by=admin)
+        body = _login(member).get(_view(community, only.slug)).content.decode()
+        assert self.RAIL not in body  # a rail of one is noise, not orientation
+
+    def test_rail_is_uncapped_so_it_never_hides_a_page_from_its_own_nav(self, world):
+        """The footer caps at six because it is a fixed slot. The rail must not: a cap
+        could drop the very page the reader is standing on out of its own rail."""
+        community, admin, coordinator, member = world
+        _open_world(world)  # "Our story" + "Mass times"
+        for i in range(6):
+            p = _page(community, coordinator, title=f"Extra page {i}", slug=f"extra-{i}")
+            p.publish(by=admin)
+        rail = self._rail(_login(member).get(_view(community, "mass-times")).content.decode())
+        assert rail.count("/p/extra-") == 6  # all eight visible pages are named
+        assert "Mass times" in rail
+        assert "Our story" in rail
+
+
 class TestTombstone:
     def _archived(self, world):
         community, _, coordinator, _ = world

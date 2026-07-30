@@ -1,0 +1,21 @@
+{% comment %}§I lateral rail: a page names its siblings, in the coordinators' own
+   sort order, so the index stops being the only corridor between them. Shaped
+   like the mission pages' chapter rail (components/_mission_nav.html), because
+   the parish's pages deserve the same sideways movement UMI's own pages have.
+
+   The view passes `siblings` from the SAME predicate as the surface it renders
+   on (member-visible for members, pre-auth for everyone else), so this rail can
+   never name a page its reader could not open. Uncapped on purpose: a truncated
+   rail would hide the reader's own page from its own nav, and because it names
+   every page this reader can open it needs no "all pages" tab of its own. The
+   index stays the fuller map (it alone carries the coordinators' chip rows), one
+   click up via the back-link.{% endcomment %}
+{% if siblings|length > 1 %}
+<nav class="flex flex-wrap items-center gap-1.5 mb-6" aria-label="Pages in this community">
+  {% for sibling in siblings %}
+  <a href="{% url 'pages:view' community.slug sibling.slug %}"
+     class="umi-tab {% if sibling.pk == page.pk %}umi-tab-active{% endif %}"
+     {% if sibling.pk == page.pk %}aria-current="page"{% endif %}>{{ sibling.title }}</a>
+  {% endfor %}
+</nav>
+{% endif %}
