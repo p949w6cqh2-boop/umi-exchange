@@ -218,3 +218,31 @@ def test_host_mode_is_still_the_default_and_says_so():
 
     assert "mode: host" in result.stdout
     assert "mode: docker" not in result.stdout
+
+
+def test_docker_mode_rewrites_the_db_host_for_the_app_container():
+    """The bug the first real rehearsal found.
+
+    psql runs inside the db container, where the server is `localhost`. manage.py runs inside the
+    APP container, where `localhost` is the app itself. Sending the operator's URL unchanged to
+    both made every docker-mode run fail its schema gate on "Connection refused"."""
+    source = DR_SIM.read_text(encoding="utf-8")
+
+    assert "APP_DB_URL=" in source, "docker mode must build a separate app-side URL"
+    assert '-e DATABASE_URL="$APP_DB_URL"' in source, (
+        "run_manage must send the rewritten app-side URL, not DR_DATABASE_URL"
+    )
+    assert "${DR_DATABASE_URL##*@}" in source, (
+        "the host swap must split on the LAST '@' so a password containing '@' survives"
+    )
+
+
+def test_a_connection_failure_is_not_reported_as_pending_migrations():
+    """Naming the failure correctly matters more than failing. Reporting 'pending migrations'
+    when nothing could reach the database sends the operator to fix the wrong thing."""
+    source = DR_SIM.read_text(encoding="utf-8")
+
+    assert "could NOT CONNECT" in source
+    assert "NOT a migration problem" in source
+    for signature in ("connection refused", "authentication failed", "OperationalError"):
+        assert signature in source, f"connection-failure detection must match {signature!r}"
