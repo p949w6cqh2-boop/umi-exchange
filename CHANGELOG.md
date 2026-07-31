@@ -5,6 +5,20 @@
 
 ## 2026-07-30
 
+- **We were telling you your contact details went to one person. They also go to your
+  coordinator, and now the board says so.** Five places on this site said that once you and a
+  neighbour both say yes, your phone number and email pass between the two of you alone. That was
+  not true. A coordinator of your community can also see them, so there is someone accountable if
+  an introduction goes wrong. The code has always worked that way and every disclosure has always
+  been written into the permanent record. The words were wrong, and the words are what you read
+  before deciding to trust us. The connect screen, the privacy page, the terms, the front page and
+  the first-steps guide all name the coordinator now.
+- **The front page no longer says the software can simply forget you.** It said sensitive records
+  are encrypted so thoroughly the software itself can forget them. Our story was corrected on this
+  a week ago and the front page was missed. It now says the same true thing: the things that could
+  really hurt someone are encrypted each with its own key, and everyday things like a display name
+  are still held in plain text.
+
 - **A community's pages now link to each other.** Before, getting from "Our story" to "Mass times"
   meant going back to the list of pages and starting again. Each page now carries a row of its
   sibling pages across the top, in whatever order the coordinators put them in, with the one you're
