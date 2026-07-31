@@ -40,9 +40,17 @@
 #   prod. So docker mode adds a guard host mode does not need — it refuses when the target dbname
 #   matches the app's, and warns when the name does not look like a scratch database.
 #
+#   Give the URL as the DB CONTAINER sees it (host localhost). The script rewrites the host to
+#   the db service name for the app container by itself — one URL cannot serve both, and getting
+#   that wrong is what made the first real rehearsal fail.
+#   PW is DB_PASSWORD from .env, NOT POSTGRES_PASSWORD. On this droplet POSTGRES_PASSWORD is a
+#   short unused leftover and compose feeds the db service `POSTGRES_PASSWORD: ${DB_PASSWORD}`.
+#   Using the wrong one still restores (psql inside the container authenticates locally) and then
+#   fails the schema gate, which reads like a broken backup and is not one.
+#
 # Usage (docker, on the droplet):
 #   cd /opt/umi-exchange && DR_DOCKER=1 DR_CONFIRM=yes-restore-into-scratch \
-#   DR_DATABASE_URL=postgres://umi:PW@localhost:5432/umi_scratch \
+#   DR_DATABASE_URL="postgres://umi:$(grep '^DB_PASSWORD=' .env | cut -d= -f2-)@localhost:5432/umi_scratch" \
 #   DR_EXPECT_SLUG=st-brigids bash scripts/dr_sim.sh
 #
 # Usage (local, no B2 needed):
@@ -91,6 +99,10 @@ if [ "$DR_DOCKER" = "1" ]; then
     # this because a wrong host there simply fails to connect; here it would connect and wipe.
     TARGET_DB="$(dbname_of "$DR_DATABASE_URL")"
     [ -n "$TARGET_DB" ] || fail "could not read a database name out of DR_DATABASE_URL."
+    # NOTE, learned on the droplet 2026-07-30: this DATABASE_URL check can be INERT in production.
+    # That .env carries `DATABASE_URL=sqlite:///db.sqlite3` (a dev leftover; compose overrides it
+    # for the app service), so comparing against it protects nothing there. The POSTGRES_DB check
+    # below is the one actually holding the line. Both are kept: neither is sufficient alone.
     APP_DB="$(dbname_of "${DATABASE_URL:-}")"
     if [ -n "$APP_DB" ] && [ "$TARGET_DB" = "$APP_DB" ]; then
         fail "target database '$TARGET_DB' is the app's own database — refusing."
@@ -112,10 +124,22 @@ if [ "$DR_DOCKER" = "1" ]; then
     DB_SVC="${DR_DB_SERVICE:-db}"; APP_SVC="${DR_APP_SERVICE:-app}"
     COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
 
+    # ONE URL CANNOT SERVE BOTH CONTAINERS. Found by the first real rehearsal, 2026-07-30.
+    # psql runs inside the db container, where the server is `localhost`. manage.py runs inside
+    # the APP container, where `localhost` is the app itself and postgres is the compose service
+    # name. Sending the operator's URL unchanged to both made every docker-mode run fail its
+    # schema gate with "Connection refused", which the gate then reported as pending migrations.
+    # So: keep the host the operator gave for psql, and swap it to $DB_SVC for the app.
+    # Split on the LAST '@' so a password containing '@' survives.
+    _url_before_host="${DR_DATABASE_URL%@*}"        # postgres://user:pass
+    _url_after_host="${DR_DATABASE_URL##*@}"        # host[:port]/dbname
+    APP_DB_URL="${_url_before_host}@${DB_SVC}:5432/${_url_after_host#*/}"
+
     run_psql()   { "${COMPOSE[@]}" exec -T "$DB_SVC" psql "$@"; }
-    run_manage() { "${COMPOSE[@]}" exec -T -e DATABASE_URL="$DR_DATABASE_URL" "$APP_SVC" python manage.py "$@"; }
+    run_manage() { "${COMPOSE[@]}" exec -T -e DATABASE_URL="$APP_DB_URL" "$APP_SVC" python manage.py "$@"; }
     schema_gate_available() { "${COMPOSE[@]}" exec -T "$APP_SVC" test -f manage.py > /dev/null 2>&1; }
     log "mode: docker ($COMPOSE_FILE, db=$DB_SVC app=$APP_SVC), target db '$TARGET_DB'."
+    log "app-side db host rewritten to '$DB_SVC' (creds not echoed)."
 else
     command -v psql > /dev/null 2>&1 || fail "psql not found (on a dockerized host set DR_DOCKER=1)."
     run_psql()   { psql "$@"; }
@@ -210,10 +234,20 @@ AUDIT=$(run_psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM audit_auditlog;" 
 
 # Health: the restored schema must have no pending migrations (migrate --check).
 if schema_gate_available; then
-    if run_manage migrate --check > /dev/null 2>&1; then
+    MIGRATE_OUT="$(run_manage migrate --check 2>&1)" && MIGRATE_RC=0 || MIGRATE_RC=$?
+    if [ "$MIGRATE_RC" = "0" ]; then
         HEALTH="ok (migrate --check: no pending migrations)"
+    elif printf '%s' "$MIGRATE_OUT" | grep -qiE 'connection refused|connection failed|could not connect|could not translate host|OperationalError|authentication failed'; then
+        # Name the failure correctly. Reporting "pending migrations" when the real problem is
+        # that nothing could reach the database sends the operator to fix the wrong thing —
+        # this exact misdiagnosis is what the first real rehearsal (2026-07-30) spent an hour on.
+        HEALTH="FAIL (could NOT CONNECT to the restored db from '$APP_SVC' — NOT a migration problem)"
+        echo "    connection error was: $(printf '%s' "$MIGRATE_OUT" | tail -1)"
+        ROWS_OK=0
     else
-        HEALTH="FAIL (migrate --check reports pending migrations)"; ROWS_OK=0
+        HEALTH="FAIL (migrate --check reports pending migrations)"
+        echo "    migrate --check said: $(printf '%s' "$MIGRATE_OUT" | tail -1)"
+        ROWS_OK=0
     fi
 else
     # Never report PASS without running the schema gate.
