@@ -515,13 +515,23 @@ live database.
 docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
   psql -U umi -d postgres -c "CREATE DATABASE umi_scratch;"
 
-# rehearse from the newest LOCAL backup, asserting a known community survives
+# rehearse from the newest LOCAL backup, asserting a known community survives.
+# DR_DOCKER=1 is REQUIRED on this droplet: the stack is dockerized and the db container
+# publishes no port, so without it the script looks for a host psql that isn't there.
 cd /opt/umi-exchange
+DR_DOCKER=1 \
 DR_CONFIRM=yes-restore-into-scratch \
 DR_DATABASE_URL=postgres://umi:$DB_PASSWORD@localhost:5432/umi_scratch \
 DR_EXPECT_SLUG=st-brigids \
   bash scripts/dr_sim.sh
 ```
+
+In docker mode the URL is resolved **inside the db container**, which is why the host is
+`localhost` and why the *database name* is doing all the safety work: inside that container
+`localhost` is the production postgres server. The script refuses outright if the target name
+matches `DATABASE_URL` or the `POSTGRES_DB` in `.env`, and warns if the name does not look like a
+scratch database. Defaults it assumes, all overridable: `DR_COMPOSE_FILE=docker/docker-compose.prod.yml`,
+`DR_ENV_FILE=.env`, `DR_DB_SERVICE=db`, `DR_APP_SERVICE=app`.
 
 It prints row counts, asserts the database is not empty, asserts your known community is present,
 and runs `migrate --check` so a restore onto a stale schema cannot report success. **A rehearsal

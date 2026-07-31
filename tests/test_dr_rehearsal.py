@@ -131,3 +131,90 @@ def test_the_rehearsal_is_documented_where_an_operator_would_look():
 
     assert "dr_sim.sh" in runbook, "the VPS runbook must tell the operator how to rehearse"
     assert "dr_sim.sh" in checklist
+
+
+# ---------------------------------------------------------------- docker mode
+# The droplet is dockerized and its db container publishes no ports, so the host-mode
+# script could not run there at all — the 2026-07-29 rehearsal executed its documented
+# steps through the containers by hand. Docker mode closes that. It also introduces a
+# hazard host mode does not have: inside the db container `localhost` IS the production
+# postgres server, so the database NAME is the entire separation between scratch and prod.
+
+
+def test_docker_mode_needs_a_compose_file_it_can_find():
+    result = _run(
+        {
+            "DR_CONFIRM": "yes-restore-into-scratch",
+            "DR_DATABASE_URL": "postgres://umi:pw@localhost:5432/umi_scratch",
+            "DR_DOCKER": "1",
+            "DR_COMPOSE_FILE": "docker/nope-does-not-exist.yml",
+        }
+    )
+
+    assert result.returncode != 0
+    assert "compose file not found" in result.stderr
+
+
+def test_docker_mode_refuses_when_the_target_dbname_is_the_apps_own():
+    """Host mode is saved by a wrong host failing to connect. Docker mode is not:
+    localhost inside the db container resolves to prod, so the name is the guard."""
+    result = _run(
+        {
+            "DR_CONFIRM": "yes-restore-into-scratch",
+            "DR_DATABASE_URL": "postgres://umi:pw@localhost:5432/umi_exchange",
+            "DATABASE_URL": "postgres://umi:pw@db:5432/umi_exchange",
+            "DR_DOCKER": "1",
+        }
+    )
+
+    assert result.returncode != 0
+    assert "is the app's own database" in result.stderr
+
+
+def test_docker_mode_refuses_the_postgres_db_named_in_the_env_file(tmp_path):
+    """The droplet's prod dbname lives in .env as POSTGRES_DB, and an operator copying
+    the runbook command is far more likely to have that set than DATABASE_URL."""
+    env_file = tmp_path / "dotenv"
+    env_file.write_text("POSTGRES_DB=umi_exchange\nOTHER=x\n")
+    result = _run(
+        {
+            "DR_CONFIRM": "yes-restore-into-scratch",
+            "DR_DATABASE_URL": "postgres://umi:pw@localhost:5432/umi_exchange",
+            "DR_DOCKER": "1",
+            "DR_ENV_FILE": str(env_file),
+        }
+    )
+
+    assert result.returncode != 0
+    assert "POSTGRES_DB" in result.stderr
+    assert "that is prod, refusing" in result.stderr
+
+
+def test_docker_mode_warns_when_the_target_does_not_look_like_scratch():
+    """It does not refuse — DR_CONFIRM was given and the operator may have their own
+    naming — but it must say out loud that it is about to DROP a schema."""
+    result = _run(
+        {
+            "DR_CONFIRM": "yes-restore-into-scratch",
+            "DR_DATABASE_URL": "postgres://umi:pw@localhost:5432/rehearsal",
+            "DR_DOCKER": "1",
+            "DR_COMPOSE_FILE": "docker/nope-does-not-exist.yml",
+        }
+    )
+
+    assert "does not look like a scratch database" in result.stdout
+
+
+def test_host_mode_is_still_the_default_and_says_so():
+    """Docker mode must be opt-in. A silent mode switch on a database-wiping script
+    is its own hazard."""
+    result = _run(
+        {
+            "DR_CONFIRM": "yes-restore-into-scratch",
+            "DR_DATABASE_URL": "postgres://umi:pw@localhost:5433/umi_scratch_absent",
+            "BACKUP_DIR": "/nonexistent-backup-dir",
+        }
+    )
+
+    assert "mode: host" in result.stdout
+    assert "mode: docker" not in result.stdout

@@ -170,8 +170,12 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   `BACKUP_*` from `.env` (cron's bare environment was why uploads never happened), partial creds are a
   hard error, and `BACKUP_REQUIRE_REMOTE=1` (set in the droplet `.env`) turns a missed off-site copy
   into a red exit. Receipts in `docs/ethics-and-safety.md` box 2. Guarded by
-  `tests/test_backup_script.py` (6). Known gap: `dr_sim.sh` itself is host-mode (host psql/Django,
-  published db port) and can't run as-is on the dockerized droplet — docker-mode patch tracked.
+  `tests/test_backup_script.py` (6). **The host-mode gap is closed:** `dr_sim.sh` now takes
+  `DR_DOCKER=1` and routes psql + `manage.py` through `docker compose exec`, so it runs on the
+  dockerized droplet instead of needing host psql/Django and a published db port. Docker mode adds
+  a dbname-collision guard (inside the db container `localhost` is prod, so the name is the whole
+  separation). `tests/test_dr_rehearsal.py` now 14. Still owed: an actual docker-mode rehearsal on
+  the droplet — the restore path there is verified only as far as every command resolving.
 - **§12.3 Person blind index MERGED (PR #71 → `623faa1`, 2026-07-22):** Stages A/B/D on main — details in
   the Encryption section; Stage C backfill remains gated/not run (`person_bidx_status` reports the wait).
 - **The #93–#99 span (2026-07-19/20):** **#93** search-relevance test marked postgres-only

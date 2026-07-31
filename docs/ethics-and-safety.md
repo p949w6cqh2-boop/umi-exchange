@@ -228,9 +228,16 @@ because they are not yet true. Each item names how you know it is done.
   until this night), **no backup cron existed** (installed 2026-07-29, append-form), and
   `backup.sh` could skip the remote leg silently (**#130**: creds now self-load from `.env`,
   partial config is a hard error, `BACKUP_REQUIRE_REMOTE=1` makes a local-only night exit red).
-  Honest caveat: `dr_sim.sh` itself is host-mode (host psql + host Django) and cannot run as-is on
-  the dockerized droplet — the rehearsal executed the script's documented steps through the
-  containers instead; a docker-mode patch for the script is tracked in the brain ledger.
+  That caveat is now closed: `dr_sim.sh` gained a **docker mode** (`DR_DOCKER=1`) that routes psql
+  and `manage.py` through `docker compose exec`, so the script runs on the dockerized droplet
+  itself rather than being executed by hand through the containers. Docker mode carries a guard
+  host mode does not need — inside the db container `localhost` IS the production server, so the
+  database *name* is the only separation, and it refuses a target matching either `DATABASE_URL`
+  or `POSTGRES_DB`. Guarded by 5 new cases in `tests/test_dr_rehearsal.py` (14 total). Stated
+  precisely: the guards and the host path are tested end to end; the docker restore path itself
+  has only been verified as far as every command it builds resolving on the droplet (compose file
+  found, `exec -T db psql` → 16.14, `exec -T app` sees `manage.py`, db publishes no port). **The
+  box does not move until a docker-mode rehearsal is actually run there.**
 
 - [ ] **Key custody is separated from root and is not all held by one person.** Done when the
   key-encryption key no longer sits in a plaintext file beside the database under the same root
