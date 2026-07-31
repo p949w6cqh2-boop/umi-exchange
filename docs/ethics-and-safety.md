@@ -233,11 +233,19 @@ because they are not yet true. Each item names how you know it is done.
   itself rather than being executed by hand through the containers. Docker mode carries a guard
   host mode does not need — inside the db container `localhost` IS the production server, so the
   database *name* is the only separation, and it refuses a target matching either `DATABASE_URL`
-  or `POSTGRES_DB`. Guarded by 5 new cases in `tests/test_dr_rehearsal.py` (14 total). Stated
-  precisely: the guards and the host path are tested end to end; the docker restore path itself
-  has only been verified as far as every command it builds resolving on the droplet (compose file
-  found, `exec -T db psql` → 16.14, `exec -T app` sees `manage.py`, db publishes no port). **The
-  box does not move until a docker-mode rehearsal is actually run there.**
+  or `POSTGRES_DB`. Guarded by `tests/test_dr_rehearsal.py` (16).
+  **✅ RUN, AND IT PASSED, on the droplet 2026-07-31 01:46 UTC** — docker mode, pulled from the
+  real B2 off-box copy (`umi-20260730-080423.sql.gz`), restored into `umi_scratch`: 5 communities,
+  16 members, 7 needs, 6 offers, 17 audit rows, the known record `st-brigids` present, and
+  `migrate --check` clean. First time the script has done its own job where the disaster would
+  happen.
+  **The first attempt FAILED, and that is the receipt worth keeping.** #135 passed 1218 tests,
+  CI 3/3, lint, semgrep, deploy check, and a read-only check that every command it builds resolves
+  on the droplet — and it still could not reach the database, because one URL cannot serve both
+  containers (`localhost` is the server inside `db` and the app itself inside `app`). It then
+  reported the failure as "pending migrations", sending the operator to inspect production's
+  migration state rather than the script. Fixed in #137. Nothing short of running it would have
+  found either. **A backup verified by reasoning is not a verified backup.**
 
 - [ ] **Key custody is separated from root and is not all held by one person.** Done when the
   key-encryption key no longer sits in a plaintext file beside the database under the same root
