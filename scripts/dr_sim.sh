@@ -25,6 +25,26 @@
 # OPTIONAL:
 #   DR_EXPECT_SLUG=st-brigids   assert a known community survived the restore
 #
+# DOCKER MODE (this is what the droplet needs):
+#   The default path is HOST mode: host psql, host python3, a reachable db port. The droplet has
+#   none of those — the stack is dockerized and the db container publishes no ports — so the
+#   2026-07-29 rehearsal had to run this script's documented steps through the containers by hand.
+#   Set DR_DOCKER=1 and the script routes psql and manage.py through `docker compose exec` itself.
+#     DR_DOCKER=1
+#     DR_COMPOSE_FILE=docker/docker-compose.prod.yml   (default)
+#     DR_ENV_FILE=.env                                 (default; the canonical call carries it)
+#     DR_DB_SERVICE=db  ·  DR_APP_SERVICE=app          (defaults)
+#   In docker mode DR_DATABASE_URL is resolved INSIDE the db container, so its host is normally
+#   localhost. That is a sharper knife than host mode: inside that container `localhost` IS the
+#   production postgres server, and the DATABASE NAME is the only thing separating scratch from
+#   prod. So docker mode adds a guard host mode does not need — it refuses when the target dbname
+#   matches the app's, and warns when the name does not look like a scratch database.
+#
+# Usage (docker, on the droplet):
+#   cd /opt/umi-exchange && DR_DOCKER=1 DR_CONFIRM=yes-restore-into-scratch \
+#   DR_DATABASE_URL=postgres://umi:PW@localhost:5432/umi_scratch \
+#   DR_EXPECT_SLUG=st-brigids bash scripts/dr_sim.sh
+#
 # Usage (local, no B2 needed):
 #   DR_CONFIRM=yes-restore-into-scratch DR_DATABASE_URL=postgres://umi:pw@localhost:5433/umi_scratch \
 #   DR_EXPECT_SLUG=st-brigids bash scripts/dr_sim.sh
@@ -53,7 +73,56 @@ fi
 if [ -n "${PROD_DB_HOST:-}" ] && printf '%s' "$DR_DATABASE_URL" | grep -qF "$PROD_DB_HOST"; then
     fail "DR_DATABASE_URL points at PROD_DB_HOST ($PROD_DB_HOST) — refusing."
 fi
-command -v psql > /dev/null 2>&1 || fail "psql not found."
+# ---- Mode: host (default) or docker ----------------------------------------
+# Everything below this block calls run_psql / run_manage, never psql / python3 directly, so the
+# verification logic is identical in both modes and cannot drift apart.
+DR_DOCKER="${DR_DOCKER:-0}"
+# dbname = the path segment of a postgres URL, minus any query string.
+dbname_of() { printf '%s' "${1##*/}" | cut -d'?' -f1; }
+
+if [ "$DR_DOCKER" = "1" ]; then
+    command -v docker > /dev/null 2>&1 || fail "DR_DOCKER=1 but docker not found."
+    ENV_FILE="${DR_ENV_FILE:-.env}"
+
+    # SAFETY BEFORE OPERATIONS. These guards run before the compose-file check on purpose: an
+    # operator who has pointed this at prod must be told THAT, not that a yaml file is missing.
+    # Docker-mode-only guard. Inside the db container `localhost` is the PROD server, so the
+    # database NAME is the entire separation between scratch and prod. Host mode does not need
+    # this because a wrong host there simply fails to connect; here it would connect and wipe.
+    TARGET_DB="$(dbname_of "$DR_DATABASE_URL")"
+    [ -n "$TARGET_DB" ] || fail "could not read a database name out of DR_DATABASE_URL."
+    APP_DB="$(dbname_of "${DATABASE_URL:-}")"
+    if [ -n "$APP_DB" ] && [ "$TARGET_DB" = "$APP_DB" ]; then
+        fail "target database '$TARGET_DB' is the app's own database — refusing."
+    fi
+    if [ -f "$ENV_FILE" ]; then
+        ENV_DB="$(grep -E '^POSTGRES_DB=' "$ENV_FILE" 2> /dev/null | tail -1 | cut -d= -f2- | tr -d '"'"'"' ')"
+        if [ -n "$ENV_DB" ] && [ "$TARGET_DB" = "$ENV_DB" ]; then
+            fail "target database '$TARGET_DB' is POSTGRES_DB from $ENV_FILE — that is prod, refusing."
+        fi
+    fi
+    case "$TARGET_DB" in
+        *scratch*|*dr_*|*_test) : ;;
+        *) log "WARNING: '$TARGET_DB' does not look like a scratch database. Continuing because
+    DR_CONFIRM was given, but this script is about to DROP its public schema." ;;
+    esac
+
+    COMPOSE_FILE="${DR_COMPOSE_FILE:-docker/docker-compose.prod.yml}"
+    [ -f "$COMPOSE_FILE" ] || fail "compose file not found: $COMPOSE_FILE (set DR_COMPOSE_FILE)."
+    DB_SVC="${DR_DB_SERVICE:-db}"; APP_SVC="${DR_APP_SERVICE:-app}"
+    COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+
+    run_psql()   { "${COMPOSE[@]}" exec -T "$DB_SVC" psql "$@"; }
+    run_manage() { "${COMPOSE[@]}" exec -T -e DATABASE_URL="$DR_DATABASE_URL" "$APP_SVC" python manage.py "$@"; }
+    schema_gate_available() { "${COMPOSE[@]}" exec -T "$APP_SVC" test -f manage.py > /dev/null 2>&1; }
+    log "mode: docker ($COMPOSE_FILE, db=$DB_SVC app=$APP_SVC), target db '$TARGET_DB'."
+else
+    command -v psql > /dev/null 2>&1 || fail "psql not found (on a dockerized host set DR_DOCKER=1)."
+    run_psql()   { psql "$@"; }
+    run_manage() { DATABASE_URL="$DR_DATABASE_URL" python3 manage.py "$@"; }
+    schema_gate_available() { [ -f manage.py ]; }
+    log "mode: host."
+fi
 log "scratch target accepted (creds not echoed)."
 
 WORK="$(mktemp -d)"
@@ -97,16 +166,16 @@ fi
 
 # ---- Wipe the scratch DB and restore ----------------------------------------
 log "wiping scratch schema + restoring (this is the scratch DB only)…"
-psql "$DR_DATABASE_URL" -v ON_ERROR_STOP=1 -q -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;" \
+run_psql "$DR_DATABASE_URL" -v ON_ERROR_STOP=1 -q -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;" \
     || fail "could not reset scratch schema."
-gunzip -c "$WORK/$LATEST" | psql "$DR_DATABASE_URL" -v ON_ERROR_STOP=1 -q \
+gunzip -c "$WORK/$LATEST" | run_psql "$DR_DATABASE_URL" -v ON_ERROR_STOP=1 -q \
     || fail "restore failed."
 
 # ---- Verify: row counts + schema/health -------------------------------------
 log "verifying restored data…"
 ROWS_OK=1
 for tbl in communities_community communities_member needs_need offers_offer audit_auditlog; do
-    n=$(psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM $tbl;" 2> /dev/null || echo "ERR")
+    n=$(run_psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM $tbl;" 2> /dev/null || echo "ERR")
     echo "    $tbl: $n"
     [ "$n" = "ERR" ] && ROWS_OK=0
 done
@@ -115,8 +184,8 @@ done
 # is not a successful restore, it is an empty database that answered every query
 # without erroring. Counting only query failures let that pass as PASS — which is
 # exactly the shape of a backup you find out about on the day you need it.
-COMMUNITIES=$(psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM communities_community;" 2> /dev/null || echo 0)
-MEMBERS=$(psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM communities_member;" 2> /dev/null || echo 0)
+COMMUNITIES=$(run_psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM communities_community;" 2> /dev/null || echo 0)
+MEMBERS=$(run_psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM communities_member;" 2> /dev/null || echo 0)
 if [ "${COMMUNITIES:-0}" -lt 1 ] || [ "${MEMBERS:-0}" -lt 1 ]; then
     echo "    !! restored database has no communities or no members — an empty restore is a failed restore"
     ROWS_OK=0
@@ -125,7 +194,7 @@ fi
 # Known-record check: the strongest cheap assertion. Counts prove the tables are
 # not empty; this proves the specific thing you expected to survive did.
 if [ -n "${DR_EXPECT_SLUG:-}" ]; then
-    FOUND=$(psql "$DR_DATABASE_URL" -tAc \
+    FOUND=$(run_psql "$DR_DATABASE_URL" -tAc \
         "SELECT count(*) FROM communities_community WHERE slug = '${DR_EXPECT_SLUG//\'/\'\'}';" 2> /dev/null || echo 0)
     if [ "${FOUND:-0}" -ge 1 ]; then
         echo "    known record: community '$DR_EXPECT_SLUG' present ✓"
@@ -137,18 +206,18 @@ else
     echo "    known record: not checked (set DR_EXPECT_SLUG=<a community slug> to assert one)"
 fi
 # Append-only audit table must exist and be readable — it's the integrity canary.
-AUDIT=$(psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM audit_auditlog;" 2> /dev/null || echo "ERR")
+AUDIT=$(run_psql "$DR_DATABASE_URL" -tAc "SELECT count(*) FROM audit_auditlog;" 2> /dev/null || echo "ERR")
 
 # Health: the restored schema must have no pending migrations (migrate --check).
-if [ -f manage.py ]; then
-    if DATABASE_URL="$DR_DATABASE_URL" python3 manage.py migrate --check > /dev/null 2>&1; then
+if schema_gate_available; then
+    if run_manage migrate --check > /dev/null 2>&1; then
         HEALTH="ok (migrate --check: no pending migrations)"
     else
         HEALTH="FAIL (migrate --check reports pending migrations)"; ROWS_OK=0
     fi
 else
     # Never report PASS without running the schema gate.
-    HEALTH="FAIL (manage.py not found — cannot verify schema health)"; ROWS_OK=0
+    HEALTH="FAIL (manage.py not reachable — cannot verify schema health)"; ROWS_OK=0
 fi
 log "schema health: $HEALTH"
 
