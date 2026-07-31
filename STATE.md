@@ -174,8 +174,11 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   `DR_DOCKER=1` and routes psql + `manage.py` through `docker compose exec`, so it runs on the
   dockerized droplet instead of needing host psql/Django and a published db port. Docker mode adds
   a dbname-collision guard (inside the db container `localhost` is prod, so the name is the whole
-  separation). `tests/test_dr_rehearsal.py` now 14. Still owed: an actual docker-mode rehearsal on
-  the droplet — the restore path there is verified only as far as every command resolving.
+  separation). `tests/test_dr_rehearsal.py` now 16. **The docker-mode rehearsal has now actually
+  been RUN on the droplet and PASSED (2026-07-31, #137):** from the real B2 object, 5 communities /
+  16 members / 7 needs / 6 offers / 17 audit rows restored into `umi_scratch`, known record
+  present, `migrate --check` clean. Its first attempt failed on a defect nothing else caught — one
+  URL cannot serve both containers — which is the argument for rehearsing rather than reasoning.
 - **§12.3 Person blind index MERGED (PR #71 → `623faa1`, 2026-07-22):** Stages A/B/D on main — details in
   the Encryption section; Stage C backfill remains gated/not run (`person_bidx_status` reports the wait).
 - **The #93–#99 span (2026-07-19/20):** **#93** search-relevance test marked postgres-only
