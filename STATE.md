@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `e4cb3cc` (2026-07-29).
+> Reflects `main` @ `c4668a1` (merged 2026-07-31 UTC); snapshot refreshed **2026-08-01**.
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 > **LIVE in production at reciprocalaid.network, serving FICTIONAL demo data only** (St. Brigid's).
@@ -101,11 +101,30 @@
 - No-JS-safe reveals (`.js`-gated, failsafe reveal-all); connect-moment ceremony; keyboard
   `:focus-visible` rings; `prefers-reduced-motion` respected.
 - Tailwind compiled to `static/css/output.css` — never hand-edit; WhiteNoise manifest storage (needs `collectstatic`).
+- **Community-page sibling rail (#133):** community pages carry a lateral rail of their siblings in the
+  coordinators' sort order, built from the **same visibility predicate as the surface it sits on**, so it
+  can never name a page its reader could not open (a draft or hidden page stays absent even for the
+  coordinator who can open it directly). Uncapped on purpose — a cap could drop the reader's own page
+  out of its own nav.
+- **The copy tells the truth about contact visibility and erasure (#133 + #136).** From 2026-07-18 to
+  02:09 UTC 2026-07-31 the live site told neighbours their contact details pass "between the two of you
+  alone" and that the software could "forget" them. Both were false against `Match.get_contact_info_for()`
+  (`is_coordinator` alone suffices — any coordinator of the community sees contact, party or not) and
+  against `docs/ethics-and-safety.md`. STATE.md recorded it correctly the whole time; only the copy was
+  wrong. #133 scoped the `/about/` forgetting claim — it now names what is encrypted under a destroyable
+  key, then admits display names, account contact details and ask titles are held in plain text. #136
+  swept the five remaining surfaces (`landing.html` step 03, `matches/detail.html`, `hub/_first_steps.html`,
+  `terms.html`, `privacy.html`), including the landing page's sibling copy of the same erasure overclaim
+  that #133 had missed a week earlier. Regression-locked by `tests/test_copy_matches_code.py` (the copy is
+  now asserted against the code that implements it); deploy verified **by content**, six string checks.
 - Product copy voice governed by the brain's `identity/voice.md`; user-facing patch notes in `CHANGELOG.md` (updated every merge).
+  A `{# voice-exempt: founder verbatim #}` marker (#134) tells the `voice-guard` hook to walk past the
+  founder's recorded words — single-line only, since Django's `{# #}` does not span newlines
+  (`tests/test_template_comments.py` caught the wrapped form, which would have rendered as visible text).
 
 ## Testing / CI / Deploy
-- **1201 tests** green on **Postgres 16 + Redis** ("gate 1201 PG16+Redis" per `a0441fd`;
-  `pytest --collect-only` = 1201; SQLite works locally, minus one Postgres-only
+- **1224 tests** green on **Postgres 16 + Redis** ("Gate: 1224 passed on Postgres 16 + Redis" per
+  `851ef24`, #137; `pytest --collect-only` = 1224; SQLite works locally, minus one Postgres-only
   full-text relevance test in `test_search_area.py` that needs PG — `apps/needs/search.py` gates
   relevance on `vendor == "postgresql"`); `ruff check` + `ruff format --check` clean (ruff **pinned** in
   CI); bandit baseline known-accepted (non-blocking);
@@ -151,7 +170,7 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   · federation crypto robustness (#119, "closes the 35-bug adversarial hunt", `674991d`). Gate grew
   **1039 (batch 1) → 1155 (batch 13)**; every batch commit records its own gate count, red-first tests,
   and semgrep/bandit-clean. All federation fixes are default-OFF fix-before-enabling.
-- **Ethics gate: 2 of 6 boxes CHECKED (2026-07-27).** **Box 5 (#120):** on-behalf-of consent honestly
+- **Ethics gate: 3 of 6 boxes CHECKED (boxes 2, 4, 5; box 2 closed 2026-07-29).** **Box 5 (#120):** on-behalf-of consent honestly
   recorded — `Consent.subject_person` grantor + `recorded_by` witness (§4.1), initials + "not asked
   directly" until an active consent names them, public `/terms/` limits page, report/block reachable
   from any post; follow-up #128 fixed the intake `record_method` enum (`consent/0005`, gate 1201).
@@ -174,11 +193,20 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   `DR_DOCKER=1` and routes psql + `manage.py` through `docker compose exec`, so it runs on the
   dockerized droplet instead of needing host psql/Django and a published db port. Docker mode adds
   a dbname-collision guard (inside the db container `localhost` is prod, so the name is the whole
-  separation). `tests/test_dr_rehearsal.py` now 16. **The docker-mode rehearsal has now actually
-  been RUN on the droplet and PASSED (2026-07-31, #137):** from the real B2 object, 5 communities /
-  16 members / 7 needs / 6 offers / 17 audit rows restored into `umi_scratch`, known record
-  present, `migrate --check` clean. Its first attempt failed on a defect nothing else caught — one
-  URL cannot serve both containers — which is the argument for rehearsing rather than reasoning.
+  separation). Docker mode is **#135**; `tests/test_dr_rehearsal.py` now 16. **The docker-mode
+  rehearsal has now actually been RUN on the droplet and PASSED (2026-07-31 01:46 UTC, receipts in
+  #138):** from the real B2 object (`umi-20260730-080423.sql.gz`), 5 communities / 16 members /
+  7 needs / 6 offers / 17 audit rows restored into `umi_scratch`, known record `st-brigids`
+  present, `migrate --check` clean. **Its first attempt failed** on three defects nothing else
+  caught, fixed in **#137**: one URL cannot serve both containers (the app-side host is now
+  rewritten to the compose service name, splitting on the LAST `@` so a password containing `@`
+  or `/` survives); a connection failure was misreported as "pending migrations", sending the
+  operator to inspect production instead of the script; and the `DATABASE_URL`-collision guard is
+  inert on the droplet, whose `.env` carries a leftover `DATABASE_URL=sqlite:///db.sqlite3`, so
+  only the `POSTGRES_DB` guard was holding the line (both kept, neither sufficient alone). #135
+  had passed 1218 tests, CI 3/3, lint, semgrep and `check --deploy` and still could not reach the
+  database — **a backup verified by reasoning is not a verified backup.** The box-2 checkbox is
+  unchanged (earned 2026-07-29); what closed here is the caveat hanging off it.
 - **§12.3 Person blind index MERGED (PR #71 → `623faa1`, 2026-07-22):** Stages A/B/D on main — details in
   the Encryption section; Stage C backfill remains gated/not run (`person_bidx_status` reports the wait).
 - **The #93–#99 span (2026-07-19/20):** **#93** search-relevance test marked postgres-only
