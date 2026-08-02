@@ -1,5 +1,8 @@
 # Envelope Encryption — Rollout Runbook
 
+> **STATUS 2026-08-01: rollout COMPLETE on the reference instance** — Stages A–E landed
+> (see `STATE.md`). Kept as the runbook for any new deployment walking the same road.
+
 The end-to-end sequence for moving PII from direct-KEK to **envelope** encryption
 (per-record DEK wrapped by the KEK list → enables crypto-shred), and the gates that
 must pass before each irreversible step. **Do the steps in order. Don't skip a gate.**
@@ -21,7 +24,7 @@ Already on `main`: needs + casework (A–D, PR #3) + Person (A–D, PR #5). Stag
 expand-only and reversible.
 
 - [ ] Deploy the current `main`.
-- [ ] Ensure `ENCRYPTION_KEYS` (or legacy `ENCRYPTION_KEY`) is set in the prod environment. (Production refuses to boot with an empty key — by design.)
+- [ ] Ensure `ENCRYPTION_KEYS` (or legacy `ENCRYPTION_KEY`) **and** `BLIND_INDEX_KEY` (a dedicated secret, distinct from every encryption key) are set in the prod environment. (Production refuses to boot when either is missing or the blind-index key collides — by design.)
 
 ## Phase 2 — Migrate (adds DEK columns + backfills)
 

@@ -1,6 +1,6 @@
 # UMI Exchange
 
-**Reference implementation of the [UMI Protocol v0.1](docs/protocol/spec.md) at Core conformance level.**
+**Reference implementation of the [UMI Protocol v0.1](docs/protocol/spec.md) at Core + Casework + Federation v1 conformance.**
 
 An open-source tool for coordinating reciprocal exchange in communities. A Catholic parish, a secular mutual aid group, a disaster relief network, or a Buddhist timebank can each adopt this as their starting point.
 
@@ -46,7 +46,8 @@ Visit http://localhost (Caddy reverse proxy)
 | `DATABASE_URL` | Yes | sqlite:///db.sqlite3 | PostgreSQL connection URL |
 | `REDIS_URL` | No | — | Redis URL for cache/sessions/queue |
 | `SITE_URL` | No | http://localhost:8000 | Public URL (used for QR code generation) |
-| `ENCRYPTION_KEY` | No | — | Fernet key for encrypting sensitive fields |
+| `ENCRYPTION_KEY` | Prod: Yes | — | Fernet key for encrypting sensitive fields; production refuses to boot without it (`ENCRYPTION_KEYS` list supported for rotation) |
+| `BLIND_INDEX_KEY` | Prod: Yes | — | Dedicated secret for the Person name blind index — must differ from every encryption key; production refuses to boot without it |
 | `ALLOWED_HOSTS` | No | localhost,127.0.0.1 | Comma-separated allowed hosts |
 | `DEBUG` | No | True | Set False in production |
 | `EMAIL_BACKEND` | No | console | Django email backend |
@@ -73,7 +74,7 @@ Enabled by default. Admin generates QR code from community settings page. Requir
 Enabled by default. Members can create/join households. Billing counts by households, not individual members.
 
 ### 2FA for Coordinators
-Uncomment `django_otp`, `django_otp.plugins.otp_totp`, and `two_factor` in `INSTALLED_APPS` and `OTPMiddleware` in `MIDDLEWARE` in `config/settings/base.py`.
+Built in and active: once a user enrolls an authenticator app (TOTP), login requires the code — with printed static recovery codes as backup and per-device throttling. No settings changes needed; just enroll the coordinator accounts.
 
 ### VPS Hardening
 ```bash
@@ -94,13 +95,15 @@ Override the visual theme via CSS custom properties in your instance's styleshee
 
 ## Protocol Conformance
 
-This implementation conforms to **UMI Protocol v0.1 at Core level**:
+This implementation conforms to **UMI Protocol v0.1 at Core + Casework + Federation v1**:
 - umi:Need, umi:Offer, umi:Match, umi:Consent entities
 - State machines enforced in Python (Match.transition_to)
 - Contact revelation only after match acceptance (Section 8.2)
 - Self-matching prevention (Section 8.6)
 - Race condition handling via SELECT FOR UPDATE (Section 8.7)
 - Append-only audit log with hashed IPs (Section 8.3)
+- Casework (Lake 2): case files and notes under envelope encryption with crypto-shred, a single access matrix, and 4-hour re-auth on sensitive views
+- Federation v1: cross-instance listing exchange, default-OFF per community
 
 ## License
 
@@ -124,7 +127,11 @@ sudo bash scripts/harden.sh
 
 # Configure environment
 cp .env.example .env
-# Edit .env: set SECRET_KEY, DB_PASSWORD, ALLOWED_HOSTS, SITE_URL, SENTRY_DSN
+# Edit .env: set SECRET_KEY, ENCRYPTION_KEY, BLIND_INDEX_KEY (a dedicated secret,
+# never the same value as an encryption key), DB_PASSWORD, ALLOWED_HOSTS, SITE_URL,
+# DJANGO_SETTINGS_MODULE=config.settings.production, SENTRY_DSN.
+# Production refuses to boot if any of the three keys is missing or the
+# blind-index key collides with an encryption key.
 
 # Update Caddyfile with your domain
 export DOMAIN=yourdomain.org
@@ -153,7 +160,7 @@ See `docs/deployment-checklist.md` for the full checklist.
 bash scripts/backup.sh
 
 # Schedule daily (cron)
-echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" | crontab -
+( crontab -l 2>/dev/null; echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" ) | crontab -
 
 # Restore
 bash scripts/restore.sh /var/backups/umi/umi-20260325-030000.sql.gz

@@ -9,6 +9,7 @@
 - [ ] **Environment file**: Copy `.env.example` to `.env` and set all values:
   - [ ] `SECRET_KEY`: Generate with `python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
   - [ ] `ENCRYPTION_KEY`: Generate with `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+  - [ ] `BLIND_INDEX_KEY`: Generate with `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` — a dedicated secret, **never** the same value as any encryption key. Production refuses to boot if it is missing or collides.
   - [ ] `DATABASE_URL`: PostgreSQL connection string
   - [ ] `DB_PASSWORD`: Strong password (not `umi`)
   - [ ] `APP_DB_USER` / `APP_DB_PASSWORD`: the runtime role (`umi_app`) — created in the
@@ -127,5 +128,5 @@ from apps.casework.tasks import register_schedule as _c; _c()"
 | Review logs | Weekly | `cat /var/log/logwatch-daily.txt` |
 | Update Docker images | Monthly | `docker compose pull && docker compose up -d` |
 | Test backup restore | Quarterly | `scripts/restore.sh` on test DB |
-| Rotate secrets | Annually | Regenerate `SECRET_KEY`, `ENCRYPTION_KEY`; restart |
+| Rotate secrets | Annually | `SECRET_KEY`: regenerate + restart. Encryption keys: **never simply regenerate** — that orphans every encrypted field. Prepend the new key to `ENCRYPTION_KEYS`, run `manage.py rotate_keks`, verify, then drop the old key (`docs/envelope-rollout-runbook.md`). `BLIND_INDEX_KEY` is not rotatable without re-indexing — leave it |
 | SSL certificate | Automatic (Caddy + Let's Encrypt) | — |
