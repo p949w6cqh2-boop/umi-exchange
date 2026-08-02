@@ -1,7 +1,15 @@
 # St. Patrick Implementation Playbook
 
 *A 90-day guide to launching UMI Exchange at St. Patrick parish.*
-*Based on the `main` branch. See `STATE.md` for the verified feature list.*
+*Refreshed 2026-08-01 against the `main` branch. See `STATE.md` for the verified feature list.*
+
+> **When can this start?** Not before the safety gate closes. Six hard preconditions are
+> written down in `docs/ethics-and-safety.md`; **three are done** (on-behalf-of consent
+> handled honestly, a written legal-response plan, backups proven by real restores) and
+> **three remain** (monitoring that pages a person, key custody held by more than one
+> person, governance beyond a solo steward). Until all six are checked, the software runs
+> on fictional demo data only — no real parishioner enters the system. This document is
+> the plan for the day the gate opens.
 
 ---
 
@@ -22,8 +30,9 @@ inside one parish.
 **What it is.** A private, parish-only board where members post **needs** ("I
 need a ride to chemo on Thursdays") and **offers** ("I can fix small plumbing
 problems"). A coordinator — or the members themselves — connect the two. Contact
-details stay hidden until **both people agree to be matched**, so it is safe and
-unintrusive. It looks less like an app and more like a parish bulletin: warm,
+details stay off the board entirely; when **both people agree to be matched** they
+are shared between the two of them and their coordinator — a trusted person keeping
+the introductions safe. It looks less like an app and more like a parish bulletin: warm,
 calm, and uncluttered.
 
 **Why St. Patrick needs it.** Right now, requests for help travel by memory and
@@ -55,7 +64,7 @@ A steady, unhurried pace. Each phase is two weeks.
 - Walk them through the **coordinator workflows** (Section 5) using a few
   practice needs and offers.
 - Print the **quick-start guide** (Section 4) and the parish **QR code**.
-- Turn on **2FA** for coordinator accounts (recommended — Section 6).
+- Turn on **2FA** for coordinator accounts (built in; strongly recommended — Section 6).
 - *Outcome:* a team that can post, match, and answer questions confidently.
 
 ### Weeks 5–6 — Soft launch (small group)
@@ -111,6 +120,7 @@ fresh secret — paste each result in:
 # Required
 SECRET_KEY=<paste output of: python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())">
 ENCRYPTION_KEY=<paste output of: python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())">
+BLIND_INDEX_KEY=<paste output of: python3 -c "import secrets; print(secrets.token_urlsafe(32))">
 ALLOWED_HOSTS=app.stpatrick.org
 SITE_URL=https://app.stpatrick.org
 DATABASE_URL=postgres://umi:${DB_PASSWORD}@db:5432/umi_exchange
@@ -125,8 +135,9 @@ HEALTH_CHECK_TOKEN=<choose a random string>
 SENTRY_DSN=            # leave blank unless you use Sentry
 ```
 > The app **will refuse to start in production** if `SECRET_KEY` is the example
-> value or `ENCRYPTION_KEY` is blank — this is intentional, so a misconfigured
-> server can't go live insecurely.
+> value, `ENCRYPTION_KEY` is blank, or `BLIND_INDEX_KEY` is missing or reuses an
+> encryption key — this is intentional, so a misconfigured server can't go live
+> insecurely. `BLIND_INDEX_KEY` must be its own dedicated secret.
 
 **4. Point the web server at your domain.** Edit `docker/Caddyfile.prod` and
 replace the placeholder domain with `app.stpatrick.org`. Caddy will fetch an
@@ -155,10 +166,15 @@ curl https://app.stpatrick.org/health/
 # → {"status": "ok", "db": "ok", "cache": "ok"}
 ```
 
-**9. Schedule a daily backup** (3 AM):
+**9. Schedule a daily backup** (3 AM) — and give it somewhere **off the server** to go.
+Fill the `BACKUP_*` variables in `.env` (any S3-compatible bucket works) and set
+`BACKUP_REQUIRE_REMOTE=1`, so a night the off-site copy fails is a loud error instead
+of a silent local-only backup. Then:
 ```bash
 echo "0 3 * * * cd /opt/umi-exchange && bash scripts/backup.sh" | crontab -
 ```
+A backup is only real once you have restored from it — rehearse with
+`scripts/restore.sh` before launch (we run the same rehearsal on our own instance).
 
 You're live. Log in at `https://app.stpatrick.org/` with the coordinator account
 and create the **St. Patrick** community (this also generates the join code).
@@ -222,14 +238,18 @@ timeline shows the steps — Proposed → Accepted → Fulfilled.
 **6. Share contact only when ready.** When someone proposes a match to you, you'll
 see **Accept** and **Decline**. *On screen:* tapping Accept shows a gentle pop-up:
 "Your contact info will be shared with the other party." Only **after you accept**
-do phone/email appear — for both of you. Reach out, arrange the help, done.
+do phone/email appear — for the two of you and your coordinator, so someone
+trustworthy always has eyes on the introductions. Reach out, arrange the help, done.
 
 **7. Finish.** Once the help has happened, open the match and tap **Mark
 Fulfilled**. That's it.
 
-**Your privacy:** No one sees your contact details until you accept a match. You
-never have to post your home address — a general neighborhood is enough. If you
-get stuck, ask a coordinator. Thank you for caring for our parish family. 🙏
+**Your privacy:** Nobody browsing the board ever sees your contact details, and no
+other member sees them until you accept a match. Your parish coordinators can see
+them — that is on purpose, so a trusted person is watching out for scams and
+strangers. You never have to post your home address — a general neighborhood is
+enough. If you get stuck, ask a coordinator. Thank you for caring for our parish
+family. 🙏
 
 ---
 
@@ -239,13 +259,19 @@ Coordinators can do everything a member can, **plus** post on behalf of others,
 oversee all matches, and see the dashboard.
 
 ### A. Post a need on behalf of a family
-Some people can't or won't use a phone/computer. A coordinator can post for them.
-1. Tap **Post a Need**.
-2. Fill in the category, a short description, and urgency as usual.
+Some people can't or won't use a phone/computer. A coordinator can post for them —
+but the **consent belongs to the neighbor, never to the coordinator**.
+1. Ask the person first, plainly: "May I put this on the parish board for you?"
+   Their yes (spoken or written) is recorded as **their** consent — the coordinator
+   signs only as the **witness** who heard it.
+2. Tap **Post a Need**. Fill in the category, a short description, and urgency as
+   usual.
 3. In the **"On behalf of"** box, type the person's name (e.g., "the Romero
-   family"). *This name is stored **encrypted** and is only there to help
-   coordinators remember who the request is really for.*
-4. Post it. The need now appears on the board for others to help with.
+   family"). *This name is stored **encrypted**, and the board shows only
+   **initials** until the person's own consent is on record.*
+4. Post it. The need now appears on the board for others to help with. If the
+   person changes their mind, a coordinator withdraws the consent and the name
+   comes back down to initials.
 
 ### B. Propose a match
 1. Open a **need** card (green edge) you can pair with an offer — or open an
@@ -282,8 +308,13 @@ Open **Community Settings → Dashboard** (coordinators/admins only).
 This tool is built to protect people. In plain terms:
 
 - **Contact info is hidden until a match is accepted.** Browsing the board, you
-  never see anyone's phone or email. They appear **only** after both sides accept
-  a match — to those two people (and, for oversight, a coordinator).
+  never see anyone's phone or email. Members see each other's **only** after both
+  sides accept a match. **Coordinators can see members' contact details, match or
+  no match** — deliberate oversight, the same reason a parish office keeps the
+  directory, and every look is logged.
+- **On-behalf-of consent belongs to the neighbor.** When a coordinator posts for
+  someone, the record names that person as the one who consented — the coordinator
+  is only the witness — and the board shows initials until that yes is real.
 - **No street addresses.** The neighborhood field is for a **general area**
   ("Westside," "near the school"), not a house number. Encourage people to keep
   it general.
@@ -291,10 +322,10 @@ This tool is built to protect people. In plain terms:
   log** of who viewed contact information and when. The log can be added to but
   **never edited or deleted** — even by an administrator.
 - **Coordinators can see everything — so protect those accounts.** Coordinators
-  can view all needs, offers, and matches. Because of that, we **strongly
-  recommend turning on two-factor authentication (2FA)** for every coordinator
-  account (an extra code from a phone app at login). It can be enabled for the
-  parish instance.
+  can view all needs, offers, and matches. Because of that, **turn on two-factor
+  authentication (2FA)** for every coordinator account. It is built in: once a
+  coordinator enrolls an authenticator app, login **requires** the extra code
+  (with printed recovery codes as backup).
 - **The data stays under parish control.** St. Patrick can **self-host** the tool
   on its own server (the data lives there and nowhere else), or we can host it on
   the parish's behalf. Either way it is **private to the parish** — there is no
@@ -324,27 +355,26 @@ whether real needs were quietly met.
 
 If the pilot succeeds, here's what could come next — in rough order.
 
-### Extended protocol features (not yet built)
-The current tool is **UMI Protocol v0.1 at "Core" level.** The next level adds:
-- **Referrals** — a coordinator forwarding a need to a partner ministry or agency.
-- **Attestations & trust badges** — members vouching for one another, with a small
-  "Trusted" badge appearing after enough vouches (the badge design already exists
-  as a placeholder; the logic behind it does not).
-- **Network admin** — overseeing several parishes/communities from one place.
-
-These are deliberately **not** in the pilot to keep it simple. They become worth
-building once a single parish is thriving.
+### Beyond Core (built, deliberately switched off for the pilot)
+The tool now conforms to **UMI Protocol v0.1 at Core + Casework + Federation v1.**
+Some of yesterday's "futures" are already real code:
+- **Member tags & verification** — coordinators can tag and verify members (the
+  trust layer under future vouching badges). Available from day one if wanted.
+- **Federation** — parishes linking boards into a wider network. Built, **off by
+  default**, and it stays off for the pilot: one parish, one board, kept simple.
+- **Referrals** to partner ministries remain future work.
 
 ### Other "lakes" (companion tools from the wider vision)
-The same calm, private approach can extend to related parish work, each as its own
-small tool:
-- **Case Notes** — a private, structured way for the St. Vincent de Paul / care
-  team to track ongoing situations (with the same strict privacy and audit rules).
+- **Case Notes is built.** A private, structured way for the St. Vincent de Paul /
+  care team to track ongoing situations — encrypted narratives, strict access
+  rules, a 4-hour re-authentication window on sensitive views, the same
+  append-only audit trail. It ships in the same software but is **not part of
+  this 90-day pilot**: the aid board earns trust first. When the parish is ready,
+  it is a switch to plan for, not a build to wait on.
 - **Skills Directory** — a searchable, opt-in list of parishioners' skills and
-  trades, for when a specific kind of help is needed.
+  trades. Still future work.
 
-These are described here only so Father can see where it could go — none is part
-of the pilot.
+The pilot stays deliberately small — the board, a coordinator team, the parish.
 
 ### Cost / tiers
 For a single parish pilot, the **free, self-hosted tier is more than enough** — the
