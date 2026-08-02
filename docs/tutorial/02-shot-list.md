@@ -32,11 +32,17 @@
 Total ≈ 90s. S6→S7 records as **one continuous take** (the click-through IS the story); the
 cut point between beats 6 and 7 happens in the edit, not the recording.
 
+> ⚠ **2026-08-02 annotation (table rows stay verbatim — they are the record of what was shot):**
+> S7's on-screen string "shared between the two of you alone" was the page copy at shoot time and
+> was **retracted by #136** — the live page now reads "between the two of you and your
+> coordinator." **S7 (with S6's locked-panel dwell) owes a re-shoot against the corrected screen
+> before the video ships.**
+
 ## Rules this spec bakes in (from keyed Stages 0–1)
 
 - The connect reveal (S7) happens ON camera in a single click — the protected money shot.
 - The two trust strings get deliberate dwell time: S4's posted-ask promise, S6's locked panel,
-  S7's "between the two of you alone."
+  S7's "between the two of you and your coordinator" (post-#136 wording — see the annotation above).
 - All typed content is fictional and American-idiom (matches the seeded parish); the S2 join
   code is invented and never submitted; passwords appear only as masked dots.
 - Nothing here touches production, posts anything, or leaves the local machine.

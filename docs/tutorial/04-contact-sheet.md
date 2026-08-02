@@ -25,6 +25,11 @@ Two consecutive full runs × both aspects, 28 scene recordings, zero reds
 
 Raw totals: ~111.6s (16:9), ~107.2s (9:16) — pads off ≈ the 90s target.
 
+> ⚠ **2026-08-02 annotation (rows stay verbatim — they record what was captured):** clip
+> 06-07's eyeballed string "shared between the two of you alone" is the **pre-#136** page copy,
+> since retracted; the live page reads "between the two of you and your coordinator." The clip
+> owes a re-shoot against the corrected screen before assembly ships.
+
 ## Legibility floor (Stage-0 goal #5)
 
 Checked on the 9:16 frames at native 405px: smallest text in frame (board meta rows,
