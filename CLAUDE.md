@@ -4,7 +4,7 @@ Guidance for Claude Code (and other AI agents) working in this repository.
 
 ## What this is
 
-**UMI Exchange** — a reference implementation of the **UMI Protocol v0.1** (Core conformance):
+**UMI Exchange** — a reference implementation of the **UMI Protocol v0.1** (Core + Casework + Federation v1 conformance):
 an open-source platform for coordinating reciprocal exchange (mutual aid) in communities — a
 Catholic parish, a secular mutual-aid group, a disaster-relief network, a timebank. Built so any
 such community can adopt it as a starting point and re-skin it per community.
@@ -199,6 +199,6 @@ prefix; never assume the shell is where you left it.
 
 ## Project roadmap
 
-See `docs/INTEGRATION-PLAN.md` for the staged build (Lakes, envelope encryption, etc.). Steps 1–3
-(people/§10, casework, `needs` envelope encryption) are built and on `main`. Casework envelope
-encryption (extending Step 3) and its Stage E contract live in separate, gated PRs.
+`STATE.md` is the authoritative snapshot of what is built. `docs/INTEGRATION-PLAN.md` is the
+**historical** staged-build plan — every step has landed (people/§10, casework, envelope
+encryption through Stage E). Read it as a record, not a roadmap.

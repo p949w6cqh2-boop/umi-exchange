@@ -60,7 +60,7 @@ The coordinator proposed; both sides get a plain yes/no. Nothing is revealed yet
 ![Match](demo/07-match.webp)
 
 ### 8. The connect — the reason all of this exists
-Both said yes. The page settles, warms, and shares contact between the two of them alone.
+Both said yes. The page settles, warms, and shares contact between the two of them and their coordinator — a trusted person keeping the introductions safe.
 
 ![Connected](demo/08-connected.webp)
 

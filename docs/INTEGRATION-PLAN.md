@@ -1,5 +1,9 @@
 # UMI Exchange — Bundle Integration Plan
 
+> **HISTORICAL RECORD (plan as of 2026-06-14).** Every step below has since landed on
+> `main` — people/§10, casework, envelope encryption through Stage E. `STATE.md` is the
+> live truth; read this file as the build's history, not its roadmap.
+
 **Source of truth:** `umi-exchange-FULL-BUNDLE.md` (65 `### FILE:` + 7 `### EDIT:` blocks).
 ⚠️ It exists only as an upload — re-supply it each session (the sandbox is ephemeral).
 **Branch model:** one branch per step; verify gate before merge; nothing reaches `main` without explicit approval.

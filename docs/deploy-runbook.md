@@ -22,6 +22,10 @@ Nothing reaches production until a human runs the steps below. (The droplet also
 - SSH access to the droplet as `root@143.244.167.7` (prompt reads `root@UMI-droplet` —
   confirm it before pasting; your laptop is a different host).
 - The change is merged to `main` and CI is green.
+- `/opt/umi-exchange/.env` still carries `SECRET_KEY`, `ENCRYPTION_KEY` (or
+  `ENCRYPTION_KEYS`), and `BLIND_INDEX_KEY` (distinct from the encryption keys) —
+  production refuses to boot without all three, so the app-container recreate in
+  step 5 fails if any went missing.
 
 ## The steps
 
