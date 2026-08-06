@@ -37,9 +37,21 @@ const PAD_MS = 3000; // head/tail padding per scene (Stage-2 spec)
 
 const ASPECTS = {
   "16x9": { viewport: { width: 1280, height: 720 } },
-  // Phone-first portrait pass at true 9:16 (405x720). Final 1080x1920 upscale
-  // happens at assembly; legibility is checked on the Stage-4 contact sheet.
-  "9x16": { viewport: { width: 405, height: 720 } },
+  // Phone-first portrait pass at 639x1136 (9:16). Two things this buys, both from
+  // his 2026-08-05 call ("the video is so zoomed in" / "its not very mobile friendly"):
+  //   1. 1.58x more captured pixels than the old 405x720, so assembly upscales 1.69x
+  //      instead of 2.67x — visibly less soft.
+  //   2. Content reads SMALLER on a full-screen phone, because more CSS px map into
+  //      the same 1080 output width. That is the "zoomed in" complaint directly.
+  // 639 is deliberate: Tailwind's sm: breakpoint is 640, so this is the widest
+  // viewport that still renders the true MOBILE layout (767 was tried and gives the
+  // tablet layout — desktop nav appears).
+  //
+  // Do NOT try to fix the upscale with recordVideo.size: Playwright only ever scales
+  // a recording DOWN to fit, never up. Setting size 1080x1920 with a 405 viewport
+  // (tried 2026-08-05) composites the page into the top-left of a grey 1080x1920
+  // canvas. deviceScaleFactor does not reach the video capture either.
+  "9x16": { viewport: { width: 639, height: 1136 } },
 };
 
 for (const k of ["LIFT", "PROPOSED"]) {
@@ -300,7 +312,13 @@ for (const aspect of runAspects) {
     if (!contexts[persona]) {
       contexts[persona] = await browser.newContext({
         viewport: ASPECTS[aspect].viewport,
-        recordVideo: { dir: outDir, size: ASPECTS[aspect].viewport },
+        ...(ASPECTS[aspect].deviceScaleFactor
+          ? { deviceScaleFactor: ASPECTS[aspect].deviceScaleFactor }
+          : {}),
+        recordVideo: {
+          dir: outDir,
+          size: ASPECTS[aspect].videoSize || ASPECTS[aspect].viewport,
+        },
         // "reduce", deliberately: under full motion a hub animation wedges the
         // headless renderer (mouse.wheel never acks, screenshots time out —
         // 2026-07-18 hang). The still-shoot uses reduce for the same reason;
