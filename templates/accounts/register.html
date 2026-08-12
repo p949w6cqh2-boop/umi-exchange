@@ -8,6 +8,15 @@
       <h1 class="umi-display !text-3xl mt-2 mb-7">Create an account</h1>
       <form method="post" class="space-y-5">
         {% csrf_token %}
+        {% comment %}Bot checks (human-verification spec, option C): a visually-hidden
+        field humans never see or fill, plus a signed render-time stamp. aria-hidden and
+        tabindex keep it out of screen readers and tab order — a real neighbour, sighted
+        or not, never touches it.{% endcomment %}
+        <div style="position:absolute;left:-9999px;top:-9999px" aria-hidden="true">
+          <label for="id_website">Website</label>
+          <input type="text" name="website" id="id_website" tabindex="-1" autocomplete="off" value="">
+        </div>
+        <input type="hidden" name="hp_ts" value="{{ hp_ts }}">
         {% if form.non_field_errors %}
         <p class="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{{ form.non_field_errors.0 }}</p>
         {% endif %}

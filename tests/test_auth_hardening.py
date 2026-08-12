@@ -28,6 +28,7 @@ from django.test import Client
 from django.urls import reverse
 
 from apps.accounts.ratelimit import AUTH_ACCT_LIMIT, AUTH_IP_LIMIT
+from tests.conftest import register_payload
 
 User = get_user_model()
 pytestmark = pytest.mark.django_db
@@ -46,7 +47,7 @@ def test_registration_rejects_password_equal_to_username(client):
     check that was inert."""
     resp = client.post(
         reverse("register"),
-        {"username": "alexandria9", "email": "", "password": "alexandria9", "password_confirm": "alexandria9"},
+        register_payload(username="alexandria9", email="", password="alexandria9", password_confirm="alexandria9"),
     )
     assert resp.status_code == 200  # re-rendered with an error, not a redirect
     assert not User.objects.filter(username="alexandria9").exists()
@@ -82,7 +83,7 @@ def test_register_flood_does_not_lock_victim_out_of_login():
     for i in range(AUTH_ACCT_LIMIT + 1):  # fill the register bucket for "victim26"
         Client().post(
             reverse("register"),
-            {"username": "victim26", "email": "", "password": "x", "password_confirm": "x"},
+            register_payload(username="victim26", email="", password="x", password_confirm="x"),
             REMOTE_ADDR=_ip(26, i),
         )
     # The victim's own login, from a clean IP, must not be throttled by that flood.

@@ -5,6 +5,13 @@
 
 ## 2026-08-12
 
+- **The person check is now real, and it never asks you to click traffic lights.** New
+  accounts confirm they're human one of two ways: click the link we email you, or — if
+  email isn't your thing — tell a coordinator at church your username and they vouch for
+  you in person (that vouch goes on the permanent record). Until one of those happens, a
+  new account can sign in and look around but can't join a community or post. Existing
+  accounts aren't affected. Robots filling in the sign-up form now get quietly shown the
+  door — real neighbours won't notice anything changed.
 - **Who can stop this thing, and who holds the keys — written down.** Two new pages in the
   open documentation: one says who holds real authority over the board (the pastor can halt
   it with a phone call; a complaint about the steward goes to the parish office, never
