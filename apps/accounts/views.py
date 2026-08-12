@@ -8,16 +8,18 @@ from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.contrib.auth.views import LogoutView
+from django.core.mail import send_mail
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, FormView, TemplateView, UpdateView
 from django_otp import login as otp_login
 from django_otp import match_token, user_has_device
 from django_ratelimit.decorators import ratelimit
 
-from .forms import LoginForm, OTPTokenForm, ProfileForm, RegistrationForm
+from .forms import LoginForm, OTPTokenForm, ProfileForm, RegistrationForm, UsernameRecoveryForm
 
 # The password step stashes the authenticated-but-not-logged-in user here; the
 # OTP step consumes it. Short-lived: a pending login is not a session.
@@ -145,3 +147,43 @@ class SettingsView(LoginRequiredMixin, UpdateView):
         if ctx["enable_2fa"]:
             ctx["is_2fa_enabled"] = self.request.user.totpdevice_set.filter(confirmed=True).exists()
         return ctx
+
+
+@method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
+class UsernameRecoveryView(FormView):
+    """Logged-out username recovery. Mirrors the password-reset posture: the
+    response is identical whether or not the address is known (no user
+    enumeration), only active accounts are considered, and one email lists
+    every username on the address. Throttled twice like the other auth
+    endpoints: the decorator here plus the auth-path middleware
+    (RATELIMIT_AUTH_PATHS)."""
+
+    template_name = "accounts/username_recovery.html"
+    form_class = UsernameRecoveryForm
+    success_url = reverse_lazy("username_recovery_done")
+
+    def form_valid(self, form):
+        email = form.cleaned_data["email"]
+        usernames = list(
+            get_user_model()
+            .objects.filter(email__iexact=email, is_active=True)
+            .order_by("username")
+            .values_list("username", flat=True)
+        )
+        if usernames:
+            body = render_to_string(
+                "emails/username_recovery_email.txt",
+                {"usernames": usernames},
+            )
+            send_mail(
+                "Your UMI Exchange username",
+                body,
+                None,  # DEFAULT_FROM_EMAIL
+                [email],
+                fail_silently=False,
+            )
+        return super().form_valid(form)
+
+
+class UsernameRecoveryDoneView(TemplateView):
+    template_name = "accounts/username_recovery_done.html"

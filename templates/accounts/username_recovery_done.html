@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Check Your Email{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto text-center py-12">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-4">Check Your Email</h1>
+  <p class="text-sm text-parish-ink/70 mb-6">If an account exists with that email, we've sent your username. Check your inbox (and spam folder).</p>
+  <a href="{% url 'login' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to login</a>
+</div>
+{% endblock %}

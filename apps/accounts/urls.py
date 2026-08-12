@@ -24,6 +24,17 @@ urlpatterns = [
         ),
         name="password_change_done",
     ),
+    # Username recovery (logged out)
+    path(
+        "username/recover/",
+        views.UsernameRecoveryView.as_view(),
+        name="username_recovery",
+    ),
+    path(
+        "username/recover/done/",
+        views.UsernameRecoveryDoneView.as_view(),
+        name="username_recovery_done",
+    ),
     # Password reset (logged out)
     path(
         "password/reset/",
