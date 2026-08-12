@@ -3,6 +3,21 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-08-12
+
+- **Who can stop this thing, and who holds the keys — written down.** Two new pages in the
+  open documentation: one says who holds real authority over the board (the pastor can halt
+  it with a phone call; a complaint about the steward goes to the parish office, never
+  through the steward himself; succession and removal are spelled out), and one designs how
+  the encryption keys stop living on the same machine as the data they protect (a sealed
+  envelope in the parish safe, openable only by two named people, is part of it). The
+  designs become real before any real parishioner's information goes on the board.
+- **How we make sure you're a person, without walling anyone out.** A written plan for
+  sign-up verification: the code you're handed at church stays the front door, and each new
+  account will confirm a real email address before it can post. We looked at CAPTCHAs — the
+  "click all the traffic lights" puzzles — and rejected them, because they wall out exactly
+  the people this board most wants to welcome.
+
 ## 2026-08-11
 
 - **Forgot your username? The board can now tell you.** The sign-in page always offered a
