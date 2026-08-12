@@ -183,6 +183,20 @@
       </div>
       {% endfor %}
     </div>
+    <div class="mt-5 pt-4 border-t border-[var(--umi-border)]">
+      <h3 class="text-sm font-semibold text-parish-ink">Vouch for a neighbour</h3>
+      <p class="text-xs text-parish-ink/70 mt-1 mb-3">
+        For members who don't use email: once you've met them in person, enter their
+        username and their account is verified. This is recorded.
+      </p>
+      <form method="post" action="{% url 'member-vouch' slug=community.slug %}" class="flex items-center gap-2">
+        {% csrf_token %}
+        <input type="text" name="username" required placeholder="Their username"
+               class="text-sm border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] flex-1"
+               aria-label="Username to vouch for">
+        <button type="submit" class="btn-primary text-sm">Vouch</button>
+      </form>
+    </div>
   </div>
 
   {# Categories #}

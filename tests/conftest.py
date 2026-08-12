@@ -29,6 +29,11 @@ class UserFactory(DjangoModelFactory):
         skip_postgeneration_save = True
 
     username = factory.Sequence(lambda n: f"user{n}")
+    # Factory users predate the human-verification gate by construction (the
+    # backfill migration's promise) — tests exercising the UNVERIFIED path set
+    # verified_at=None explicitly.
+    verified_at = factory.LazyFunction(timezone.now)
+    verified_via = "backfill"
 
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):  # noqa: N805 (factory_boy hook signature)
