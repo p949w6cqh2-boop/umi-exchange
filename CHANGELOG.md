@@ -3,6 +3,17 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-08-11
+
+- **Forgot your username? The board can now tell you.** The sign-in page always offered a
+  password reset; now there is a "Forgot username?" link beside it. Enter your email and the
+  board sends the username registered to it. Nothing is revealed to anyone else: the page
+  answers the same way whether or not it knows your address.
+- **Reset emails are on the path to actually arriving.** We found that on the live server,
+  "we've sent you an email" could be true in the code and false in your inbox — the message
+  went to a server log. A delivery check now exists and the setup to send real email is
+  written down, so this gets fixed at the root before the first parish onboards.
+
 ## 2026-07-30
 
 - **We were telling you your contact details went to one person. They also go to your

@@ -1,0 +1,14 @@
+{% autoescape off %}Hello,
+
+You're receiving this email because you asked for the username on your UMI Exchange account.
+
+{% if usernames|length == 1 %}Your username is: {{ usernames.0 }}{% else %}These usernames are registered to this email address:
+{% for name in usernames %}  - {{ name }}
+{% endfor %}{% endif %}
+
+You can sign in here: {{ protocol|default:"https" }}://{{ domain|default:"reciprocalaid.network" }}/auth/login/
+
+If you did not ask for this, you can ignore this email. Nothing about your account has changed.
+
+— UMI Exchange
+{% endautoescape %}
