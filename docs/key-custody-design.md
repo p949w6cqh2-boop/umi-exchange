@@ -55,17 +55,38 @@ Three changes, in order:
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
   The uptime monitor (monitoring runbook) makes the downtime loud.
 
-## What implementation looks like (separate keyed PR, not this document)
+## Implementation (BUILT 2026-08-12, keyed; rehearsal still owed)
 
-- `scripts/deploy-with-keys.sh` (laptop side): age-decrypt → ssh → inject → `up -d` →
-  shred local plaintext; refuses to run if the plaintext file would touch droplet disk.
-- Remove key lines from the droplet `.env` (leaving non-secret config); add
-  `secrets/keys.env.age`; document rotation: new KEK prepended to `ENCRYPTION_KEYS`,
-  `rotate_keks`, retire old.
-- A rehearsal (the restore-test pattern): decrypt-deploy once on a scratch box, then once
-  on the droplet at a quiet hour; screenshots + date recorded here.
-- Envelope prepared, sealed, dated, signed across the seal; placed in the safe with the
-  pastor's knowledge; its existence recorded in `docs/governance.md`.
+- **`scripts/deploy-with-keys.sh` exists** (tests: `tests/test_deploy_with_keys.py`,
+  skipped where `age` is absent). Three modes:
+  - `encrypt <plaintext-env-file>` → age-encrypts to `$UMI_KEYS_AGE`
+    (default `~/.config/umi/keys.env.age` — **outside the repo**; `secrets/` is
+    gitignored as a brief staging spot). Refuses without a recipients file; tells the
+    steward to shred the plaintext.
+  - `deploy` → age-decrypts on the laptop and pipes STRAIGHT over ssh into droplet
+    tmpfs (`/dev/shm`, `umask 077`, no scp, no laptop temp file), refuses if the droplet
+    `.env` still carries plaintext key lines, merges tmpfs keys + key-free `.env` into
+    `/dev/shm/umi-full.env`, runs the runbook's exact compose invocation from it, then
+    shreds both tmpfs files. `DRY_RUN=1` prints the full remote plan without connecting.
+  - `check` → proves the droplet `.env` (or `--local-file <f>`) holds no
+    `ENCRYPTION_KEYS` / `BLIND_INDEX_KEY` / `SECRET_KEY` lines.
+- **Path chosen for the container residue (the design's named question):** env-file merge
+  in tmpfs, consumed at `up`. What a root attacker can still read: Docker writes the
+  container's resolved environment into its container-config JSON
+  (`/var/lib/docker/containers/<id>/config.v2.json`) for the LIFETIME OF THE CONTAINER —
+  that residue is real and stays. It disappears only on container removal; it is not an
+  at-rest survives-redeploy plaintext file, but a rooted host while the app exists can
+  read the keys there (as it could read process memory). Closing it fully = a secrets
+  sidecar / managed store — still deferred, still the steward's call, per the residuals
+  section above.
+- **Migration steps on the droplet (steward's hand, at the rehearsal):** compose the key
+  lines into a scratch file → `encrypt` it → remove those lines from `/opt/umi-exchange/.env`
+  → `deploy` → `check`. Rotation unchanged: new KEK prepended to `ENCRYPTION_KEYS` in the
+  plaintext staging file, re-`encrypt`, `deploy`, `manage.py rotate_keks`, retire old.
+- **Still owed before the gate box ticks (unchanged):** the rehearsal (scratch box, then
+  droplet at a quiet hour, screenshots + date recorded here) and the sealed envelope in
+  the parish safe (printed identity + plain-English instructions), recorded in
+  `docs/governance.md`.
 
 ## Done-when checklist (tick the gate box only when ALL are true)
 
