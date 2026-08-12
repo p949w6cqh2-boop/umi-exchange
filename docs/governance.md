@@ -13,13 +13,36 @@
 
 | Role | Who (pilot) | What they actually hold |
 |---|---|---|
-| **Steward** | Jasiah (founder) | Runs the software: deploys, admin seat, key custody day-to-day. |
-| **Pastor** | the parish pastor | The ministry's authority: can HALT the board outright, names and removes coordinators and the steward's ministry mandate, co-holds refusal power. |
+| **Steward** | Jasiah (founder) | Runs the ministry day-to-day (the pastor's mandate, 2026-08-12) and the software: deploys, admin seat, key custody day-to-day. |
+| **Pastor** | the parish pastor | The ministry's authority, not its operator: can HALT the board outright, names and removes coordinators and the steward's ministry mandate, co-holds refusal power. Runs nothing day-to-day. |
 | **Keeper of the envelope** | parish office (pastor + one named trustee, e.g. the Sister) | Break-glass custody of the sealed key envelope (see `docs/key-custody-design.md`). Two-person act to open, always logged. |
 | **Coordinators** | named parishioners, gathered by the steward at the pastor's request | Day-to-day care: propose matches, see accepted connections for safety, freeze/remove an account that harms someone (every act on the audit record). |
 
 That table, filled with real names, is the whole point: after it is filled, no single
 person is the entire trust boundary — including the founder.
+
+## The pastor runs nothing
+
+Stated plainly, because it decides whether this design is workable for a busy parish:
+**the pastor operates nothing.** At the blessing follow-up (2026-08-12, pastor to steward)
+he asked the steward to run the ministry — and that is exactly what this page already
+designs. The steward runs the ministry and the software; the pastor holds authority that
+only matters in rare moments. His entire burden:
+
+- **Halt** — one phone call, only if something is wrong. No monitoring, no meetings.
+- **Refuse** — co-decide only IF a legal demand for data ever arrives. Rare by design.
+- **The envelope** — sits sealed in the parish safe. Zero effort unless succession or
+  break-glass happens.
+- **Serious complaints** — hears a problem about the steward only when the parish office
+  cannot resolve it (see the complaint path below).
+- **Appoint / remove** — his existing pastoral authority applied to this ministry; not
+  new work.
+
+Everything else — the board, the neighbours, the coordinators, the machines — is the
+steward's, by the pastor's own mandate. What the pastor may not delegate away is the
+backstop itself: if no one but the steward can halt the system, reach the keys, or remove
+the steward, then one person is the whole trust boundary again and the gate box this page
+exists for cannot honestly tick.
 
 ## The powers, explicitly
 
@@ -35,8 +58,11 @@ person is the entire trust boundary — including the founder.
   harming someone (incident-response covers the in-person-harm path). Freezes are audited
   and reviewed by the pastor at the next board meeting.
 - **Complain past the steward.** A parishioner who has a problem WITH the steward or the
-  software goes to the pastor or the parish office directly — a path that does not route
-  through the person being complained about. The pastor can act on it (see Remove).
+  software goes to the parish office first — the named trustee (e.g. the Sister) is the
+  first receiver, a path that does not route through the person being complained about
+  and does not land on the pastor's plate by default. The office escalates to the pastor
+  only what is serious: suspected abuse of trust, anything touching the steward's mandate.
+  The pastor can act on it (see Remove).
 
 ## Succession and removal
 
