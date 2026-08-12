@@ -4,6 +4,7 @@ Shared test fixtures: users, communities, members, categories.
 
 import factory
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from apps.communities.models import Category, Community, Member
 
@@ -16,6 +17,10 @@ class UserFactory(factory.django.DjangoModelFactory):
         skip_postgeneration_save = True
 
     username = factory.Sequence(lambda n: f"user{n}")
+    # Factory users predate the human-verification gate by construction (the
+    # backfill migration's promise) — unverified-path tests set verified_at=None.
+    verified_at = factory.LazyFunction(timezone.now)
+    verified_via = "backfill"
 
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):  # noqa: N805 (factory_boy hook signature)

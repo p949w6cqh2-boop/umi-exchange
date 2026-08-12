@@ -23,6 +23,22 @@ def _ensure_static_root():
     settings.STATIC_ROOT.mkdir(parents=True, exist_ok=True)
 
 
+def register_payload(**fields):
+    """POST body for the register form that passes the human-verification bot
+    checks (honeypot left empty, signed form-age stamp past the minimum) — the
+    shape a real browser submission has. Tests exercising the TRIP paths build
+    their own payloads in tests/test_human_verification.py."""
+    import time as _time
+
+    from django.core import signing as _signing
+
+    from apps.accounts.verification import HONEYPOT_TS_SALT
+
+    payload = {"website": "", "hp_ts": _signing.dumps(_time.time() - 30, salt=HONEYPOT_TS_SALT)}
+    payload.update(fields)
+    return payload
+
+
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
