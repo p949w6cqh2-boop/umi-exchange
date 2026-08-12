@@ -70,3 +70,8 @@ docs/tutorial/out/
 .gstack/
 # local /retro snapshots — machine-readable trend data for the next run, not shared state
 .context/
+
+# Key-custody staging area (docs/key-custody-design.md): plaintext key files may
+# be composed here briefly before `deploy-with-keys.sh encrypt`, and must never
+# be committed. The ciphertext default also lives OUTSIDE the repo (~/.config/umi/).
+secrets/
