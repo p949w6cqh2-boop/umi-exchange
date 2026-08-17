@@ -11,6 +11,7 @@ urlpatterns = [
     path("create/", views.CommunityCreateView.as_view(), name="community-create"),
     path("<slug:slug>/", views.FeedView.as_view(), name="community-feed"),
     path("<slug:slug>/settings/", views.CommunitySettingsView.as_view(), name="community-settings"),
+    path("<slug:slug>/members/vouch/", views.VouchMemberView.as_view(), name="member-vouch"),
     path("<slug:slug>/welcome/", views.CommunityWelcomeView.as_view(), name="community-welcome"),
     path("<slug:slug>/resources/", views.ResourceListView.as_view(), name="community-resources"),
     path("<slug:slug>/leave/", views.LeaveCommunityView.as_view(), name="community-leave"),

@@ -21,7 +21,7 @@
         <button type="submit" class="w-full btn-primary !mt-7">Sign in</button>
       </form>
       <div class="flex items-center justify-between mt-6 pt-5 border-t border-[var(--umi-border)]">
-        <a href="{% url 'password_reset' %}" class="text-sm text-parish-ink/70 hover:text-parish-ink transition-colors duration-300">Forgot password?</a>
+        <span class="text-sm text-parish-ink/70"><a href="{% url 'password_reset' %}" class="hover:text-parish-ink transition-colors duration-300">Forgot password?</a> &middot; <a href="{% url 'username_recovery' %}" class="hover:text-parish-ink transition-colors duration-300">Forgot username?</a></span>
         <span class="text-sm text-parish-ink/70">New here? <a href="{% url 'register' %}" class="font-semibold text-umi-primary hover:text-umi-primary-hover">Create an account</a></span>
       </div>
     </div>

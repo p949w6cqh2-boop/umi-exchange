@@ -156,3 +156,18 @@ class OTPTokenForm(forms.Form):
 
     def clean_token(self):
         return self.cleaned_data["token"].strip().replace(" ", "")
+
+
+class UsernameRecoveryForm(forms.Form):
+    """Logged-out username recovery: an email address, nothing else. The view
+    never reveals whether the address exists (no user enumeration)."""
+
+    email = forms.EmailField(
+        label="Email",
+        widget=forms.EmailInput(
+            attrs={
+                "class": "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]",
+                "placeholder": "your@email.com",
+            }
+        ),
+    )

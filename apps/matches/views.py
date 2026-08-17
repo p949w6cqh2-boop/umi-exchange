@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import DetailView
 
+from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.models import AuditLog
 from apps.audit.services import emit
 from apps.communities.models import Community, Member
@@ -37,7 +38,7 @@ def _reject(request, slug, pk, message, status):
     return HttpResponse(message, status=status)
 
 
-class MatchProposeView(LoginRequiredMixin, View):
+class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
     """POST: propose a match between a need and an offer."""
 
     def post(self, request, slug):

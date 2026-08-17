@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Recover your username{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-6">Recover your username</h1>
+  <p class="text-sm text-parish-ink/70 mb-4">Enter your email address and we'll send you the username for your account.</p>
+  <form method="post" class="umi-card space-y-4">
+    {% csrf_token %}
+    {% for field in form %}
+    <div>
+      <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="w-full btn-primary transition-colors">
+      Send my username
+    </button>
+  </form>
+  <p class="text-center mt-4"><a href="{% url 'login' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to login</a></p>
+</div>
+{% endblock %}

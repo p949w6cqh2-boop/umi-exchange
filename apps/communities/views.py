@@ -22,6 +22,7 @@ from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
 
 from apps.accounts.ratelimit import rate_limit
+from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
 from apps.communities.identity import SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
 from apps.moderation.services import blocked_member_ids
@@ -43,7 +44,7 @@ class LandingView(TemplateView):
 # per-IP: a parish onboarding event legitimately joins many members from one
 # NAT, while account creation is already IP-throttled upstream.
 @method_decorator(rate_limit("join", 10, 3600, by="user"), name="post")
-class JoinCommunityView(LoginRequiredMixin, FormView):
+class JoinCommunityView(LoginRequiredMixin, VerifiedRequiredMixin, FormView):
     template_name = "communities/join.html"
     form_class = JoinForm
 
@@ -735,3 +736,42 @@ class SecurityTxtView(View):
             "Preferred-Languages: en",
         ]
         return HttpResponse("\n".join(lines) + "\n", content_type="text/plain; charset=utf-8")
+
+
+class VouchMemberView(LoginRequiredMixin, View):
+    """The vouch exit of the human-verification gate (his key, option 1,
+    2026-08-12): a coordinator who has met the neighbour in person marks their
+    account verified — the path for members who don't use email. Coordinator-only,
+    audited (§8.3); the vouched account still needs a join code like everyone."""
+
+    def post(self, request, slug):
+        community = get_object_or_404(Community, slug=slug)
+        member = Member.objects.filter(user=request.user, community=community, is_active=True).first()
+        if member is None or not member.is_coordinator:
+            raise PermissionDenied("Only a coordinator can vouch for a neighbour.")
+
+        username = (request.POST.get("username") or "").strip()
+        from django.contrib.auth import get_user_model
+
+        target = get_user_model().objects.filter(username__iexact=username, is_active=True).first()
+        if target is None:
+            messages.error(request, "No account with that username. Check the spelling with your neighbour.")
+            return redirect("community-settings", slug=slug)
+        if target.is_human_verified:
+            messages.info(request, f"{target.username} is already verified.")
+            return redirect("community-settings", slug=slug)
+
+        from django.utils import timezone as dj_timezone
+
+        target.verified_at = dj_timezone.now()
+        target.verified_via = "coordinator"
+        target.save(update_fields=["verified_at", "verified_via"])
+        emit(
+            "user.vouched",
+            target,
+            user=request.user,
+            request=request,
+            details={"vouched_username": target.username, "community": community.slug},
+        )
+        messages.success(request, f"Vouched for {target.username} — they can now join and post.")
+        return redirect("community-settings", slug=slug)

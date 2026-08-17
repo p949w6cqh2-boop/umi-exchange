@@ -12,6 +12,8 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
+from tests.conftest import register_payload
+
 from .conftest import (
     CategoryFactory,
     CommunityFactory,
@@ -32,9 +34,13 @@ def _login(user):
 
 
 def test_registration_rejects_weak_password(client):
+    # Distinct IP: register is throttled 3/min/IP and the fixed window is shared
+    # suite-wide, so same-minute register POSTs from other test files can 429 this
+    # one depending on suite timing (house gotcha: rotate REMOTE_ADDR).
     resp = client.post(
         reverse("register"),
-        {"username": "weakling", "email": "", "password": "1", "password_confirm": "1"},
+        register_payload(username="weakling", email="", password="1", password_confirm="1"),
+        REMOTE_ADDR="10.44.1.1",
     )
     assert resp.status_code == 200  # form re-rendered with errors, not a redirect
     assert not User.objects.filter(username="weakling").exists()
@@ -43,7 +49,8 @@ def test_registration_rejects_weak_password(client):
 def test_registration_accepts_strong_password(client):
     resp = client.post(
         reverse("register"),
-        {"username": "sturdy", "email": "", "password": "Str0ng-p4ss!x9", "password_confirm": "Str0ng-p4ss!x9"},
+        register_payload(username="sturdy", email="", password="Str0ng-p4ss!x9", password_confirm="Str0ng-p4ss!x9"),
+        REMOTE_ADDR="10.44.1.2",
     )
     assert resp.status_code in (301, 302)  # created + logged in + redirected
     assert User.objects.filter(username="sturdy").exists()

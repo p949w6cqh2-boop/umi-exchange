@@ -3,6 +3,39 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-08-12
+
+- **The person check is now real, and it never asks you to click traffic lights.** New
+  accounts confirm they're human one of two ways: click the link we email you, or — if
+  email isn't your thing — tell a coordinator at church your username and they vouch for
+  you in person (that vouch goes on the permanent record). Until one of those happens, a
+  new account can sign in and look around but can't join a community or post. Existing
+  accounts aren't affected. Robots filling in the sign-up form now get quietly shown the
+  door — real neighbours won't notice anything changed.
+- **Who can stop this thing, and who holds the keys — written down.** Two new pages in the
+  open documentation: one says who holds real authority over the board (the pastor can halt
+  it with a phone call; a complaint about the steward goes to the parish office, never
+  through the steward himself; succession and removal are spelled out), and one designs how
+  the encryption keys stop living on the same machine as the data they protect (a sealed
+  envelope in the parish safe, openable only by two named people, is part of it). The
+  designs become real before any real parishioner's information goes on the board.
+- **How we make sure you're a person, without walling anyone out.** A written plan for
+  sign-up verification: the code you're handed at church stays the front door, and each new
+  account will confirm a real email address before it can post. We looked at CAPTCHAs — the
+  "click all the traffic lights" puzzles — and rejected them, because they wall out exactly
+  the people this board most wants to welcome.
+
+## 2026-08-11
+
+- **Forgot your username? The board can now tell you.** The sign-in page always offered a
+  password reset; now there is a "Forgot username?" link beside it. Enter your email and the
+  board sends the username registered to it. Nothing is revealed to anyone else: the page
+  answers the same way whether or not it knows your address.
+- **Reset emails are on the path to actually arriving.** We found that on the live server,
+  "we've sent you an email" could be true in the code and false in your inbox — the message
+  went to a server log. A delivery check now exists and the setup to send real email is
+  written down, so this gets fixed at the root before the first parish onboards.
+
 ## 2026-07-30
 
 - **We were telling you your contact details went to one person. They also go to your
