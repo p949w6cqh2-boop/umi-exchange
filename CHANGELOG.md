@@ -13,6 +13,13 @@
   says the same thing, and it's the outside watcher we actually decided on back in July. We also
   corrected a page that told people to switch on error reporting we deliberately keep switched
   off, because those reports can carry private information out of the building.
+- **Every page was quietly reaching out to an outside server it didn't need.** The board keeps
+  its own copies of the two small libraries that make pages feel responsive, with a backup copy
+  on a public service in case ours ever fails to load. A bug meant the backup was fetched on
+  every single page view, even though our copy was already working. On a school or office
+  network that blocks outside services, that showed up as an error. Now the backup is only
+  fetched if ours genuinely fails, and when it is, the browser checks it byte for byte and
+  refuses it if anything has been tampered with.
 
 ## 2026-08-12
 
