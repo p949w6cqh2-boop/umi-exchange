@@ -140,8 +140,8 @@ prefix; never assume the shell is where you left it.
   `RecursionError`. Use `{% comment %}…{% endcomment %}` for multi-line comments.
 - **Never judge a test suite through a pipe.** `pytest … | tail` exits with the pipe's status, not
   the suite's — chained `&& git commit` has shipped red gates. Write the summary line to a file,
-  **Read the pass count**, then commit as a separate command (a PreToolUse hook warns on this; the
-  `/gate` skill encodes the whole verified sequence).
+  **Read the pass count**, then commit as a separate command (a PreToolUse hook **blocks** this when
+  both sit at command position; the `/gate` skill encodes the whole verified sequence).
 - **Never blanket-stage here** (`-A` / `.`). It sweeps in whatever untracked files happen to be in
   the tree — scratch scripts, another session's WIP, secrets — none of which you are looking at when
   you type it. That committed a foreign WIP file and broke CI lint twice (`hgit_sync.py`, archived
