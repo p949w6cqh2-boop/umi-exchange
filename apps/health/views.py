@@ -1,6 +1,6 @@
 """
 Health check endpoint — returns 200 when app + database are reachable.
-Used by load balancers, uptime monitors (Uptime Kuma), and deployment scripts.
+Used by load balancers, uptime monitors (UptimeRobot), and deployment scripts.
 Optional token protection via HEALTH_CHECK_TOKEN env var.
 """
 

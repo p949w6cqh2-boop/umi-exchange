@@ -3,6 +3,24 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-08-17
+
+- **Our own documentation was giving two different answers about how we watch the board, so we
+  fixed it.** Nothing you can see changed. Behind the scenes, seven pages disagreed about which
+  system checks that the site is up and warns a human when it isn't. Some described a watcher
+  running on the same machine as the board, which is a bad idea for an obvious reason: if the
+  machine goes down, so does the thing meant to tell us the machine went down. Every page now
+  says the same thing, and it's the outside watcher we actually decided on back in July. We also
+  corrected a page that told people to switch on error reporting we deliberately keep switched
+  off, because those reports can carry private information out of the building.
+- **Every page was quietly reaching out to an outside server it didn't need.** The board keeps
+  its own copies of the two small libraries that make pages feel responsive, with a backup copy
+  on a public service in case ours ever fails to load. A bug meant the backup was fetched on
+  every single page view, even though our copy was already working. On a school or office
+  network that blocks outside services, that showed up as an error. Now the backup is only
+  fetched if ours genuinely fails, and when it is, the browser checks it byte for byte and
+  refuses it if anything has been tampered with.
+
 ## 2026-08-12
 
 - **The person check is now real, and it never asks you to click traffic lights.** New

@@ -246,7 +246,11 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   key custody off root, governance beyond a solo steward. Policy: the reference instance
   stays fictional-only until every box passes. Pointer from `CLAUDE.md`.
 - **Monitoring DECIDED (#86/#87):** UptimeRobot only, **Sentry OFF** (`SENTRY_DSN` empty) — rationale
-  (PII-leak in error payloads) in `docs/monitoring-decision.md`. Founder still to create the monitor.
+  (PII-leak in error payloads) in `docs/monitoring-decision.md`. **The monitor EXISTS and detection
+  is proven** (founder-confirmed 2026-08-17; this line previously read "founder still to create the
+  monitor" and contradicted the "Next manual/ops steps" entry below). **The open half is the alert
+  channel: the alert email never arrives**, so ethics box 1 stays unticked — the box wants a
+  delivered alert, not a configured monitor.
   #114 hardened `config/sentry.py` (no request bodies, no frame locals) so even a future/adopter DSN
   can't ship decrypted casework plaintext.
 - **Ops/infra merges:** docker collectstatic-under-prod fix (#83), droplet-config reconcile (#89),

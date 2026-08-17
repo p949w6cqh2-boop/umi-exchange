@@ -17,7 +17,8 @@
       owner/superuser of `audit_auditlog` (else append-only is bypassable). `docs/threat-model.md`.
 - [ ] Threat-model must-fix **#4** decision recorded (DV/high-risk casework default `restricted`) —
       casework never federates, but the pilot posture should be settled before widening surface.
-- [ ] Both instances healthy on the ops baseline: Uptime Kuma green, `backup.sh` current,
+- [ ] Both instances healthy on the ops baseline: **UptimeRobot monitor green** on `/health/`
+      (`docs/monitoring-decision.md` Option C), `backup.sh` current,
       `manage.py check --deploy` = 0 issues.
 
 ## 1. Per-instance prerequisites
@@ -131,7 +132,8 @@ oldest pending age, retention debt (contacts in grace / overdue for shred), live
 each problem. `manage.py federation_envelope_status` — envelope census of the federation payload
 columns; **run it before and after every KEK rotation** (`rotate_keks` covers the federation DEKs).
 `scripts/monitor.sh` probes `/.well-known/umi-federation` when `FEDERATION_WELLKNOWN_URL` is set;
-point an Uptime Kuma keyword monitor at the same URL (keyword: `umi_federation`).
+point an **UptimeRobot keyword monitor** at the same URL (keyword: `umi_federation`) — the free
+tier supports keyword matching, which is what catches a 200 that is not actually healthy.
 
 - `fed.sig_rejected` (reason `bad_iat` → NTP; `bad_htu` → SITE_URL/proxy mismatch).
 - `fed.peer_unreachable` — backoff runs 1 min → 4 h; after 7 days unreachable the link

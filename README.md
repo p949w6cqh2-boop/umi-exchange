@@ -150,8 +150,13 @@ See `docs/deployment-checklist.md` for the full checklist.
 ### Monitoring
 
 - **Health check**: `GET /health/` returns `{"status": "ok", "db": "ok", "cache": "ok"}`
-- **Sentry**: Set `SENTRY_DSN` in `.env` for error tracking (no PII sent)
-- **Uptime Kuma**: `docker compose --profile monitoring up -d` starts a local uptime monitor on port 3001
+- **Uptime**: an external **UptimeRobot** monitor on `/health/` (5-minute interval, SSL expiry
+  alerts on). Setup: `docs/monitoring-runbook.md`. Posture: `docs/monitoring-decision.md`.
+- **Sentry**: **off by design** at prototype stage — `SENTRY_DSN` stays empty. Errors go to the
+  structured local logs in `config/settings/production.py`. The hook is still in the code if the
+  decision is ever revisited.
+- **Uptime Kuma**: an opt-in `--profile monitoring` service remains in the prod compose but is
+  **not** the decided posture and does not start by default. See `docs/monitoring.md`.
 
 ### Backups
 
