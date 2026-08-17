@@ -561,8 +561,9 @@ Gate for every stage: `ruff check` + `ruff format --check` · `makemigrations --
   federated matches cancellable locally.
 - **D — Attestations.** §5.4 on `apps.tags`. Reversible: capability flag.
 - **E — Ops & (optional) directory.** Federation section in the census/monitoring docs
-  (extend the existing Uptime Kuma + `monitor.sh`, per the ops brief — don't stand up new
-  stacks); retention sweeps dashboards; the untrusted signed directory, if wanted at all.
+  (extend the existing **UptimeRobot** monitors + `monitor.sh`, per the ops brief and
+  `docs/monitoring-decision.md` — don't stand up new stacks); retention sweeps dashboards; the
+  untrusted signed directory, if wanted at all.
 
 **Conformance mapping — DESIGN DECISION (manual not in repo):** per the brain's canonical summary
 (`umi-brain/vision/what-is-umi.md`): Core ✅ + Casework ✅ are BUILT; the manual's **Federation

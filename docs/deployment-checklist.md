@@ -109,7 +109,7 @@ from apps.casework.tasks import register_schedule as _c; _c()"
 - [ ] **Retention check**: Confirm nothing in `/var/backups/umi/` is older than `RETENTION_DAYS`, **and** that the B2 bucket lifecycle rule exists — `backup.sh` never deletes remote copies (vps-runbook §9.2)
 - [ ] **Backup cron installed**: `( crontab -l 2>/dev/null; echo "0 3 * * * /opt/umi-exchange/scripts/backup.sh >> /var/log/umi-backup.log 2>&1" ) | crontab -` — then confirm `crontab -l` shows the line (the append form matters: a bare `echo … | crontab -` replaces the whole crontab)
 - [ ] **B2 upload verified**: at least one run has printed `Remote upload verified` (in `/var/log/umi-backup.log` or a manual `bash scripts/backup.sh`); once B2 is provisioned, set `BACKUP_REQUIRE_REMOTE=1` in `.env` so a night without an off-site copy exits nonzero instead of passing silently (vps-runbook §9)
-- [ ] **Monitoring**: Set up Uptime Kuma or similar to ping `/health/` every 60 seconds
+- [ ] **Monitoring**: Set up the **UptimeRobot** monitor on `/health/` (5-minute interval, SSL expiry alerts on) and **prove it** by tripping it once and watching the alert arrive — full hand-list in `docs/monitoring-runbook.md`, posture in `docs/monitoring-decision.md`. A configured monitor does not satisfy the ethics-gate box; a delivered alert does.
 
 ## Rollback Procedure
 

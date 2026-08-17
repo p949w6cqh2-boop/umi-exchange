@@ -1,7 +1,7 @@
 """
 One-command federation ops readout (§12 Stage E): link health, outbox depth,
 retention debt, shadow volume. Human text by default; --json for monitor.sh /
-Uptime Kuma keyword checks. PII-free by construction — counts and hours only.
+UptimeRobot keyword checks. PII-free by construction — counts and hours only.
 
   python manage.py federation_status [--json]
 """
