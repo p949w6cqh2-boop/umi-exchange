@@ -29,11 +29,17 @@
   `uptime-kuma` service in `docker/docker-compose.prod.yml` was **left in place, not deleted**, and
   is documented as not-the-posture.
 
-## ⚠️ SETUP IS DONE. ONLY THE TRIP TEST REMAINS (step 5).
+## ✅ COMPLETE. The trip test ran 2026-08-18 and the gate box is ticked.
 
-**Founder-confirmed 2026-08-17/18.** The account exists, the monitor exists, detection is proven,
-and **the alert channel now works.** This runbook was written 2026-08-11 as a from-scratch path;
-steps 1 to 4 are kept only as reference for a rebuild or a second instance.
+**Receipt: `docs/monitoring/trip-test-2026-08-18/`** — both alert screenshots, the timeline, and an
+independent agent-side poll of `/health/` that corroborates the emails.
+
+**Measured on the day: 6m 06s of real downtime, DOWN alert in ~3.5 minutes, recovery alert in
+~2.5 minutes.** Both inside the gate's "within minutes."
+
+This runbook was written 2026-08-11 as a from-scratch path; steps 1 to 4 are kept only as reference
+for a rebuild or a second instance. **Step 5 carries two corrections that only surfaced by running
+it — read them before repeating this on another instance.**
 
 **Monitor as measured 2026-08-18:** HTTP/S on `https://reciprocalaid.network/health/`, keyword
 `exists ok`, 5-minute interval, monitor id `803538525`. The endpoint returns
@@ -87,15 +93,43 @@ brief production outage.
 4. **Alert contacts:** mobile push + email, both attached to the monitor. No Slack/webhook
    third parties — the decision's data-dignity posture is "nothing leaves the box" and a
    pinger only ever sees the health JSON, never parishioner data.
-5. **The trip test (the gate's own proof — a real alert, not a dry run):**
+5. **The trip test (the gate's own proof — a real alert, not a dry run):** ✅ **DONE 2026-08-18.**
+   **Receipt: `docs/monitoring/trip-test-2026-08-18/`.**
    - Pick a quiet minute (the board serves fictional data; there is no parishioner harm today).
-   - On the droplet: `docker compose --env-file .env stop web` (the compose invocation is the
-     one recorded in the deploy runbook). Wait through one full check interval plus retry
-     (~6–11 minutes). The push notification must arrive on the phone.
-   - `docker compose --env-file .env start web` — confirm the recovery notification arrives too.
-   - Screenshot both notifications. Those screenshots are the receipt the gate box cites.
+   - On the droplet:
+     ```bash
+     ssh root@143.244.167.7
+     cd /opt/umi-exchange
+     docker compose --env-file .env -f docker/docker-compose.prod.yml stop app
+     ```
+     Wait through one full check interval plus retry (~6–11 minutes). The alert must arrive.
+     ```bash
+     docker compose --env-file .env -f docker/docker-compose.prod.yml start app
+     docker compose --env-file .env -f docker/docker-compose.prod.yml ps app   # want "healthy"
+     ```
+     Confirm the recovery alert arrives too.
+   - Screenshot both alerts. Those screenshots are the receipt the gate box cites.
+
+   🔧 **Two corrections to this step, both found by running it (2026-08-18).**
+   - **The service is `app`, not `web`.** Earlier versions of this step said `stop web`. **There
+     has never been a `web` service** — `docker/docker-compose.prod.yml` defines `app`, `db`,
+     `redis`, `caddy`, `uptime-kuma`. The command as written simply failed.
+   - **`-f docker/docker-compose.prod.yml` is required.** Without it compose reads the dev file
+     and does not act on the production stack at all. `--env-file .env` is also required, per the
+     deploy runbook, or compose starts with missing env.
+   - **Stop `app`, not `caddy`.** With Caddy up and `app` down the site returns a clean **502**,
+     which is exactly the signal the monitor should catch. Stopping Caddy instead kills TLS, so the
+     monitor records a connection failure and the evidence is muddier.
+
+   ⚠️ **Changing the monitor's URL to a bogus path is NOT this test, and it was tried first.**
+   Pointing the monitor at `/health/ERROR` produces a real alert with root cause `HTTP 404`, which
+   proves the notification channel and nothing else. **The gate asks for two things at once** —
+   the pinger live against `/health/` *and* a real failure producing an alert. A bogus path
+   satisfies neither clause, and while it is configured that way **the real endpoint is not being
+   monitored at all.** Read the `Checked URL` field on any alert before trusting it.
 6. **Only after the alert actually arrived:** tick the gate box in `docs/ethics-and-safety.md`
    (separate commit, founder's merge), citing the date and where the screenshots live.
+   ✅ **Done 2026-08-18** — box ticked, citing `docs/monitoring/trip-test-2026-08-18/`.
 
 ## What this deliberately does not do
 
