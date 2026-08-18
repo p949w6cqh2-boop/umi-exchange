@@ -246,11 +246,12 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   key custody off root, governance beyond a solo steward. Policy: the reference instance
   stays fictional-only until every box passes. Pointer from `CLAUDE.md`.
 - **Monitoring DECIDED (#86/#87):** UptimeRobot only, **Sentry OFF** (`SENTRY_DSN` empty) — rationale
-  (PII-leak in error payloads) in `docs/monitoring-decision.md`. **The monitor EXISTS and detection
-  is proven** (founder-confirmed 2026-08-17; this line previously read "founder still to create the
-  monitor" and contradicted the "Next manual/ops steps" entry below). **The open half is the alert
-  channel: the alert email never arrives**, so ethics box 1 stays unticked — the box wants a
-  delivered alert, not a configured monitor.
+  (PII-leak in error payloads) in `docs/monitoring-decision.md`. **The monitor EXISTS, detection is
+  proven, and the alert channel WORKS as of 2026-08-18.** Root cause of the long-standing "the alert
+  email never arrives": **the E-mail notification channel was simply switched OFF on the monitor**
+  (SMS and Voice were on). Toggled on and re-tested by the founder. ⚠️ **Box 1 still unticked** —
+  the gate wants a real trip test with the alert watched arriving, not a test notification, and that
+  step is the founder's hands. See `docs/monitoring-runbook.md`.
   #114 hardened `config/sentry.py` (no request bodies, no frame locals) so even a future/adopter DSN
   can't ship decrypted casework plaintext.
 - **Ops/infra merges:** docker collectstatic-under-prod fix (#83), droplet-config reconcile (#89),
@@ -265,9 +266,14 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   loud-fail + `.env` self-load + runbook §9 rewrite (#130), ethics box 2 closed with receipts (#131).
 - **Design/art:** The Commons system + 7-scene Higgsfield linocut print suite (fixed-palette webp);
   spoken-copy + CarePortal-grammar passes recorded in the brain's `identity/voice.md`.
-- **Next manual/ops steps (founder):** fix the UptimeRobot alert channel + re-trip (ethics box 1 —
-  monitor exists, detection proven, the alert email never arrives); **rotate demo creds** before a
-  real parish; SMTP creds so consented email leaves the console backend; real two-instance federation
+- **Next manual/ops steps (founder):** ~~fix the UptimeRobot alert channel~~ ✅ **FIXED 2026-08-18 —
+  the E-mail channel was switched OFF on the monitor; toggled on and re-tested.** **Still owed: the
+  real trip test** (`stop web`, watch the alert land, `start web`, screenshot both) — that is what
+  ticks ethics box 1, and a test notification does not substitute for it. ⚠️ **The toggle cost four
+  unannounced outages: 84.416% uptime over the prior 30 days, 4 incidents, 4d 19h 56m down, none of
+  which reached a human.** Also owed: **rotate demo creds** before a
+  real parish; SMTP creds so consented email leaves the console backend (**separate problem — it
+  does NOT affect monitor alerting**); real two-instance federation
   dark launch (runbook ready); old-KEK retirement (runbook Phase 5) once prod censuses are clean;
   DB-role step-0 check on the host. ~~DR rehearsal + B2 lifecycle rule~~ ✅ done 2026-07-29 (#131).
   **The `docs/ethics-and-safety.md` gate must pass before real PII.**

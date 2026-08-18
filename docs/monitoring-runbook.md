@@ -29,25 +29,48 @@
   `uptime-kuma` service in `docker/docker-compose.prod.yml` was **left in place, not deleted**, and
   is documented as not-the-posture.
 
-## ⚠️ START AT STEP 4 — steps 1 and 3 are already done
+## ⚠️ SETUP IS DONE. ONLY THE TRIP TEST REMAINS (step 5).
 
-**Founder-confirmed 2026-08-17: the UptimeRobot account exists, the monitor exists, and detection
-is proven.** This runbook was written 2026-08-11 as a from-scratch path and, merged as-is, it would
-send you to redo finished work.
+**Founder-confirmed 2026-08-17/18.** The account exists, the monitor exists, detection is proven,
+and **the alert channel now works.** This runbook was written 2026-08-11 as a from-scratch path;
+steps 1 to 4 are kept only as reference for a rebuild or a second instance.
 
-**The actual open half is the alert channel: the alert email never arrives** (`STATE.md`, next
-manual/ops steps). So ethics box 1 is **not** a setup job. It is one working alert away, and the
-box wants a *delivered* alert, not a configured monitor.
+**Monitor as measured 2026-08-18:** HTTP/S on `https://reciprocalaid.network/health/`, keyword
+`exists ok`, 5-minute interval, monitor id `803538525`. The endpoint returns
+`{"status": "ok", "db": "ok", "cache": "ok"}`, HTTP 200 in ~0.29s.
 
-**Do this:** step **4** (alert contacts, and find out why delivery fails), then step **5** (the trip
-test, which is the gate's own proof). Steps 1 to 3 are reference for a rebuild or a second instance.
+### ROOT CAUSE OF "the alert email never arrives", found 2026-08-18
 
-**Likely root cause, worth checking first:** `STATE.md` lists "SMTP creds so consented email leaves
-the console backend" in the same breath. That is the same failure the board already had once, where
-the code said the mail was sent and the inbox never saw it. **If outbound mail is still on the
-console backend, no alert email can arrive no matter how the monitor is configured** — and a push
-notification to the mobile app would sidestep it entirely, which is why step 2 matters more than it
-looks.
+**The E-mail notification channel was switched OFF on the monitor.** SMS and Voice were on;
+E-mail and Push were off. **No email was ever going to arrive.** Toggled on, saved, re-tested by
+the founder — the test notification now lands. Nothing was broken; a setting was off.
+
+🔴 **CORRECTION TO THIS FILE, recorded rather than quietly edited.** An earlier version of this
+section (merged in PR #150) stated the likely cause was *"outbound mail still on the console
+backend."* **That was wrong.** UptimeRobot sends alerts from **its own infrastructure** to the
+founder's inbox; it never touches this application's mail backend. The app's console-backend mail
+issue is a real and separate problem and has nothing to do with monitor alerting. **Anyone
+debugging an alerting gap here should look at the monitor's notification channels first, not at
+Django's email settings.**
+
+### 🔴 What this cost, and why the box exists
+
+**Last 30 days at the time of the fix: 84.416% uptime, 4 incidents, 4d 19h 56m down — and not one
+of them reached a human.** Last 7 days were clean at 100%. The monitor detected every incident and
+announced none of them, because of the toggle above. **That is the concrete argument for this gate
+box**, and it belongs in the record.
+
+⚠️ **Unverified, worth checking:** SMS and Voice were enabled and pointed at the founder's number
+throughout those four incidents. If neither reached him, the free tier likely does not deliver them
+(both are normally paid features). **Compare call/text history against the incident dates before
+relying on either channel.**
+
+### What still has to happen before the box is ticked
+
+**A test notification is NOT a trip test.** The gate's wording is *"a silent error or outage
+produces a real alert to a human within minutes, proven by deliberately tripping it once and
+watching the alert arrive."* **Go to step 5.** That step is the founder's hands: it is a real,
+brief production outage.
 
 ## The founder's hand-list (written from scratch; see the note above for where to start)
 
