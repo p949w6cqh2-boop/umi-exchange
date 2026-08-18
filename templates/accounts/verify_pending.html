@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}One more step{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 md:mt-20 umi-rise">
+  <div class="umi-shell">
+    <div class="umi-card !p-7 md:!p-9">
+      <span class="umi-kicker">Almost there</span>
+      <h1 class="umi-display !text-3xl mt-2 mb-5">One more step before you can post</h1>
+      <p class="text-sm text-parish-ink/80 mb-5">
+        To keep the board a place of real neighbours, every account confirms a person is
+        behind it before joining a community or posting. Two ways, either works:
+      </p>
+      <div class="space-y-4">
+        <div class="border border-[var(--umi-border)] rounded-xl p-4">
+          <h2 class="font-semibold text-parish-ink mb-1.5">Confirm your email</h2>
+          {% if user.email %}
+          <p class="text-sm text-parish-ink/70 mb-3">We sent a link to <strong>{{ user.email }}</strong>. Click it and you're done. Nothing in your inbox?</p>
+          <form method="post" action="{% url 'verify-send' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Send the link again</button>
+          </form>
+          {% else %}
+          <p class="text-sm text-parish-ink/70">There's no email on your account. You can add one in
+            <a href="{% url 'account-settings' %}" class="font-semibold text-umi-primary hover:text-umi-primary-hover">settings</a>,
+            or use the second way below.</p>
+          {% endif %}
+        </div>
+        <div class="border border-[var(--umi-border)] rounded-xl p-4">
+          <h2 class="font-semibold text-parish-ink mb-1.5">Or ask a coordinator</h2>
+          <p class="text-sm text-parish-ink/70">
+            If you don't use email, tell a coordinator at church your username and they can
+            vouch for you in person. That's it — no screens required on your end.
+          </p>
+        </div>
+      </div>
+      <p class="text-sm text-parish-ink/70 mt-6 pt-5 border-t border-[var(--umi-border)] text-center">
+        You can still <a href="{% url 'hub:index' %}" class="font-semibold text-umi-primary hover:text-umi-primary-hover">look around</a> in the meantime.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

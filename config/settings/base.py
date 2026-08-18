@@ -276,7 +276,13 @@ EMAIL_SUBJECT_PREFIX = env("EMAIL_SUBJECT_PREFIX", default="[UMI] ")
 # ── Rate Limiting ─────────────────────────────────────
 RATELIMIT_USE_CACHE = "default"
 # Paths the AuthRateLimitMiddleware throttles (POST). Empty = inert.
-RATELIMIT_AUTH_PATHS = ("/auth/login/", "/auth/register/", "/auth/password/reset/", "/admin/login/")
+RATELIMIT_AUTH_PATHS = (
+    "/auth/login/",
+    "/auth/register/",
+    "/auth/password/reset/",
+    "/auth/username/recover/",
+    "/admin/login/",
+)
 # Third-party django_ratelimit (RegisterView/UMILoginView key="ip") must read
 # the SAME trusted IP the rest of the app uses, not REMOTE_ADDR — behind Caddy
 # REMOTE_ADDR is the proxy's constant docker-net address, so every user would

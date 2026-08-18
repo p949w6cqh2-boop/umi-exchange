@@ -32,10 +32,27 @@
       background-color: #ffffff !important;
     }
   </style>
-  <script src="{% static 'js/htmx.min.js' %}" defer></script>
-  <script>window.htmx || document.write('<script src="https://unpkg.com/htmx.org@1.9.11" defer><\/script>')</script>
-  <script src="{% static 'js/alpine.min.js' %}" defer></script>
-  <script>window.Alpine || document.write('<script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer><\/script>')</script>
+  {% comment %}
+    Self-hosted first; unpkg only if the local file genuinely fails to load.
+    The fallback is an onerror handler, NOT an inline `window.htmx || document.write(...)`
+    check: with `defer` the local script has not executed by the time an inline script
+    runs during parsing, so that check saw `undefined` every single time and fetched the
+    CDN copy on EVERY page load. On a managed network that blocks unpkg (common in
+    corporate and parish-office filtering) that produced a failed request and a console
+    error on every view, while the local copy was already doing the job.
+    onerror fires only on real failure, so the normal path touches no third party.
+
+    The fallback carries Subresource Integrity. This board handles vulnerable people's
+    data; a CDN script with no integrity check means a compromised unpkg could run
+    arbitrary JS here. With SRI the browser refuses a script whose bytes do not match,
+    so the worst case is "no fallback" rather than "attacker code." Hashes are pinned to
+    the exact versions below and MUST be recomputed if either version is bumped:
+      curl -sSL <url> | openssl dgst -sha384 -binary | openssl base64 -A
+  {% endcomment %}
+  <script src="{% static 'js/htmx.min.js' %}" defer
+    onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/htmx.org@1.9.11';s.integrity='sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0';s.crossOrigin='anonymous';s.defer=true;document.head.appendChild(s);"></script>
+  <script src="{% static 'js/alpine.min.js' %}" defer
+    onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js';s.integrity='sha384-BxpSbjbDhVKwnC1UfcjsNEuMuxg4af5IXOaSi1Iq5rASQ/9a7uslhEXbP9UI/fXo';s.crossOrigin='anonymous';s.defer=true;document.head.appendChild(s);"></script>
 </head>
 <body class="font-sans text-base min-h-screen flex flex-col">
   <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-[var(--umi-primary)] text-white px-4 py-2 rounded z-50">Skip to content</a>

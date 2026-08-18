@@ -1,0 +1,13 @@
+{% autoescape off %}Hello {{ username }},
+
+Welcome to UMI Exchange. One click confirms your email and finishes setup:
+
+{{ link }}
+
+The link works for 48 hours. If it expires, sign in and we'll send another.
+
+If you did not create this account, you can ignore this email — without this
+confirmation the account cannot join a community or post anything.
+
+— UMI Exchange
+{% endautoescape %}

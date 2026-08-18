@@ -2,7 +2,25 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `c4668a1` (merged 2026-07-31 UTC); snapshot refreshed **2026-08-01**.
+> Reflects `main` @ `e853cdb` (merged 2026-08-18 UTC).
+>
+> ⚠️ **Honest scope of this stamp.** **13 commits landed since the previous stamp** (`c4668a1`,
+> 2026-07-31): PRs #140 #143 #144 #145 #146 #147 #148 #149 #142 #150 #151 plus two direct doc
+> sweeps. The body has been kept current **merge-by-merge by the PRs that touched it** — the
+> monitoring lines were rewritten today in #151 — but **a full line-by-line sweep of this file
+> against `main` has not been run since 2026-08-01.** Read untouched sections as 08-01 vintage.
+>
+> 🔁 **Third occurrence, and it took hours rather than weeks.** `a3d4764` fixed this drift once
+> (*"header was five merges stale"*); #152 fixed it again this evening, stamping `afb3ded` — and
+> **two merges later the same evening (#152 itself, then #153) that stamp was already wrong.** The
+> previous version of this note said *"if it goes stale a third time, the fix is a check, not another
+> manual correction."* **That threshold has now been crossed, and this edit is another manual
+> correction, so the debt is named rather than paid: a check is OWED.**
+>
+> **Why it keeps happening is not carelessness.** Every PR that edits this file stamps the sha it
+> branched from, which is stale the moment anything else merges. **A stamp a human maintains by hand
+> cannot be correct in a repo with more than one open PR.** The fix is mechanical — derive the line
+> at merge time, or drop the sha and keep only the honest scope paragraph below.
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 > **LIVE in production at reciprocalaid.network, serving FICTIONAL demo data only** (St. Brigid's).
@@ -241,12 +259,25 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   member safety* bullet above. ~29 TDD tests. Also corrected an ethics-doc §8.2 overclaim (an accepted
   offer-less volunteer match DOES reveal contact to an unvouched volunteer — not yet guarded).
 - **Ethics & safety gate (2026-07-18):** `docs/ethics-and-safety.md` — honest harm analysis + a hard
-  precondition gate. **Now 3 of 6 boxes checked** (breach/legal-demand plan #121, on-behalf consent #120,
-  tested restore + verified retention #131 — see the dated bullets above); still open: monitoring wired,
-  key custody off root, governance beyond a solo steward. Policy: the reference instance
+  precondition gate. **Now 4 of 6 boxes checked** (breach/legal-demand plan #121, on-behalf consent #120,
+  tested restore + verified retention #131, **monitoring + alerts #153** — see the dated bullets above);
+  still open: **key custody off root, governance beyond a solo steward** — both people-problems, not
+  code, which is why they are the two that have not moved. Policy: the reference instance
   stays fictional-only until every box passes. Pointer from `CLAUDE.md`.
 - **Monitoring DECIDED (#86/#87):** UptimeRobot only, **Sentry OFF** (`SENTRY_DSN` empty) — rationale
-  (PII-leak in error payloads) in `docs/monitoring-decision.md`. Founder still to create the monitor.
+  (PII-leak in error payloads) in `docs/monitoring-decision.md`. **The monitor EXISTS, detection is
+  proven, and the alert channel WORKS as of 2026-08-18.** Root cause of the long-standing "the alert
+  email never arrives": **the E-mail notification channel was simply switched OFF on the monitor**
+  (SMS and Voice were on). Toggled on and re-tested by the founder.
+  ✅ **BOX 1 TICKED 2026-08-18 (#153). Receipt: `docs/monitoring/trip-test-2026-08-18/`.** `app` was
+  stopped on the droplet; the site served **502 for 6m 06s**; the DOWN alert arrived in ~3.5 minutes
+  and the recovery in ~2.5 minutes, both naming `Checked URL: https://reciprocalaid.network/health/`.
+  An independent 15-second poll ran throughout, so the emails are corroborated rather than
+  self-reported. See `docs/monitoring-runbook.md`.
+  ⚠️ **Read `Checked URL` on any alert before trusting it.** A first attempt pointed the monitor at
+  `/health/ERROR`, a path that never existed; it produced a real alert with root cause `HTTP 404`,
+  which proves the notification channel and nothing else — and while it was configured that way
+  **the real endpoint was not monitored at all.**
   #114 hardened `config/sentry.py` (no request bodies, no frame locals) so even a future/adopter DSN
   can't ship decrypted casework plaintext.
 - **Ops/infra merges:** docker collectstatic-under-prod fix (#83), droplet-config reconcile (#89),
@@ -261,9 +292,14 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   loud-fail + `.env` self-load + runbook §9 rewrite (#130), ethics box 2 closed with receipts (#131).
 - **Design/art:** The Commons system + 7-scene Higgsfield linocut print suite (fixed-palette webp);
   spoken-copy + CarePortal-grammar passes recorded in the brain's `identity/voice.md`.
-- **Next manual/ops steps (founder):** fix the UptimeRobot alert channel + re-trip (ethics box 1 —
-  monitor exists, detection proven, the alert email never arrives); **rotate demo creds** before a
-  real parish; SMTP creds so consented email leaves the console backend; real two-instance federation
+- **Next manual/ops steps (founder):** ~~fix the UptimeRobot alert channel~~ ✅ **FIXED 2026-08-18 —
+  the E-mail channel was switched OFF on the monitor; toggled on and re-tested.**
+  ~~Still owed: the real trip test~~ ✅ **RAN 2026-08-18, ethics box 1 TICKED (#153)** — receipt at
+  `docs/monitoring/trip-test-2026-08-18/`. ⚠️ **The toggle cost four
+  unannounced outages: 84.416% uptime over the prior 30 days, 4 incidents, 4d 19h 56m down, none of
+  which reached a human.** Also owed: **rotate demo creds** before a
+  real parish; SMTP creds so consented email leaves the console backend (**separate problem — it
+  does NOT affect monitor alerting**); real two-instance federation
   dark launch (runbook ready); old-KEK retirement (runbook Phase 5) once prod censuses are clean;
   DB-role step-0 check on the host. ~~DR rehearsal + B2 lifecycle rule~~ ✅ done 2026-07-29 (#131).
   **The `docs/ethics-and-safety.md` gate must pass before real PII.**

@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
+from .conftest import register_payload
 from .factories import CategoryFactory, CommunityFactory, MemberFactory, UserFactory
 
 
@@ -116,11 +117,11 @@ class TestRegistration:
         client = Client()
         response = client.post(
             reverse("register"),
-            {
-                "username": "newuser",
-                "password": "SecurePass123!",
-                "password_confirm": "SecurePass123!",
-            },
+            register_payload(
+                username="newuser",
+                password="SecurePass123!",
+                password_confirm="SecurePass123!",
+            ),
         )
         assert response.status_code == 302  # Redirect on success
 
@@ -128,11 +129,11 @@ class TestRegistration:
         client = Client()
         response = client.post(
             reverse("register"),
-            {
-                "username": "newuser",
-                "password": "SecurePass123!",
-                "password_confirm": "WrongPass123!",
-            },
+            register_payload(
+                username="newuser",
+                password="SecurePass123!",
+                password_confirm="WrongPass123!",
+            ),
         )
         assert response.status_code == 200  # Re-renders form with errors
 
@@ -148,11 +149,11 @@ class TestRegistration:
         for i, username in enumerate(("nomail-one", "nomail-two")):
             response = client.post(
                 reverse("register"),
-                {
-                    "username": username,
-                    "password": "SecurePass123!",
-                    "password_confirm": "SecurePass123!",
-                },
+                register_payload(
+                    username=username,
+                    password="SecurePass123!",
+                    password_confirm="SecurePass123!",
+                ),
                 REMOTE_ADDR=f"10.99.1.{i + 1}",
             )
             form = response.context["form"] if response.status_code == 200 else None
@@ -166,12 +167,12 @@ class TestRegistration:
 
     def test_register_duplicate_email_rejected(self):
         client = Client()
-        payload = {
-            "username": "first-owner",
-            "email": "taken@example.com",
-            "password": "SecurePass123!",
-            "password_confirm": "SecurePass123!",
-        }
+        payload = register_payload(
+            username="first-owner",
+            email="taken@example.com",
+            password="SecurePass123!",
+            password_confirm="SecurePass123!",
+        )
         first = client.post(reverse("register"), payload, REMOTE_ADDR="10.99.2.1")
         assert first.status_code == 302
         response = client.post(

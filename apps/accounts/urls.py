@@ -8,6 +8,10 @@ urlpatterns = [
     path("login/", views.UMILoginView.as_view(), name="login"),
     path("login/otp/", views.OTPVerifyView.as_view(), name="login-otp"),
     path("logout/", views.UMILogoutView.as_view(), name="logout"),
+    # Human verification (docs/specs/human-verification.md, A+C)
+    path("verify/pending/", views.VerifyPendingView.as_view(), name="verify-pending"),
+    path("verify/send/", views.VerifySendView.as_view(), name="verify-send"),
+    path("verify/<str:token>/", views.VerifyEmailView.as_view(), name="verify-email"),
     # Password change (logged in)
     path(
         "password/change/",
@@ -23,6 +27,17 @@ urlpatterns = [
             template_name="accounts/password_change_done.html",
         ),
         name="password_change_done",
+    ),
+    # Username recovery (logged out)
+    path(
+        "username/recover/",
+        views.UsernameRecoveryView.as_view(),
+        name="username_recovery",
+    ),
+    path(
+        "username/recover/done/",
+        views.UsernameRecoveryDoneView.as_view(),
+        name="username_recovery_done",
     ),
     # Password reset (logged out)
     path(

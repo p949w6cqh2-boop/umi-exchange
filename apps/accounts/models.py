@@ -15,8 +15,24 @@ class User(AbstractUser):
     # account settings and the adapter stops sending to them.
     email_notifications = models.BooleanField(default=True)
 
+    # Human verification (docs/specs/human-verification.md, A+C build): unverified
+    # accounts can sign in and look, but the four write doors (join/post/propose)
+    # are soft-gated. Two exits — the email link, or a coordinator's in-person
+    # vouch — plus "backfill" for accounts that predate the gate.
+    VERIFIED_VIA_CHOICES = [
+        ("email", "Email link"),
+        ("coordinator", "Coordinator vouch"),
+        ("backfill", "Pre-gate account"),
+    ]
+    verified_at = models.DateTimeField(null=True, blank=True)
+    verified_via = models.CharField(max_length=12, blank=True, default="", choices=VERIFIED_VIA_CHOICES)
+
     REQUIRED_FIELDS = []
     USERNAME_FIELD = "username"
+
+    @property
+    def is_human_verified(self):
+        return self.verified_at is not None
 
     class Meta:
         db_table = "accounts_user"

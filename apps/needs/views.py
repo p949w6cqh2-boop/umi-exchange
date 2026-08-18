@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView
 
+from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.moderation.services import is_blocked_between
@@ -17,7 +18,7 @@ from .forms import NeedForm
 from .models import Need
 
 
-class NeedCreateView(LoginRequiredMixin, CreateView):
+class NeedCreateView(LoginRequiredMixin, VerifiedRequiredMixin, CreateView):
     model = Need
     form_class = NeedForm
     template_name = "needs/create.html"
