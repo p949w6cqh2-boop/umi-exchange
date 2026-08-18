@@ -194,10 +194,20 @@ to make sure the choice was made knowingly, the reveal was logged, and safety wa
 **No real community with real PII onboards until ALL of the following are true.** They are unchecked
 because they are not yet true. Each item names how you know it is done.
 
-- [ ] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
+- [x] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
   silent error or outage produces a real alert to a human within minutes, proven by deliberately
   tripping it once and watching the alert arrive. The posture is already decided
   (`docs/monitoring-decision.md`); this item is about it actually being on.
+  **✅ TICKED 2026-08-18. Receipt: `docs/monitoring/trip-test-2026-08-18/`.** `app` was stopped on
+  the droplet, the site returned 502 for **6m 06s**, and both alerts arrived — DOWN in ~3.5 minutes,
+  recovery in ~2.5 minutes — each naming `Checked URL: https://reciprocalaid.network/health/`. An
+  independent 15-second poll ran throughout and corroborates the emails.
+  🔴 **What this box was actually protecting against, learned the same day it closed.** The monitor
+  had existed and been detecting correctly for over two weeks while the **E-mail notification
+  channel was switched off**. In the 30 days before that was found: **84.416% uptime, 4 incidents,
+  4d 19h 56m down, and not one of them reached a human.** Detection working with alerting silently
+  disabled is worse than no monitoring, because it produces confidence without coverage. **That is
+  why this box asks for an alert to be *watched arriving* and not merely for a monitor to exist.**
 
 - [x] **Backups are tested with a real restore, and the retention promise is verified.** Done when a
   backup made by `scripts/backup.sh` has been restored into a scratch database and its contents
