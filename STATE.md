@@ -2,7 +2,17 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `c4668a1` (merged 2026-07-31 UTC); snapshot refreshed **2026-08-01**.
+> Reflects `main` @ `afb3ded` (merged 2026-08-18 UTC).
+>
+> ⚠️ **Honest scope of this stamp.** **13 commits landed since the previous stamp** (`c4668a1`,
+> 2026-07-31): PRs #140 #143 #144 #145 #146 #147 #148 #149 #142 #150 #151 plus two direct doc
+> sweeps. The body has been kept current **merge-by-merge by the PRs that touched it** — the
+> monitoring lines were rewritten today in #151 — but **a full line-by-line sweep of this file
+> against `main` has not been run since 2026-08-01.** Read untouched sections as 08-01 vintage.
+>
+> 🔁 **This is the second time this header has gone stale** (`a3d4764`: *"header was five merges
+> stale"*). It drifts because updating it is nobody's step in the merge ritual. **If it goes stale
+> a third time, the fix is a check, not another manual correction.**
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 > **LIVE in production at reciprocalaid.network, serving FICTIONAL demo data only** (St. Brigid's).
