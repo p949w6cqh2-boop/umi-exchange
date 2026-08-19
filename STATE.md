@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `e853cdb` (merged 2026-08-18 UTC).
+> Reflects `main` @ `a2a7628` (merged 2026-08-18 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** **13 commits landed since the previous stamp** (`c4668a1`,
 > 2026-07-31): PRs #140 #143 #144 #145 #146 #147 #148 #149 #142 #150 #151 plus two direct doc
@@ -10,21 +10,22 @@
 > monitoring lines were rewritten today in #151 — but **a full line-by-line sweep of this file
 > against `main` has not been run since 2026-08-01.** Read untouched sections as 08-01 vintage.
 >
-> 🔁 **Third occurrence, and it took hours rather than weeks.** `a3d4764` fixed this drift once
-> (*"header was five merges stale"*); #152 fixed it again this evening, stamping `afb3ded` — and
-> **two merges later the same evening (#152 itself, then #153) that stamp was already wrong.** The
-> previous version of this note said *"if it goes stale a third time, the fix is a check, not another
-> manual correction."* **That threshold has now been crossed, and this edit is another manual
-> correction, so the debt is named rather than paid: a check is OWED.**
->
-> **Why it keeps happening is not carelessness.** Every PR that edits this file stamps the sha it
-> branched from, which is stale the moment anything else merges. **A stamp a human maintains by hand
-> cannot be correct in a repo with more than one open PR.** The fix is mechanical — derive the line
-> at merge time, or drop the sha and keep only the honest scope paragraph below.
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
 > **LIVE in production at reciprocalaid.network, serving FICTIONAL demo data only** (St. Brigid's).
 > Real PII does NOT onboard until the `docs/ethics-and-safety.md` gate passes — the fictional line is policy.
+>
+> ✅ **The stamp above is now checked — `scripts/check_state_stamp.py`, wired into CI and
+> `make lint`.** It drifted three times (`a3d4764` "header was five merges stale"; then #152 and
+> #154 the same evening), and this note promised a third occurrence would produce a check rather
+> than a fourth manual correction. It did. **Run `make state-stamp` to fix a failure.**
+>
+> **What the check does not do, said plainly: it cannot keep the stamp current after a merge, and
+> nothing can.** Every PR stamps the sha it branched from, which is stale the moment anything else
+> merges, and rewriting `main` at merge time is what branch protection forbids. So it enforces only
+> what is knowable when someone edits this file — a real commit this branch descends from, within
+> 10 of the merge-base — which catches the failure that actually happened (18 days, 13 commits) and
+> leaves ordinary post-merge drift alone.
 
 ## Protocol & conformance
 - **UMI Protocol v0.1 — Core ✅ + Casework ✅ + Federation v1 ✅** (default-OFF per community;

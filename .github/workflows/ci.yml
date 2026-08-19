@@ -16,11 +16,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The STATE.md stamp check needs real history to compute a merge-base.
+          # The default shallow checkout cannot, and the script fails loudly
+          # rather than degrading to a silent pass, so this is required.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       - run: pip install ruff==0.15.14 bandit pip-audit
+      - name: STATE.md header stamp
+        # Only enforced when the change touches STATE.md; a no-op otherwise.
+        # BASE_REF goes through env rather than into the run: line, so the value
+        # is never interpolated at command position.
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+        run: python scripts/check_state_stamp.py --base "origin/$BASE_REF"
       - name: Ruff lint
         run: ruff check .
       - name: Ruff format check
