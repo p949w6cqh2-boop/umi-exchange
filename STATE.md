@@ -2,13 +2,17 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `a2a7628` (merged 2026-08-18 UTC).
+> Reflects `main` @ `511e6fe` (merged 2026-08-19 UTC).
 >
-> ⚠️ **Honest scope of this stamp.** **13 commits landed since the previous stamp** (`c4668a1`,
-> 2026-07-31): PRs #140 #143 #144 #145 #146 #147 #148 #149 #142 #150 #151 plus two direct doc
-> sweeps. The body has been kept current **merge-by-merge by the PRs that touched it** — the
-> monitoring lines were rewritten today in #151 — but **a full line-by-line sweep of this file
-> against `main` has not been run since 2026-08-01.** Read untouched sections as 08-01 vintage.
+> ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
+> touch it**, but **a full line-by-line sweep of this file against `main` has not been run since
+> 2026-08-01.** Read untouched sections as 08-01 vintage.
+>
+> *Earlier versions of this note enumerated the PRs merged since the last stamp. That list was
+> removed on 2026-08-19 because it rotted on every merge: it stopped at #151 while #152 through
+> #156 had landed, and it still said the monitoring lines were rewritten "today." **A hand-written
+> commit list under a stamp is a second thing to keep current, and it goes stale faster than the
+> stamp it was explaining.** The durable claim is the sweep date; git already answers the rest.*
 >
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
@@ -167,6 +171,8 @@
 - Docs: `CLAUDE.md` (agent guide + gotchas), **`docs/protocol/spec.md`** (UMI Protocol v0.1 CANONICAL),
   **`docs/ethics-and-safety.md`** (harm analysis + onboarding gate), **`docs/incident-response.md`**
   (breach/legal-demand plan, #121), **`docs/monitoring-decision.md`**,
+  **`docs/email-provider-decision.md`** (⚠️ **decision NOT yet made** — record written before the
+  choice), `docs/email-delivery-runbook.md`,
   `docs/federation-dark-launch-runbook.md`, `docs/envelope-rollout-runbook.md`, `docs/privacy-retention.md`,
   `docs/deployment-checklist.md`, `docs/deploy-runbook.md`, `docs/deploy/vps-runbook.md` (§9.1 DR rehearsal,
   §9.2 retention), `docs/threat-model.md`, `docs/guides/` (get-a-tag, start-your-own-community), `docs/INTEGRATION-PLAN.md`.
@@ -299,8 +305,12 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   `docs/monitoring/trip-test-2026-08-18/`. ⚠️ **The toggle cost four
   unannounced outages: 84.416% uptime over the prior 30 days, 4 incidents, 4d 19h 56m down, none of
   which reached a human.** Also owed: **rotate demo creds** before a
-  real parish; SMTP creds so consented email leaves the console backend (**separate problem — it
-  does NOT affect monitor alerting**); real two-instance federation
+  real parish; **outbound email — VERIFIED STILL DEAD 2026-08-19**: `printenv EMAIL_HOST_USER` on
+  the app container returns **empty**, so the console→SMTP switch never fires and production mail is
+  written to a log and delivered nowhere. **Blocked one step earlier than "creds": there is no
+  provider account yet** (founder's hand, external account). Reasoning written up front in
+  **`docs/email-provider-decision.md`**; hands-on path in `docs/email-delivery-runbook.md`.
+  (**Separate problem — it does NOT affect monitor alerting.**) Real two-instance federation
   dark launch (runbook ready); old-KEK retirement (runbook Phase 5) once prod censuses are clean;
   DB-role step-0 check on the host. ~~DR rehearsal + B2 lifecycle rule~~ ✅ done 2026-07-29 (#131).
   **The `docs/ethics-and-safety.md` gate must pass before real PII.**
