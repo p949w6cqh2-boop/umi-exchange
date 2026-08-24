@@ -3,6 +3,18 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-08-24
+
+- **The demo parish looked alive and nobody in it could actually do anything.** If you set up a
+  demo board to try this out, it arrives with twelve neighbours, a full noticeboard and a handful
+  of asks and offers already in motion. In August we added a step that asks every account to
+  confirm a real person is behind it before they can join a community or post — either by clicking
+  an email link or by a coordinator vouching for them in person. The demo setup was never told
+  about that step, so all twelve of its people were stuck at "one more step before you can post."
+  You could sign in and look around, and that was it. They're now vouched for the way a real
+  parish would vouch for someone it knows, so the demo behaves like the board it's demonstrating.
+  Re-running the setup also repairs a demo parish that was already stuck.
+
 ## 2026-08-17
 
 - **Our own documentation was giving two different answers about how we watch the board, so we
