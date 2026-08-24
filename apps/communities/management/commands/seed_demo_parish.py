@@ -213,6 +213,21 @@ class Command(BaseCommand):
                 # would reject the shared throwaway on purpose-built demo accounts.
                 user.set_password(DEMO_PASSWORD)  # nosemgrep: unvalidated-password
                 user.save()
+            # Human verification (#148) soft-gates the four write doors. Without this
+            # the seed produces a twelve-member parish where nobody can join, post a
+            # need or an offer, or propose a match — the fixture looks alive and is
+            # unusable. "coordinator" is the honest provenance: these people are known
+            # to the parish in person. "backfill" would claim they predate the gate and
+            # "email" would claim a link nobody clicked.
+            #
+            # Deliberately OUTSIDE `if created`: get_or_create returns created=False on
+            # every later run, so anything set only in that branch stops happening for
+            # rows an earlier run made — which is exactly how these accounts missed the
+            # field when it was added. This repairs an existing parish on reseed.
+            if not user.is_human_verified:
+                user.verified_at = timezone.now()
+                user.verified_via = "coordinator"
+                user.save(update_fields=["verified_at", "verified_via"])
             users[username] = user
 
         community, _ = Community.objects.get_or_create(
