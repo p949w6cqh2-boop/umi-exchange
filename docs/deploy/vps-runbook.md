@@ -22,7 +22,16 @@ replaces all of that.
 
 ## ⚠️ §0 — FIRST: fix the SSH lock-out risk left by harden.sh (do this before anything else)
 
-`scripts/harden.sh` runs under `set -euo pipefail`. Its SSH step is:
+> ✅ **FIXED IN THE SCRIPT 2026-09-11.** `harden.sh` now backs up `sshd_config`, validates the
+> edited config with `sshd -t` *before* restarting, tries **both** `ssh.service` and `sshd.service`,
+> and **restores the backup and exits non-zero** if it cannot restart the daemon — so it can no
+> longer leave a key-only config armed against a daemon that never reloaded.
+>
+> **This section still applies to any host hardened with the OLD script**, and its checks are worth
+> running once on a new host anyway: confirming your key is installed before you trust key-only
+> login costs nothing and is the difference between a reboot and a rebuild.
+
+`scripts/harden.sh` runs under `set -euo pipefail`. Its SSH step **was**:
 
 ```
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
@@ -575,6 +584,100 @@ the bucket and confirming nothing predates the window:
 ```bash
 aws s3 ls "s3://$BACKUP_BUCKET/umi-backups/" --endpoint-url "$BACKUP_ENDPOINT" | head
 ```
+
+---
+
+### §9.3 — Restore a backup into PRODUCTION (rebuilding after host loss)
+
+§9.1 rehearses into a **scratch** database and `dr_sim.sh` refuses the live one — correct for a
+rehearsal, and it means this repo could *prove* a backup works but had no written way to *use* one.
+This section is that way. Written 2026-09-11 while rebuilding from
+`docs/incidents/2026-09-05-droplet-destroyed.md`.
+
+Use it when the database is empty and needs to become a known-good backup: a destroyed droplet, a
+migration to new hardware, or a corruption you are rolling back from.
+
+#### 🔴 The sequencing trap — read this before running §7
+
+`backup.sh` runs `pg_dump -U umi umi_exchange` with **no `--clean` and no `--create`**. The dump is
+plain SQL — `CREATE TABLE`, `COPY`, and `ALTER TABLE ... OWNER TO umi`. It does **not** drop
+existing objects and does **not** create the database.
+
+**So it must go into an EMPTY `umi_exchange`.** §7 step 1 is `migrate`, which creates every table —
+run it first and the restore dies on *"relation already exists."*
+
+⭐ **The restore REPLACES `migrate`; it does not follow it.**
+
+| | fresh install (§7) | restoring (this section) |
+|---|---|---|
+| 1 | `up -d` (whole stack) | `up -d db` **only** |
+| 2 | `migrate` | **restore the dump** |
+| 3 | `collectstatic` | `migrate` — applies anything newer than the dump |
+| 4 | `createsuperuser` | `collectstatic` |
+| 5 | — | `up -d app` |
+
+#### Restore
+
+Bring up only the database, so the app never sees a half-restored schema:
+
+```bash
+cd /opt/umi-exchange
+docker compose --env-file .env -f docker/docker-compose.prod.yml up -d db
+```
+
+Copy the chosen dump to the droplet, then:
+
+```bash
+gunzip -c ~/umi-20260903-030001.sql.gz \
+  | docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
+      psql -U umi -d umi_exchange -v ON_ERROR_STOP=1
+```
+
+⚠️ **`ON_ERROR_STOP=1` is not optional.** Without it `psql` reports success after a partial restore,
+which is the worst possible outcome: a board that looks fine and is missing rows.
+
+#### Verify before going further
+
+```bash
+docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
+  psql -U umi -d umi_exchange -c \
+  "select (select count(*) from communities_community) communities,
+          (select count(*) from communities_member) members,
+          (select count(*) from accounts_user)       users;"
+```
+
+Compare against what you expect from that dump's date. Zeroes mean the restore did not land — stop
+and read the psql output rather than continuing.
+
+#### Then finish as §7 does, minus `migrate`'s table creation
+
+```bash
+docker compose --env-file .env -f docker/docker-compose.prod.yml run --rm app python manage.py migrate
+docker compose --env-file .env -f docker/docker-compose.prod.yml run --rm app python manage.py collectstatic --noinput
+docker compose --env-file .env -f docker/docker-compose.prod.yml up -d
+```
+
+`migrate` here applies only migrations newer than the dump. **A no-op is the expected result** when
+the backup came from the same release; anything else is real and worth reading.
+
+Do **not** run `createsuperuser` — the restored dump already contains the accounts.
+
+#### About the encryption key on a rebuilt host
+
+A rebuild generates a **new** `SECRET_KEY`, `ENCRYPTION_KEY` and `DB_PASSWORD` (§4). That is safe
+only when the dump carries no ciphertext written under the *old* key. **Check before you trust it:**
+
+```bash
+gunzip -c <dump>.sql.gz | grep -c gAAAAA        # Fernet tokens; expect 0
+```
+
+- **`0`** — nothing in the dump is encrypted; a fresh key orphans nothing. Proceed.
+- **non-zero** — those rows were encrypted under the key that died with the old host. **A new key
+  cannot read them.** You need the original `ENCRYPTION_KEYS` (or the custody envelope) *before*
+  restoring, or you are knowingly restoring unreadable columns. See `docs/key-custody-design.md`.
+
+📌 `ENCRYPTION_KEYS` takes a **list, primary first**, so the recovered old key can be added
+alongside a new one and `manage.py rotate_keks` re-wraps everything onto the new primary.
 
 ---
 
