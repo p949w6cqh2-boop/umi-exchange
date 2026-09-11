@@ -33,12 +33,32 @@
 3. **Droplet `.env` additions:**
    ```
    EMAIL_HOST=<provider smtp host>
-   EMAIL_PORT=587
+   EMAIL_PORT=2587
    EMAIL_USE_TLS=True
    EMAIL_HOST_USER=<smtp username>
    EMAIL_HOST_PASSWORD=<smtp password>
    DEFAULT_FROM_EMAIL=noreply@<sending domain>
    ```
+
+   🔴 **The port is 2587, not 587, and this cost a debugging cycle on 2026-09-11.**
+   **DigitalOcean blocks outbound 25, 465 and 587 by default** as an anti-spam measure.
+   The symptom is a `TimeoutError: timed out` inside `smtplib.connect` — a *connect*
+   failure, not an auth failure, so it reads like a broken network rather than a policy.
+   `ufw` is not the cause (`harden.sh` sets `allow outgoing`). Measured on the droplet:
+
+   ```
+   25 BLOCKED · 465 BLOCKED · 587 BLOCKED · 2465 OPEN · 2587 OPEN
+   ```
+
+   **Resend publishes 2465 and 2587 for hosts that block the standard ports.** Use **2587**
+   with `EMAIL_USE_TLS=True` (STARTTLS). 2465 is implicit TLS and would need
+   `EMAIL_USE_SSL=True` with `EMAIL_USE_TLS=False` — Django rejects both being true.
+   The alternative is opening a DigitalOcean support ticket to lift the block; the
+   alternate port needs no ticket.
+
+   ⚠️ **`EMAIL_HOST_USER` for Resend is the literal word `resend`**, not an address. A typo
+   there still leaves the value truthy, so `production.py` still flips the backend to SMTP
+   and the config *looks* applied — it fails only when mail is actually sent.
    Then restart the app (deploy runbook invocation). Note: once the key-custody design
    lands, these join the encrypted secrets file, not plaintext .env.
 4. **Smoke:** `python manage.py send_smoke <your own address>` on the droplet. The receipt
