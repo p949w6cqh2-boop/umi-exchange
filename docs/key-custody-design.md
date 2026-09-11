@@ -55,6 +55,29 @@ Three changes, in order:
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
   The uptime monitor (monitoring runbook) makes the downtime loud.
 
+## 🔴 Status correction 2026-09-11 — BUILT, but never ARMED
+
+Found while recovering from `docs/incidents/2026-09-05-droplet-destroyed.md`. On the steward's
+laptop, **`~/.config/umi/` does not exist** — no `age-identity.txt`, no `age-recipients.txt`, and
+no `keys.env.age` ciphertext anywhere on the machine. `age` and `age-keygen` are installed;
+`scripts/deploy-with-keys.sh` has exactly one commit, the #147 build, and was never run.
+
+**So the production droplet ran the pre-custody way — plaintext keys in `.env` — from #147 until it
+was destroyed.** Every protection described above was designed, merged, tested in isolation, and
+never switched on. The unticked checklist line *"Deploy-from-laptop rehearsed on the real droplet"*
+was the only honest signal, and it was easy to read as a formality rather than as **the rig is off**.
+
+📌 **Lesson, and it generalises past this rig: a merged implementation is not a live control.**
+Between BUILT and ARMED there is a step that only a person can take, and nothing in this repo could
+tell the difference. Where a control matters, its *armed* state needs a check that fails loudly —
+not a checkbox in a design doc.
+
+**No data was lost to this.** Every table requiring `ENCRYPTION_KEYS` was empty; see the incident.
+
+⭐ **The rebuild is the owed rehearsal, and it is the cheapest one that will ever be available** —
+a fresh host with nothing on it to lose. Generate the identity, encrypt the keys, deploy from the
+laptop, and tick the rehearsal line for real.
+
 ## Implementation (BUILT 2026-08-12, keyed; rehearsal still owed)
 
 - **`scripts/deploy-with-keys.sh` exists** (tests: `tests/test_deploy_with_keys.py`,

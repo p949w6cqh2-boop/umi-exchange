@@ -8,6 +8,9 @@
 #   (cron runs this script with a bare environment, so the .env fallback is what makes
 #   the nightly upload actually happen). The aws CLI on Ubuntu 24.04 is installed with
 #   `sudo snap install aws-cli --classic` (there is no awscli apt package).
+#   NOTE: that snap command is for THIS machine (the droplet). It does not work on a
+#   laptop running Linux Mint, which blocks snapd by policy — see the root-free official
+#   installer in docs/deploy/vps-runbook.md §9. Pulling backups DOWN happens there.
 #   Set BACKUP_REQUIRE_REMOTE=1 in .env (recommended in production once B2 is
 #   provisioned): any night the off-site copy cannot be made then exits nonzero
 #   instead of quietly keeping a local-only backup.
@@ -117,7 +120,9 @@ if [ "$B2_SET" -eq 3 ]; then
         echo "WARNING: aws CLI not installed; skipping remote upload — this backup exists on this machine ONLY (Ubuntu 24.04: sudo snap install aws-cli --classic)."
     else
         REMOTE_KEY="umi-backups/$FILENAME"
-        ENDPOINT="${BACKUP_ENDPOINT:-https://s3.us-west-001.backblazeb2.com}"
+        # Region must match the bucket. This project's bucket lives in us-east-005;
+        # a wrong region here fails the upload, so set BACKUP_ENDPOINT in .env explicitly.
+        ENDPOINT="${BACKUP_ENDPOINT:-https://s3.us-east-005.backblazeb2.com}"
         # Pass the scoped key explicitly (command-scoped env) so it never leaks wider.
         if AWS_ACCESS_KEY_ID="$BACKUP_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$BACKUP_SECRET_KEY" \
             aws s3 cp "$BACKUP_DIR/$FILENAME" "s3://$BACKUP_BUCKET/$REMOTE_KEY" \
