@@ -497,7 +497,21 @@ Off-site copies: fill `BACKUP_BUCKET` / `BACKUP_ACCESS_KEY` / `BACKUP_SECRET_KEY
 `BACKUP_ENDPOINT` in `.env` (Backblaze B2) — `backup.sh` uploads when all three credentials are
 set, and **fails loudly if they are only partially set**. The upload needs the aws CLI — on
 Ubuntu 24.04 install it with `sudo snap install aws-cli --classic` (there is no `awscli` apt
-package). Once B2 is provisioned, set `BACKUP_REQUIRE_REMOTE=1` in `.env` (**recommended in
+package).
+
+⚠️ **That snap command works on the droplet and NOT on the steward's laptop.** Linux Mint blocks
+snapd by policy, and the recovery on 2026-09-11 hit exactly this. **On any non-snap machine — and
+for pulling backups *down*, which happens on the laptop, not the droplet — use the official
+installer instead. It needs no root:**
+
+```bash
+curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+unzip -q -o /tmp/awscliv2.zip -d /tmp/
+/tmp/aws/install --install-dir "$HOME/.local/aws-cli" --bin-dir "$HOME/.local/bin"
+"$HOME/.local/bin/aws" --version
+```
+
+Once B2 is provisioned, set `BACKUP_REQUIRE_REMOTE=1` in `.env` (**recommended in
 production**): any night the off-site copy cannot be made then exits nonzero into
 `/var/log/umi-backup.log` instead of quietly keeping a local-only backup.
 

@@ -166,8 +166,9 @@ if [ -n "${DR_BACKUP_FILE:-}" ]; then
 elif [ -n "${DR_BUCKET:-}" ] && [ -n "${DR_ACCESS_KEY:-}" ] && [ -n "${DR_SECRET_KEY:-}" ]; then
     # 2. The off-box copy. This is the one that proves the backup would survive
     #    losing the machine.
-    command -v aws > /dev/null 2>&1 || fail "aws CLI not found (Ubuntu 24.04: sudo snap install aws-cli --classic)."
-    ENDPOINT="${DR_ENDPOINT:-https://s3.us-west-001.backblazeb2.com}"
+    command -v aws > /dev/null 2>&1 || fail "aws CLI not found (droplet/Ubuntu: sudo snap install aws-cli --classic; laptop/Mint or any non-snap machine: see the root-free installer in docs/deploy/vps-runbook.md §9)."
+    # Region must match the bucket. This project's bucket lives in us-east-005.
+    ENDPOINT="${DR_ENDPOINT:-https://s3.us-east-005.backblazeb2.com}"
     export AWS_ACCESS_KEY_ID="$DR_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$DR_SECRET_KEY"
     log "finding latest backup in s3://$DR_BUCKET/umi-backups/ …"
     LATEST=$(aws s3 ls "s3://$DR_BUCKET/umi-backups/" --endpoint-url "$ENDPOINT" \

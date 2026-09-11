@@ -85,6 +85,12 @@ brief production outage.
 2. **Install the UptimeRobot mobile app** and sign in — push notification is the "reaches a
    human within minutes" channel; email alone can sit unread. **← the channel that bypasses the
    broken email path; do this one.**
+   🔴 **STILL NOT DONE, and on 2026-09-11 it cost the production droplet.** This step and step 4
+   are the only two in this runbook never marked done. The droplet was powered off 09-03 and
+   destroyed 09-05; nobody was told for eight days, because email was the only channel and the
+   sentence above — *"email alone can sit unread"* — turned out to be exactly right.
+   **`docs/incidents/2026-09-05-droplet-destroyed.md`.** Ethics-gate box 1 is re-opened until an
+   interrupting channel exists and has been proven with the founder not watching for it.
 3. **Create the monitor:** ✅ **done — exists, detection proven**
    - Type: HTTP(S) · URL: `https://reciprocalaid.network/health/` · Interval: 5 minutes.
    - Keyword variant (preferred if offered on free tier): alert when the response does NOT

@@ -194,11 +194,22 @@ to make sure the choice was made knowingly, the reveal was logged, and safety wa
 **No real community with real PII onboards until ALL of the following are true.** They are unchecked
 because they are not yet true. Each item names how you know it is done.
 
-- [x] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
+- [ ] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
   silent error or outage produces a real alert to a human within minutes, proven by deliberately
   tripping it once and watching the alert arrive. The posture is already decided
   (`docs/monitoring-decision.md`); this item is about it actually being on.
-  **✅ TICKED 2026-08-18. Receipt: `docs/monitoring/trip-test-2026-08-18/`.** `app` was stopped on
+  🔴 **RE-OPENED 2026-09-11 — this box was ticked and the property it asserts then failed for eight
+  days.** The production droplet was powered off on 2026-09-03 and destroyed on 2026-09-05, and no
+  human was told until the outage was found by hand on 09-11 during unrelated work. Full write-up:
+  **`docs/incidents/2026-09-05-droplet-destroyed.md`**.
+  **What was wrong with the tick, not merely with the setup:** the runbook's steps 2 and 4 (mobile
+  **push** as the interrupting channel, and both contacts attached) were never done, so email was
+  the only path — and this box's own proof, a deliberate trip test, is *watched by definition* and
+  therefore cannot detect an unwatched channel. **Before this box is ticked again it must require an
+  interrupting channel (push/SMS), a trip test the founder does not schedule or watch for, and a
+  periodic liveness check on the monitor itself.** The 2026-08-18 trip test remains a valid receipt
+  for *detection*; it was never a receipt for *reaching a human who was not expecting it*.
+  **Prior tick, kept for the record — 2026-08-18. Receipt: `docs/monitoring/trip-test-2026-08-18/`.** `app` was stopped on
   the droplet, the site returned 502 for **6m 06s**, and both alerts arrived — DOWN in ~3.5 minutes,
   recovery in ~2.5 minutes — each naming `Checked URL: https://reciprocalaid.network/health/`. An
   independent 15-second poll ran throughout and corroborates the emails.
