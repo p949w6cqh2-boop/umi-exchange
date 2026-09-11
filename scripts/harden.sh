@@ -42,10 +42,37 @@ systemctl restart fail2ban
 # 4. SSH hardening
 echo "[4/6] Hardening SSH..."
 if [ -f /root/.ssh/authorized_keys ] && [ -s /root/.ssh/authorized_keys ]; then
+    # Back up FIRST. Everything below can roll back to this.
+    SSHD_BACKUP="/etc/ssh/sshd_config.bak.$(date +%s)"
+    cp /etc/ssh/sshd_config "$SSHD_BACKUP"
+
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
     sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
     sed -i 's/#PermitRootLogin yes/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
-    systemctl restart sshd
+
+    # Validate the edited config BEFORE restarting anything. A bad config plus a
+    # restart is a lock-out, and this script runs as the only session you have.
+    if ! sshd -t; then
+        echo "  ERROR: sshd config invalid after edit. Restoring backup; NOT restarting."
+        mv "$SSHD_BACKUP" /etc/ssh/sshd_config
+        exit 1
+    fi
+
+    # Debian/Ubuntu name the unit ssh.service; some distros use sshd.service.
+    # Naming only ONE of them is the bug that bit on Ubuntu 24.04: the restart
+    # failed, `set -e` aborted the script here, and the config was ALREADY edited
+    # — arming a key-only lock-out that sprang at the next unattended reboot,
+    # which step 1 of this same script schedules for 02:00.
+    # See docs/incidents/2026-09-05-droplet-destroyed.md.
+    if ! systemctl restart ssh 2> /dev/null && ! systemctl restart sshd 2> /dev/null; then
+        echo "  ERROR: could not restart the SSH daemon (tried ssh.service and sshd.service)."
+        echo "  The on-disk config IS already edited, so leaving it would lock you out at"
+        echo "  the next reboot. Restoring the backup instead."
+        mv "$SSHD_BACKUP" /etc/ssh/sshd_config
+        exit 1
+    fi
+
+    rm -f "$SSHD_BACKUP"
     echo "  SSH password auth disabled (public key detected)."
 else
     echo "  WARNING: No SSH key found. Password auth remains enabled."
