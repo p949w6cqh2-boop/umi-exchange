@@ -33,9 +33,16 @@ that says, in effect, here are the vulnerable people and here is how to reach th
 people are hiding from someone. Some of them are one disclosure away from losing a job, a home, or a
 custody arrangement. The stakes are not measured in inconvenience.
 
-So the honest framing is this. The harm surface today is close to zero, because the only people in the
-database are fictional. The moment the first real person is entered, the harm surface becomes real and
-does not shrink again. Everything in Part 3 is meant to be true before that moment, not after it.
+So the honest framing is this. The harm surface today is close to zero, because **the casework side of
+the database is empty** — no narrative, need, household or identity has ever been stored. The moment
+the first real person's *situation* is entered, the harm surface becomes real and does not shrink
+again. Everything in Part 3 is meant to be true before that moment, not after it.
+
+⚠️ **Corrected 2026-09-11: this paragraph used to say "the only people in the database are
+fictional."** That was false — real accounts exist, with real email addresses in plaintext. It stayed
+false and unnoticed for weeks. See Part 4. The harm-surface argument survives the correction because
+it rests on casework being empty, not on the account table; **but the sentence that carried it did
+not, and the difference is exactly the kind an overbroad claim hides.**
 
 ---
 
@@ -320,10 +327,39 @@ because they are not yet true. Each item names how you know it is done.
 
 ## Part 4 — The bright line
 
-**The reference instance at reciprocalaid.network serves fictional demo data only, and it stays that
-way until every box in Part 3 is checked.** The current demo is the fictional St. Brigid's parish. The
-first real person's information does not enter the live system before the gate is met, and the demo
-credentials are rotated before any real community is onboarded.
+🔴 **CORRECTION, 2026-09-11 — the line has already been crossed, quietly, and this section said
+otherwise.** The sentence below was written about the *seeded content* and read by everyone —
+including the agents writing these docs — as covering the whole database. **It does not.**
+
+**What is true:** the board's **content** is fictional. St. Brigid's, its needs, offers, matches and
+pages are all seeded (`seed_demo_parish`). **Casework carries nothing at all** — `people_person`,
+`households_household`, every `casework_*` and every `federation_*` table is **empty**, verified by
+row count on 2026-09-11. No narrative, no identity, no on-behalf-of name has ever been stored.
+
+**What is not true:** the **accounts** are not all fictional. Of 22 user rows, roughly seven carry
+real, working email addresses at real providers. Several are the steward's own. **At least three
+appear to belong to other people** (inferred from the addresses, not confirmed with those people),
+and one has the shape of an automated signup — which also means **public registration is being found
+by bots.** Account email is deliberately stored in plaintext (Part 2), so these were plaintext in
+the database that was destroyed on 2026-09-05 and are plaintext in the restored one.
+
+⚖️ **Proportion, stated in both directions so this is neither minimised nor inflated:** an email
+address is not a casework note, and no parishioner's need, situation or identity has ever been in
+this system. **But "no real person's information enters the live system before the gate is met" was
+already false when it was written,** and nobody noticed — which is the same shape as the outage in
+`docs/incidents/2026-09-05-droplet-destroyed.md`, where a thing that had stopped being true kept
+being asserted for eight days.
+
+📌 **The lesson this section now carries: a bright line needs a check, not a sentence.** Nothing
+counts registrations against this claim. Until something does, the claim is a hope.
+
+---
+
+**The reference instance at reciprocalaid.network serves fictional demo *content*, and the casework
+side holds nothing at all. It stays that way until every box in Part 3 is checked.** The current
+demo is the fictional St. Brigid's parish. **No real person's casework, need, household or identity
+information enters the live system before the gate is met**, and the demo credentials are rotated
+before any real community is onboarded.
 
 This is policy, not a preference. The line between fictional and real data is the whole safety story
 right now, and it stays bright. If you are unsure whether an action would cross it, treat it as
