@@ -55,6 +55,88 @@ Three changes, in order:
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
   The uptime monitor (monitoring runbook) makes the downtime loud.
 
+## 🔴🔴 Second correction, 2026-09-11 (later the same night) — the rig does not merely sit unarmed, **IT HAS NEVER WORKED**
+
+The correction below said the rig was built and never switched on. **Attempting to switch it on,
+against the rebuilt production droplet, found two independent defects — either one fatal.** The
+rehearsal did exactly the job a rehearsal exists for.
+
+### Defect 1 — the decrypted keys are thrown away
+
+`scripts/deploy-with-keys.sh`, the final line of `cmd_deploy`:
+
+```bash
+age -d -i "$IDENTITY" "$KEYS_AGE" | ssh "$DROPLET" "bash -s" <<< "$remote_script"
+```
+
+**The pipe and the here-string both claim ssh's stdin, and the here-string wins.** So `bash -s`
+reads the *script* from stdin; the script's own first line, `cat > /dev/shm/umi-keys.env`, then
+reads from that same, already-exhausted stream. **The plaintext from `age` is discarded entirely.**
+
+Observed: the deploy failed with the script's own catch-all, `deploy failed — plaintext was confined
+to the pipe and tmpfs`, which is true and says nothing about why.
+
+**A working form** — pass the script as an argument so stdin stays free for the data:
+
+```bash
+age -d -i "$IDENTITY" "$KEYS_AGE" | ssh "$DROPLET" "bash -c $(printf '%q' "$remote_script")"
+```
+
+Proved in place: with this form the keys arrive, the merge happens, and the container recreates.
+
+### Defect 2 — `--env-file` does not put anything in the container
+
+This one survives fixing defect 1, and it is the design-level error.
+
+```bash
+docker compose --env-file /dev/shm/umi-full.env -f docker/docker-compose.prod.yml up -d app
+```
+
+**`--env-file` supplies variables for compose's own `${VAR}` substitution in the YAML. It does not
+inject them into the container.** The app service takes its environment from `env_file: ../.env`,
+and `docker/docker-compose.prod.yml` names only `DJANGO_SETTINGS_MODULE`, `DATABASE_URL` and
+`REDIS_URL` in its `environment:` block — **`SECRET_KEY`, `ENCRYPTION_KEY` and `BLIND_INDEX_KEY` are
+not there.**
+
+So once the key lines are removed from `.env` — which the rig requires, and checks for — the app has
+no keys at all. Observed, with the site 502 for about three minutes:
+
+```
+django.core.exceptions.ImproperlyConfigured: SECRET_KEY must be set to a unique
+secret value in production; the insecure development default is not allowed.
+```
+
+Recovered from a `.env` backup taken before the migration. **Take that backup; it is the difference
+between a three-minute outage and a night of one.**
+
+**The fix this needs (NOT applied — it is a code change and wants tests):** add the three key names
+to the app service's `environment:` block as `${SECRET_KEY}` etc., so the `--env-file` merge
+actually reaches the container. Then re-run the rehearsal.
+
+### Why no test caught either
+
+`tests/test_deploy_with_keys.py` has eight tests. They cover `encrypt` round-trip, the refusals
+(missing identity, missing ciphertext, missing recipients), `check` in both directions — and
+`test_deploy_dry_run_plan_keeps_plaintext_in_tmpfs_and_shreds`, which asserts on **the text of the
+dry-run plan.** ⚠️ **Nothing in the suite ever executes a deploy.** The plan string was correct;
+the code that runs it was not, and the code that runs it is the whole rig.
+
+📌 **The sharpened lesson, and it is narrower than "built ≠ armed": A DRY RUN THAT PRINTS THE RIGHT
+PLAN IS EVIDENCE ABOUT THE PLAN, NOT ABOUT THE EXECUTION.** Both defects live in the two lines the
+dry run deliberately skips.
+
+### What the rehearsal DID close
+
+- ✅ Age identity generated on the steward's laptop, mode `600`, recipients file verified to match.
+- ✅ Key material encrypted to `~/.config/umi/keys.env.age`, **round-trip proven byte-for-byte**.
+- ✅ `deploy-with-keys.sh check` confirmed clean against a droplet `.env` with the key lines removed.
+- ❌ **Deploy-from-laptop is still owed.** It was attempted, and it failed.
+
+⚠️ Also found: `UMI_DROPLET` still defaults to `root@143.244.167.7` — **a destroyed droplet whose IP
+has returned to DigitalOcean's pool.** Every invocation must set it explicitly until that is fixed.
+
+---
+
 ## 🔴 Status correction 2026-09-11 — BUILT, but never ARMED
 
 Found while recovering from `docs/incidents/2026-09-05-droplet-destroyed.md`. On the steward's
