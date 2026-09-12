@@ -6,6 +6,18 @@ services:
     env_file: ../.env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
+      # Key material, named here ON PURPOSE (2026-09-11). `env_file` reads .env from
+      # disk; the key-custody rig (scripts/deploy-with-keys.sh) deliberately keeps the
+      # keys OUT of that file and merges them into a tmpfs env-file passed as
+      # `--env-file`. But --env-file only feeds compose's ${...} substitution — it
+      # injects nothing into the container. Without these three lines the rig strips
+      # the keys from .env and the app boots with none, which is exactly how it failed
+      # its first rehearsal. See docs/key-custody-design.md §Second correction.
+      # Values still come from .env on a plain deploy, so nothing changes for anyone
+      # not using the rig.
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - BLIND_INDEX_KEY=${BLIND_INDEX_KEY}
       # Runtime role: defaults keep the single-role setup working, but the
       # append-only audit gate (threat-model must-fix #1) needs the app on a
       # non-owner role — see deployment-checklist.md "Database roles".
