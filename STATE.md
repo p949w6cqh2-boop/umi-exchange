@@ -16,8 +16,12 @@
 >
 > This repo = **Lake 1 (Parish Aid Board)** + **Lake 2 (Case Notes / casework)** of the UMI
 > Protocol, plus **Federation v1** between instances.
-> **LIVE in production at reciprocalaid.network, serving FICTIONAL demo data only** (St. Brigid's).
-> Real PII does NOT onboard until the `docs/ethics-and-safety.md` gate passes — the fictional line is policy.
+> **LIVE in production at reciprocalaid.network, serving FICTIONAL demo CONTENT** (St. Brigid's).
+> Real casework PII does NOT onboard until the `docs/ethics-and-safety.md` gate passes — that line is policy.
+> 🔴 **Corrected 2026-09-11: "fictional demo data only" was too broad and this file said it for weeks.**
+> The *content* is seeded and casework is **empty** (verified by row count). The *accounts* are not —
+> several real people have registered and their email addresses are stored in plaintext by design.
+> See `docs/ethics-and-safety.md` Part 4.
 >
 > ✅ **The stamp above is now checked — `scripts/check_state_stamp.py`, wired into CI and
 > `make lint`.** It drifted three times (`a3d4764` "header was five merges stale"; then #152 and

@@ -1,8 +1,25 @@
 # Incident — the production droplet was destroyed, and nobody was told
 
-> **Severity: total loss of the production host.** No parishioner harm: the board served
+> **Severity: total loss of the production host.** No parishioner harm: **casework held nothing at
+> all** — `people_person`, `households_household`, every `casework_*` and every `federation_*` table
+> was empty, verified by row count. No narrative, need, household or identity has ever been stored.
+> This is a rebuild, not a betrayal.
+>
+> 🔴 **CORRECTION 2026-09-11, hours after this file was merged — recorded rather than quietly
+> edited.** The original version of these three lines read: *"No parishioner harm: the board served
 > **fictional demo data only**, which is exactly what the `docs/ethics-and-safety.md` bright line
-> exists to guarantee. That line held. This is a rebuild, not a betrayal.
+> exists to guarantee. That line held."* **The last two sentences were wrong.** Reading the live
+> `accounts_user` table during the rebuild showed roughly **seven real, working email addresses**
+> among 22 rows — several the steward's own, at least three apparently other people's, and one with
+> the shape of an automated signup. Account email is plaintext by design, so those were plaintext in
+> the destroyed database and are plaintext in the restored one. **The bright line had already been
+> crossed before this incident, and nobody had noticed.** See `docs/ethics-and-safety.md` Part 4.
+>
+> ⚖️ **It does not change this incident's severity** — an email address is not a casework note, and
+> the disk was destroyed by the provider, not exfiltrated. **It does change what this document is
+> allowed to claim**, and the agent that wrote it asserted "fictional demo data only" from the
+> standing docs without ever querying the table. 📌 **An inherited claim repeated into an incident
+> report is not a verified one.**
 >
 > Written 2026-09-11, during the recovery, from live evidence rather than memory.
 
