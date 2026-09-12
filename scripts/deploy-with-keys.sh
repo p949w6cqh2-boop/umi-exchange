@@ -20,7 +20,7 @@
 #   UMI_AGE_IDENTITY   age identity file        (default ~/.config/umi/age-identity.txt)
 #   UMI_AGE_RECIPIENTS age recipients file      (default ~/.config/umi/age-recipients.txt)
 #   UMI_KEYS_AGE       ciphertext path          (default ~/.config/umi/keys.env.age)
-#   UMI_DROPLET        ssh target               (default root@143.244.167.7)
+#   UMI_DROPLET        ssh target               (REQUIRED for deploy/check — no default)
 #   UMI_REMOTE_DIR     compose dir on droplet   (default /opt/umi-exchange)
 #   DRY_RUN=1          print the plan, run nothing remote
 
@@ -30,7 +30,10 @@ CONF_HOME="${HOME:-/nonexistent}"
 IDENTITY="${UMI_AGE_IDENTITY:-$CONF_HOME/.config/umi/age-identity.txt}"
 RECIPIENTS="${UMI_AGE_RECIPIENTS:-$CONF_HOME/.config/umi/age-recipients.txt}"
 KEYS_AGE="${UMI_KEYS_AGE:-$CONF_HOME/.config/umi/keys.env.age}"
-DROPLET="${UMI_DROPLET:-root@143.244.167.7}"
+# No baked-in default. The old one named a droplet destroyed 2026-09-05 whose IP has
+# returned to DigitalOcean's pool — a silent default that would deploy at a stranger.
+# Checked lazily by need_droplet(), because encrypt and `check --local-file` need none.
+DROPLET="${UMI_DROPLET:-}"
 REMOTE_DIR="${UMI_REMOTE_DIR:-/opt/umi-exchange}"
 COMPOSE="docker compose --env-file /dev/shm/umi-full.env -f docker/docker-compose.prod.yml"
 
@@ -45,6 +48,9 @@ usage() {
 }
 
 need_age() { command -v age >/dev/null || die "age binary not found (install age)"; }
+need_droplet() {
+  [ -n "$DROPLET" ] || die "set UMI_DROPLET=root@<droplet-ip> — there is no default (the previous one outlived its droplet)"
+}
 
 cmd_encrypt() {
   local plain="${1:-}"
@@ -64,6 +70,7 @@ cmd_encrypt() {
 }
 
 cmd_deploy() {
+  need_droplet
   [ -f "$IDENTITY" ] || die "age identity not found: $IDENTITY — this rig deploys from the steward's laptop only"
   [ -f "$KEYS_AGE" ] || die "ciphertext not found: $KEYS_AGE (run encrypt first)"
   need_age
@@ -87,12 +94,18 @@ REMOTE
 )
 
   if [ "${DRY_RUN:-0}" = "1" ]; then
-    echo "== DRY RUN: would decrypt $KEYS_AGE with $IDENTITY and pipe into: ssh $DROPLET bash -s =="
+    echo "== DRY RUN: would decrypt $KEYS_AGE with $IDENTITY and pipe it to the STDIN of: ssh $DROPLET bash -c <the script below> =="
     echo "$remote_script"
     return 0
   fi
 
-  age -d -i "$IDENTITY" "$KEYS_AGE" | ssh "$DROPLET" "bash -s" <<< "$remote_script" \
+  # The script goes in as an ARGUMENT, not on stdin. Piping the plaintext while also
+  # feeding the script as a here-string makes both contend for ssh's stdin: the
+  # here-string wins, `bash -s` consumes it as the script, and the script's own
+  # `cat > /dev/shm/umi-keys.env` then reads an exhausted stream — so the decrypted
+  # keys were silently discarded on every run from #147 until 2026-09-11.
+  # printf %q quotes the script for the remote shell, leaving stdin free for the data.
+  age -d -i "$IDENTITY" "$KEYS_AGE" | ssh "$DROPLET" "bash -c $(printf '%q' "$remote_script")" \
     || die "deploy failed — plaintext was confined to the pipe and tmpfs; re-run after fixing"
   # shellcheck disable=SC2181
 }
@@ -107,6 +120,7 @@ cmd_check() {
     echo "clean: no plaintext key lines in $f"
     return 0
   fi
+  need_droplet
   if [ "${DRY_RUN:-0}" = "1" ]; then
     echo "== DRY RUN: would run on $DROPLET: grep -E '^($KEY_NAMES)=' $REMOTE_DIR/.env =="
     return 0

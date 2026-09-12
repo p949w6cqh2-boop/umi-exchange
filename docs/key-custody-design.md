@@ -55,7 +55,58 @@ Three changes, in order:
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
   The uptime monitor (monitoring runbook) makes the downtime loud.
 
+## ✅ Third entry, 2026-09-11 (same night, after the fixes) — **THE RIG NOW WORKS, AND THE AVAILABILITY RESIDUAL IS DISPROVED**
+
+Both defects below are fixed, and the rehearsal was re-run end to end against production.
+
+**Proven, in this order, on the live droplet:**
+
+1. Age identity generated on the steward's laptop, mode `600`, recipients file verified to match.
+2. Key material encrypted; **round-trip decrypt compared byte-for-byte against the original**.
+3. Key lines removed from the droplet `.env` (backup taken first).
+4. `deploy` run from the laptop → keys decrypt locally, travel an ssh pipe into `/dev/shm`, merge
+   with the key-free `.env`, container **force-recreated**, tmpfs shredded.
+5. Site returned **200 on apex and `www`**, `/health/` reporting `db: ok, cache: ok`.
+6. `check` clean · `.env` key lines **0** · `/dev/shm` **empty** · and the running container holds
+   all three keys (87 / 45 / 45 bytes). **The keys exist only in container memory and in
+   `keys.env.age` on the laptop.**
+
+### ⭐ The availability residual is FALSE — corrected, not softened
+
+§Named residuals says: *"The droplet can no longer restart the app unattended after a reboot; the
+steward's laptop (or the safe) is needed."*
+
+**Tested by rebooting production.** `uptime` returned `0 minutes`, all four containers came back
+**unattended**, the app was healthy in ~30 seconds with **all three keys present**, and `.env` still
+held none. Apex and `www` both 200.
+
+**Why the design was wrong:** Docker stores a container's environment in its config and replays it
+on restart. `restart: unless-stopped` therefore brings the app back with its keys intact from a disk
+that holds none. Nobody had tested it.
+
+📌 **The real limit, which is narrower and much better: keys survive RESTARTS, not RECREATES.** Any
+`up -d` that rebuilds the container — a new image, a compose change, `--force-recreate` — needs the
+steward's laptop. **That is a deploy-time dependency, not an uptime one.** The unattended 02:00
+security-upgrade reboot is safe.
+
+### Box 3 after tonight
+
+- [x] No plaintext key material at rest on the droplet — `check` clean, `.env` = 0
+- [x] **Deploy-from-laptop rehearsed on the real droplet**
+- [x] Survives an unattended reboot — residual disproved by test
+- [ ] **Sealed envelope in the parish safe; two named people know it exists** — needs the conversation
+- [ ] Rotation rehearsed once end-to-end
+
+🔴 **Until the envelope exists, the age identity is the ONLY copy of the keys, on one laptop.** That
+costs nothing today — every table requiring them is empty — and it stops being true the moment real
+casework lands. **No real parishioner data goes behind this key before the envelope is in the safe.**
+
+---
+
 ## 🔴🔴 Second correction, 2026-09-11 (later the same night) — the rig does not merely sit unarmed, **IT HAS NEVER WORKED**
+
+> ✅ **Both defects below are now FIXED** — see the entry above. This section is kept as the record
+> of what was found and how, because the *reason* no test caught them is the durable lesson.
 
 The correction below said the rig was built and never switched on. **Attempting to switch it on,
 against the rebuilt production droplet, found two independent defects — either one fatal.** The
