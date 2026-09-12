@@ -293,3 +293,57 @@ def test_human_registration_still_works_end_to_end(client):
     resp = _register(client, 24, "human", "human@example.org")
     assert resp.status_code in (301, 302)
     assert User.objects.filter(username="human").exists()
+
+
+class TestVerifyPendingIsNotADeadEnd:
+    """The pending page offers two exits and a 'look around' link. For the users who
+    actually see it — newly registered, unverified, in no community yet — that link
+    used to bounce straight back here, because the hub resolver sends a memberless
+    user to /join/ and /join/ is one of the four gated write doors.
+
+    Found 2026-09-11 by the founder hitting it on the live board. It matters most for
+    the email-less path, which exists precisely for parishioners with no other way in.
+    """
+
+    def test_look_around_does_not_loop_back_to_pending(self, client):
+        # verified_at defaults to NULL, so a fresh account is unverified —
+        # is_human_verified is a read-only property over it.
+        user = User.objects.create_user(username="newcomer", password=STRONG)
+        assert not user.is_human_verified
+        client.force_login(user)
+
+        pending = reverse("verify-pending")
+        resp = client.get(pending)
+        assert resp.status_code == 200
+
+        # The link the page offers as the way out.
+        body = resp.content.decode()
+        assert "look around" in body
+
+        import re
+
+        match = re.search(r'href="([^"]+)"[^>]*>\s*look around', body)
+        assert match, "the 'look around' link disappeared — this test guards its target"
+        target = match.group(1)
+
+        followed = client.get(target, follow=True)
+        final = followed.request["PATH_INFO"]
+        assert final != pending, (
+            f"'look around' returned the user to {pending}: a memberless unverified "
+            "account has no way out of the verification page"
+        )
+
+    def test_hub_does_not_send_an_unverified_user_to_a_gated_door(self, client):
+        """The resolver's 0-membership branch pointed at /join/, which carries
+        VerifiedRequiredMixin. Sending someone to a door they cannot open is the
+        mechanism behind the loop above."""
+        # verified_at defaults to NULL, so a fresh account is unverified —
+        # is_human_verified is a read-only property over it.
+        user = User.objects.create_user(username="newcomer2", password=STRONG)
+        assert not user.is_human_verified
+        client.force_login(user)
+
+        followed = client.get("/hub/", follow=True)
+        chain = [url for url, _ in followed.redirect_chain]
+        assert "/join/" not in chain, f"the resolver routed an unverified user through the gated join page: {chain}"
+        assert followed.request["PATH_INFO"] != reverse("verify-pending")

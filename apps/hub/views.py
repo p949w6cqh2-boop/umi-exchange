@@ -12,6 +12,13 @@ class HubResolverView(LoginRequiredMixin, View):
 
     0 memberships → onboarding (/join/); a valid last-visited slug → there;
     exactly 1 → straight in; otherwise (many, no valid last) → most-recent.
+
+    Exception, added 2026-09-11: a memberless account that is ALSO unverified does
+    not go to /join/, because /join/ carries VerifiedRequiredMixin and bounces it to
+    the pending page — whose own "look around" link points back here. That was an
+    infinite loop for exactly the people who see the pending page: newly registered,
+    in no community yet. Worst for the email-less path, which exists for parishioners
+    who have no other way in. Send them somewhere they can actually read instead.
     """
 
     def get(self, request):
@@ -20,6 +27,8 @@ class HubResolverView(LoginRequiredMixin, View):
         ).select_related("community")
         slugs = {m.community.slug for m in memberships}
         if not slugs:
+            if not request.user.is_human_verified:
+                return redirect("landing")
             return redirect("/join/")
         last = request.session.get("hub:last_slug")
         if last in slugs:
