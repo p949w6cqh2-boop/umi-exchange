@@ -7,11 +7,19 @@ runbook. Every command below has been checked line-by-line against
 
 **Your situation (assumed by this runbook):**
 
-- Droplet IP: **`143.244.167.7`**, fresh Ubuntu 24.04, you log in as **root**.
-- Repo already cloned at **`/opt/umi-exchange`**.
-- Docker + `docker compose` plugin already installed.
-- `scripts/harden.sh` has **already run**: UFW + fail2ban are on. Its SSH step **failed**
-  (Ubuntu 24 uses `ssh.service`, not `sshd.service`), which has consequences — see §0.
+- A fresh **Ubuntu 24.04** droplet; you log in as **root**.
+- Nothing else is assumed. Docker, the repo, and hardening are all installed by this runbook.
+
+> ⚠️ **CORRECTED 2026-09-11.** This preamble used to hardcode one droplet's IP and assert that the
+> repo, Docker, and `harden.sh` were *already* in place. **None of that is true of a new droplet**,
+> and following it left nothing at `/opt/umi-exchange`. §0.7 now installs Docker and clones the
+> repo; `harden.sh` is run when §0 tells you to.
+
+**Set your droplet's IP once**, so every command below is copy-paste:
+
+```bash
+export DROPLET_IP="203.0.113.10"    # <-- replace with YOUR droplet's real IP
+```
 
 **What the old runbook got wrong (do not reuse it):** owner `williams-umi` (real owner is
 `p949w6cqh2-boop`), image `ghcr.io/your-org/...` (placeholder), domain `umifoundation.org` (not
@@ -82,7 +90,7 @@ Expect `PasswordAuthentication no`, `PermitRootLogin prohibit-password`, and `ss
 **0.3 — From a SECOND terminal on your laptop, prove key login works BEFORE you restart SSH:**
 
 ```bash
-ssh root@143.244.167.7 'echo key-login-works'
+ssh root@$DROPLET_IP 'echo key-login-works'
 ```
 
 If that prints `key-login-works` without asking for a password, your key is good.
@@ -98,7 +106,7 @@ systemctl status ssh --no-pager | head -5
 **0.5 — From a THIRD fresh terminal, confirm you can still get in:**
 
 ```bash
-ssh root@143.244.167.7 'echo still-in'
+ssh root@$DROPLET_IP 'echo still-in'
 ```
 
 Keep your original session open until this prints `still-in`. Now the SSH state is consistent and
@@ -120,6 +128,119 @@ HTTP-01 certificate challenge.
 
 ---
 
+## §0.7 — Install Docker and get the repo onto the droplet
+
+> ✅ **ADDED 2026-09-11.** Everything from §3 onward assumes Docker is installed and the repo is
+> already at `/opt/umi-exchange`. **It never said how either got there.** On a bare Ubuntu 24.04
+> droplet you reach §3 and find nothing. This section is the missing prelude, written while
+> rebuilding after `docs/incidents/2026-09-05-droplet-destroyed.md`.
+
+### Docker
+
+```bash
+curl -fsSL https://get.docker.com | sh
+```
+
+```bash
+docker --version && docker compose version
+```
+
+**Both must print.** Every command in this runbook is `docker compose ...` (v2 plugin syntax);
+Ubuntu's `apt install docker.io` does not reliably provide it.
+
+### A read-only deploy key
+
+The repo is private, so the droplet needs its own credential. Use a **deploy key** — scoped to this
+one repo — not an account SSH key.
+
+```bash
+ssh-keygen -t ed25519 -f /root/.ssh/umi_deploy -N "" -C "umi-droplet-deploy"
+```
+
+```bash
+cat /root/.ssh/umi_deploy.pub
+```
+
+Add that output at **GitHub → the repo → Settings → Deploy keys → Add deploy key**.
+
+🔴 **Leave "Allow write access" UNCHECKED.** A write-capable key means anyone who roots the droplet
+can push to `main`. Read-only lets the server pull and nothing else, which is the whole blast radius
+a deploy host should have.
+
+```bash
+printf 'Host github.com\n  IdentityFile /root/.ssh/umi_deploy\n  IdentitiesOnly yes\n' >> /root/.ssh/config
+```
+
+```bash
+ssh-keyscan github.com >> /root/.ssh/known_hosts
+```
+
+That second line pre-trusts GitHub's host key so the clone does not stop on an interactive prompt.
+
+### Clone
+
+```bash
+git clone git@github.com:<owner>/umi-exchange.git /opt/umi-exchange
+```
+
+```bash
+git -C /opt/umi-exchange log --oneline -1
+```
+
+Confirm it matches the commit you intend to deploy before going on.
+
+> 💡 **Paste long commands one line at a time.** During the 2026-09-11 rebuild, multi-line blocks
+> pasted into the terminal wrapped and silently corrupted themselves — a `sed` became
+> `/ ^DEBUG=/d`, an SSH key lost its spaces, and a `$VAR` set on a skipped line expanded to empty
+> and blanked `ALLOWED_HOSTS`, taking the site down. **Every command in this runbook is written to
+> stand alone. Run them one at a time and read the output between each.**
+
+---
+
+## §0.8 — Run `harden.sh`
+
+> ✅ **ADDED 2026-09-11.** §0 describes cleaning up *after* `harden.sh`, and §11 finishes what it
+> skipped — but **no section ever told you to run it.** During the 2026-09-11 rebuild the droplet
+> reached production serving live traffic with no firewall and no fail2ban, purely because no step
+> said to. Ports read "closed" only because nothing happened to be listening; that is luck, not a
+> control.
+
+Do this with your current root session **open**, from a second terminal if you like — the script
+restarts the SSH daemon.
+
+```bash
+bash /opt/umi-exchange/scripts/harden.sh
+```
+
+It performs six steps: unattended security upgrades (with **automatic reboot at 02:00**), UFW
+(`deny incoming`, allowing only ssh/http/https), fail2ban for SSH, the SSH hardening in §0,
+logwatch, and kernel sysctl parameters.
+
+**Confirm all six printed, then:**
+
+```bash
+ufw status verbose
+```
+
+```bash
+systemctl is-active fail2ban docker
+```
+
+⚠️ **The 02:00 auto-reboot is only safe if the stack restarts itself.** Every service in
+`docker/docker-compose.prod.yml` carries `restart: unless-stopped` and Docker is enabled under
+systemd, so it does. **If you later arm the key-custody rig, that stops being true** — the app then
+needs keys delivered from the steward's laptop at boot (`docs/key-custody-design.md`, §Named
+residuals). Re-check this assumption when you arm it.
+
+> ⚠️ **Known risk at step [3/6].** The fail2ban jail reads `/var/log/auth.log`, which exists only
+> when `rsyslog` is installed. If the jail is invalid, `systemctl restart fail2ban` returns
+> non-zero and `set -euo pipefail` aborts the script — skipping the SSH hardening and everything
+> after it, exactly like the `sshd`/`ssh` unit-name bug fixed in §0. **If the script stops at
+> [3/6], the steps after it did not run.** Install `rsyslog` (`apt-get install -y rsyslog`) and
+> re-run.
+
+---
+
 ## §1 — Real values you must provide
 
 You cannot deploy without these. Fill them in as you go.
@@ -127,9 +248,10 @@ You cannot deploy without these. Fill them in as you go.
 | What | Example | Notes |
 |------|---------|-------|
 | **Domain name** | `app.example.org` | You must own it and be able to edit DNS. Caddy gets a free Let's Encrypt cert for this name automatically. |
-| **DNS A record** | `app.example.org → 143.244.167.7` | Set this **before** launching Caddy (§6), or cert issuance fails until it propagates. |
+| **DNS A record** | `app.example.org → $DROPLET_IP` | Set this **before** launching Caddy (§6), or cert issuance fails until it propagates. |
 | **`SECRET_KEY`** | *(generated in §4)* | Django signing key. Generated, never chosen. |
 | **`ENCRYPTION_KEY`** | *(generated in §4)* | Fernet key for field encryption. Production **refuses to boot** if empty. |
+| **`BLIND_INDEX_KEY`** | *(generated in §4)* | Separate secret for §12.3 blind indexes. Production **refuses to boot** if empty **or if it matches an encryption key**. |
 | **`DB_PASSWORD`** | *(generated in §4)* | Postgres password. Generated, never chosen. |
 | **GHCR token** *(only if you use Option B in §3)* | a GitHub PAT with `read:packages` | Only needed to pull the prebuilt image from a **private** GHCR package. |
 
@@ -149,7 +271,7 @@ export DOMAIN="app.example.org"     # <-- replace with YOUR real domain
 In your DNS provider, add an **A record**:
 
 ```
-app        A        143.244.167.7
+app        A        <your droplet IP>
 ```
 
 (Use the host/name that matches `$DOMAIN`. For an apex like `example.org`, use `@`.)
@@ -157,7 +279,7 @@ app        A        143.244.167.7
 Verify it resolves before continuing (Caddy needs this to get a TLS cert):
 
 ```bash
-dig +short "$DOMAIN"      # must print 143.244.167.7
+dig +short "$DOMAIN"      # must print your droplet IP
 ```
 
 If `dig` isn't installed: `apt-get install -y dnsutils`. Propagation can take a few minutes.
@@ -249,9 +371,10 @@ secrets and write them with `printf` (safe for any special characters):
 cd /opt/umi-exchange
 cp .env.example .env
 
-# --- generate the three secrets (pure python3 stdlib; no extra libs needed) ---
+# --- generate the FOUR secrets (pure python3 stdlib; no extra libs needed) ---
 SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')"
 ENCRYPTION_KEY="$(python3 -c 'import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
+BLIND_INDEX_KEY="$(python3 -c 'import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
 DB_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
 
 # --- write the REQUIRED values into .env (delete any existing line, then append) ---
@@ -259,6 +382,7 @@ set_env() { sed -i "/^$1=/d" .env; printf '%s=%s\n' "$1" "$2" >> .env; }
 
 set_env SECRET_KEY       "$SECRET_KEY"
 set_env ENCRYPTION_KEY   "$ENCRYPTION_KEY"
+set_env BLIND_INDEX_KEY  "$BLIND_INDEX_KEY"
 set_env DB_PASSWORD      "$DB_PASSWORD"
 set_env ALLOWED_HOSTS    "$DOMAIN,localhost,127.0.0.1"
 set_env SITE_URL         "https://$DOMAIN"
@@ -269,10 +393,16 @@ set_env DEFAULT_FROM_EMAIL "UMI Exchange <noreply@$DOMAIN>"
 
 **Which `.env` variables actually matter** (verified against the compose file and settings):
 
-- **Generate (secrets):** `SECRET_KEY`, `ENCRYPTION_KEY`, `DB_PASSWORD`.
+- **Generate (secrets):** `SECRET_KEY`, `ENCRYPTION_KEY`, `BLIND_INDEX_KEY`, `DB_PASSWORD`.
   - `SECRET_KEY` — production **refuses to start** if it's empty or the dev default.
   - `ENCRYPTION_KEY` — production **refuses to start** if empty (it would silently disable PII
     encryption). A Fernet key = 32 random bytes, url-safe-base64 encoded (what the command makes).
+  - 🔴 `BLIND_INDEX_KEY` — production **refuses to start** if it is empty, **and refuses again if
+    it equals any encryption key** (`production.py` lines 32 and 38). It is a *separate* secret:
+    sharing one would let an encryption-key holder test name equality (§12.3 key separation).
+    Generating it with its own `os.urandom(32)` call, as above, guarantees it differs.
+    **This variable was missing from this section until 2026-09-11** — following the old text
+    produced an `.env` that looked complete and an app that would not boot.
   - `DB_PASSWORD` — used by **both** the `db` service (`POSTGRES_PASSWORD`) **and** the app's DB
     connection string. Must be set or Postgres won't come up.
 - **Set (real values):** `ALLOWED_HOSTS` (your domain — Django rejects requests otherwise when
@@ -297,65 +427,42 @@ grep -E '^(SECRET_KEY|ENCRYPTION_KEY|DB_PASSWORD)=' .env | sed 's/=.*/=<set>/'
 
 ---
 
-## §5 — Fix the Caddy config (3 real corrections)
+## §5 — Check the Caddy config (already correct in-repo)
 
-The shipped `docker/Caddyfile.prod` has **three problems** that would break a real deploy, because
-the compose file never wires up what the Caddyfile assumes:
+> ✅ **CORRECTED 2026-09-11. This section used to tell you to rewrite `docker/Caddyfile.prod`,
+> and doing that today would make things WORSE.** The shipped file has since been fixed in-repo:
+> the domain is hardcoded, there is no `/static/*` block, and logs go to stdout. The replacement
+> this section used to print covered **only the apex**, so writing it would silently drop
+> `www.reciprocalaid.network`. Verify instead of overwrite.
 
-1. **Domain is never set.** The site block is `{$DOMAIN:localhost}`, but the `caddy` service in the
-   compose file has **no** `environment`/`env_file`, so `DOMAIN` is unset → Caddy would serve as
-   `localhost` and get **no TLS cert for your domain**. → We hardcode your real domain.
-2. **Static files 404.** The Caddyfile serves `/static/*` from `/srv/static`, but that path is
-   **never mounted** into the caddy container → every CSS/JS request 404s and the site renders
-   unstyled. → We remove that block and let the app's **WhiteNoise** (already configured and
-   compiled into the image) serve `/static/`.
-3. **Caddy fails to start on the file-log block.** The Caddyfile logs to `/var/log/caddy/access.log`,
-   but that directory isn't mounted/created in the container → Caddy errors at startup. → We drop
-   it and use Caddy's default stdout logging (view with `docker compose logs caddy`).
+The three problems this section was written for are all fixed in the committed file:
 
-Write the corrected file (this preserves the reverse-proxy, the trusted `X-Real-IP` handling, and
-all security headers — it only removes the two broken blocks and hardcodes your domain):
+| former problem | state |
+|---|---|
+| `{$DOMAIN:localhost}` never set → no TLS cert for your domain | fixed — domain hardcoded, apex **and** `www` |
+| `/static/*` served from an unmounted `/srv/static` → every asset 404s | fixed — block removed; the app's WhiteNoise serves `/static/` |
+| file logging to an unmounted `/var/log/caddy` → Caddy fails at startup | fixed — logs to stdout (`docker compose logs caddy`) |
+
+**Just confirm it:**
 
 ```bash
-cd /opt/umi-exchange
-cat > docker/Caddyfile.prod <<EOF
-# Corrected for this deployment (see docs/deploy/vps-runbook.md §5).
-# Domain hardcoded; /static served by the app's WhiteNoise; logs go to stdout.
-$DOMAIN {
-    reverse_proxy app:8000 {
-        # Caddy REPLACES X-Real-IP with the real connecting IP on every request.
-        # Django trusts this header for rate-limiting and salted audit-log IP hashing.
-        # Only safe while Caddy is the edge (no CDN/LB in front of it).
-        header_up X-Real-IP {remote_host}
-    }
-
-    encode gzip zstd
-
-    header {
-        -Server
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-        # CSP is set by Django; Caddy does not override it.
-    }
-
-    # Health check (no auth). Same trusted X-Real-IP replacement as the main block.
-    handle /health/* {
-        reverse_proxy app:8000 {
-            header_up X-Real-IP {remote_host}
-        }
-    }
-}
-EOF
-
-# verify the domain landed correctly (should print:  app.example.org {)
-head -3 docker/Caddyfile.prod
+head -11 docker/Caddyfile.prod | tail -1
 ```
 
-> The heredoc is intentionally **unquoted** so `$DOMAIN` expands. Nothing else in the file uses a
-> `$`, so Caddy placeholders like `{remote_host}` pass through untouched — confirm with the
-> `head -3` output above.
+Expect the site block naming both hostnames:
+
+```
+reciprocalaid.network, www.reciprocalaid.network {
+```
+
+⚠️ **If you are deploying a DIFFERENT domain**, this is the one line to change — edit that site
+block to your own apex and `www`, and change nothing else. The `header_up X-Real-IP {remote_host}`
+line is load-bearing for Django's audit-log IP hashing and rate limiting; leave it exactly as is.
+
+🔴 **Whatever hostnames appear here must also appear in `ALLOWED_HOSTS` in `.env`.** Caddy will
+happily serve a name Django then rejects with **400 Bad Request** — that exact mismatch took the
+site down for several minutes during the 2026-09-11 rebuild, because `www` was in the Caddyfile
+and not in `ALLOWED_HOSTS`.
 
 ---
 
@@ -432,7 +539,7 @@ Then in a browser:
   own `DEPLOY.md` "Verification Checklist".
 
 > **Cert not issued yet?** `docker compose ... logs caddy` will show the ACME attempts. The usual
-> causes are DNS not yet pointing at `143.244.167.7` (§2) or port 80/443 blocked (§0.6). Caddy
+> causes are DNS not yet pointing at your droplet IP (§2) or port 80/443 blocked (§0.6). Caddy
 > retries automatically once DNS/ports are correct.
 
 ---
@@ -472,8 +579,20 @@ goes down or the cert nears expiry.
 `scripts/backup.sh` dumps the Postgres DB (gzip) to `/var/backups/umi/`. It expects the DB
 container to be named **`docker-db-1`**, which is exactly what this compose project produces (the
 compose project name defaults to the `docker/` directory), so it works as-is. Note: the dump
-contains only KEK-wrapped ciphertext — it is **not** decryptable without `ENCRYPTION_KEY` from
-`.env`, so store backups somewhere that does **not** also hold that key.
+contains only KEK-wrapped ciphertext for the **designated sensitive fields** — casework narratives,
+Person identity, on-behalf-of names, federation payloads — so store backups somewhere that does
+**not** also hold `ENCRYPTION_KEY` from `.env`.
+
+🔴 **Do not read that as "the dump is encrypted."** Everything outside those designated fields is
+**plaintext in the dump by design** — community names, member display names, account emails, need
+titles and descriptions (`docs/ethics-and-safety.md`). And when the encrypted tables happen to be
+empty, the dump contains **no ciphertext at all**: measured on 2026-09-11, `grep -c gAAAAA` over
+the live backup returned **0**. A backup is only as protected as the rows that happen to be in it.
+**Check, don't assume:**
+
+```bash
+gunzip -c <dump>.sql.gz | grep -c gAAAAA     # 0 means nothing in it is encrypted
+```
 
 The script reads `BACKUP_BUCKET` / `BACKUP_ACCESS_KEY` / `BACKUP_SECRET_KEY` / `BACKUP_ENDPOINT`
 (plus `RETENTION_DAYS` and `BACKUP_REQUIRE_REMOTE`) from `/opt/umi-exchange/.env` itself whenever
@@ -780,7 +899,7 @@ If SSH ever refuses your key and you're shut out:
 | owner `williams-umi` | `p949w6cqh2-boop` |
 | `git clone .../williams-umi/umi-exchange` | already at `/opt/umi-exchange` (skip clone) |
 | image `ghcr.io/your-org/umi-exchange:latest` | build `umi-exchange:local` **or** `ghcr.io/p949w6cqh2-boop/umi-exchange:latest` |
-| domain `app.umifoundation.org` | **your** domain (`$DOMAIN`) → A record to `143.244.167.7` |
+| domain `app.umifoundation.org` | **your** domain (`$DOMAIN`) → A record to your droplet IP |
 | `.env` var `generate-with-python...` (doesn't exist) | real key is `ENCRYPTION_KEY=` in `.env.example` |
 | `sed` on `SITE_URL`/`ALLOWED_HOSTS`/`DEBUG` (fragile) | `set_env` helper writes the real keys safely (§4) |
 | `systemctl restart sshd` | `systemctl restart ssh` (Ubuntu 24) |
