@@ -350,8 +350,16 @@ already false when it was written,** and nobody noticed — which is the same sh
 `docs/incidents/2026-09-05-droplet-destroyed.md`, where a thing that had stopped being true kept
 being asserted for eight days.
 
-📌 **The lesson this section now carries: a bright line needs a check, not a sentence.** Nothing
-counts registrations against this claim. Until something does, the claim is a hope.
+📌 **The lesson this section now carries: a bright line needs a check, not a sentence.** ✅ **As of
+2026-09-14 something counts:** `python manage.py bright_line` (`apps/accounts/management/commands/`).
+It reports two things and treats them differently on purpose. **Registrations** — seeded
+(`@demo.invalid`) vs everything else — are *reported*, never failed on: they are already non-zero,
+and a permanently red check teaches its reader to ignore it. **Sensitive rows** — every model in
+the `people`, `households`, `casework` and `federation` apps — are *failed on*, **exit 2**, because
+they are zero today and this paragraph's whole claim is that they stay zero until the gate closes.
+Counts only; the output never carries a name or an address, so it can land in a ledger. **It runs
+in the weekly `/stats-pull` walk and its block goes into that pull's ledger — a number a human reads
+every week, which is the only kind of check this document has learned to trust.**
 
 ---
 
