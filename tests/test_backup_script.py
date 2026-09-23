@@ -90,3 +90,73 @@ def test_the_empty_creds_case_says_so_out_loud():
 
     assert "NOTICE" in body
     assert "this machine ONLY" in body
+
+
+# ── Heartbeat ────────────────────────────────────────────────────────────────
+# Exiting nonzero is not an alert. Cron mails root on a failing job and root mail
+# on the droplet goes nowhere, so a failing nightly backup is still silent — the
+# same shape that let the host sit destroyed for eight days. The signal is
+# therefore inverted: ping only on full success, and let the monitor alert on the
+# ping's ABSENCE, which also covers the backup that never ran at all.
+
+
+def test_unset_heartbeat_says_nobody_is_watching():
+    """While BACKUP_HEARTBEAT_URL is unset, a failed or skipped backup reaches
+    nobody. That gap must be visible in the log on every run, not remembered."""
+    result = _run()
+
+    assert "BACKUP_HEARTBEAT_URL not set" in result.stdout + result.stderr
+    assert "alert NOBODY" in result.stdout + result.stderr
+
+
+def test_plaintext_heartbeat_url_is_refused():
+    """The URL is a bearer token: anyone who observes it can forge 'all clear'
+    forever. Over http it is observable, so it is a hard error, not a warning."""
+    result = _run({"BACKUP_HEARTBEAT_URL": "http://example.invalid/ping/abc"})
+
+    assert result.returncode != 0
+    assert "must be https" in result.stdout + result.stderr
+
+
+def test_non_url_heartbeat_is_refused():
+    """A typo'd value must fail in preflight, not after the backup has run and
+    can no longer report."""
+    result = _run({"BACKUP_HEARTBEAT_URL": "uptimerobot-heartbeat"})
+
+    assert result.returncode != 0
+    assert "not a URL" in result.stdout + result.stderr
+
+
+def test_heartbeat_url_is_never_echoed():
+    """A log line carrying the URL hands over the ability to forge 'all clear'.
+    The script must never print it — not in the preflight, not on success, not in
+    the failure warning."""
+    secret = "https://heartbeat.invalid/ping/SEKRIT-TOKEN-9x2"
+    result = _run({"BACKUP_HEARTBEAT_URL": secret})
+
+    assert secret not in result.stdout + result.stderr
+    assert "SEKRIT-TOKEN-9x2" not in result.stdout + result.stderr
+
+
+def test_heartbeat_is_the_last_statement():
+    """Reaching the ping is the proof of success, because `set -e` has already
+    exited on any earlier failure. If anything ran after it, a later failure
+    could leave the monitor green on a broken night."""
+    body = BACKUP.read_text()
+    # rindex, not index: the var is also read in the preflight near the top, and
+    # matching that one silently tests nothing (it "passed" against a tail
+    # containing the whole backup).
+    tail = body[body.rindex("BACKUP_HEARTBEAT_URL:-") :]
+
+    assert "pg_dump" not in tail
+    assert "aws s3" not in tail
+    assert tail.rstrip().endswith("fi")
+
+
+def test_a_failed_heartbeat_does_not_fail_a_good_backup():
+    """The tail must not wag the dog: a monitor being down cannot turn a
+    successful backup into a failed run. It must still be loud about it."""
+    body = BACKUP.read_text()
+
+    assert "backup SUCCEEDED but the heartbeat could not be delivered" in body
+    assert "curl -fsS" in body

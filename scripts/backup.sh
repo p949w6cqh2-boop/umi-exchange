@@ -15,6 +15,26 @@
 #   provisioned): any night the off-site copy cannot be made then exits nonzero
 #   instead of quietly keeping a local-only backup.
 #
+# HEARTBEAT (BACKUP_HEARTBEAT_URL) — exiting nonzero is not an alert. Cron mails
+#   root on a failing job and root mail ON THIS DROPLET GOES NOWHERE, so a
+#   failing nightly backup is still silent. That is the same shape that let the
+#   host sit destroyed for eight days: something detected the problem and told
+#   nobody.
+#
+#   The fix cannot be "shout louder on failure", because the worst failures are
+#   the ones where the script never runs at all — a dead cron, a full disk, a
+#   destroyed droplet. Nothing inside this file executes to report those.
+#
+#   So the signal is INVERTED. This script pings the URL only on a fully
+#   successful run, and the monitor alerts when the ping DOES NOT ARRIVE inside
+#   its window. Absence is the alarm, which covers both a failed backup and a
+#   backup that never started. Point it at an UptimeRobot heartbeat monitor (or
+#   healthchecks.io) whose window is longer than one backup cycle.
+#
+#   The URL IS the credential — anyone holding it can forge "all clear". It is
+#   therefore never echoed to the log, https is required, and it belongs in .env
+#   with the B2 keys, not in the crontab line.
+#
 # SECURITY — keys are NEVER in the dump. pg_dump captures the DATABASE only;
 #   ENCRYPTION_KEYS / SECRET_KEY live in the app's env, so a backup holds only
 #   KEK-wrapped DEKs + ciphertext — opaque without the env key (this IS crypto-
@@ -52,6 +72,7 @@ BACKUP_ACCESS_KEY="${BACKUP_ACCESS_KEY-$(env_file_val BACKUP_ACCESS_KEY)}"
 BACKUP_SECRET_KEY="${BACKUP_SECRET_KEY-$(env_file_val BACKUP_SECRET_KEY)}"
 BACKUP_ENDPOINT="${BACKUP_ENDPOINT-$(env_file_val BACKUP_ENDPOINT)}"
 BACKUP_REQUIRE_REMOTE="${BACKUP_REQUIRE_REMOTE-$(env_file_val BACKUP_REQUIRE_REMOTE)}"
+BACKUP_HEARTBEAT_URL="${BACKUP_HEARTBEAT_URL-$(env_file_val BACKUP_HEARTBEAT_URL)}"
 RETENTION_DAYS="${RETENTION_DAYS-$(env_file_val RETENTION_DAYS)}"
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/umi}"
@@ -76,6 +97,30 @@ fi
 if [ "$B2_SET" -eq 0 ] && [ "${BACKUP_REQUIRE_REMOTE:-}" = "1" ]; then
     echo "ERROR: BACKUP_REQUIRE_REMOTE=1 but no B2 credentials are configured (BACKUP_BUCKET/BACKUP_ACCESS_KEY/BACKUP_SECRET_KEY empty in the environment and $ENV_FILE) — refusing to call a local-only backup a success."
     exit 1
+fi
+
+# Heartbeat preflight. Validate the URL BEFORE doing any work: a bad heartbeat
+# URL discovered at the end means the backup ran and still cannot report, which
+# is the state this whole feature exists to remove.
+if [ -n "${BACKUP_HEARTBEAT_URL:-}" ]; then
+    case "$BACKUP_HEARTBEAT_URL" in
+        https://*) ;;
+        http://*)
+            # The URL is a bearer token. Over plaintext it is observable, and
+            # anyone who observes it can forge "all clear" forever after.
+            echo "ERROR: BACKUP_HEARTBEAT_URL must be https — a plaintext heartbeat URL is a forgeable all-clear."
+            exit 1
+            ;;
+        *)
+            echo "ERROR: BACKUP_HEARTBEAT_URL is set but is not a URL (expected https://…)."
+            exit 1
+            ;;
+    esac
+else
+    # Deliberately a NOTICE on every run, not a one-time setup hint: while this
+    # is unset, a failing or never-running backup reaches nobody, and that gap
+    # should be visible in the log rather than remembered.
+    echo "NOTICE: BACKUP_HEARTBEAT_URL not set — a failed or skipped backup will alert NOBODY. Set it in .env."
 fi
 
 mkdir -p "$BACKUP_DIR"
@@ -151,3 +196,29 @@ fi
 DELETED=$(find "$BACKUP_DIR" -name "umi-*.sql.gz" -mtime +"$RETENTION_DAYS" -delete -print | wc -l)
 echo "[$(date)] Cleaned $DELETED backups older than $RETENTION_DAYS days."
 echo "[$(date)] Backup complete."
+
+# ── Heartbeat ────────────────────────────────────────────────────────────────
+# LAST statement in the file, on purpose. `set -e` means any earlier failure has
+# already exited, so reaching this line is itself the proof that the dump ran,
+# the key-leak guard passed, the off-site copy was verified and rotation ran.
+# Anything less than a complete success must NOT ping, or the monitor goes green
+# on a broken night.
+#
+# A heartbeat that cannot be delivered must never fail a backup that worked — the
+# tail would be wagging the dog — so the curl is non-fatal. It is still LOUD:
+# every outcome writes a line, because a silently-skipped heartbeat is the exact
+# defect this feature was added to remove, reproduced one layer up.
+#
+# The URL is never printed. See the header: it is a credential, and a log line
+# carrying it hands over the ability to forge "all clear".
+if [ -n "${BACKUP_HEARTBEAT_URL:-}" ]; then
+    if command -v curl > /dev/null 2>&1; then
+        if curl -fsS -m 15 --retry 2 --retry-delay 3 -o /dev/null "$BACKUP_HEARTBEAT_URL" 2>/dev/null; then
+            echo "[$(date)] Heartbeat sent."
+        else
+            echo "WARNING: backup SUCCEEDED but the heartbeat could not be delivered — the monitor will alert as if this backup failed. Check the monitor before assuming data loss."
+        fi
+    else
+        echo "WARNING: BACKUP_HEARTBEAT_URL is set but curl is not installed — no heartbeat was sent."
+    fi
+fi
