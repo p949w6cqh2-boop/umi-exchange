@@ -87,7 +87,7 @@ was right; the deferral that leaned on it was not.
 
 | Option | Serves | Costs | Verdict |
 |---|---|---|---|
-| **A. Add an email later** | anyone who gains an address after signing up | one form, one token; no new credential type | ✅ **Take.** Smallest build on the page and it shrinks the population every other option serves. |
+| **A. Add an email later** | anyone who gains an address after signing up | one token; **no new form — the surface already existed, it just wrote unconfirmed** | ✅ **TAKEN AND BUILT** (`feat/add-email-later`). Smallest build on the page, it shrinks the population every other option serves, and it closed a live account-takeover vector nobody had named. |
 | **B. Printed one-time recovery code** | the person who will never have an email | a bearer credential on paper | ✅ **Take**, with the mitigations in §Recommended. |
 | **C. Coordinator-issued reset code** | the person who lost the paper too | hands coordinators account-takeover power | ⚠️ **Take, but only after the role split.** See the risk. |
 | **D. Security questions / known facts** | same population as B | answers are guessable and shareable | ⛔ **Refuse.** In a parish the people who know your mother's maiden name are sitting in the pews. Strictly worse here than elsewhere. |
@@ -123,6 +123,28 @@ spec — claim links.
 | `claim` | 30 days | companion spec only |
 
 ### A. Add an email later
+
+> ✅ **BUILT 2026-09-23** on branch `feat/add-email-later`, and the build changed what this
+> section is for.
+>
+> 🔴 **When this spec was written it assumed the surface did not exist. It did.** `ProfileForm`
+> has always included `email` (`apps/accounts/forms.py`) and account settings has always edited
+> it. The grep behind that assumption was too narrow.
+>
+> ⚠️ **The reality was worse than the gap, which is why the prescription below survived
+> unchanged:** that form wrote `User.email` **directly, with nothing confirming the person owns
+> the address.** So the first bullet was not a precaution for a future feature — it described a
+> live defect. Two consequences, both already shipped:
+>
+> - **A typo'd address silently becomes the account's recovery path.** Password reset then mails
+>   a reset link to a stranger, who can take the account. The user does nothing wrong beyond
+>   mistyping once.
+> - `email` is `unique=True`, so **claiming an address you do not own denies it to its real owner
+>   permanently.**
+>
+> The shipped change is therefore not a new form. The field stays where people already look — the
+> settings page — and becomes a **request**: a confirmation link goes to the submitted address and
+> nothing is written until it is clicked.
 
 - **Never write `User.email` unconfirmed.** It is `unique=True`; an unconfirmed write lets
   anyone squat an address they do not control.
