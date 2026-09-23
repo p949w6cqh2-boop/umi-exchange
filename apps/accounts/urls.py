@@ -12,6 +12,11 @@ urlpatterns = [
     path("verify/pending/", views.VerifyPendingView.as_view(), name="verify-pending"),
     path("verify/send/", views.VerifySendView.as_view(), name="verify-send"),
     path("verify/<str:token>/", views.VerifyEmailView.as_view(), name="verify-email"),
+    # Adding an email to an account that started without one. Separate route AND
+    # separate token salt from verify/ above: that token carries only a uid, so a
+    # shared salt would let an old registration link be replayed here to attach
+    # an attacker-chosen address. docs/specs/account-recovery.md §A.
+    path("email/confirm/<str:token>/", views.ConfirmAddEmailView.as_view(), name="account-confirm-email"),
     # Password change (logged in)
     path(
         "password/change/",

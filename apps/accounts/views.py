@@ -23,8 +23,10 @@ from django_ratelimit.decorators import ratelimit
 from .forms import LoginForm, OTPTokenForm, ProfileForm, RegistrationForm, UsernameRecoveryForm
 from .verification import (
     honeypot_timestamp,
+    read_add_email_token,
     read_email_token,
     register_post_trips,
+    send_add_email_verification,
     send_verification_email,
 )
 
@@ -158,9 +160,43 @@ class SettingsView(LoginRequiredMixin, UpdateView):
     def get_object(self, queryset=None):
         return self.request.user
 
+    def get_initial(self):
+        # `email` is no longer a model field on this form, so ModelForm cannot
+        # populate it from the instance.
+        initial = super().get_initial()
+        initial["email"] = self.request.user.email
+        return initial
+
     def form_valid(self, form):
-        messages.success(self.request, "Profile updated.")
-        return super().form_valid(form)
+        """Phone and notification preference save immediately. An email CHANGE
+        does not: it goes out as a confirmation link and is written only when
+        that link is clicked (docs/specs/account-recovery.md §A).
+
+        The address the form was given is never stored anywhere in the meantime
+        — it rides inside the signed token — because User.email is unique=True
+        and an unconfirmed write lets someone claim an address they do not own,
+        which also denies it to its real owner permanently.
+        """
+        response = super().form_valid(form)
+        user = self.request.user
+        requested = form.cleaned_data.get("email")
+
+        if not requested or requested == user.email:
+            messages.success(self.request, "Profile updated.")
+            return response
+
+        # Collision is checked here and answers EXACTLY like success: same
+        # message, same redirect, and no mail to the existing owner — using
+        # their inbox as the oracle would leak just as loudly as an error would.
+        taken = get_user_model().objects.filter(email__iexact=requested).exclude(pk=user.pk).exists()
+        if not taken:
+            send_add_email_verification(self.request, user, requested)
+
+        messages.success(
+            self.request,
+            "Profile updated. Check that address for a confirmation link — your email is not saved until you click it.",
+        )
+        return response
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -171,6 +207,45 @@ class SettingsView(LoginRequiredMixin, UpdateView):
         if ctx["enable_2fa"]:
             ctx["is_2fa_enabled"] = self.request.user.totpdevice_set.filter(confirmed=True).exists()
         return ctx
+
+
+class ConfirmAddEmailView(View):
+    """Landing for the add-an-email link. Possession of the link is the proof
+    that the person reads that inbox, which is the entire point — no login
+    required, since they may be opening it in their phone's mail app."""
+
+    def get(self, request, token):
+        uid, email = read_add_email_token(token)
+        if uid is None or not email:
+            messages.error(request, "That confirmation link is invalid or has expired. You can request a new one.")
+            return redirect("account-settings" if request.user.is_authenticated else "login")
+
+        user = get_user_model().objects.filter(pk=uid).first()
+        if user is None:
+            messages.error(request, "That confirmation link is invalid or has expired. You can request a new one.")
+            return redirect("login")
+
+        # Re-check the collision at CONFIRM time, not just at request time.
+        # Someone else can register this address in the 48 hours between the two,
+        # and unique=True would raise at save. Refuse rather than 500.
+        if get_user_model().objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            messages.error(request, "That address could not be confirmed. Try a different one.")
+            return redirect("account-settings" if request.user.is_authenticated else "login")
+
+        user.email = email
+        fields = ["email"]
+        if not user.is_human_verified:
+            # No verification yet, so this IS the first one and "email" is honest.
+            user.verified_at = timezone.now()
+            user.verified_via = "email"
+            fields += ["verified_at", "verified_via"]
+        # If they WERE already verified, verified_via is left exactly as it is.
+        # A coordinator vouch was a human act performed at church in front of a
+        # witness; it is not ours to overwrite with a weaker machine fact.
+        user.save(update_fields=fields)
+
+        messages.success(request, "Email confirmed — you can now reset your password by email.")
+        return redirect("account-settings" if request.user.is_authenticated else "login")
 
 
 @method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
