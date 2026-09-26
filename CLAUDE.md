@@ -160,6 +160,13 @@ prefix; never assume the shell is where you left it.
   boundary (~rare). Green in isolation ⇒ flake; anything else failing ⇒ real.
 - **Prefer Edit over sed/heredoc for source changes** — sed has mangled apostrophes and
   duplicated content here; any quote in the text makes sed fragile. Edit tool, always, for code.
+- **Inserting a class right after a method SILENTLY REPARENTS every method below it.** Adding
+  `ConfirmAddEmailView` immediately after `SettingsView.form_valid` moved `SettingsView
+  .get_context_data` — which supplies `memberships` and the 2FA flags — into the new class. No
+  error, no lint warning, page still 200s; the community list just vanished from account settings.
+  Anchor a new class on the END of the previous one, and confirm the shape rather than eyeballing
+  it: `python -c "import ast; [print(n.name,[m.name for m in n.body if isinstance(m,ast.FunctionDef)])
+  for n in ast.parse(open('path.py').read()).body if isinstance(n,ast.ClassDef)]"`.
 - **Crontab/scheduled jobs: absolute paths + explicit `cd /abs/repo/path &&` prefix, written
   via heredoc** — the missing-prefix bug has recurred (nightly brain-refresh took several tries).
 - **No smart/curly quotes in Python source or f-strings** — they read as normal quotes to the eye

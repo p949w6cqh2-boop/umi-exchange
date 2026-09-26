@@ -101,11 +101,38 @@ INPUT_CLASS = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-
 
 
 class ProfileForm(forms.ModelForm):
-    """Form for updating user profile (email, phone)."""
+    """Form for updating user profile (email, phone).
+
+    `email` is deliberately NOT a model field here any more. It used to be, and
+    saving this form wrote User.email straight to the row with nothing
+    confirming that the person owns the address. Two live consequences:
+
+      * A typo'd address silently becomes the account's recovery path. Password
+        reset then mails a reset link to a stranger, who can take the account.
+        The user has to do nothing wrong beyond mistyping once.
+      * email is unique=True, so claiming an address you do not own denies it to
+        its real owner permanently.
+
+    The field still renders here, because account settings is where people
+    already look for it. It is now a REQUEST: SettingsView mails a confirmation
+    link to the submitted address and writes nothing until it is clicked.
+    See docs/specs/account-recovery.md §A.
+    """
+
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(
+            attrs={
+                "class": INPUT_CLASS,
+                "placeholder": "Email (optional)",
+            }
+        ),
+        help_text="We'll send a confirmation link before this is saved.",
+    )
 
     class Meta:
         model = User
-        fields = ["email", "phone", "email_notifications"]
+        fields = ["phone", "email_notifications"]
         widgets = {
             "email": forms.EmailInput(
                 attrs={
@@ -127,12 +154,13 @@ class ProfileForm(forms.ModelForm):
         }
 
     def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if email:
-            qs = User.objects.filter(email=email).exclude(pk=self.instance.pk)
-            if qs.exists():
-                raise forms.ValidationError("This email is already in use.")
-        return email or None  # Store empty as NULL (unique constraint)
+        # No uniqueness check and no "already in use" error, deliberately. This
+        # form no longer writes the column, so there is nothing to collide with
+        # yet — and answering differently for a taken address would turn account
+        # settings into the enumeration oracle that password reset and username
+        # recovery both refuse to be. The collision is handled where it actually
+        # matters, at confirmation time, and it answers like success there too.
+        return self.cleaned_data.get("email") or None
 
 
 class OTPTokenForm(forms.Form):
