@@ -29,16 +29,33 @@ MIN_FORM_SECONDS = 3  # a human reads the form; a script does not
 
 
 def make_email_token(user):
-    return signing.dumps({"uid": str(user.pk)}, salt=EMAIL_VERIFY_SALT)
+    # The address rides in the token (2026-09-26, #172): a click proves control of the
+    # address the link was SENT to, which is not necessarily the one on the account by
+    # the time it is clicked. Confirming the current address from a link sent to an old
+    # one would bless an inbox nobody proved.
+    return signing.dumps({"uid": str(user.pk), "email": user.email or ""}, salt=EMAIL_VERIFY_SALT)
 
 
-def read_email_token(token):
-    """User pk from a valid, unexpired token; None otherwise (no exceptions out)."""
+def read_email_token_claims(token):
+    """{"uid", "email"} from a valid, unexpired token; None otherwise (no exceptions out).
+
+    "email" is None for a LEGACY token (issued before 2026-09-26, uid only). Four went out
+    that day; they stay valid for their 48 hours and confirm the account's current address.
+    The residual is bounded and named: an admin changing that address inside the same 48h.
+    """
     try:
         data = signing.loads(token, salt=EMAIL_VERIFY_SALT, max_age=EMAIL_TOKEN_MAX_AGE)
     except signing.BadSignature:  # SignatureExpired subclasses BadSignature
         return None
-    return data.get("uid")
+    if not data.get("uid"):
+        return None
+    return {"uid": data["uid"], "email": data["email"] if "email" in data else None}
+
+
+def read_email_token(token):
+    """User pk from a valid, unexpired token; None otherwise (no exceptions out)."""
+    claims = read_email_token_claims(token)
+    return claims["uid"] if claims else None
 
 
 # ── add-an-email-later token (docs/specs/account-recovery.md §A) ─────────────
@@ -85,7 +102,12 @@ def send_add_email_verification(request, user, email):
 
 def send_verification_email(request, user):
     """One verification message. Delivery inherits the email runbook's backend —
-    console in dev, SMTP in production once the steward's creds land."""
+    console in dev, SMTP in production once the steward's creds land.
+
+    The ONE sender allowed to address `user.email` directly rather than
+    `user.deliverable_email`: a confirmation link has to go to the unproven address,
+    because proving it is the whole point. tests/test_email_confirmation.py allowlists
+    exactly this function by name; any other raw recipient fails the build."""
     token = make_email_token(user)
     body = render_to_string(
         "emails/verify_email.txt",

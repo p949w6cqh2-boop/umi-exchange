@@ -2,6 +2,7 @@
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from .conftest import MatchFactory, MemberFactory
 
@@ -56,6 +57,7 @@ class TestContactRevelation:
     def test_contact_after_acceptance(self):
         match = MatchFactory()
         match.need.requester.user.email = "test@example.com"
+        match.need.requester.user.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
         match.need.requester.user.save()
         match.need.contact_pref = "email"
         match.need.save()

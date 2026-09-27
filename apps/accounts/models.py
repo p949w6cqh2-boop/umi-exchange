@@ -27,12 +27,33 @@ class User(AbstractUser):
     verified_at = models.DateTimeField(null=True, blank=True)
     verified_via = models.CharField(max_length=12, blank=True, default="", choices=VERIFIED_VIA_CHOICES)
 
+    # Email OWNERSHIP, kept apart from human verification on purpose
+    # (docs/specs/email-confirmation.md, issue #172). `verified_via` answers "is this a
+    # human?" — and a coordinator vouch is the strongest answer to that while proving
+    # nothing about any inbox. So an account can be fully verified and still carry an
+    # address nobody has shown they read. Set ONLY when a person clicks a link sent to
+    # the address; cleared by save() whenever the address changes without one.
+    email_confirmed_at = models.DateTimeField(null=True, blank=True)
+
     REQUIRED_FIELDS = []
     USERNAME_FIELD = "username"
 
     @property
     def is_human_verified(self):
         return self.verified_at is not None
+
+    @property
+    def deliverable_email(self):
+        """The address, if and only if its owner has proven they read it; else None.
+
+        EVERY sender reads this, never `.email` — password reset, username recovery,
+        notifications, the casework digest, the contact reveal. A rule each call site
+        must remember is not a rule: this exists so the next sender cannot trust an
+        unproven address by accident, and tests/test_email_confirmation.py fails the
+        build if one tries. The single exception is the confirmation link itself,
+        which must go to the unproven address because proving it is the point.
+        """
+        return self.email if self.email and self.email_confirmed_at else None
 
     class Meta:
         db_table = "accounts_user"
@@ -48,7 +69,32 @@ class User(AbstractUser):
         # Writes that skip full_clean (e.g. UserManager.create_user, which
         # also normalizes None to "") must not store "" either.
         self.email = self.email or None
+        self._clear_confirmation_if_address_changed(kwargs)
         super().save(*args, **kwargs)
+
+    def _clear_confirmation_if_address_changed(self, save_kwargs):
+        """A proof belongs to the address it proved. Changing the address WITHOUT a
+        fresh confirmation clears it; changing it WITH one (ConfirmAddEmailView writes
+        both in one save) keeps it.
+
+        Enforced here rather than in each view because the next writer will not come
+        through our views — an admin page, a ModelForm, a management command.
+        Known bypass, stated rather than hidden: QuerySet.update() skips save(). None
+        exists in apps/ today (checked 2026-09-26).
+        """
+        update_fields = save_kwargs.get("update_fields")
+        if update_fields is not None and "email" not in update_fields:
+            return  # the address is not being written; nothing to compare (every login lands here)
+        if self._state.adding or self.pk is None:
+            return  # a new row has no previous address to have proven
+        prev = type(self).objects.filter(pk=self.pk).values("email", "email_confirmed_at").first()
+        if prev is None or (prev["email"] or None) == self.email:
+            return
+        if self.email_confirmed_at != prev["email_confirmed_at"]:
+            return  # the caller is writing a fresh proof for the new address
+        self.email_confirmed_at = None
+        if update_fields is not None and "email_confirmed_at" not in update_fields:
+            save_kwargs["update_fields"] = [*update_fields, "email_confirmed_at"]
 
     def __str__(self):
         return self.username
