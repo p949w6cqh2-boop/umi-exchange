@@ -7,6 +7,10 @@ the first one.*
 > chapter, or neighbourhood can run its own board — on somebody's existing
 > server or on your own.
 
+**Want to try it with your own hands first?** The [parish starter kit](parish-starter-kit.md)
+runs a practice parish on your laptop in about half an hour, walks one need from asked to
+answered, and has ready-made categories, a bulletin notice and a coordinator practice session.
+
 ## Door 1 — Start a community on an existing UMI site (five minutes)
 
 If a UMI site is already running (say, your diocese or a neighbouring parish
