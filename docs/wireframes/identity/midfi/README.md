@@ -1,7 +1,7 @@
 # Layer C mid-fi — greyscale Commons (Stage 7)
 
 > Structure, hierarchy, spacing, and copy are real; color is deliberately withheld until
-> Stage 8. Fictional St. Patrick's seed content throughout (the §J seed canon: Our story +
+> Stage 8. Fictional St. Brigid's seed content throughout (the §J seed canon: Our story +
 > Mass times live, Ministries draft, Old bulletin archived; Nuala the member, Fr. Declan
 > the admin). Screen 01 is not a mockup — it's the REAL /protocol/ page from
 > `slice/platform-floor`, shot live at DEBUG=0, footer-click and TOC-jump verified.

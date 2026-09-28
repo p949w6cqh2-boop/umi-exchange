@@ -14,6 +14,17 @@
       <label for="id_email" class="umi-label">Email</label>
       {{ form.email }}
       {% if form.email.errors %}<p class="text-sm text-red-600 mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+      {% if user.email and not user.email_confirmed_at %}
+      {% comment %}
+        #172: an unproven address receives nothing (no reset, no notices), so say so
+        and offer the fix right here. The button submits the separate form below by
+        its id, because forms cannot nest.
+      {% endcomment %}
+      <p class="text-sm text-parish-ink/80 mt-2">
+        Not confirmed yet. We won't send anything to this address until you click the link we emailed you.
+        <button type="submit" form="confirm-resend" class="underline text-umi-primary">Send the link again</button>
+      </p>
+      {% endif %}
     </div>
     <div>
       <label for="id_phone" class="umi-label">Phone</label>
@@ -37,6 +48,9 @@
       <a href="{% url 'password_change' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Change password</a>
     </div>
   </form>
+  {% if user.email and not user.email_confirmed_at %}
+  <form id="confirm-resend" method="post" action="{% url 'verify-send' %}" class="hidden">{% csrf_token %}</form>
+  {% endif %}
 
   {# 2FA Section (Gap 2: conditional UI) #}
   {% if enable_2fa %}

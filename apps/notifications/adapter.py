@@ -45,9 +45,10 @@ class NotificationAdapter:
             channels_sent=channels_sent,
         )
 
-        # 2. Email: send only to a neighbour who has an address AND hasn't
-        # opted out (consent, not surveillance — honoured on every send).
-        if recipient_user.email and getattr(recipient_user, "email_notifications", True):
+        # 2. Email: send only to a neighbour who has a PROVEN address AND hasn't
+        # opted out (consent, not surveillance — honoured on every send). An unproven
+        # address may be a stranger's inbox; the in-app notice above still lands (#172).
+        if recipient_user.deliverable_email and getattr(recipient_user, "email_notifications", True):
             email_sent = NotificationAdapter._send_email(recipient_user, title, body, link)
             if email_sent:
                 channels_sent.append("email")
@@ -90,7 +91,7 @@ class NotificationAdapter:
                 subject=f"[UMI] {title}",
                 body=text_body,
                 from_email=django_settings.DEFAULT_FROM_EMAIL,
-                to=[recipient_user.email],
+                to=[recipient_user.deliverable_email],
             )
             if html_body:
                 email.attach_alternative(html_body, "text/html")

@@ -95,7 +95,7 @@ def make_user(handle):
 @pytest.fixture
 def world(db):
     admin_u, plain_u = make_user("fedadmin"), make_user("fedplain")
-    community = Community.objects.create(name="St. Patrick Conference", slug="st-patrick", created_by=admin_u)
+    community = Community.objects.create(name="St. Brigid Conference", slug="st-brigid", created_by=admin_u)
     admin = Member.objects.create(
         user=admin_u, community=community, role="admin", display_name="Father Tom", is_active=True
     )
@@ -150,7 +150,8 @@ def authority_match(fed_settings, active_link, world):
     active_link.pairing_pepper = b"0" * 32
     active_link.save(update_fields=["pairing_pepper"])
     world.plain_u.email = "maria@example.test"
-    world.plain_u.save(update_fields=["email"])
+    world.plain_u.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
+    world.plain_u.save(update_fields=["email", "email_confirmed_at"])
     cat = Category.objects.create(community=world.community, name="Food")
     need = Need.objects.create(
         community=world.community,

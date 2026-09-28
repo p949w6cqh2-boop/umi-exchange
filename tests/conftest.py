@@ -50,6 +50,11 @@ class UserFactory(DjangoModelFactory):
     # verified_at=None explicitly.
     verified_at = factory.LazyFunction(timezone.now)
     verified_via = "backfill"
+    # Same convention, second column (#172): a factory user's address is PROVEN, the way
+    # a normal account's is once it clicks its link. Tests exercising the UNCONFIRMED
+    # path set email_confirmed_at=None explicitly. (tests/factories.py has a sibling
+    # UserFactory; the two must agree, and this one serves ~22 files to its 4.)
+    email_confirmed_at = factory.LazyFunction(timezone.now)
 
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):  # noqa: N805 (factory_boy hook signature)

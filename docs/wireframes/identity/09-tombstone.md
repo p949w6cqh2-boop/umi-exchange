@@ -1,7 +1,7 @@
 # 09 · Archived page tombstone — 390px
 ```
 ┌──────────────────────────────┐
-│ St. Patrick's                │
+│ St. Brigid's                 │
 ├──────────────────────────────┤
 │        (small archive mark)  │
 │ Your coordinators put this   │

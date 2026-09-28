@@ -1,7 +1,7 @@
 # 07 · /c/<slug>/p/ — pages index — 390px
 ```
 ┌──────────────────────────────┐
-│ St. Patrick's                │
+│ St. Brigid's                 │
 │ Pages                        │
 │ [sign-in blurb, if set —     │  anon state only
 │  auto-escaped]               │
