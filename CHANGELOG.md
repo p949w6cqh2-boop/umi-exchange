@@ -22,7 +22,8 @@
   goes.
 - **Updates now finish their own database step.** Nothing you can see changed. When an update
   changes how information is stored, the tool we deploy with now makes that change itself, instead
-  of someone doing it by hand in the seconds after.
+  of someone doing it by hand in the seconds after. And if an update fails partway, the tool now
+  wipes the keys it carried in, instead of leaving them on the server until it next restarts.
 
 ## 2026-09-26
 

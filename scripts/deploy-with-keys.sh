@@ -78,6 +78,9 @@ cmd_deploy() {
   # Everything the droplet runs, in one heredoc: read plaintext from stdin straight
   # into tmpfs, merge with the (key-free) .env, bring the app up, shred both tmpfs
   # files. Plaintext never touches droplet disk; nothing is scp'd.
+  # The shred is also TRAPPED on exit, set before any plaintext lands: under `set -e` a
+  # failed `up` used to exit before the shred line and leave the keys in tmpfs until
+  # the next reboot.
   # Then migrate, through the container that is already running: it holds its keys in
   # its own config, so this step never needs the tmpfs file and runs after the shred.
   # Nothing else in the stack migrates (the image runs gunicorn only), so a deploy that
@@ -86,6 +89,7 @@ cmd_deploy() {
   remote_script=$(cat <<REMOTE
 set -euo pipefail
 umask 077
+trap 'shred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env 2>/dev/null || true' EXIT
 cat > /dev/shm/umi-keys.env
 cd $REMOTE_DIR
 grep -Eq '^($KEY_NAMES)=' .env && { echo 'REFUSING: droplet .env still carries plaintext key lines — finish the migration (docs/key-custody-design.md)'; shred -u /dev/shm/umi-keys.env; exit 1; }

@@ -275,7 +275,8 @@ def test_deploy_migrates_after_up_and_after_the_shred(age_home):
     assert r.returncode == 0, r.stderr
     plan = r.stdout
     up = plan.index("up -d app")
-    shred = plan.index("shred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env")
+    # The standalone shred LINE, not the trap, which carries the same words earlier.
+    shred = plan.index("\nshred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env\n")
     migrate = plan.index("manage.py migrate --noinput")
     # Migrate runs against the NEW container, and only after the plaintext is gone:
     # the container already carries its keys, so this step never needs the tmpfs file.
@@ -285,3 +286,66 @@ def test_deploy_migrates_after_up_and_after_the_shred(age_home):
     assert 'docker exec "$app_id"' in plan
     # A failed migrate must say what state it left behind, not just exit non-zero.
     assert "MIGRATE FAILED" in plan
+
+
+# ── The shred trap, 2026-09-28 ────────────────────────────────────────────────
+#
+# The remote script runs under `set -e`, and its shred was an ordinary line after `up`.
+# So a failed `up -d app` exited BEFORE the shred and left the decrypted keys sitting in
+# /dev/shm until the droplet next rebooted. A trap on EXIT shreds them on every path.
+
+
+def _dry_run_plan(age_home):
+    out = age_home["dir"] / "keys.env.age"
+    run(
+        ["encrypt", str(age_home["plain"])],
+        env={"UMI_AGE_RECIPIENTS": str(age_home["recipients"]), "UMI_KEYS_AGE": str(out)},
+    )
+    r = run(
+        ["deploy"],
+        env={
+            "UMI_AGE_IDENTITY": str(age_home["identity"]),
+            "UMI_KEYS_AGE": str(out),
+            "UMI_DROPLET": "root@198.51.100.7",
+            "DRY_RUN": "1",
+        },
+    )
+    assert r.returncode == 0, r.stderr
+    return r.stdout.split("\n", 1)[1]  # drop the "== DRY RUN ... ==" banner
+
+
+def test_deploy_plan_traps_the_shred_before_any_plaintext_lands(age_home):
+    plan = _dry_run_plan(age_home)
+    trap = next((ln for ln in plan.splitlines() if ln.startswith("trap ")), None)
+    assert trap, "the remote script sets no trap: a failed step leaves the keys in /dev/shm"
+    assert "EXIT" in trap
+    assert "/dev/shm/umi-keys.env" in trap and "/dev/shm/umi-full.env" in trap
+    assert plan.index(trap) < plan.index("cat > /dev/shm/umi-keys.env")
+
+
+def test_a_failed_up_still_shreds_the_keys(age_home, tmp_path):
+    """Run the real remote script against a fake droplet: /dev/shm and the compose dir
+    rewritten into tmp, and a `docker` that fails on `up`. The keys file must be gone."""
+    shm = tmp_path / "shm"
+    repo = tmp_path / "repo"
+    bindir = tmp_path / "bin"
+    for d in (shm, repo, bindir):
+        d.mkdir()
+    (repo / ".env").write_text("DEBUG=False\n")  # key-free, as the rig requires
+    docker = bindir / "docker"
+    docker.write_text('#!/bin/sh\ncase " $* " in *" up "*) echo "up failed" >&2; exit 1;; esac\nexit 0\n')
+    docker.chmod(0o755)
+
+    plan = _dry_run_plan(age_home).replace("/dev/shm/", f"{shm}/").replace("cd /opt/umi-exchange", f"cd {repo}")
+    r = subprocess.run(
+        ["bash", "-c", plan],
+        input=KEYS_SAMPLE,
+        capture_output=True,
+        text=True,
+        env={"PATH": f"{bindir}:/usr/bin:/bin"},
+        timeout=30,
+    )
+    assert r.returncode != 0, "the fake `up` should have failed the deploy"
+    assert "up failed" in r.stderr
+    assert not (shm / "umi-keys.env").exists(), "decrypted keys left in tmpfs after a failed up"
+    assert not (shm / "umi-full.env").exists(), "merged env left in tmpfs after a failed up"
