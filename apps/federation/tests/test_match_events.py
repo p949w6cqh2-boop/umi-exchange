@@ -44,7 +44,8 @@ def mirror_fmatch(fed_settings, active_link, world):
     active_link.pairing_pepper = b"1" * 32
     active_link.save(update_fields=["pairing_pepper"])
     world.plain_u.email = "bob@example.test"
-    world.plain_u.save(update_fields=["email"])
+    world.plain_u.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
+    world.plain_u.save(update_fields=["email", "email_confirmed_at"])
     cat = Category.objects.create(community=world.community, name="Food")
     offer = Offer.objects.create(
         community=world.community,

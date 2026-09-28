@@ -2,7 +2,7 @@
 
 > **Scope & posture.** This app holds the identities, locations, and case files of poor and vulnerable
 > people. The risk is not only privacy — it is a person's **physical safety** (e.g. a DV survivor's
-> location). This is a protective, design/audit pass on the **application** layer before St. Patrick goes
+> location). This is a protective, design/audit pass on the **application** layer before the pilot parish goes
 > live with real PII. It builds on — does not duplicate — the **network** layer
 > ([`network-security-addendum.md`](network-security-addendum.md)) and the **dev/host** layer
 > ([`umi_dev_security_protocol.md`](umi_dev_security_protocol.md)). No exploitation; analysis only.

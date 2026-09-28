@@ -27,16 +27,22 @@ def _encryption_key(settings):
     settings.BLIND_INDEX_KEY = "hermetic-test-blind-index-key"
 
 
-def make_user(handle):
+def make_user(handle, email_confirmed=True):
+    """A casework actor. Its address is PROVEN by default (#172) — a coordinator doing
+    casework has clicked their link — so digest-delivery tests exercise delivery, not
+    the unconfirmed gate. The gate has its own test, passing email_confirmed=False."""
     User = get_user_model()  # noqa: N806
+    confirmed = {"email_confirmed_at": timezone.now()} if email_confirmed else {}
     try:
-        return User.objects.create_user(username=handle, email=f"{handle}@example.test", password="pw-Str0ng!pass")
+        return User.objects.create_user(
+            username=handle, email=f"{handle}@example.test", password="pw-Str0ng!pass", **confirmed
+        )
     except TypeError:  # email-only custom managers
-        return User.objects.create_user(email=f"{handle}@example.test", password="pw-Str0ng!pass")
+        return User.objects.create_user(email=f"{handle}@example.test", password="pw-Str0ng!pass", **confirmed)
 
 
 def make_community(created_by):
-    kwargs = dict(name="St. Patrick Conference", slug="st-patrick", created_by=created_by)
+    kwargs = dict(name="St. Brigid Conference", slug="st-brigid", created_by=created_by)
     try:
         return Community.objects.create(**kwargs)
     except Exception:

@@ -3,15 +3,15 @@
 ┌──────────────────────────────┐
 │ ● Reciprocal Aid Network     │  logged-out header (no member nav,
 ├──────────────────────────────┤   no bottom nav, no flag panel)
-│ ST. PATRICK'S                │  community name kicker (theme applies)
+│ ST. BRIGID'S                 │  community name kicker (theme applies)
 │ Our story                    │
 │ Written by the coordinators  │  byline doubly load-bearing here
-│ of St. Patrick's             │
+│ of St. Brigid's              │
 │ ┌─ prose well ─────────────┐ │
 │ │ …                        │ │
 │ └──────────────────────────┘ │
 │ ┌──────────────────────────┐ │
-│ │ Part of St. Patrick's?   │ │  join door CTA
+│ │ Part of St. Brigid's?    │ │  join door CTA
 │ │ [ Join with your code ]  │ │
 │ └──────────────────────────┘ │
 └──────────────────────────────┘

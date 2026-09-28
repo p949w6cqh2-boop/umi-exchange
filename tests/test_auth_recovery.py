@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.management import call_command
 from django.urls import reverse
+from django.utils import timezone
 
 User = get_user_model()
 pytestmark = pytest.mark.django_db
@@ -33,7 +34,8 @@ def test_username_recovery_form_renders(client):
 
 
 def test_known_email_receives_its_username(client):
-    User.objects.create_user("nuala", email="nuala@example.org", password=STRONG)
+    # Recovery mails PROVEN addresses only (#172); this pins delivery, so the address is proven.
+    User.objects.create_user("nuala", email="nuala@example.org", password=STRONG, email_confirmed_at=timezone.now())
     resp = client.post(reverse("username_recovery"), {"email": "nuala@example.org"})
     assert resp.status_code == 302
     assert resp.url == reverse("username_recovery_done")
@@ -50,7 +52,7 @@ def test_unknown_email_gets_identical_response_and_no_mail(client):
 
 
 def test_email_lookup_is_case_insensitive(client):
-    User.objects.create_user("marta", email="Marta@Example.org", password=STRONG)
+    User.objects.create_user("marta", email="Marta@Example.org", password=STRONG, email_confirmed_at=timezone.now())
     client.post(reverse("username_recovery"), {"email": "marta@example.org"})
     assert len(mail.outbox) == 1
     assert "marta" in mail.outbox[0].body
@@ -68,7 +70,11 @@ def test_email_is_unique_per_account():
 
 
 def test_inactive_account_is_not_disclosed(client):
-    user = User.objects.create_user("gone", email="gone@example.org", password=STRONG)
+    # Proven address, so INACTIVITY is the only reason no mail goes out. Unproven, this
+    # test would pass for the wrong reason (#172) and stop guarding the is_active filter.
+    user = User.objects.create_user(
+        "gone", email="gone@example.org", password=STRONG, email_confirmed_at=timezone.now()
+    )
     user.is_active = False
     user.save(update_fields=["is_active"])
     client.post(reverse("username_recovery"), {"email": "gone@example.org"})

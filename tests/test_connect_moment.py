@@ -5,6 +5,7 @@ reachable preference."""
 import pytest
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.needs.models import Need
 from tests.conftest import CategoryFactory, CommunityFactory, MatchFactory, MemberFactory, NeedFactory
@@ -48,6 +49,7 @@ def test_channel_less_contact_gets_the_graceful_line(accepted_match):
 def test_contact_with_email_shows_the_email_not_the_fallback(accepted_match):
     community, requester, helper, need, match = accepted_match
     requester.user.email = "maria@example.org"
+    requester.user.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
     requester.user.save()
     Need.objects.filter(pk=need.pk).update(contact_pref="any")
     resp = _login(helper).get(reverse("match-detail", kwargs={"slug": community.slug, "pk": match.pk}))
