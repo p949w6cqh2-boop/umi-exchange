@@ -1,0 +1,16 @@
+{% autoescape off %}Hello,
+
+Someone just started a new account on UMI Exchange with this email address. This address is
+already on an account here, so we did not add it to the new one.
+
+If that account is yours, you do not need a second one. You can sign in here:
+
+{{ login_link }}
+
+Forgot your username? {{ username_link }}
+Forgot your password? {{ reset_link }}
+
+If this was not you, you can ignore this email.
+
+UMI Exchange
+{% endautoescape %}

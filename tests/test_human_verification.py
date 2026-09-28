@@ -62,7 +62,9 @@ def test_register_with_email_sends_verification_link(client):
     resp = _register(client, 1, "nuala", "nuala@example.org")
     assert resp.status_code in (301, 302)
     assert len(mail.outbox) == 1
-    assert "verify" in mail.outbox[0].body.lower()
+    # Option C (docs/specs/email-confirmation.md): the add-email link, whose click writes
+    # the address, proves it and verifies the account in one save.
+    assert "/auth/email/confirm/" in mail.outbox[0].body
     user = User.objects.get(username="nuala")
     assert user.verified_at is None
 
