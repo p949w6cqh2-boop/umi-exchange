@@ -112,8 +112,24 @@ Expected closing line (exact counts matter):
 
 > St. Brigid's demo parish is ready: 12 members, 7 needs, 6 offers, 3 matches.
 > Sign in as marta (admin), tom (coordinator), or nuala (member) — password 'demo-parish' for all.
+> On a live site, run rotate_demo_password next: that password is public.
 
 The coordinator sign-in is now **tom** (was `tomas`).
+
+## 3b. Take the demo off the public password (1 min)
+
+The password that closing line prints is written in this public repository. On a live site it
+opens the demo parish's admin and coordinator accounts to anyone, and a coordinator can vouch
+**any** account on the site as a verified human. Replace it straight away. The new password
+lives only in the steward's private file (`~/.config/umi/demo-password.txt` on the laptop, mode
+600) and travels on stdin, so it never appears on a command line, in a process list or in a log:
+
+```bash
+ssh root@<droplet> 'docker exec -i docker-app-1 python manage.py rotate_demo_password' \
+  < ~/.config/umi/demo-password.txt
+```
+
+Expected: `Rotated the password on 12 seeded demo accounts.` Each rotation is audited.
 
 ## 4. Verify (2 min)
 
@@ -123,7 +139,7 @@ curl -s https://reciprocalaid.network/ | grep -ci "half-nine"   # expect 0
 curl -s https://reciprocalaid.network/health/                    # {"status": "ok"}
 ```
 
-Then by eye: sign in as `tom` / `demo-parish`; the board should read American — a ride to
+Then by eye: sign in as `tom` with the password from the steward's file; the board should read American — a ride to
 the 9:30 Mass, a leaky kitchen faucet, a crib for the new baby, the grocery run, math help
 for Marco.
 
