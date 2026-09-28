@@ -350,7 +350,8 @@ class Command(BaseCommand):
                 f"{Offer.objects.filter(community=community).count()} offers, "
                 f"{Match.objects.filter(need__community=community).count()} matches. "
                 f"Sign in as marta (admin), tom (coordinator), "
-                f"or nuala (member) — password {DEMO_PASSWORD!r} for all."
+                f"or nuala (member) — password {DEMO_PASSWORD!r} for all.\n"
+                f"On a live site, run rotate_demo_password next: that password is public."
             )
         )
 

@@ -32,7 +32,8 @@ import { chromium } from "playwright";
 
 const BASE = process.env.TUTORIAL_BASE || "http://127.0.0.1:8123";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const PASSWORD = "demo-parish";
+// A laptop seed uses the public password; a live site's is private (rotate_demo_password).
+const PASSWORD = process.env.DEMO_PASSWORD || "demo-parish";
 const PAD_MS = 3000; // head/tail padding per scene (Stage-2 spec)
 
 const ASPECTS = {
