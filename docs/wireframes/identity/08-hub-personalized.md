@@ -1,7 +1,7 @@
 # 08 · Hub, personalized — 390px
 ```
 ┌──────────────────────────────┐
-│ St. Patrick's        ⌂ ▤ ⊕ ▣│
+│ St. Brigid's         ⌂ ▤ ⊕ ▣│
 ├──────────────────────────────┤
 │ Welcome back, Nuala.         │  greeting unchanged
 │ "Whatever you did for the    │  welcome_line under it, quiet,

@@ -53,7 +53,7 @@ Federation) shows this instance's key thumbprint.
 
 ## 3. The handshake ceremony (two humans, one phone call)
 
-Roles: **Admin A** (St. Patrick) and **Admin B** (the peer). Both open
+Roles: **Admin A** (the home community) and **Admin B** (the peer). Both open
 `c/<community>/federation/` and keep the page visible — it shows their **own key thumbprint**.
 
 1. Admin B enters A's base URL → **Fetch & request**. The page reloads with the one-time

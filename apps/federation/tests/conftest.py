@@ -95,7 +95,7 @@ def make_user(handle):
 @pytest.fixture
 def world(db):
     admin_u, plain_u = make_user("fedadmin"), make_user("fedplain")
-    community = Community.objects.create(name="St. Patrick Conference", slug="st-patrick", created_by=admin_u)
+    community = Community.objects.create(name="St. Brigid Conference", slug="st-brigid", created_by=admin_u)
     admin = Member.objects.create(
         user=admin_u, community=community, role="admin", display_name="Father Tom", is_active=True
     )

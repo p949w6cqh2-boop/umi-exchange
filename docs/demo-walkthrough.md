@@ -1,4 +1,4 @@
-# Demo walkthrough — showing UMI Exchange to Father Mac
+# Demo walkthrough — showing UMI Exchange to a pastor
 
 The board, alive and in hand. Eleven screens at phone width (390px), in the order to demo them.
 Everything below is the fictional St. Brigid's — no real people, no real parish specifics.
@@ -84,7 +84,7 @@ readable on an offline laptop.
 
 ![Protocol](demo/11-protocol.webp)
 
-## If Father Mac pokes around
+## If the pastor pokes around
 
 - A typo'd address gets the warm 404, not an error dump (that's why the demo runs `DEBUG=0`).
 - A member opening a coordinators-only page gets a polite 403 in the same style.

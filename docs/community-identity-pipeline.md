@@ -190,7 +190,7 @@ theming; no HTML storage.
 
 ### §D — Structured identity (Community.settings, additive keys)
 
-`patron` (Char ≤80, e.g. "St. Patrick"), `welcome_line` (≤140), `signin_blurb` (≤300),
+`patron` (Char ≤80, e.g. "St. Brigid"), `welcome_line` (≤140), `signin_blurb` (≤300),
 `scene_choices` (dict surface→scene-slug validated against the 10 committed prints in
 `templates/illustrations/`; uploads keyed OUT). Purpose: the small facts; pages carry the
 rest — the WordPress line. Behavior: edited in the settings surface; `set_theme` precedent
@@ -297,7 +297,7 @@ Greeting may carry `welcome_line` under the name (the "Welcome back, {first name
 `_hub_body.html`); `scene_choices` selects platform prints per surface (spotlight/masthead)
 from the committed illustration set with graceful fallback to today's defaults (`_well` on
 hub); spotlight logic untouched. Every new surface ships its warm empty state. Seed:
-fictional St. Patrick's (patron line, welcome line, 3 pages: Our story / Mass times /
+fictional St. Brigid's (patron line, welcome line, 3 pages: Our story / Mass times /
 Ministries; one on landing) — demo walkthrough updates at Stage 8. Switcher test: full
 bundle swap across memberships.
 
@@ -323,7 +323,7 @@ land on /protocol/, TOC jumps work; curl `/protocol/spec.md` content-type AND
 docker/Caddyfile.prod); link-rot + leak + RFC 9116 tests green; grep for both dead domains
 returns only the allowlisted pipeline doc; /gate PASS. Layer C slices: authz matrix green,
 sanitizer red-team green, anon no-oracle probes (private vs missing = byte-identical
-redirects), golden-path Playwright re-run with St. Patrick's seed DEBUG off, /gate PASS each.
+redirects), golden-path Playwright re-run with St. Brigid's seed DEBUG off, /gate PASS each.
 
 ## Next
 
@@ -362,7 +362,7 @@ carries the wall's second surface) and one reorder (writing the protocol precede
 6. **Safe by default** — 6.1 zero customization still looks finished (§J); 6.2 what never
    crosses: local-only v1, the federation guard (§C/§I); 6.3 the audit trail, PII-free (§H).
 7. **Proving it** — 7.1 the matrices: authz, sanitizer red-team, no-oracle probes (§K);
-   7.2 the demo: St. Patrick's being St. Patrick's, DEBUG off, in the gallery (§J/§K).
+   7.2 the demo: St. Brigid's being St. Brigid's, DEBUG off, in the gallery (§J/§K).
 8. **Appendix** — the slice map (Stage 4's blueprint; dependency diagram above).
 
 ---
@@ -370,7 +370,7 @@ carries the wall's second surface) and one reorder (writing the protocol precede
 # ✋ STAGE 4 — KEYED (Jasiah, 2026-07-14) — the blueprint
 
 **Interleave ruling: YES.** S0+S1 proceed immediately; Layer C code waits for the Stage 5–7
-keys. Noted benefit: S1 makes the footer line true before the Father Mac demo. /protocol/
+keys. Noted benefit: S1 makes the footer line true before the pastor's demo. /protocol/
 appears in Stage 5's inventory and is revisited at Stage 7 only if the founder flags it.
 
 **Slice map:** S0 (spec doc, `slice/protocol-doc`) ──✋ founder key on the draft──▶ S1
@@ -378,7 +378,7 @@ appears in Stage 5's inventory and is revisited at Stage 7 only if the founder f
 Caddy security.txt──▶ floor done. Stages 5–7 keys ──▶ S2 (`slice/pages-core`: model,
 renderer+pins, authz, audit, manager) ──▶ S3 (`slice/pages-surfaces`: public/member routes,
 no-oracle landing, moderation target, nav) ──▶ S4 (`slice/community-identity`: settings
-identity + hub + switcher + St. Patrick's seed) ──▶ Stage 8 final pass.
+identity + hub + switcher + St. Brigid's seed) ──▶ Stage 8 final pass.
 
 **Rollback honesty (keyed amendment):** for S2 and later, rollback = unroute/disable the
 surfaces; data preserved. Migrating `apps/pages` backwards is last-resort and DESTROYS
@@ -418,7 +418,7 @@ copy stand as drawn. All 10 screens + variant states accepted as drawn.
 
 # ✋ STAGE 7 — KEYED (Jasiah, 2026-07-16) — mid-fi
 
-Greyscale Commons grid, fictional St. Patrick's seed content (the §J canon: Our story +
+Greyscale Commons grid, fictional St. Brigid's seed content (the §J canon: Our story +
 Mass times live, Ministries draft, Old bulletin archived; Nuala the member, Fr. Declan the
 admin), Playwright shots at 390px + 1280 desktop. Artifacts:
 `docs/wireframes/identity/midfi/` (mockups, `commons.css` greyscale system, `shoot.mjs`
@@ -499,10 +499,9 @@ before each merge). What the close-out did:
    door a visitor sees, a page in the parish's own words, and the footer landing on the
    instance's own /protocol/. `docs/demo-walkthrough.md` carries all eleven with the
    demo script; St. Brigid's being St. Brigid's.
-4. **Demo canon note.** The build order said "St. Patrick's seed"; the demo parish
-   remains the fictional **St. Brigid's** — St. Patrick is the real parish and the
-   keyring keeps real-parish specifics out of git. The rename is the founder's explicit
-   call if ever wanted. The seeded community is public so the front door renders.
+4. **Demo canon note.** The demo parish is the fictional **St. Brigid's** everywhere, and
+   real parish names stay out of this repository by rule. The seeded community is public
+   so the front door renders.
 
 Open at this stop: the six pre-existing contrast spots above; the settings error-redirect
 discarding typed input (all settings actions share the shape); PR #71 (person blind

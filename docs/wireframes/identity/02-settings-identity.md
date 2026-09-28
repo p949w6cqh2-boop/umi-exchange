@@ -1,7 +1,7 @@
 # 02 · Settings → Identity — 390px
 ```
 ┌──────────────────────────────┐
-│ St. Patrick's · Settings     │
+│ St. Brigid's · Settings      │
 │ … (Join code / Details /     │  existing sections above
 │    Appearance) …             │
 ├─ Identity ───────────────────┤  NEW section (after Appearance)

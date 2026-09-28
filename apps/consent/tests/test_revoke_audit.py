@@ -20,7 +20,7 @@ def _user(handle):
 def _active_consent(user):
     return Consent.objects.create(
         participant=user,
-        granted_to="St. Patrick Conference",
+        granted_to="St. Brigid Conference",
         scope=["case_records", "case_export"],
         purpose="test",
         method="digital",

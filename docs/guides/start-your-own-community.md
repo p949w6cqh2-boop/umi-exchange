@@ -7,6 +7,10 @@ the first one.*
 > chapter, or neighbourhood can run its own board — on somebody's existing
 > server or on your own.
 
+**Want to try it with your own hands first?** The [parish starter kit](parish-starter-kit.md)
+runs a practice parish on your laptop in about half an hour, walks one need from asked to
+answered, and has ready-made categories, a bulletin notice and a coordinator practice session.
+
 ## Door 1 — Start a community on an existing UMI site (five minutes)
 
 If a UMI site is already running (say, your diocese or a neighbouring parish
@@ -15,7 +19,7 @@ hosts one), you don't need a server. You need an account and a name.
 1. **Sign up** on that site (email is optional — a username is enough).
 2. After signing in you'll land on the welcome page with **two cards: join a
    community, or start one**. Pick **Start a community**.
-3. Give it its **name** ("St. Patrick Parish") — you become its first
+3. Give it its **name** ("St. Brigid Parish") — you become its first
    **admin** (coordinator).
 4. The community gets a private **join code**. Share it the way you'd share
    anything parish-only: the bulletin, the sacristy corkboard, a QR code in
@@ -37,7 +41,7 @@ self-hosted web app: Docker, one Postgres database, a bit of patience.
 
 The honest path, start to finish, is already written down:
 
-- **`docs/st-patrick-playbook.md`** — the 90-day pilot playbook: server setup
+- **`docs/parish-pilot-playbook.md`** — the 90-day pilot playbook: server setup
   in weeks 1–2, coordinator onboarding, quiet launch, full-parish opening,
   and how to decide afterwards whether it earned its place. Written for a
   real parish, reusable for yours.
