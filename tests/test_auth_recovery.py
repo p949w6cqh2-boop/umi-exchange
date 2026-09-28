@@ -59,9 +59,9 @@ def test_email_lookup_is_case_insensitive(client):
 
 
 def test_email_is_unique_per_account():
-    # The model enforces one account per email (and the registration form says
-    # "This email is already in use"), so the recovery email always carries
-    # exactly one username. This pins the invariant the flow relies on.
+    # The model enforces one account per email (unique=True), so the recovery email
+    # always carries exactly one username. This pins the invariant the flow relies on.
+    # (The registration form no longer says "already in use": #171.)
     from django.db import IntegrityError
 
     User.objects.create_user("marta", email="shared@example.org", password=STRONG)

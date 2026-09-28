@@ -14,10 +14,12 @@ One helper module, three jobs:
 import time
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 EMAIL_VERIFY_SALT = "accounts.email-verify"
 HONEYPOT_TS_SALT = "accounts.register-ts"
@@ -98,6 +100,40 @@ def send_add_email_verification(request, user, email):
         },
     )
     send_mail("Confirm your email — UMI Exchange", body, None, [email], fail_silently=False)
+
+
+# ── registration (docs/specs/email-confirmation.md "Registration", option C; #171) ──
+#
+# Registration no longer writes the address. It used to, unproven, and User.email is
+# unique=True, so anyone could register with YOUR address and deny it to you for good.
+# It also used to refuse a taken address with "This email is already in use", which told
+# any stranger whether an address had an account here: the one question password reset
+# and username recovery both refuse to answer. Now the address rides in the add-email link
+# (#169's route writes it, with its proof, on the click), and the person registering sees
+# the same page whether or not the address is taken.
+#
+# The address waits in the SESSION, never on the user row, so the waiting page can say
+# where the link went and the resend button can reach it.
+PENDING_EMAIL_KEY = "pending_email"
+
+
+def send_registration_email(request, user, email):
+    """The confirm link, or, when the address already belongs to another account, a notice
+    to its owner instead. A link there would only be refused at confirm time; the notice
+    points at the sign-in they probably forgot. It names no account."""
+    taken = get_user_model().objects.filter(email__iexact=email).exclude(pk=user.pk).exists()
+    if not taken:
+        send_add_email_verification(request, user, email)
+        return
+    body = render_to_string(
+        "emails/already_registered.txt",
+        {
+            "login_link": request.build_absolute_uri(reverse("login")),
+            "username_link": request.build_absolute_uri(reverse("username_recovery")),
+            "reset_link": request.build_absolute_uri(reverse("password_reset")),
+        },
+    )
+    send_mail("About your UMI Exchange account", body, None, [email], fail_silently=False)
 
 
 def send_verification_email(request, user):
