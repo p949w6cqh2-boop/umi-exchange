@@ -1,11 +1,11 @@
 # 05 · Community page — member view — 390px
 ```
 ┌──────────────────────────────┐
-│ St. Patrick's        ⌂ ▤ ⊕ ▣│  community chrome + bottom nav
+│ St. Brigid's         ⌂ ▤ ⊕ ▣│  community chrome + bottom nav
 ├──────────────────────────────┤
 │ Our story                    │  h1 = page title (platform-rendered)
 │ Written by the coordinators  │  mandatory byline, not suppressible
-│ of St. Patrick's             │
+│ of St. Brigid's              │
 │ ┌─ prose well ─────────────┐ │
 │ │ (content_html, h2–h4     │ │  no classes/ids in content;
 │ │  p/lists/quotes/links)   │ │  images appear as plain links

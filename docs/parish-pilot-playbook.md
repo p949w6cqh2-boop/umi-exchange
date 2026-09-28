@@ -1,6 +1,6 @@
-# St. Patrick Implementation Playbook
+# Parish Pilot Playbook
 
-*A 90-day guide to launching UMI Exchange at St. Patrick parish.*
+*A 90-day guide to launching UMI Exchange in a parish. Wherever you see [Parish], `app.yourparish.org` or `YOURCODE`, put in your own.*
 *Refreshed 2026-08-01 against the `main` branch. See `STATE.md` for the verified feature list.*
 
 > **When can this start?** Not before the safety gate closes. Six hard preconditions are
@@ -35,7 +35,7 @@ are shared between the two of them and their coordinator — a trusted person ke
 the introductions safe. It looks less like an app and more like a parish bulletin: warm,
 calm, and uncluttered.
 
-**Why St. Patrick needs it.** Right now, requests for help travel by memory and
+**Why a parish needs it.** Right now, requests for help travel by memory and
 word of mouth — a note in the office, a mention after Mass, a name someone half
 remembers. Things fall through the cracks. This gives the parish one trustworthy
 place to see who needs help and who can give it, without anyone's phone number
@@ -56,7 +56,7 @@ A steady, unhurried pace. Each phase is two weeks.
 - Provision a small server (VPS) or arrange hosting.
 - Install Docker, run the hardening script, configure the environment.
 - Deploy the app, run database setup, confirm the health check is green.
-- Create the St. Patrick community and the first **admin** (coordinator) account.
+- Create the parish's community and the first **admin** (coordinator) account.
 - *Outcome:* a working, secured site at the parish's web address.
 
 ### Weeks 3–4 — Onboard the coordinator team
@@ -97,7 +97,7 @@ A steady, unhurried pace. Each phase is two weeks.
 
 > This section is for whoever sets up the server. Everyone else can skip it.
 > Commands assume a fresh Ubuntu VPS with Docker installed. Replace
-> `app.stpatrick.org` with the parish's actual domain (or server IP).
+> `app.yourparish.org` with the parish's actual domain (or server IP).
 
 **1. Clone the repository**
 ```bash
@@ -121,8 +121,8 @@ fresh secret — paste each result in:
 SECRET_KEY=<paste output of: python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())">
 ENCRYPTION_KEY=<paste output of: python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())">
 BLIND_INDEX_KEY=<paste output of: python3 -c "import secrets; print(secrets.token_urlsafe(32))">
-ALLOWED_HOSTS=app.stpatrick.org
-SITE_URL=https://app.stpatrick.org
+ALLOWED_HOSTS=app.yourparish.org
+SITE_URL=https://app.yourparish.org
 DATABASE_URL=postgres://umi:${DB_PASSWORD}@db:5432/umi_exchange
 DEBUG=False
 DJANGO_SETTINGS_MODULE=config.settings.production
@@ -140,7 +140,7 @@ SENTRY_DSN=            # leave blank unless you use Sentry
 > insecurely. `BLIND_INDEX_KEY` must be its own dedicated secret.
 
 **4. Point the web server at your domain.** Edit `docker/Caddyfile.prod` and
-replace the placeholder domain with `app.stpatrick.org`. Caddy will fetch an
+replace the placeholder domain with `app.yourparish.org`. Caddy will fetch an
 HTTPS certificate automatically.
 
 **5. Start everything (production)**
@@ -162,7 +162,7 @@ docker compose -f docker/docker-compose.prod.yml exec app python manage.py colle
 
 **8. Verify the health endpoint** — should return `ok`:
 ```bash
-curl https://app.stpatrick.org/health/
+curl https://app.yourparish.org/health/
 # → {"status": "ok", "db": "ok", "cache": "ok"}
 ```
 
@@ -176,18 +176,18 @@ echo "0 3 * * * cd /opt/umi-exchange && bash scripts/backup.sh" | crontab -
 A backup is only real once you have restored from it — rehearse with
 `scripts/restore.sh` before launch (we run the same rehearsal on our own instance).
 
-You're live. Log in at `https://app.stpatrick.org/` with the coordinator account
-and create the **St. Patrick** community (this also generates the join code).
+You're live. Log in at `https://app.yourparish.org/` with the coordinator account
+and create the parish's community (this also generates the join code).
 
 ---
 
 ## 4. Onboarding materials (ready to copy)
 
 ### Bulletin announcement (one paragraph)
-> **Help One Another — St. Patrick's Care Board.** Our parish now has a simple,
+> **Help One Another — [Parish] Care Board.** Our parish now has a simple,
 > private way to ask for a hand and to offer one. Need a ride to an appointment,
 > a meal during illness, help with yard work, or a tutor for a child? Able to
-> give a little time or a skill? Join St. Patrick's Care Board, a members-only
+> give a little time or a skill? Join the [Parish] Care Board, a members-only
 > board where neighbors quietly connect. Your phone number stays private until
 > *you* agree to a match. Scan the code in this bulletin or ask a parish
 > coordinator after Mass to get started. *"There were no needy persons among
@@ -195,7 +195,7 @@ and create the **St. Patrick** community (this also generates the join code).
 
 ### Pulpit script (≈30 seconds, after Mass)
 > "Before you go — our parish has a new, simple way to care for one another.
-> It's called the St. Patrick Care Board. If you need help — a ride, a meal, a
+> It's called the [Parish] Care Board. If you need help — a ride, a meal, a
 > repair — or if you have a little time or a skill to share, you can join. It's
 > private: your contact information is never shown until you choose to accept a
 > match. There's a code in today's bulletin, and coordinators are at the doors to
@@ -203,7 +203,7 @@ and create the **St. Patrick** community (this also generates the join code).
 
 ### QR code / join code
 Each community has a unique join code and a matching QR image.
-- **Placeholder join link:** `https://app.stpatrick.org/join/?code=STPATRICK` —
+- **Placeholder join link:** `https://app.yourparish.org/join/?code=YOURCODE` —
   the real code is generated automatically when the community is created.
 - **To get the real QR code:** a coordinator (admin) opens **Community Settings**
   and uses the join-code / QR option there. Print that QR image for the bulletin
@@ -212,7 +212,7 @@ Each community has a unique join code and a matching QR image.
 
 ### One-page quick-start guide for volunteers (plain English)
 
-**Welcome to the St. Patrick Care Board** 🌿
+**Welcome to the [Parish] Care Board** 🌿
 A private place to ask for help or offer it. Here's all you need to know.
 
 **1. Join.** Point your phone camera at the parish QR code (or open the link from
@@ -326,7 +326,7 @@ This tool is built to protect people. In plain terms:
   authentication (2FA)** for every coordinator account. It is built in: once a
   coordinator enrolls an authenticator app, login **requires** the extra code
   (with printed recovery codes as backup).
-- **The data stays under parish control.** St. Patrick can **self-host** the tool
+- **The data stays under parish control.** The parish can **self-host** the tool
   on its own server (the data lives there and nowhere else), or we can host it on
   the parish's behalf. Either way it is **private to the parish** — there is no
   public directory, no selling of data, no ads.

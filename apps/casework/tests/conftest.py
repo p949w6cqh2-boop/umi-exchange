@@ -42,7 +42,7 @@ def make_user(handle, email_confirmed=True):
 
 
 def make_community(created_by):
-    kwargs = dict(name="St. Patrick Conference", slug="st-patrick", created_by=created_by)
+    kwargs = dict(name="St. Brigid Conference", slug="st-brigid", created_by=created_by)
     try:
         return Community.objects.create(**kwargs)
     except Exception:
