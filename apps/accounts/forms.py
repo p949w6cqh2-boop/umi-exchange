@@ -23,8 +23,24 @@ class ConfirmedEmailPasswordResetForm(PasswordResetForm):
 
 
 class RegistrationForm(forms.ModelForm):
-    """Registration with optional email."""
+    """Registration with optional email.
 
+    `email` is deliberately NOT a model field here, for the same reason ProfileForm's
+    is not (#169): saving would write User.email unproven. The view sends the address a
+    link instead, and the click writes it (docs/specs/email-confirmation.md, option C).
+    """
+
+    field_order = ["username", "email", "password", "password_confirm"]
+
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(
+            attrs={
+                "class": "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]",
+                "placeholder": "Email (optional)",
+            }
+        ),
+    )
     password = forms.CharField(
         widget=forms.PasswordInput(
             attrs={
@@ -44,7 +60,7 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["username", "email"]
+        fields = ["username"]
         widgets = {
             "username": forms.TextInput(
                 attrs={
@@ -52,21 +68,14 @@ class RegistrationForm(forms.ModelForm):
                     "placeholder": "Choose a username",
                 }
             ),
-            "email": forms.EmailInput(
-                attrs={
-                    "class": "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]",
-                    "placeholder": "Email (optional)",
-                }
-            ),
         }
 
     def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if not email:
-            return None  # Store as NULL so unique constraint allows multiple blanks
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("This email is already in use.")
-        return email
+        # No uniqueness check and no "already in use" error (#171). This form writes no
+        # address, so there is nothing to collide with, and answering differently for a
+        # taken address told any stranger who has an account here. The collision is
+        # handled by what gets SENT: a link, or a notice to the address's owner.
+        return self.cleaned_data.get("email") or None
 
     def clean(self):
         cleaned = super().clean()

@@ -6,6 +6,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 
 from .conftest import register_payload
 from .factories import CategoryFactory, CommunityFactory, MemberFactory, UserFactory
@@ -165,24 +166,24 @@ class TestRegistration:
         assert users.count() == 2
         assert all(user.email is None for user in users)
 
-    def test_register_duplicate_email_rejected(self):
-        client = Client()
+    def test_register_with_a_taken_email_answers_like_success(self):
+        # #171: this used to re-render with "This email is already in use", which told
+        # any stranger whether an address had an account here. Now the registration goes
+        # through, writes no address, and the owner gets a notice (tests/test_registration_confirm.py).
+        get_user_model().objects.create_user(
+            "first-owner", email="taken@example.com", password="SecurePass123!", email_confirmed_at=timezone.now()
+        )
         payload = register_payload(
-            username="first-owner",
+            username="second-claimant",
             email="taken@example.com",
             password="SecurePass123!",
             password_confirm="SecurePass123!",
         )
-        first = client.post(reverse("register"), payload, REMOTE_ADDR="10.99.2.1")
-        assert first.status_code == 302
-        response = client.post(
-            reverse("register"),
-            {**payload, "username": "second-claimant"},
-            REMOTE_ADDR="10.99.2.2",
-        )
-        assert response.status_code == 200  # Re-renders form with errors
-        assert "This email is already in use." in response.content.decode()
-        assert not get_user_model().objects.filter(username="second-claimant").exists()
+        response = Client().post(reverse("register"), payload, REMOTE_ADDR="10.99.2.2")
+        assert response.status_code == 302
+        assert "already in use" not in response.content.decode()
+        assert get_user_model().objects.get(username="second-claimant").email is None
+        assert get_user_model().objects.get(username="first-owner").email == "taken@example.com"
 
 
 @pytest.mark.django_db

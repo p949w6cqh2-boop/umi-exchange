@@ -22,11 +22,13 @@ from django_ratelimit.decorators import ratelimit
 
 from .forms import LoginForm, OTPTokenForm, ProfileForm, RegistrationForm, UsernameRecoveryForm
 from .verification import (
+    PENDING_EMAIL_KEY,
     honeypot_timestamp,
     read_add_email_token,
     read_email_token_claims,
     register_post_trips,
     send_add_email_verification,
+    send_registration_email,
     send_verification_email,
 )
 
@@ -59,9 +61,15 @@ class RegisterView(CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         login(self.request, self.object, backend="django.contrib.auth.backends.ModelBackend")
-        if self.object.email:
-            send_verification_email(self.request, self.object)
-            messages.info(self.request, "We've sent a confirmation link to your email — click it to finish setup.")
+        email = form.cleaned_data.get("email")
+        if email:
+            # Option C: the address is NOT on the account. It rides in the link, and the
+            # click writes it. It waits in the session (set AFTER login, which rotates the
+            # session) so the waiting page and the resend button can reach it. The same
+            # words whether or not the address is taken: #171.
+            self.request.session[PENDING_EMAIL_KEY] = email
+            send_registration_email(self.request, self.object, email)
+            messages.info(self.request, "We've sent a confirmation link to your email. Click it to finish setup.")
         return response
 
 
@@ -247,6 +255,8 @@ class ConfirmAddEmailView(View):
         # A coordinator vouch was a human act performed at church in front of a
         # witness; it is not ours to overwrite with a weaker machine fact.
         user.save(update_fields=fields)
+        # Clicked in the same browser that registered: nothing is pending any more.
+        request.session.pop(PENDING_EMAIL_KEY, None)
 
         messages.success(request, "Email confirmed — you can now reset your password by email.")
         return redirect("account-settings" if request.user.is_authenticated else "login")
@@ -352,6 +362,12 @@ class VerifySendView(LoginRequiredMixin, View):
         if not needs_human and not needs_address:
             return redirect("hub:index")
         if not user.email:
+            pending = request.session.get(PENDING_EMAIL_KEY)
+            if pending:
+                # Registered with an address that is not on the account yet (option C).
+                send_registration_email(request, user, pending)
+                messages.success(request, "Confirmation link sent. Check your inbox (and spam folder).")
+                return redirect("verify-pending")
             messages.info(
                 request,
                 "There's no email on your account — ask a coordinator at church to vouch for you instead.",
@@ -366,3 +382,10 @@ class VerifyPendingView(LoginRequiredMixin, TemplateView):
     """The soft gate's landing page: plain words, both exits."""
 
     template_name = "accounts/verify_pending.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # An address typed at registration is not on the account until its link is
+        # clicked (option C); the session is the only place it waits.
+        ctx["pending_email"] = self.request.session.get(PENDING_EMAIL_KEY)
+        return ctx

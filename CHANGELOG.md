@@ -5,6 +5,11 @@
 
 ## 2026-09-28
 
+- **Signing up with an email now works like adding one later.** We save your address only after
+  you click the link we send it. Two things that fixes: someone could sign up with your address
+  before you did and keep you from ever using it here, and the sign-up page told anyone who asked
+  whether an address already had an account. Now it answers the same way either way. If the
+  address is already on an account, we email its owner a short note instead of a link.
 - **Password resets now only go to an email address you've confirmed.** An address nobody had
   confirmed used to be trusted like any other, so a mistyped or planted one could receive your
   reset link. Now reset links, username reminders and notification emails only go to an address
