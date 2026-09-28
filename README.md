@@ -8,13 +8,10 @@ An open-source tool for coordinating reciprocal exchange in communities. A Catho
 
 ```bash
 # Clone and enter the project
-git clone https://github.com/your-org/umi-exchange.git
+git clone https://github.com/p949w6cqh2-boop/umi-exchange.git
 cd umi-exchange
 
-# Run the interactive setup
-bash scripts/setup.sh
-
-# Or manually:
+# Set up and run
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # Edit with your DB and Redis URLs

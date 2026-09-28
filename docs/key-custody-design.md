@@ -55,6 +55,22 @@ Three changes, in order:
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
   The uptime monitor (monitoring runbook) makes the downtime loud.
 
+## Fourth entry, 2026-09-28: the rig now migrates
+
+The rig stopped at `up -d app`, and nothing else in the stack migrates: the image runs gunicorn and
+nothing more. #174 carried `accounts.0006`, so migrate had to be run by hand straight after the rig,
+or the new code would have queried a column the old schema did not have.
+
+`deploy` now finishes the job. After `up -d app` it notes the new container's id, shreds tmpfs
+exactly as before, then runs `docker exec <id> python manage.py migrate --noinput`. The migrate step
+comes after the shred on purpose: the container already holds its keys (Third entry, below), so it
+never needs the plaintext file, and tmpfs lives no longer than it did. A failed migrate stops the rig
+with `MIGRATE FAILED` and says what state it left behind. Pinned by
+`tests/test_deploy_with_keys.py::test_deploy_migrates_after_up_and_after_the_shred`.
+
+Unchanged, and still the steward's job: take the backup before building (`docs/deploy/vps-runbook.md`
+§10). The rig migrates; it does not check that a backup exists.
+
 ## ✅ Third entry, 2026-09-11 (same night, after the fixes) — **THE RIG NOW WORKS, AND THE AVAILABILITY RESIDUAL IS DISPROVED**
 
 Both defects below are fixed, and the rehearsal was re-run end to end against production.

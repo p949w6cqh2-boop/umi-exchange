@@ -247,3 +247,41 @@ def test_compose_passes_key_material_into_the_container():
             ".env, and --env-file only does ${...} substitution — so the app will boot "
             "without it and production will refuse to start."
         )
+
+
+# ── The migrate step, 2026-09-28 ──────────────────────────────────────────────
+#
+# Nothing in this stack migrates on its own: the image runs gunicorn and nothing else,
+# and the rig stopped at `up -d app`. #174 shipped accounts.0006, so migrate had to be
+# run by hand straight after the rig, or the new code would have queried a column the
+# old schema did not have.
+
+
+def test_deploy_migrates_after_up_and_after_the_shred(age_home):
+    out = age_home["dir"] / "keys.env.age"
+    run(
+        ["encrypt", str(age_home["plain"])],
+        env={"UMI_AGE_RECIPIENTS": str(age_home["recipients"]), "UMI_KEYS_AGE": str(out)},
+    )
+    r = run(
+        ["deploy"],
+        env={
+            "UMI_AGE_IDENTITY": str(age_home["identity"]),
+            "UMI_KEYS_AGE": str(out),
+            "UMI_DROPLET": "root@198.51.100.7",
+            "DRY_RUN": "1",
+        },
+    )
+    assert r.returncode == 0, r.stderr
+    plan = r.stdout
+    up = plan.index("up -d app")
+    shred = plan.index("shred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env")
+    migrate = plan.index("manage.py migrate --noinput")
+    # Migrate runs against the NEW container, and only after the plaintext is gone:
+    # the container already carries its keys, so this step never needs the tmpfs file.
+    assert up < shred < migrate
+    # The container id is resolved on the droplet, not expanded on the laptop.
+    assert "app_id=$(" in plan
+    assert 'docker exec "$app_id"' in plan
+    # A failed migrate must say what state it left behind, not just exit non-zero.
+    assert "MIGRATE FAILED" in plan

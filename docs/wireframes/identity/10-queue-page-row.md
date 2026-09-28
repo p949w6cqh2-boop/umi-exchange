@@ -1,7 +1,7 @@
 # 10 · Moderation queue — page row state — 390px
 ```
 ┌──────────────────────────────┐
-│ Reports · St. Patrick's      │  existing queue frame
+│ Reports · St. Brigid's       │  existing queue frame
 ├──────────────────────────────┤
 │ (need row … as today)        │
 ├──────────────────────────────┤
