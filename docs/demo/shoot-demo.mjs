@@ -19,7 +19,8 @@ import { AxeBuilder } from "@axe-core/playwright";
 
 const BASE = process.argv[2] || "http://127.0.0.1:8123";
 const OUT = path.dirname(fileURLToPath(import.meta.url));
-const PASSWORD = "demo-parish";
+// A laptop seed uses the public password; a live site's is private (rotate_demo_password).
+const PASSWORD = process.env.DEMO_PASSWORD || "demo-parish";
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21aa"];
 
 // The walkthrough, in order. `as` names the signed-in demo account (null = a

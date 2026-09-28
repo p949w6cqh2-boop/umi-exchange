@@ -5,6 +5,11 @@
 
 ## 2026-09-28
 
+- **The demo parish no longer opens with a password anyone can read.** Its twelve made-up
+  neighbors shared one password, and that password is written in our public code. On the live
+  board that meant anyone could sign in as the demo's coordinator, and a coordinator can vouch for
+  any account as a real person. We changed it on the live board, and setting the demo up again now
+  comes with a step that changes it every time.
 - **Signing up with an email now works like adding one later.** We save your address only after
   you click the link we send it. Two things that fixes: someone could sign up with your address
   before you did and keep you from ever using it here, and the sign-up page told anyone who asked
