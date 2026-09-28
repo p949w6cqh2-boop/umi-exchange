@@ -71,6 +71,12 @@ with `MIGRATE FAILED` and says what state it left behind. Pinned by
 Unchanged, and still the steward's job: take the backup before building (`docs/deploy/vps-runbook.md`
 §10). The rig migrates; it does not check that a backup exists.
 
+Same day, a second fix. The shred was an ordinary line after `up`, and the remote script runs under
+`set -e`, so a failed `up -d app` exited before it and left the decrypted keys in `/dev/shm` until the
+droplet next rebooted. A trap on EXIT, set before any plaintext lands, now shreds both files on every
+path. Pinned by `test_a_failed_up_still_shreds_the_keys`, which runs the real remote script against a
+fake droplet whose `docker ... up` fails.
+
 ## ✅ Third entry, 2026-09-11 (same night, after the fixes) — **THE RIG NOW WORKS, AND THE AVAILABILITY RESIDUAL IS DISPROVED**
 
 Both defects below are fixed, and the rehearsal was re-run end to end against production.
