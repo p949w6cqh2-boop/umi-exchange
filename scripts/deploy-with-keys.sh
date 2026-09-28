@@ -12,7 +12,7 @@
 #
 # Modes:
 #   encrypt <plaintext-env-file>   age-encrypt key material -> $UMI_KEYS_AGE
-#   deploy                         decrypt -> ssh -> tmpfs merge -> compose up -> shred
+#   deploy                         decrypt -> ssh -> tmpfs merge -> compose up -> shred -> migrate
 #   check                          prove the droplet .env holds no plaintext keys
 #   check --local-file <file>      same proof against a local file (used by tests)
 #
@@ -78,6 +78,10 @@ cmd_deploy() {
   # Everything the droplet runs, in one heredoc: read plaintext from stdin straight
   # into tmpfs, merge with the (key-free) .env, bring the app up, shred both tmpfs
   # files. Plaintext never touches droplet disk; nothing is scp'd.
+  # Then migrate, through the container that is already running: it holds its keys in
+  # its own config, so this step never needs the tmpfs file and runs after the shred.
+  # Nothing else in the stack migrates (the image runs gunicorn only), so a deploy that
+  # carries a migration served new code against the old schema until this was added.
   local remote_script
   remote_script=$(cat <<REMOTE
 set -euo pipefail
@@ -88,8 +92,12 @@ grep -Eq '^($KEY_NAMES)=' .env && { echo 'REFUSING: droplet .env still carries p
 cat .env /dev/shm/umi-keys.env > /dev/shm/umi-full.env
 $COMPOSE up -d app
 $COMPOSE ps app
+app_id=\$($COMPOSE ps -q app || true)
 shred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env
-echo 'tmpfs shredded; deploy done'
+echo 'tmpfs shredded'
+[ -n "\$app_id" ] || { echo 'MIGRATE FAILED: no app container after up, so nothing was migrated. Check: docker ps'; exit 3; }
+docker exec "\$app_id" python manage.py migrate --noinput || { echo 'MIGRATE FAILED: the new app is running on a schema it does not match. Read the error above, fix it, and re-run: docker exec <app container> python manage.py migrate. The backup taken before this deploy is the fallback.'; exit 3; }
+echo 'migrations applied; deploy done'
 REMOTE
 )
 
