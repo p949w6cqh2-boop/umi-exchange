@@ -199,7 +199,8 @@ class TestLake1AuditSweep:
     def test_need_contact_disclosed_to_coordinator(self, world, login):
         poster = world["member"]
         poster.user.email = "poster@example.test"
-        poster.user.save(update_fields=["email"])
+        poster.user.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
+        poster.user.save(update_fields=["email", "email_confirmed_at"])
         need = Need.objects.create(
             community=world["community"],
             requester=poster,
@@ -220,7 +221,8 @@ class TestLake1AuditSweep:
     def test_need_detail_no_contact_or_event_for_ordinary_member(self, world, login):
         poster = world["member"]
         poster.user.email = "poster@example.test"
-        poster.user.save(update_fields=["email"])
+        poster.user.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
+        poster.user.save(update_fields=["email", "email_confirmed_at"])
         need = Need.objects.create(
             community=world["community"],
             requester=poster,
@@ -238,7 +240,8 @@ class TestLake1AuditSweep:
     def test_offer_contact_disclosed_to_coordinator(self, world, login):
         poster = world["member"]
         poster.user.email = "offerer@example.test"
-        poster.user.save(update_fields=["email"])
+        poster.user.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
+        poster.user.save(update_fields=["email", "email_confirmed_at"])
         offer = Offer.objects.create(
             community=world["community"],
             offerer=poster,
@@ -258,7 +261,8 @@ class TestLake1AuditSweep:
     def test_offer_detail_no_contact_for_ordinary_member(self, world, login):
         poster = world["member"]
         poster.user.email = "offerer@example.test"
-        poster.user.save(update_fields=["email"])
+        poster.user.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
+        poster.user.save(update_fields=["email", "email_confirmed_at"])
         offer = Offer.objects.create(
             community=world["community"],
             offerer=poster,

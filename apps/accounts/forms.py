@@ -2,9 +2,24 @@
 
 from django import forms
 from django.contrib.auth import get_user_model, password_validation
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 
 User = get_user_model()
+
+
+class ConfirmedEmailPasswordResetForm(PasswordResetForm):
+    """Password reset that mails ONLY an address its owner has proven (#172).
+
+    Stock reset trusted whatever sat in User.email. A typo at sign-up made a stranger's
+    inbox the account's recovery path: they request a reset, receive a working link,
+    and own the account — and the holder did nothing wrong beyond one typo.
+
+    The view answers identically whether this yields a user or not (Django always
+    redirects to the done page), so gating here adds no enumeration signal.
+    """
+
+    def get_users(self, email):
+        return (u for u in super().get_users(email) if u.email_confirmed_at is not None)
 
 
 class RegistrationForm(forms.ModelForm):
