@@ -7,9 +7,11 @@
 > written down in `docs/ethics-and-safety.md`; **three are done** (on-behalf-of consent
 > handled honestly, a written legal-response plan, backups proven by real restores) and
 > **three remain** (monitoring that pages a person, key custody held by more than one
-> person, governance beyond a solo steward). Until all six are checked, the software runs
-> on fictional demo data only — no real parishioner enters the system. This document is
-> the plan for the day the gate opens.
+> person, governance beyond a solo steward). Until all six are checked, the board carries
+> fictional demo content only, and no parishioner's need, situation or identity enters the
+> system. That promise covers content, not accounts: sign-up is open on the reference
+> instance and some real people have registered there (`docs/ethics-and-safety.md`, Part 4).
+> This document is the plan for the day the gate opens.
 
 ---
 
