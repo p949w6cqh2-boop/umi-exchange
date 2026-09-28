@@ -131,6 +131,22 @@ def test_digest_honours_the_email_opt_out(world):
     assert mail.outbox == [], "an assignee who opted out of email must not be emailed"
 
 
+def test_digest_withholds_email_from_an_unproven_address_but_keeps_the_notice(world):
+    """#172. Follow-up TITLES are coordinator-written plaintext ("Call Maria about the
+    eviction hearing") and nothing else in the digest is encrypted. A coordinator who
+    mistyped their address at sign-up would mail case detail to a stranger. The
+    reminder must still reach them in the app — only the email is withheld."""
+    world.coord_u.email_confirmed_at = None
+    world.coord_u.save(update_fields=["email_confirmed_at"])
+    _overdue_followup(world, world.coordinator)
+
+    sent = followup_overdue_digest()
+
+    assert sent == 1
+    assert Notification.objects.filter(recipient=world.coord_u, type="followup_overdue").exists()
+    assert mail.outbox == [], "an unproven address must not receive case detail"
+
+
 def test_digest_still_reaches_the_assignee_who_has_access(world):
     """The guards must not silence the one justified digest."""
     _overdue_followup(world, world.coordinator)

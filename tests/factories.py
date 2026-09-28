@@ -21,6 +21,10 @@ class UserFactory(factory.django.DjangoModelFactory):
     # backfill migration's promise) — unverified-path tests set verified_at=None.
     verified_at = factory.LazyFunction(timezone.now)
     verified_via = "backfill"
+    # Same convention, second column (#172): a factory user has a PROVEN address, the
+    # way a normal account does once it clicks its link. Unconfirmed-path tests set
+    # email_confirmed_at=None explicitly, as unverified-path tests do for verified_at.
+    email_confirmed_at = factory.LazyFunction(timezone.now)
 
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):  # noqa: N805 (factory_boy hook signature)

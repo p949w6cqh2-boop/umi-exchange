@@ -22,11 +22,13 @@ from django_ratelimit.decorators import ratelimit
 
 from .forms import LoginForm, OTPTokenForm, ProfileForm, RegistrationForm, UsernameRecoveryForm
 from .verification import (
+    PENDING_EMAIL_KEY,
     honeypot_timestamp,
     read_add_email_token,
-    read_email_token,
+    read_email_token_claims,
     register_post_trips,
     send_add_email_verification,
+    send_registration_email,
     send_verification_email,
 )
 
@@ -59,9 +61,15 @@ class RegisterView(CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         login(self.request, self.object, backend="django.contrib.auth.backends.ModelBackend")
-        if self.object.email:
-            send_verification_email(self.request, self.object)
-            messages.info(self.request, "We've sent a confirmation link to your email — click it to finish setup.")
+        email = form.cleaned_data.get("email")
+        if email:
+            # Option C: the address is NOT on the account. It rides in the link, and the
+            # click writes it. It waits in the session (set AFTER login, which rotates the
+            # session) so the waiting page and the resend button can reach it. The same
+            # words whether or not the address is taken: #171.
+            self.request.session[PENDING_EMAIL_KEY] = email
+            send_registration_email(self.request, self.object, email)
+            messages.info(self.request, "We've sent a confirmation link to your email. Click it to finish setup.")
         return response
 
 
@@ -233,7 +241,11 @@ class ConfirmAddEmailView(View):
             return redirect("account-settings" if request.user.is_authenticated else "login")
 
         user.email = email
-        fields = ["email"]
+        # The address and its proof in ONE save. User.save() clears a confirmation when
+        # the address changes WITHOUT a fresh one; writing a fresh one here is what tells
+        # it this change is proven (docs/specs/email-confirmation.md).
+        user.email_confirmed_at = timezone.now()
+        fields = ["email", "email_confirmed_at"]
         if not user.is_human_verified:
             # No verification yet, so this IS the first one and "email" is honest.
             user.verified_at = timezone.now()
@@ -243,6 +255,8 @@ class ConfirmAddEmailView(View):
         # A coordinator vouch was a human act performed at church in front of a
         # witness; it is not ours to overwrite with a weaker machine fact.
         user.save(update_fields=fields)
+        # Clicked in the same browser that registered: nothing is pending any more.
+        request.session.pop(PENDING_EMAIL_KEY, None)
 
         messages.success(request, "Email confirmed — you can now reset your password by email.")
         return redirect("account-settings" if request.user.is_authenticated else "login")
@@ -263,9 +277,12 @@ class UsernameRecoveryView(FormView):
 
     def form_valid(self, form):
         email = form.cleaned_data["email"]
+        # Confirmed addresses only (#172). An unproven address may be a stranger's
+        # typo'd-into inbox; mailing it the username hands over half of a takeover.
+        # The response below is identical either way, so nothing is enumerable.
         usernames = list(
             get_user_model()
-            .objects.filter(email__iexact=email, is_active=True)
+            .objects.filter(email__iexact=email, is_active=True, email_confirmed_at__isnull=False)
             .order_by("username")
             .values_list("username", flat=True)
         )
@@ -293,19 +310,40 @@ class VerifyEmailView(View):
     required (the neighbour may be opening it on their phone's mail app)."""
 
     def get(self, request, token):
-        uid = read_email_token(token)
-        if uid is None:
+        claims = read_email_token_claims(token)
+        if claims is None:
             messages.error(request, "That confirmation link is invalid or has expired. You can request a new one.")
             return redirect("verify-pending" if request.user.is_authenticated else "login")
-        user = get_user_model().objects.filter(pk=uid).first()
+        user = get_user_model().objects.filter(pk=claims["uid"]).first()
         if user is None:
             messages.error(request, "That confirmation link is invalid or has expired. You can request a new one.")
             return redirect("login")
+
+        fields = []
+        # The click proves control of the address the link was SENT to. Confirm the
+        # account's address only if it is still that one. A legacy uid-only token
+        # (claims["email"] is None, issued before 2026-09-26) confirms the current
+        # address — bounded by its 48h life; see read_email_token_claims.
+        sent_to = claims["email"]
+        address_matches = bool(user.email) and (sent_to is None or sent_to.lower() == user.email.lower())
+        if address_matches:
+            user.email_confirmed_at = timezone.now()
+            fields.append("email_confirmed_at")
         if not user.is_human_verified:
             user.verified_at = timezone.now()
             user.verified_via = "email"
-            user.save(update_fields=["verified_at", "verified_via"])
-        messages.success(request, "Email confirmed — welcome aboard.")
+            fields += ["verified_at", "verified_via"]
+        if fields:
+            user.save(update_fields=fields)
+
+        if address_matches:
+            messages.success(request, "Email confirmed — welcome aboard.")
+        elif user.email:
+            # Before #172 this branch still said "Email confirmed" while recording
+            # nothing. Say what actually happened.
+            messages.info(
+                request, "That link was for a different address. Send a fresh one to confirm your current email."
+            )
         return redirect("hub:index" if request.user.is_authenticated else "login")
 
 
@@ -314,20 +352,40 @@ class VerifySendView(LoginRequiredMixin, View):
     """Resend the confirmation link (throttled like the other auth POSTs)."""
 
     def post(self, request):
-        if request.user.is_human_verified:
+        user = request.user
+        needs_human = not user.is_human_verified
+        # A verified account can still carry an address nobody has proven — every
+        # backfill account does. Before #172 this view bounced all verified accounts to
+        # the hub, which would have left exactly those people unable to ever confirm,
+        # and so unable to reset a password by email once reset trusts only proven ones.
+        needs_address = bool(user.email) and user.email_confirmed_at is None
+        if not needs_human and not needs_address:
             return redirect("hub:index")
-        if not request.user.email:
+        if not user.email:
+            pending = request.session.get(PENDING_EMAIL_KEY)
+            if pending:
+                # Registered with an address that is not on the account yet (option C).
+                send_registration_email(request, user, pending)
+                messages.success(request, "Confirmation link sent. Check your inbox (and spam folder).")
+                return redirect("verify-pending")
             messages.info(
                 request,
                 "There's no email on your account — ask a coordinator at church to vouch for you instead.",
             )
             return redirect("verify-pending")
-        send_verification_email(request, request.user)
+        send_verification_email(request, user)
         messages.success(request, "Confirmation link sent — check your inbox (and spam folder).")
-        return redirect("verify-pending")
+        return redirect("verify-pending" if needs_human else "account-settings")
 
 
 class VerifyPendingView(LoginRequiredMixin, TemplateView):
     """The soft gate's landing page: plain words, both exits."""
 
     template_name = "accounts/verify_pending.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # An address typed at registration is not on the account until its link is
+        # clicked (option C); the session is the only place it waits.
+        ctx["pending_email"] = self.request.session.get(PENDING_EMAIL_KEY)
+        return ctx

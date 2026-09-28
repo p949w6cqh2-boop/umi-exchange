@@ -3,6 +3,74 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## 2026-09-28
+
+- **The demo parish no longer opens with a password anyone can read.** Its twelve made-up
+  neighbors shared one password, and that password is written in our public code. On the live
+  board that meant anyone could sign in as the demo's coordinator, and a coordinator can vouch for
+  any account as a real person. We changed it on the live board, and setting the demo up again now
+  comes with a step that changes it every time.
+- **Signing up with an email now works like adding one later.** We save your address only after
+  you click the link we send it. Two things that fixes: someone could sign up with your address
+  before you did and keep you from ever using it here, and the sign-up page told anyone who asked
+  whether an address already had an account. Now it answers the same way either way. If the
+  address is already on an account, we email its owner a short note instead of a link.
+- **Password resets now only go to an email address you've confirmed.** An address nobody had
+  confirmed used to be trusted like any other, so a mistyped or planted one could receive your
+  reset link. Now reset links, username reminders and notification emails only go to an address
+  its owner has proven by clicking our link. Addresses already on the board start out unconfirmed,
+  so check Settings: it says so if yours isn't confirmed yet, and can send the link again.
+- **A practice parish you can run on your own laptop.** Thinking about a board for your parish? The
+  new parish starter kit sets up a practice parish in about half an hour and walks one need from
+  asked to answered, with ready-made categories, a bulletin notice and a coordinator practice
+  session. The 90-day pilot guide now works for any parish, with blanks where your parish's name
+  goes.
+- **Updates now finish their own database step.** Nothing you can see changed. When an update
+  changes how information is stored, the tool we deploy with now makes that change itself, instead
+  of someone doing it by hand in the seconds after. And if an update fails partway, the tool now
+  wipes the keys it carried in, instead of leaving them on the server until it next restarts.
+
+## 2026-09-26
+
+- **An email you add later is saved only after you confirm it.** You can join with just a username
+  and add an email any time in Settings. It used to be saved the moment you typed it. Now we send a
+  link to the new address and save it when you click. That also shuts a door: someone with a moment
+  in your account could have swapped in their own address.
+
+## 2026-09-23
+
+- **A failed backup can now raise an alert.** The board backs itself up every night, and a backup
+  that quietly stopped would have looked just like one that worked. Each good backup can now check
+  in with an outside watcher, so a missed night raises an alarm. Switching that on for this board is
+  the next step.
+
+## 2026-09-14
+
+- **A weekly count now checks what we say about your information.** Every week a check counts
+  what's in the system. Real sign-ups are reported, and the private casework side fails the check
+  if anything appears in it before the safety gate is met. It reports numbers only, never names or
+  addresses.
+
+## 2026-09-11
+
+- **The board was offline from September 3 to 11, and it took us eight days to notice.** After a
+  billing problem the server was switched off, then deleted. Our alerts only went to email. We
+  rebuilt from the nightly backups, all 23 of which were intact. No casework was lost, because the
+  private casework side has never held any. Better alerts are the open item.
+- **We said the board held only made-up information. That was too broad.** The needs, offers and
+  pages are made up for the demo, and casework has never held anything. But the accounts are real:
+  people have signed up with real email addresses, which are stored as plain text so we can write
+  to you. We corrected the pages that said otherwise.
+- **New accounts waiting for verification were stuck in a loop.** The "look around" link on the
+  waiting page led straight back to it, and without an email there was no way out. It now goes to
+  the front page. The page also stops asking you to confirm an email you never gave, and says a
+  coordinator can vouch for you before you join.
+- **For anyone running their own board:** following our setup guide to rebuild ours turned up seven
+  mistakes, all fixed. The hardening script could lock you out of your server at the next reboot;
+  it now checks its work and undoes the change if anything fails. The keys that protect private
+  information are no longer kept in the server's settings file; they arrive from a separate machine
+  at each update.
+
 ## 2026-08-24
 
 - **The demo parish looked alive and nobody in it could actually do anything.** If you set up a

@@ -126,8 +126,10 @@ class Member(models.Model):
         """§8.2 contact shape: display name + only the channels `pref` opts into.
         Shared by match contact-revelation and coordinator oversight on need/offer detail."""
         info = {"display_name": self.display_name, "preference": pref}
-        if pref in ("email", "any") and self.user.email:
-            info["email"] = self.user.email
+        # A neighbour is handed this address to reach the member — so only an address
+        # the member has PROVEN they read (#172). An unproven one may be someone else's.
+        if pref in ("email", "any") and self.user.deliverable_email:
+            info["email"] = self.user.deliverable_email
         if pref in ("phone", "any") and self.user.phone:
             info["phone"] = self.user.phone
         return info

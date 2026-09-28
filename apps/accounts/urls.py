@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
+from .forms import ConfirmedEmailPasswordResetForm
 
 urlpatterns = [
     path("register/", views.RegisterView.as_view(), name="register"),
@@ -48,6 +49,8 @@ urlpatterns = [
     path(
         "password/reset/",
         auth_views.PasswordResetView.as_view(
+            # Confirmed addresses only — docs/specs/email-confirmation.md, #172.
+            form_class=ConfirmedEmailPasswordResetForm,
             template_name="accounts/password_reset.html",
             email_template_name="emails/password_reset_email.txt",
             success_url="/auth/password/reset/done/",

@@ -2,14 +2,45 @@
 
 from django import forms
 from django.contrib.auth import get_user_model, password_validation
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 
 User = get_user_model()
 
 
-class RegistrationForm(forms.ModelForm):
-    """Registration with optional email."""
+class ConfirmedEmailPasswordResetForm(PasswordResetForm):
+    """Password reset that mails ONLY an address its owner has proven (#172).
 
+    Stock reset trusted whatever sat in User.email. A typo at sign-up made a stranger's
+    inbox the account's recovery path: they request a reset, receive a working link,
+    and own the account — and the holder did nothing wrong beyond one typo.
+
+    The view answers identically whether this yields a user or not (Django always
+    redirects to the done page), so gating here adds no enumeration signal.
+    """
+
+    def get_users(self, email):
+        return (u for u in super().get_users(email) if u.email_confirmed_at is not None)
+
+
+class RegistrationForm(forms.ModelForm):
+    """Registration with optional email.
+
+    `email` is deliberately NOT a model field here, for the same reason ProfileForm's
+    is not (#169): saving would write User.email unproven. The view sends the address a
+    link instead, and the click writes it (docs/specs/email-confirmation.md, option C).
+    """
+
+    field_order = ["username", "email", "password", "password_confirm"]
+
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(
+            attrs={
+                "class": "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]",
+                "placeholder": "Email (optional)",
+            }
+        ),
+    )
     password = forms.CharField(
         widget=forms.PasswordInput(
             attrs={
@@ -29,7 +60,7 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["username", "email"]
+        fields = ["username"]
         widgets = {
             "username": forms.TextInput(
                 attrs={
@@ -37,21 +68,14 @@ class RegistrationForm(forms.ModelForm):
                     "placeholder": "Choose a username",
                 }
             ),
-            "email": forms.EmailInput(
-                attrs={
-                    "class": "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]",
-                    "placeholder": "Email (optional)",
-                }
-            ),
         }
 
     def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if not email:
-            return None  # Store as NULL so unique constraint allows multiple blanks
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("This email is already in use.")
-        return email
+        # No uniqueness check and no "already in use" error (#171). This form writes no
+        # address, so there is nothing to collide with, and answering differently for a
+        # taken address told any stranger who has an account here. The collision is
+        # handled by what gets SENT: a link, or a notice to the address's owner.
+        return self.cleaned_data.get("email") or None
 
     def clean(self):
         cleaned = super().clean()

@@ -12,9 +12,9 @@
       </p>
       <div class="space-y-4">
         <div class="border border-[var(--umi-border)] rounded-xl p-4">
-          {% if user.email %}
+          {% if user.email or pending_email %}
           <h2 class="font-semibold text-parish-ink mb-1.5">Confirm your email</h2>
-          <p class="text-sm text-parish-ink/70 mb-3">We sent a link to <strong>{{ user.email }}</strong>. Click it and you're done. Nothing in your inbox?</p>
+          <p class="text-sm text-parish-ink/70 mb-3">We sent a link to <strong>{{ user.email|default:pending_email }}</strong>. Click it and you're done. Nothing in your inbox?</p>
           <form method="post" action="{% url 'verify-send' %}">
             {% csrf_token %}
             <button type="submit" class="btn-primary">Send the link again</button>

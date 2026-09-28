@@ -60,13 +60,17 @@ def followup_overdue_digest():
         # the adapter re-brands the subject "[UMI] …", and Lake 2's mail is
         # deliberately "[Case Notes]" with a plaintext-only body (§3.6 — nothing
         # decrypts in email).
-        if user.email and getattr(user, "email_notifications", True):
+        # PROVEN addresses only (#172). Nothing decrypts here, but follow-up TITLES are
+        # coordinator-written plaintext — "Call Maria about the eviction hearing" — so a
+        # typo'd coordinator address would mail case detail to a stranger. The in-app
+        # notify() above still lands; only the email is withheld.
+        if user.deliverable_email and getattr(user, "email_notifications", True):
             try:
                 send_mail(
                     subject=f"[Case Notes] {len(items)} overdue follow-up(s)",
                     message=body + f"\n\nOpen your queue: {link}",
                     from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                    recipient_list=[user.email],
+                    recipient_list=[user.deliverable_email],
                     fail_silently=True,
                 )
             except Exception:  # email must never break the task
