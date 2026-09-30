@@ -124,7 +124,10 @@ class TestRegistration:
                 password_confirm="SecurePass123!",
             ),
         )
-        assert response.status_code == 302  # Redirect on success
+        # No email given, so success shows the one-time recovery code (A1) instead of redirecting.
+        assert response.status_code == 200
+        assert "accounts/recovery_code.html" in [t.name for t in response.templates]
+        assert get_user_model().objects.filter(username="newuser").exists()
 
     def test_register_password_mismatch(self):
         client = Client()
@@ -157,8 +160,10 @@ class TestRegistration:
                 ),
                 REMOTE_ADDR=f"10.99.1.{i + 1}",
             )
-            form = response.context["form"] if response.status_code == 200 else None
-            assert response.status_code == 302, (
+            # Email-less success is the recovery-code page (A1); a re-rendered form is failure.
+            templates = [t.name for t in response.templates]
+            form = response.context.get("form") if response.context else None
+            assert "accounts/recovery_code.html" in templates, (
                 f"{username} signup failed: {response.status_code} "
                 f"{form.errors.as_data() if form else response.content[:200]}"
             )

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Your recovery code{% endblock %}
+{% block content %}
+{% comment %}
+  docs/specs/account-recovery.md §B. Shown exactly once: nothing stores the plaintext, so this
+  page is the only copy there will ever be. Large type, plain words, printable, and the way
+  forward stays locked until the person says they have written it down.
+{% endcomment %}
+<style>
+  @media print {
+    body * { visibility: hidden; }
+    #recovery-sheet, #recovery-sheet * { visibility: visible; }
+    #recovery-sheet { position: absolute; inset: 0 auto auto 0; width: 100%; }
+    .no-print { display: none !important; }
+  }
+</style>
+<div class="max-w-lg mx-auto">
+  <div id="recovery-sheet" class="umi-card space-y-5">
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">
+      {% if reset_url %}Your new recovery code{% else %}Your recovery code{% endif %}
+    </h1>
+    {% if reset_url %}
+    <p class="text-base text-parish-ink">Your old code is used up. This new one replaces it. Write it down before you set your new password.</p>
+    {% else %}
+    <p class="text-base text-parish-ink">If you ever forget your password, this code lets you set a new one. You have no email on your account, so this is your way back in.</p>
+    {% endif %}
+
+    <p class="text-center font-mono font-semibold tracking-[0.2em] text-parish-ink text-4xl sm:text-5xl py-4 select-all" aria-label="Recovery code {{ code }}">{{ code }}</p>
+
+    <ul class="text-base text-parish-ink space-y-2 list-disc pl-5">
+      <li><strong>Write it on paper</strong> or print this page, and keep it with something you don't lose, like your wallet.</li>
+      <li><strong>Only you should have it.</strong> Anyone holding this code can set a new password for your account.</li>
+      <li><strong>It works once.</strong> When you use it, you'll get a new one right away.</li>
+      <li>We don't keep a copy, and we will never ask you for it by email or on the phone.</li>
+    </ul>
+    <p class="text-sm text-parish-ink/70">To use it: on the sign-in page, choose "Have a recovery code?"</p>
+  </div>
+
+  <div class="no-print mt-6 space-y-4">
+    <button type="button" onclick="window.print()" class="w-full btn-secondary">Print this page</button>
+    <form method="get" action="{{ continue_url }}" class="umi-card space-y-4">
+      <label class="flex items-start gap-3 text-base text-parish-ink">
+        <input type="checkbox" name="written" required class="mt-1 h-5 w-5">
+        <span>I have written this down or printed it.</span>
+      </label>
+      <button type="submit" class="w-full btn-primary">
+        {% if reset_url %}Set my new password{% elif first_time %}Continue{% else %}Back to settings{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -52,7 +52,10 @@ def test_registration_accepts_strong_password(client):
         register_payload(username="sturdy", email="", password="Str0ng-p4ss!x9", password_confirm="Str0ng-p4ss!x9"),
         REMOTE_ADDR="10.44.1.2",
     )
-    assert resp.status_code in (301, 302)  # created + logged in + redirected
+    # Created + logged in. With no email, success is the one-time recovery-code page (A1,
+    # docs/specs/account-recovery.md §B) rather than a redirect.
+    assert resp.status_code == 200
+    assert "accounts/recovery_code.html" in [t.name for t in resp.templates]
     assert User.objects.filter(username="sturdy").exists()
 
 

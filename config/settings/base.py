@@ -281,6 +281,7 @@ RATELIMIT_AUTH_PATHS = (
     "/auth/register/",
     "/auth/password/reset/",
     "/auth/username/recover/",
+    "/auth/recover/code/",  # printed recovery code: IP + username buckets (account-recovery.md §B)
     "/admin/login/",
 )
 # Third-party django_ratelimit (RegisterView/UMILoginView key="ip") must read
