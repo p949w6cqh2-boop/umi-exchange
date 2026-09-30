@@ -11,6 +11,7 @@ from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.mail import send_mail
 from django.core.validators import URLValidator
 from django.db import transaction
 from django.http import HttpResponse
@@ -20,7 +21,10 @@ from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
+from django_ratelimit.decorators import ratelimit
 
+from apps.accounts.credentials import issue as issue_credential
+from apps.accounts.models import RecoveryCredential
 from apps.accounts.ratelimit import rate_limit
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
@@ -775,3 +779,56 @@ class VouchMemberView(LoginRequiredMixin, View):
         )
         messages.success(request, f"Vouched for {target.username} — they can now join and post.")
         return redirect("community-settings", slug=slug)
+
+
+@method_decorator(ratelimit(key="user", rate="5/h", method="POST", block=True), name="post")
+class CoordinatorResetView(LoginRequiredMixin, View):
+    """A coordinator-issued reset (docs/specs/account-recovery.md §C, A2): a 15-minute code the
+    coordinator reads aloud; the person sets their own password at /auth/recover/code/. The
+    coordinator never sees or sets the password.
+
+    His ruling 2026-09-30: coordinators and admins only (can_reset). Unlike VouchMemberView, the
+    target must be an ACTIVE, PLAIN member of THIS community, and never the issuer, a coordinator
+    or an admin: a reset must never be a way to climb. Every issue is audited with both members
+    and the community, the person is emailed if they have a confirmed address, and the limit is
+    per coordinator (5/hour), which is what bounds a compromised coordinator account.
+    """
+
+    NOT_FOUND = "No plain member of this community has that username. Check the spelling with them."
+
+    def post(self, request, slug):
+        community = get_object_or_404(Community, slug=slug)
+        issuer = Member.objects.filter(user=request.user, community=community, is_active=True).first()
+        if issuer is None or not issuer.can_reset:
+            raise PermissionDenied("Only a coordinator can issue a reset code.")
+
+        username = (request.POST.get("username") or "").strip()
+        target = (
+            Member.objects.filter(community=community, is_active=True, role="member", user__username=username)
+            .exclude(pk=issuer.pk)
+            .select_related("user")
+            .first()
+        )
+        if target is None:
+            messages.error(request, self.NOT_FOUND)
+            return render(request, "communities/reset_done.html", {"community": community, "code": None})
+
+        _, code = issue_credential(target.user, RecoveryCredential.PURPOSE_COORDINATOR_RESET, issued_by=issuer)
+        emit(
+            "account.reset.coordinator",
+            target.user,
+            user=request.user,
+            request=request,
+            details={"community": community.slug, "issuer_member": str(issuer.pk), "target_member": str(target.pk)},
+        )
+        if target.user.deliverable_email:
+            send_mail(
+                "A coordinator started a password reset for you — UMI Exchange",
+                f"{issuer.display_name}, a coordinator of {community.name}, made a reset code for your "
+                "account. It works for 15 minutes.\n\nIf you asked them for this, nothing else to do. "
+                "If you did not, tell someone you trust at your parish and sign in to change your password.",
+                None,
+                [target.user.deliverable_email],
+                fail_silently=True,
+            )
+        return render(request, "communities/reset_done.html", {"community": community, "code": code, "target": target})

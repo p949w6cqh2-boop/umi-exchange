@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Reset code · {{ community.name }}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto space-y-4">
+  {% if code %}
+  <div class="umi-card space-y-4">
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Reset code for {{ target.display_name }}</h1>
+    <p class="text-center font-mono font-semibold tracking-widest text-parish-ink text-3xl py-2 select-all">{{ code }}</p>
+    <p class="text-base text-parish-ink">
+      Read this to them now. On their own phone or computer, they go to the sign-in page, choose
+      "Have a recovery code?", type their username and this code, and choose a new password
+      themselves. You never see or choose their password.
+    </p>
+    <p class="text-sm text-parish-ink/70">It works once, for 15 minutes. This is the only place it is shown. Your name is recorded with it{% if target.user.deliverable_email %}, and they get an email saying you made it{% endif %}.</p>
+  </div>
+  {% else %}
+  <div class="umi-card">
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">No reset code made</h1>
+    {% if messages %}{% for m in messages %}<p class="text-base text-parish-ink mt-3">{{ m }}</p>{% endfor %}{% endif %}
+  </div>
+  {% endif %}
+  <p><a href="{% url 'community-settings' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to settings</a></p>
+</div>
+{% endblock %}

@@ -201,6 +201,28 @@ powers across five apps — moderation hide/remove/reinstate, role changes, vouc
 visibility, coordinator page surfaces. There is no way today to grant reset without also
 granting removal. **A narrow role is a precondition of C, not an enhancement to it.**
 
+### C. Coordinator-issued reset — as built (2026-09-30)
+
+**His ruling, 2026-09-30:** built now, for **coordinators and admins only** (`Member.can_reset`).
+Intake helpers stay vouch-only. He accepted the stated risk: this gives every coordinator a path to
+take over a plain member's account in their community, with detection, not prevention.
+
+`POST /c/<slug>/members/reset/`, a form on community settings beside the vouch form. It makes a
+15-minute `coordinator_reset` credential, shown once for the coordinator to read aloud. The person
+redeems it at `/auth/recover/code/` and chooses their own password.
+
+**Guards beyond this spec's text:**
+- Unlike `VouchMemberView`, the target must be an **active member of this community**.
+- The target must have **role `member`**: never the issuer, another coordinator, or an admin. A
+  reset must never be a way to climb.
+
+**Detection:**
+- Audited as `account.reset.coordinator` with `{community, issuer_member, target_member}`.
+- The person is emailed if they have a confirmed address.
+- Limited to 5 per hour per coordinator.
+- ⏳ Not yet on the "Who did what" page (C13 is a separate branch). Add `account.reset.coordinator`
+  to its allow-list, scoped by `details.community`, when both have merged.
+
 ### A4. Admin unlock — as built (2026-09-30)
 
 `/staff/unlock/`, staff only, outside every community surface. Exact username (no search, no

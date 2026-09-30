@@ -122,6 +122,12 @@ class Member(models.Model):
     def is_admin(self):
         return self.role == "admin"
 
+    @property
+    def can_reset(self):
+        """Issue a 15-minute reset code for a plain member of this community (A2). His ruling
+        2026-09-30: coordinators and admins only; an intake helper never gets this."""
+        return self.role in ("coordinator", "admin")
+
     def contact_dict(self, pref):
         """§8.2 contact shape: display name + only the channels `pref` opts into.
         Shared by match contact-revelation and coordinator oversight on need/offer detail."""

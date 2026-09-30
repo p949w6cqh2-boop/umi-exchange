@@ -460,6 +460,7 @@ class RecoveryCodeRedeemView(FormView):
         for purpose, action in (
             (RecoveryCredential.PURPOSE_RECOVERY_CODE, "account.recovery_code.redeemed"),
             (RecoveryCredential.PURPOSE_ADMIN_UNLOCK, "account.unlock.redeemed"),
+            (RecoveryCredential.PURPOSE_COORDINATOR_RESET, "account.reset.redeemed"),
         ):
             cred = redeem_credential(user, purpose, form.cleaned_data["code"])
             if cred is not None:
