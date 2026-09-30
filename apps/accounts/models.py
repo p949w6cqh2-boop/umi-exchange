@@ -135,6 +135,9 @@ class RecoveryCredential(models.Model):
     )
     # Denormalized so the record still says who issued it after that Member row is gone.
     issued_by_label = models.CharField(max_length=150, blank=True, default="")
+    # Why it was issued (the admin unlock's required reason). Kept HERE, on a row that can be
+    # redacted, and never in the append-only audit log (tests/test_audit_pii_hygiene.py doctrine).
+    note = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "accounts_recovery_credential"

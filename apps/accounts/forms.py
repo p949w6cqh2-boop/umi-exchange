@@ -249,3 +249,21 @@ class RecoveryCodeForm(forms.Form):
             }
         ),
     )
+
+
+class StaffUnlockForm(forms.Form):
+    """The admin unlock (account-recovery.md §A4): exact username and a reason, both required."""
+
+    _input = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]"
+
+    username = forms.CharField(
+        label="Exact username",
+        max_length=150,
+        widget=forms.TextInput(attrs={"class": _input, "autocomplete": "off", "autocapitalize": "none"}),
+    )
+    reason = forms.CharField(
+        label="Why, and how you confirmed it is them",
+        min_length=10,
+        max_length=1000,
+        widget=forms.Textarea(attrs={"class": _input, "rows": 3}),
+    )

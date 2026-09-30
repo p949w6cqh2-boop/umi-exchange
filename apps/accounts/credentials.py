@@ -51,7 +51,7 @@ def hash_code(code: str) -> str:
     return hashlib.sha256(normalize(code).encode()).hexdigest()
 
 
-def issue(user, purpose, *, issued_by=None):
+def issue(user, purpose, *, issued_by=None, issued_by_label=None, note=""):
     """Create a credential and return (row, plaintext). The plaintext exists only in this
     return value: show it once, then let it go.
 
@@ -73,7 +73,9 @@ def issue(user, purpose, *, issued_by=None):
             token_hash=hash_code(plaintext),
             expires_at=now + lifetime if lifetime else None,
             issued_by=issued_by,
-            issued_by_label=getattr(issued_by, "display_name", "") or "",
+            # Staff are not community members, so the admin unlock passes its own label.
+            issued_by_label=issued_by_label or getattr(issued_by, "display_name", "") or "",
+            note=note,
         )
     return row, plaintext
 
