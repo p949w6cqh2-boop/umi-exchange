@@ -86,7 +86,15 @@ class Community(models.Model):
 
 
 class Member(models.Model):
-    ROLE_CHOICES = [("member", "Member"), ("coordinator", "Coordinator"), ("admin", "Admin")]
+    # "intake" is the narrow role (docs/specs/coordinator-roles.md): it can vouch and nothing else.
+    # It is deliberately outside is_coordinator and every role__in=("coordinator", "admin") check.
+    ROLE_CHOICES = [
+        ("member", "Member"),
+        ("intake", "Intake helper"),
+        ("coordinator", "Coordinator"),
+        ("admin", "Admin"),
+    ]
+    VOUCH_ROLES = ("coordinator", "admin", "intake")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -116,7 +124,15 @@ class Member(models.Model):
 
     @property
     def is_coordinator(self):
+        # NEVER add "intake" here. This one property gates moderation, member removal, hidden
+        # content, the contact reveal, tags, resources, pages, federation oversight and casework;
+        # widening it hands all of that to a role that exists to vouch (coordinator-roles.md).
         return self.role in ("coordinator", "admin")
+
+    @property
+    def can_vouch(self):
+        """Mark a neighbor met in person as a real person. The intake helper's only power."""
+        return self.role in self.VOUCH_ROLES
 
     @property
     def is_admin(self):

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Vouch for a neighbor · {{ community.name }}{% endblock %}
+{% block content %}
+{% comment %}
+  docs/specs/coordinator-roles.md: the vouch form alone, for intake helpers, who cannot open
+  community settings. Coordinators see the same form there.
+{% endcomment %}
+<div class="max-w-md mx-auto">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-2">Vouch for a neighbor</h1>
+  <p class="text-base text-parish-ink/70 mb-6">
+    When you have met someone in person and know they are who they say, type their username here.
+    Their account is marked as a real person, and they can join and post. Your name is recorded
+    with every vouch.
+  </p>
+  <form method="post" action="{% url 'member-vouch' slug=community.slug %}" class="umi-card space-y-4">
+    {% csrf_token %}
+    <input type="hidden" name="return_to" value="vouch">
+    <div>
+      <label for="vouch-username" class="umi-label">Their username</label>
+      <input id="vouch-username" type="text" name="username" required autocapitalize="none" autocomplete="off"
+             class="w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]">
+    </div>
+    <button type="submit" class="w-full btn-primary">Vouch</button>
+  </form>
+  <p class="text-sm text-parish-ink/70 mt-4">Only vouch for someone you have met. If you are not sure, ask your coordinator.</p>
+</div>
+{% endblock %}

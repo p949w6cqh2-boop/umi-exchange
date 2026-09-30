@@ -3,6 +3,15 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## Unreleased
+
+- **A new role for helpers who vouch: intake helper.** Some parishes have someone who meets new
+  neighbors at church and can say "yes, this is a real person" — but until now the only way to let
+  them do that was to make them a full coordinator, with the moderation queue, member removal and
+  the community settings that come with it. An admin can now make someone an *intake helper*
+  instead. They get a "Vouch for a neighbor" page and nothing else: no moderation, no settings, no
+  hidden posts. Every vouch is recorded with their name, as before.
+
 ## 2026-09-28
 
 - **The demo parish no longer opens with a password anyone can read.** Its twelve made-up
