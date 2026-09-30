@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.audit.views import CoordinatorActivityView
 from apps.dashboard.views import DashboardExportView, DashboardView
 from apps.matches.views import MatchDetailView, MatchProposeView, MatchUpdateView
 from apps.needs.views import NeedCreateView, NeedDeleteView, NeedDetailView
@@ -18,6 +19,7 @@ urlpatterns = [
     path("<slug:slug>/settings/qr/", views.JoinCodeQRView.as_view(), name="join-code-qr"),
     path("<slug:slug>/dashboard/", DashboardView.as_view(), name="community-dashboard"),
     path("<slug:slug>/dashboard/export/", DashboardExportView.as_view(), name="dashboard-export"),
+    path("<slug:slug>/activity/", CoordinatorActivityView.as_view(), name="community-activity"),
     # Needs
     path("<slug:slug>/needs/new/", NeedCreateView.as_view(), name="need-create"),
     path("<slug:slug>/needs/<uuid:pk>/", NeedDetailView.as_view(), name="need-detail"),

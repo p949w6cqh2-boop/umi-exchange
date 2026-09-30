@@ -3,6 +3,14 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## Unreleased
+
+- **Coordinators can now see who did what.** A new page, linked from community settings, lists
+  every vouch, role change, removal, moderation step and settings change in your community,
+  newest first, with the name of the person who did it. It covers everything already on record,
+  not just what happens from today, and nobody can edit or delete it. What neighbors do privately,
+  like blocking someone or raising a concern, is never shown there.
+
 ## 2026-09-28
 
 - **The demo parish no longer opens with a password anyone can read.** Its twelve made-up

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Who did what · {{ community.name }}{% endblock %}
+{% block content %}
+{% comment %}
+  docs/specs/coordinator-activity.md (C13). Only the fields apps/audit/coordinator_activity.py
+  chose reach this page: never the raw details, an IP hash, or an email.
+{% endcomment %}
+<div class="max-w-2xl mx-auto space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Who did what</h1>
+    <a href="{% url 'community-settings' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Settings</a>
+  </div>
+  <p class="text-sm text-parish-ink/70">
+    Every vouch, role change, removal, moderation step and settings change in {{ community.name }},
+    newest first, with the name of the person who did it. This record can't be edited or deleted,
+    by anyone. What neighbors do privately, like blocking someone or raising a concern, is not shown here.
+  </p>
+
+  <form method="get" class="flex items-end gap-2">
+    <div>
+      <label for="since" class="umi-label">Since</label>
+      <input id="since" type="date" name="since" value="{{ since }}"
+             class="border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px]">
+    </div>
+    <button type="submit" class="btn-secondary text-sm min-h-[44px]">Show</button>
+  </form>
+
+  <div class="umi-card">
+    {% if events %}
+    <ul class="divide-y divide-[var(--umi-border)]">
+      {% for e in events %}
+      <li class="py-3">
+        <p class="text-base text-parish-ink"><strong>{{ e.who }}</strong> {{ e.what }}{% if e.subject %}: {{ e.subject }}{% endif %}</p>
+        <p class="text-sm text-parish-ink/70"><time datetime="{{ e.when|date:'c' }}">{{ e.when|date:"M j, Y, g:i A" }}</time></p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-base text-parish-ink/70">Nothing recorded{% if since %} since that date{% endif %} yet.</p>
+    {% endif %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <nav class="flex items-center justify-between text-sm" aria-label="Pages">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if since %}&amp;since={{ since }}{% endif %}" class="text-umi-primary">&larr; Newer</a>{% else %}<span></span>{% endif %}
+    <span class="text-parish-ink/70">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if since %}&amp;since={{ since }}{% endif %}" class="text-umi-primary">Older &rarr;</a>{% else %}<span></span>{% endif %}
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
