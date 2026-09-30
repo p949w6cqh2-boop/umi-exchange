@@ -832,3 +832,69 @@ class CoordinatorResetView(LoginRequiredMixin, View):
                 fail_silently=True,
             )
         return render(request, "communities/reset_done.html", {"community": community, "code": code, "target": target})
+
+
+@method_decorator(ratelimit(key="user", rate="30/h", method="POST", block=True), name="post")
+class IntakeRegisterView(LoginRequiredMixin, TemplateView):
+    """Coordinator-assisted sign-up (#170, build plan B8). His ruling 2026-09-30: build now,
+    outside the ethics gate.
+
+    The public sign-up silently drops a form that comes back faster than a human reads it, which
+    is right against a script and wrong against a coordinator on their tenth neighbor of the
+    morning. This route is for this community's coordinators and admins, signed in. It drops ONLY
+    the speed check: the hidden-field check still applies. RegisterView is untouched.
+
+    Named cost: this is an authenticated path around an anti-abuse control. It is compensated by
+    the per-coordinator limit (30/hour) and an audit row for every account made here. The new
+    person is never signed in (the coordinator stays themselves), and someone with no email leaves
+    with their paper recovery code, because otherwise they could never get back in.
+    When the intake-helper role (C11) merges, widen the gate from is_coordinator to can_vouch.
+    """
+
+    template_name = "communities/intake_register.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.member = Member.objects.filter(user=request.user, community=self.community, is_active=True).first()
+        if self.member is None or not self.member.is_coordinator:
+            raise PermissionDenied("Only a coordinator can register neighbors here.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        from apps.accounts.forms import RegistrationForm
+
+        ctx = super().get_context_data(**kwargs)
+        ctx.setdefault("form", RegistrationForm())
+        ctx.update({"community": self.community, "member": self.member})
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        from apps.accounts.forms import RegistrationForm
+        from apps.accounts.verification import send_registration_email
+        from apps.accounts.views import issue_recovery_code, render_recovery_code
+
+        here = reverse("intake-register", kwargs={"slug": self.community.slug})
+        if request.POST.get("website", "").strip():
+            # The hidden field still trips: same quiet answer as the public door, no account.
+            return redirect(here)
+        form = RegistrationForm(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+        email = form.cleaned_data.get("email")
+        with transaction.atomic():
+            user = form.save()
+            code = None if email else issue_recovery_code(request, user)
+            emit(
+                "account.registered.intake",
+                user,
+                user=request.user,
+                request=request,
+                details={"community": self.community.slug},
+            )
+        if email:
+            send_registration_email(request, user, email)
+            messages.success(request, f"Account {user.username} made. A confirmation link went to their email.")
+            return redirect(here)
+        return render_recovery_code(request, code, continue_url=here, first_time=True)
