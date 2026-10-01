@@ -113,6 +113,11 @@
     </p>
   </div>
 
+  {% if geo_attribution %}
+  {# Required by DB-IP's CC BY 4.0 licence while its data runs the sign-up gate (docs/specs/geolocking.md) #}
+  <p class="text-xs text-parish-ink/70 mt-8">Sign-up country lookup: <a href="https://db-ip.com" class="underline">IP Geolocation by DB-IP</a>, CC BY 4.0.</p>
+  {% endif %}
+
   {% include "components/_chapter_next.html" with next_url="/what-we-believe/" next_kicker="Chapter two" next_title="What we believe · Lake 0, the heart" %}
 </article>
 {% endblock %}

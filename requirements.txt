@@ -6,6 +6,7 @@ django-redis>=5.4
 django-q2>=1.6
 django-htmx>=1.17
 django-ratelimit>=4.1
+maxminddb>=2.6  # geolocking: reads the DB-IP country .mmdb (pure Python, Apache-2.0)
 cryptography>=42.0
 argon2-cffi>=23.1
 psycopg[binary]>=3.1

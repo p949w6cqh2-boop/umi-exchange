@@ -145,3 +145,23 @@ class RecoveryCredential(models.Model):
 
     def __str__(self):
         return f"{self.purpose} for {self.user_id}"
+
+
+class GeoSignupCount(models.Model):
+    """Geolocking Phase 0 (docs/specs/geolocking.md): sign-up ATTEMPTS per country.
+
+    Integers only. No IP, no user, no request detail: the one question it answers is "where do
+    sign-up attempts come from?", in aggregate. "--" is the bucket for unknown or unreadable.
+    """
+
+    country = models.CharField(max_length=2, primary_key=True)
+    count = models.PositiveIntegerField(default=0)
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "accounts_geo_signup_count"
+        ordering = ["-count"]
+
+    def __str__(self):
+        return f"{self.country}: {self.count}"

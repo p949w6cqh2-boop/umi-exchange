@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Sign-up is limited during our pilot{% endblock %}
+{% block content %}
+{% comment %}
+  docs/specs/geolocking.md: the refusal is a plain page, never a silent drop. Someone outside the
+  pilot area is exactly who the project invites to run their own board, so it says so.
+{% endcomment %}
+<div class="max-w-md mx-auto umi-card space-y-4">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Sign-up is limited during our pilot</h1>
+  <p class="text-base text-parish-ink">Sign-up here is open to {{ region }} during our pilot.</p>
+  <p class="text-base text-parish-ink">Anyone can run their own board. It's free and open source, and a parish or neighborhood anywhere can set one up.</p>
+  <p><a href="{{ self_host_url }}" class="text-base text-umi-primary hover:text-umi-primary-hover">How to run your own board &rarr;</a></p>
+  <p class="text-sm text-parish-ink/70">You can still read everything on this site.</p>
+</div>
+{% endblock %}

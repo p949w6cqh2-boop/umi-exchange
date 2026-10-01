@@ -373,6 +373,19 @@ This is policy, not a preference. The line between fictional and real data is th
 right now, and it stays bright. If you are unsure whether an action would cross it, treat it as
 crossing it and stop.
 
+### The sign-up country gate processes location, so it is named here
+
+`docs/specs/geolocking.md`, built 2026-10-01. **Off in the code; on only in a deployment's own
+`.env`.** When on, it looks up the country of a request to `/auth/register/` (and `/admin/login/`
+only if opted in) from the reverse-proxy-set client IP.
+- **The country is used for one decision and dropped.** It is never stored or logged beside an IP.
+- **Count mode stores per-country integers and nothing else.**
+- **It FAILS OPEN.** A missing or unreadable database, or an unknown country, lets the person
+  through, because a broken lookup must never lock real people out.
+- **It gates sign-up only, never reading.** Someone outside the area is shown how to run their own
+  board.
+- **Honest limit:** a VPN defeats it in one click. It is a speed bump, not a wall.
+
 ---
 
 ## What this document claims, in one honest paragraph
