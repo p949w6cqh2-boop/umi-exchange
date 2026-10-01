@@ -105,6 +105,27 @@ def test_missing_database_fails_open_and_says_so(caplog):
 
 
 @override_settings(**ON, GEO_ALLOWED_COUNTRIES=["US"])
+def test_any_lookup_error_fails_open_not_a_500(tmp_path, settings):
+    """The review's MAJOR finding: an exception type the lookup did not anticipate must still
+    allow the request rather than 500 the sign-up page."""
+    settings.GEO_DB_PATH = str(tmp_path / "geo.mmdb")
+    (tmp_path / "geo.mmdb").write_bytes(b"x")
+    reader = mock.Mock()
+    reader.get.side_effect = RuntimeError("unexpected inside the reader")
+    with mock.patch.object(geo.maxminddb, "open_database", return_value=reader):
+        assert Client().get(reverse("register")).status_code == 200
+
+
+@override_settings(**ON, GEO_COUNT=True)
+def test_a_counting_failure_never_blocks_the_sign_up(caplog):
+    with _country("FR"), mock.patch.object(geo, "count_attempt", side_effect=RuntimeError("db down")):
+        with caplog.at_level(logging.WARNING):
+            _register(Client(), username="stillin")
+    assert User.objects.filter(username="stillin").exists()
+    assert "could not count" in caplog.text
+
+
+@override_settings(**ON, GEO_ALLOWED_COUNTRIES=["US"])
 def test_reading_pages_are_never_gated():
     with _country("FR"):
         for name in ("landing", "about", "technology", "login"):

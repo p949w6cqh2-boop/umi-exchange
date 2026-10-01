@@ -73,8 +73,8 @@ def country_for(ip):
         return None
     try:
         record = _get_reader(path).get(ip)
-    except (OSError, ValueError, maxminddb.InvalidDatabaseError) as exc:
-        _warn_once(f"database unavailable ({type(exc).__name__})")
+    except Exception as exc:  # noqa: BLE001 - FAIL OPEN: any lookup failure means "unknown", never a 500
+        _warn_once(f"lookup failed ({type(exc).__name__})")
         return None
     code = ((record or {}).get("country") or {}).get("iso_code")
     return code.upper() if code else None
@@ -113,7 +113,10 @@ class GeoGateMiddleware:
 
         country = country_for(client_ip(request))
         if counting:
-            count_attempt(country)
+            try:
+                count_attempt(country)
+            except Exception as exc:  # noqa: BLE001 - counting must never cost anyone their sign-up
+                log.warning("geo: could not count a sign-up attempt (%s); allowed", type(exc).__name__)
         if allowed and country and country not in allowed:
             return render(
                 request,
