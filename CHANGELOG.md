@@ -19,9 +19,15 @@
 - **Helping neighbors sign up in person no longer loses accounts.** Our sign-up page quietly
   ignores forms filled in faster than a person could read them, to stop robots. A coordinator
   helping several people in a row got fast enough to trip it, and those accounts were never made,
-  with no error. Coordinators now have a sign-up helper, linked from community settings, that
-  skips that one check. Each neighbor still types their own password, and anyone without an email
+  with no error. Coordinators and intake helpers now have a sign-up helper that skips that one
+  check. Each neighbor still types their own password, and anyone without an email
   gets their recovery code right there.
+- **A new role for helpers who vouch: intake helper.** Some parishes have someone who meets new
+  neighbors at church and can say "yes, this is a real person" — but until now the only way to let
+  them do that was to make them a full coordinator, with the moderation queue, member removal and
+  the community settings that come with it. An admin can now make someone an *intake helper*
+  instead. They can vouch for neighbors and help them sign up, and nothing else: no moderation, no
+  settings, no hidden posts, no password resets. Everything they do is recorded with their name.
 
 ## 2026-09-28
 
