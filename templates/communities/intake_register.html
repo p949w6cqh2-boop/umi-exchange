@@ -31,6 +31,10 @@
     {% endfor %}
     <button type="submit" class="w-full btn-primary">Make their account</button>
   </form>
+  {% if member.is_coordinator %}
   <p><a href="{% url 'community-settings' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to settings</a></p>
+  {% else %}
+  <p><a href="{% url 'member-vouch-page' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to vouching</a></p>
+  {% endif %}
 </div>
 {% endblock %}
