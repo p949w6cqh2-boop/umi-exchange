@@ -13,6 +13,10 @@ def poll_all_active_links() -> int:
     (a dead peer never blocks the others). Returns total live rows."""
     if not getattr(settings, "FEDERATION_ENABLED", False):
         return 0
+    from apps.holds.services import everything_held
+
+    if everything_held():  # polling deletes withdrawn shadows (polling.py); a hold on everything freezes it
+        return 0
     from .models import FederationLink
     from .polling import poll_link
 

@@ -14,6 +14,16 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+_TARGETS = ("community", "person", "case", "need")
+
+
+def _target_matches_scope():
+    """Scope "all" names no target; every other scope names its own target and no other."""
+    rule = models.Q(scope="all", **{f"{t}__isnull": True for t in _TARGETS})
+    for scope in _TARGETS:
+        rule |= models.Q(scope=scope, **{f"{t}__isnull": t != scope for t in _TARGETS})
+    return rule
+
 
 class LegalHold(models.Model):
     SCOPE_ALL = "all"
@@ -48,6 +58,12 @@ class LegalHold(models.Model):
     class Meta:
         db_table = "holds_legal_hold"
         ordering = ["-placed_at"]
+        constraints = [
+            # Exactly the target its scope names, and no other (review finding, 2026-10-01). Enforced in
+            # the database so a NULL never reaches the hold subqueries: SQL's `NOT IN (..., NULL)` is
+            # never true, so one targetless hold would quietly stop erasure for everyone.
+            models.CheckConstraint(name="legal_hold_target_matches_scope", condition=_target_matches_scope()),
+        ]
 
     @property
     def is_active(self):

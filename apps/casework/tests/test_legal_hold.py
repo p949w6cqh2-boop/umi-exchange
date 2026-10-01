@@ -206,6 +206,33 @@ def test_scope_and_target_must_agree(world):
         )  # fmt: skip
 
 
+def test_the_database_refuses_a_hold_whose_target_does_not_match_its_scope(world):
+    """A targetless hold would put a NULL into the hold subqueries and quietly stop erasure for
+    everyone, so the database itself refuses one (review finding, 2026-10-01)."""
+    from django.db import IntegrityError, transaction
+
+    for bad in (
+        {"scope": LegalHold.SCOPE_CASE},
+        {"scope": LegalHold.SCOPE_ALL, "case": world.case},
+        {"scope": LegalHold.SCOPE_CASE, "case": world.case, "community": world.community},
+    ):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            LegalHold.objects.create(reference="x", **bad)
+    assert not LegalHold.objects.exists()
+
+
+def test_a_target_that_is_not_a_uuid_is_a_clean_error(world):
+    world.admin_u.is_staff = True
+    world.admin_u.save()
+    with pytest.raises(CommandError, match="No case matches"):
+        call_command(
+            "legal_hold", "place", "--scope", "case", "--id", "not-a-uuid", "--reference", "x",
+            "--by", world.admin_u.username,
+        )  # fmt: skip
+    with pytest.raises(CommandError, match="No active hold"):
+        call_command("legal_hold", "release", "not-a-uuid", "--by", world.admin_u.username)
+
+
 def test_admin_shows_holds_but_cannot_edit_or_delete_them(world, client):
     world.admin_u.is_staff = True
     world.admin_u.is_superuser = True

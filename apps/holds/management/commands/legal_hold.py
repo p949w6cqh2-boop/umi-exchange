@@ -11,6 +11,7 @@ A hold is never deleted; releasing it stamps released_at.
 """
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
@@ -70,13 +71,13 @@ class Command(BaseCommand):
         lookup = {"slug": target} if scope == "community" else {"pk": target}
         try:
             return model.objects.get(**lookup)
-        except (model.DoesNotExist, ValueError, Exception) as exc:
+        except (model.DoesNotExist, ValueError, ValidationError) as exc:  # ValidationError: not a UUID
             raise CommandError(f"No {scope} matches {target!r}.") from exc
 
     def _release(self, opts):
         try:
             hold = LegalHold.objects.get(pk=opts["hold_id"], released_at__isnull=True)
-        except (LegalHold.DoesNotExist, ValueError, Exception) as exc:
+        except (LegalHold.DoesNotExist, ValueError, ValidationError) as exc:
             raise CommandError(f"No active hold {opts['hold_id']!r}.") from exc
         user = self._user(opts["by"])
         hold.released_at = timezone.now()

@@ -29,7 +29,7 @@ covers, so a sweep stays one query and held records are simply never selected.
 | `discard_stale_drafts` | skips drafts in held cases | stops |
 | `shred_aged_need_pii` (1-year retention) | skips held needs | stops |
 | `shred_on_behalf` (manual erasure) | **refuses** a held need | refuses |
-| federation sweeps (shadows, contacts, event payloads) | not scoped in v1 | stop |
+| federation sweeps (shadows, contacts, event payloads) and polling, which deletes shadows a peer withdrew | not scoped in v1 | stop |
 | `purge_recovery_credentials --apply` | not scoped | refuses |
 
 - **Placing and releasing go through `manage.py legal_hold`**, by a named staff account, and each
@@ -39,6 +39,9 @@ covers, so a sweep stays one query and held records are simply never selected.
   permanent liability.
 - **A hold is never deleted.** Releasing stamps `released_at`, and the next sweep proceeds. The
   admin shows holds read-only; it cannot add, edit or delete them.
+- **The database refuses a hold whose target does not match its scope** (a check constraint). A
+  targetless hold would put a NULL into the hold subqueries, and SQL's `NOT IN (..., NULL)` is never
+  true, so one bad row would quietly stop erasure for everyone.
 
 ## Honest limits, stated rather than hidden
 
@@ -69,5 +72,8 @@ docker exec docker-app-1 python manage.py legal_hold release <hold-uuid> --by <s
 - the manual erasure command refuses a held need;
 - stale drafts in held cases are kept;
 - place, list and release are audited without the reference;
-- only staff can place a hold, and scope and target must agree;
+- only staff can place a hold, and scope and target must agree, in the command and in the database;
 - the admin can read holds but not change them.
+
+`apps/federation/tests/test_polling.py`: a hold on everything pauses polling and its tombstone
+deletes, and releasing it lets them run again.
