@@ -3,6 +3,15 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## Unreleased
+
+- **No email? You now get a recovery code on paper.** Until now, if you signed up without an
+  email and forgot your password, there was no way back in. Now, when you sign up without an
+  email, we show you a short code once, to write down or print. If you ever forget your password,
+  choose "Have a recovery code?" on the sign-in page, type your username and the code, and set a
+  new password. Each code works once, and you get a new one as soon as you use it. We don't keep a
+  copy. Lost yours? Print a new one from Settings, and the old one stops working.
+
 ## 2026-09-28
 
 - **The demo parish no longer opens with a password anyone can read.** Its twelve made-up
