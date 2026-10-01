@@ -15,11 +15,16 @@
 |---|---|---|
 | **Steward** | Jasiah (founder) | Runs the ministry day-to-day (the pastor's mandate, 2026-08-12) and the software: deploys, admin seat, key custody day-to-day. |
 | **Pastor** | the parish pastor | The ministry's authority, not its operator: can HALT the board outright, names and removes coordinators and the steward's ministry mandate, co-holds refusal power. Runs nothing day-to-day. |
-| **Keeper of the envelope** | parish office (pastor + one named trustee, e.g. the Sister) | Break-glass custody of the sealed key envelope (see `docs/key-custody-design.md`). Two-person act to open, always logged. |
-| **Coordinators** | named parishioners, gathered by the steward at the pastor's request | Day-to-day care: propose matches, see accepted connections for safety, freeze/remove an account that harms someone (every act on the audit record). |
+| **Keeper of the envelope** | parish office (pastor + one named trustee, e.g. the Sister). **Proposed 2026-10-01: the first coordinator as the trustee, with the pastor.** Pending: the envelope is not yet sealed and the pastor has not yet accepted. | Break-glass custody of the sealed key envelope (see `docs/key-custody-design.md`; the printed instructions are `docs/envelope-instructions.md`). Two-person act to open, always logged. |
+| **Coordinators** | named parishioners, gathered by the steward at the pastor's request. **First named by the steward 2026-10-01: a trusted parishioner who helps older neighbours who don't use technology.** Pending: the pastor's naming, and their own sign-up before the seat exists. | Day-to-day care: propose matches, see accepted connections for safety, freeze/remove an account that harms someone (every act on the audit record). |
 
 That table, filled with real names, is the whole point: after it is filled, no single
 person is the entire trust boundary — including the founder.
+
+> **Names, since #175 (2026-09-28):** real names stay out of this public repository. The steward
+> and the parish office hold who fills each seat; this page records the role and the date. The
+> checklist below says "real names" because it predates #175: how that line is met is the
+> steward's call.
 
 ## The pastor runs nothing
 
@@ -82,8 +87,12 @@ exists for cannot honestly tick.
 - [ ] Pastor's halt + refusal roles stated to him in these words and accepted (Sept 15
       board meeting is the natural moment).
 - [ ] Envelope sealed and in the safe; keeper(s) named in writing.
+      *2026-10-01: trustee proposed; contents and printed instructions written
+      (`docs/envelope-instructions.md`); not yet sealed.*
 - [ ] At least one coordinator beyond the steward appointed and holding a real coordinator
       seat on the live instance.
+      *2026-10-01: first coordinator named by the steward; the seat waits for their own sign-up
+      and the pastor's naming.*
 - [ ] This page updated with the real names and the date; incident-response cross-checked
       so the names match there too.
 - [ ] Then, and only then: tick the governance box in `docs/ethics-and-safety.md`

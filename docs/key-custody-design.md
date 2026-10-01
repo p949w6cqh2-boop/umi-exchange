@@ -55,6 +55,47 @@ Three changes, in order:
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
   The uptime monitor (monitoring runbook) makes the downtime loud.
 
+## Fifth entry, 2026-10-01: rotation rehearsed on a scratch box, and the envelope's missing half
+
+**Stage 1 of the rotation rehearsal is done** (the "scratch box" of `## Implementation`, below). It
+ran on the steward's laptop with a throwaway age identity, throwaway keys and scratch Postgres
+databases. The real `~/.config/umi/keys.env.age` was checksummed before and after: unchanged. It
+followed the rotation line exactly, through the real `deploy-with-keys.sh encrypt`:
+
+| Step | Result |
+|---|---|
+| Encrypt the staging file, decrypt it again | byte-identical |
+| Seed one row per envelope family under key A (a person's name and contact, a case summary, a case note, an on-behalf name) | all readable |
+| `ENCRYPTION_KEYS=B,A`, then `rotate_keks --dry-run`, then `rotate_keks` | 5 wraps pending, then `Total: 5` |
+| Retire A (`ENCRYPTION_KEYS=B`) | all readable |
+| Restore a dump taken BEFORE the rotation, read with B alone | all unreadable (`ValueError`) |
+| The same dump, read with the archived A | all readable |
+
+**The rule the last two rows earned: archive the old key, never destroy it, until the last backup
+taken before the rotation has aged out** (30 days: `scripts/backup.sh` and the B2 lifecycle rule).
+A backup is a dump, and its records stay wrapped under the key that was current when it was taken.
+Retiring the old key from the live list is safe. Destroying it silently crypto-shreds every older
+backup.
+
+**Stage 2, the real droplet at a quiet hour, is not done.** It runs on the steward's hand.
+
+### The envelope needs the key FILE, not only the identity
+
+The identity unlocks `keys.env.age`; it is not the keys. That file exists only on the steward's
+laptop (Third entry: "The keys exist only in container memory and in `keys.env.age` on the
+laptop"), and `scripts/backup.sh` does not copy it (no reference to it in the script), although
+§The design item 1 says backups carry the ciphertext. **So an envelope holding only the printed
+identity recovers nothing if the laptop is lost.**
+
+The fix is the steward's call. Recommended: the envelope carries the key file too, on a USB drive
+and printed as text (`age -a`), replaced after every rotation; and `backup.sh` uploads the ciphertext
+beside each dump, so a second copy exists off the laptop. `docs/envelope-instructions.md` is written
+for the first option.
+
+**After any break-glass opening, replace the identity too, not only the keys.** `rotate_keks` moves
+records to a new key, but a new key file encrypted to the old recipient is readable by anyone who
+saw the old identity.
+
 ## Fourth entry, 2026-09-28: the rig now migrates
 
 The rig stopped at `up -d app`, and nothing else in the stack migrates: the image runs gunicorn and
