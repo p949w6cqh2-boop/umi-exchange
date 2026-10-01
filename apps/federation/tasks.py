@@ -28,8 +28,12 @@ def poll_all_active_links() -> int:
 def sweep_expired_shadows() -> int:
     """Delete inbound shadows past their TTL (§4.4). They carry no PII, so a
     bulk delete is appropriate; nothing durable is lost."""
+    from apps.holds.services import everything_held
+
     from .models import ShadowListing
 
+    if everything_held():  # legal hold on everything (docs/specs/legal-hold.md)
+        return 0
     deleted, _ = ShadowListing.objects.filter(expires_at__lt=timezone.now()).delete()
     return deleted
 
@@ -48,8 +52,12 @@ def sweep_expired_contacts() -> int:
     """Shred exchanged contact payloads past their post-terminal grace (§4.4).
     Deliberately NOT flag-gated: retention is a privacy guarantee and must
     still run if federation is switched off with payloads at rest."""
+    from apps.holds.services import everything_held
+
     from .outbox import sweep_expired_contacts as _sweep
 
+    if everything_held():  # legal hold on everything: retention pauses (docs/specs/legal-hold.md)
+        return 0
     return _sweep()
 
 
@@ -158,6 +166,10 @@ def sweep_stale_event_payloads() -> int:
     switching federation off a way to freeze requester PII decryptable forever —
     the opposite of what turning it off should mean.
     """
+    from apps.holds.services import everything_held
+
     from .outbox import sweep_stale_event_payloads as _sweep
 
+    if everything_held():  # legal hold on everything: retention pauses (docs/specs/legal-hold.md)
+        return 0
     return _sweep()

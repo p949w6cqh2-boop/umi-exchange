@@ -18,6 +18,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         rows = purgeable()
         count = rows.count()
+        from apps.holds.services import everything_held
+
+        if options["apply"] and everything_held():
+            self.stdout.write("Legal hold in force on everything: nothing was purged.")
+            return
         if not options["apply"]:
             self.stdout.write(f"DRY RUN: {count} expired unused credential(s) would be purged. Re-run with --apply.")
             return

@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "apps.hub",
     "apps.moderation",
     "apps.pages",
+    "apps.holds",
 ]
 
 # Optional: Django-Q2 (for background tasks — not required for basic operation)
