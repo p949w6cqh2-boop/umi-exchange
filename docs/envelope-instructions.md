@@ -14,7 +14,8 @@ the spare. It lets the parish get back in if the steward cannot: illness, an acc
 - [ ] This page.
 - [ ] **The identity sheet:** one line of text starting `AGE-SECRET-KEY-1`. It unlocks the key file.
 - [ ] **The key file** (`keys.env.age`), on a USB drive and printed as text. It is replaced after
-      every key change, because the identity alone unlocks nothing.
+      every key change, because the identity alone unlocks nothing. Other locked copies sit on the
+      steward's laptop and beside every nightly backup; none of them opens without the identity.
 - [ ] The succession note from `docs/governance.md` (§Succession and removal).
 - Sealed on ____________ by ____________ and ____________ (both sign across the seal).
 

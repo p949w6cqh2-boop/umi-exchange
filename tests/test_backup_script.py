@@ -160,3 +160,89 @@ def test_a_failed_heartbeat_does_not_fail_a_good_backup():
 
     assert "backup SUCCEEDED but the heartbeat could not be delivered" in body
     assert "curl -fsS" in body
+
+
+# ── The key file travels with the dump, 2026-10-01 ───────────────────────────
+# A dump's sensitive columns are wrapped under the keys that were current when it was
+# taken, and keys.env.age lived only on the steward's laptop. So every dump now carries
+# a dated copy of the age CIPHERTEXT beside it, locally and in B2, and it ages out with
+# the dump (docs/key-custody-design.md, Fifth entry; the founder's key "6").
+
+ARMORED = "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCg==\n-----END AGE ENCRYPTED FILE-----\n"
+
+
+def _full_run(tmp_path, keys_content=None, prepare=None):
+    """The whole script, end to end, against a fake docker (one dump) and a fake aws
+    (records every call). Nothing leaves tmp."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "docker").write_text('#!/bin/sh\ncase "$1" in ps) echo abc123;; exec) echo "-- dump";; esac\nexit 0\n')
+    (bindir / "aws").write_text('#!/bin/sh\necho "$*" >> "$AWS_LOG"\nexit 0\n')
+    for name in ("docker", "aws"):
+        (bindir / name).chmod(0o755)
+    backups = tmp_path / "backups"
+    backups.mkdir()
+    if keys_content is not None:
+        (backups / "keys.env.age").write_text(keys_content)
+    if prepare:
+        prepare(backups)
+    log = tmp_path / "aws.log"
+    r = _run(
+        env={
+            "PATH": f"{bindir}:/usr/bin:/bin",
+            "BACKUP_DIR": str(backups),
+            "BACKUP_BUCKET": "bkt",
+            "BACKUP_ACCESS_KEY": "id",
+            "BACKUP_SECRET_KEY": "secret",
+            "AWS_LOG": str(log),
+        },
+        timeout=30,
+    )
+    return r, backups, (log.read_text() if log.exists() else "")
+
+
+def test_the_key_ciphertext_travels_beside_each_dump(tmp_path):
+    r, backups, aws = _full_run(tmp_path, keys_content=ARMORED)
+    assert r.returncode == 0, r.stdout + r.stderr
+    copies = list(backups.glob("umi-*.keys.env.age"))
+    assert len(copies) == 1
+    assert copies[0].read_text() == ARMORED
+    assert (copies[0].stat().st_mode & 0o777) == 0o600
+    assert f"s3 cp {copies[0]} s3://bkt/umi-backups/{copies[0].name}" in aws
+    assert f"--key umi-backups/{copies[0].name}" in aws  # verified with head-object, like the dump
+    assert "Key file (ciphertext) uploaded beside the dump" in r.stdout
+
+
+def test_a_key_file_that_is_not_age_ciphertext_is_never_copied_or_uploaded(tmp_path):
+    r, backups, aws = _full_run(tmp_path, keys_content='ENCRYPTION_KEYS="k1"\nSECRET_KEY="s"\n')
+    assert r.returncode != 0
+    assert "not age ciphertext" in r.stdout
+    assert not list(backups.glob("umi-*.keys.env.age"))
+    assert "keys.env.age" not in aws
+
+
+def test_without_a_key_file_the_backup_still_succeeds_and_says_so(tmp_path):
+    r, backups, aws = _full_run(tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "no key file" in r.stdout
+    assert "keys.env.age" not in aws
+
+
+def test_old_key_copies_age_out_with_the_dumps_but_the_live_copy_stays(tmp_path):
+    import os
+    import time
+
+    forty_days_ago = time.time() - 40 * 86400
+
+    def prepare(backups):
+        old = backups / "umi-20200101-000000.keys.env.age"
+        old.write_text(ARMORED)
+        os.utime(old, (forty_days_ago, forty_days_ago))
+        os.utime(backups / "keys.env.age", (forty_days_ago, forty_days_ago))
+
+    r, backups, _ = _full_run(tmp_path, keys_content=ARMORED, prepare=prepare)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not (backups / "umi-20200101-000000.keys.env.age").exists()  # aged out with its dump
+    assert (backups / "keys.env.age").exists()  # the live copy is never pruned
+    # Today's copy survives even though its source is old: it must not inherit that mtime.
+    assert len(list(backups.glob("umi-2*.keys.env.age"))) == 1
