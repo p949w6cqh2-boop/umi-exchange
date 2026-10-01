@@ -77,7 +77,25 @@ A backup is a dump, and its records stay wrapped under the key that was current 
 Retiring the old key from the live list is safe. Destroying it silently crypto-shreds every older
 backup.
 
-**Stage 2, the real droplet at a quiet hour, is not done.** It runs on the steward's hand.
+**Stage 2, the real droplet, was attempted the same evening and stopped by a real gap** (the
+founder's key "3", run one command at a time with his approval):
+
+- The pre-rotation backup went off-site with its key file beside it (the next section's fix,
+  proven in production on its first run).
+- The key file was staged as `ENCRYPTION_KEYS=<new>,<old>`, round-tripped byte-identical and
+  deployed. **The app booted with no key at all**: `docker/docker-compose.prod.yml` passed only
+  `ENCRYPTION_KEY` into the container, never the list (`The "ENCRYPTION_KEY" variable is not set`).
+  Production refused to start and **the site served 502 for about four minutes (~21:48–21:52 UTC).**
+- **Rolled back** by putting the pre-rotation key file back and redeploying: `/health/` 200. No
+  record had been re-wrapped (`rotate_keks` never ran), so nothing needed the new key, and it was
+  shredded unused.
+- **Why the scratch box missed it:** the rehearsal ran Django directly with the keys in its
+  environment, not through compose. A rehearsal that skips the real launcher cannot catch a
+  launcher gap; this is the same defect class as the Second correction (09-11).
+- **Fixed:** compose now passes `ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}` (empty keeps a single-key
+  setup working), pinned by `test_compose_passes_the_key_list_so_rotation_can_reach_production`.
+  Stage 2 re-runs after this merges and the droplet pulls it (compose is read from the droplet's
+  checkout; the image does not change).
 
 ### The envelope needs the key FILE, not only the identity
 
