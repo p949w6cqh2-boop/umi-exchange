@@ -28,6 +28,11 @@
   the community settings that come with it. An admin can now make someone an *intake helper*
   instead. They can vouch for neighbors and help them sign up, and nothing else: no moderation, no
   settings, no hidden posts, no password resets. Everything they do is recorded with their name.
+- **Coordinators can now see who did what.** A new page, linked from community settings, lists
+  every vouch, role change, removal, moderation step, password reset code and settings change in
+  your community, newest first, with the name of the person who did it. It covers everything already on record,
+  not just what happens from today, and nobody can edit or delete it. What neighbors do privately,
+  like blocking someone or raising a concern, is never shown there.
 
 ## 2026-09-28
 
