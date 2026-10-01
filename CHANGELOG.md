@@ -16,6 +16,12 @@
   phone or computer and choose your new password yourself; the coordinator never sees it. Their
   name is recorded every time, and if you have a confirmed email we tell you it happened.
   Coordinators can only do this for members, never for another coordinator.
+- **Helping neighbors sign up in person no longer loses accounts.** Our sign-up page quietly
+  ignores forms filled in faster than a person could read them, to stop robots. A coordinator
+  helping several people in a row got fast enough to trip it, and those accounts were never made,
+  with no error. Coordinators now have a sign-up helper, linked from community settings, that
+  skips that one check. Each neighbor still types their own password, and anyone without an email
+  gets their recovery code right there.
 
 ## 2026-09-28
 
