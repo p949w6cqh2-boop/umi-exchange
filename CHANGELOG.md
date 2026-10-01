@@ -3,6 +3,14 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## Unreleased
+
+- **Every backup now carries what it needs to be restored.** Nothing you can see changed. The most
+  private parts of the board are locked, and until now the only copy of the locked key file lived
+  on one laptop. Now a copy goes beside every nightly backup, still locked, so the backup can be
+  restored even if that laptop is lost. The key that opens it stays with the steward and in a sealed
+  envelope at the parish.
+
 ## 2026-10-01
 
 - **No email? You now get a recovery code on paper.** Until now, if you signed up without an

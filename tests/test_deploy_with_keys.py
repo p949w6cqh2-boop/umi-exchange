@@ -349,3 +349,87 @@ def test_a_failed_up_still_shreds_the_keys(age_home, tmp_path):
     assert "up failed" in r.stderr
     assert not (shm / "umi-keys.env").exists(), "decrypted keys left in tmpfs after a failed up"
     assert not (shm / "umi-full.env").exists(), "merged env left in tmpfs after a failed up"
+
+
+# ── The key file travels with the backups, 2026-10-01 ─────────────────────────
+#
+# keys.env.age existed only on the steward's laptop, and backup.sh never copied it, so a
+# backup restored without that laptop had its sensitive columns locked for good, and an
+# envelope holding only the printed identity recovered nothing (key-custody-design.md,
+# Fifth entry). The founder's key "6": the ciphertext is printable, the rig copies it to
+# the droplet's backup directory, and backup.sh carries it beside every dump.
+
+
+def test_encrypt_writes_printable_armored_ciphertext(age_home):
+    out = age_home["dir"] / "keys.env.age"
+    r = run(
+        ["encrypt", str(age_home["plain"])],
+        env={"UMI_AGE_RECIPIENTS": str(age_home["recipients"]), "UMI_KEYS_AGE": str(out)},
+    )
+    assert r.returncode == 0, r.stderr
+    text = out.read_text()  # armored age is plain ASCII: it can be printed for the envelope
+    assert text.startswith("-----BEGIN AGE ENCRYPTED FILE-----")
+    dec = subprocess.run(["age", "-d", "-i", str(age_home["identity"]), str(out)], capture_output=True, text=True)
+    assert dec.stdout == KEYS_SAMPLE
+
+
+def test_deploy_plan_says_it_copies_the_ciphertext_never_the_plaintext(age_home):
+    out = age_home["dir"] / "keys.env.age"
+    run(
+        ["encrypt", str(age_home["plain"])],
+        env={"UMI_AGE_RECIPIENTS": str(age_home["recipients"]), "UMI_KEYS_AGE": str(out)},
+    )
+    r = run(
+        ["deploy"],
+        env={
+            "UMI_AGE_IDENTITY": str(age_home["identity"]),
+            "UMI_KEYS_AGE": str(out),
+            "UMI_DROPLET": "root@198.51.100.7",
+            "DRY_RUN": "1",
+        },
+    )
+    assert r.returncode == 0, r.stderr
+    banner = r.stdout.splitlines()[0]
+    assert "/var/backups/umi/keys.env.age" in banner
+    assert "ciphertext" in banner.lower()
+    assert "k1-abc" not in r.stdout
+
+
+def test_copy_ciphertext_refuses_a_file_that_is_not_age_ciphertext(age_home):
+    r = run(
+        ["copy-ciphertext"],
+        env={"UMI_KEYS_AGE": str(age_home["plain"]), "UMI_DROPLET": "root@198.51.100.7", "DRY_RUN": "1"},
+    )
+    assert r.returncode != 0
+    assert "not age ciphertext" in (r.stderr + r.stdout)
+
+
+def test_copy_ciphertext_lands_the_file_with_owner_only_permissions(age_home, tmp_path):
+    """Run the real copy through a fake ssh that executes the remote command locally."""
+    out = age_home["dir"] / "keys.env.age"
+    run(
+        ["encrypt", str(age_home["plain"])],
+        env={"UMI_AGE_RECIPIENTS": str(age_home["recipients"]), "UMI_KEYS_AGE": str(out)},
+    )
+    bindir = tmp_path / "fakebin"
+    bindir.mkdir()
+    ssh = bindir / "ssh"
+    ssh.write_text('#!/bin/sh\nshift\nexec bash -c "$*"\n')  # drop the host, run the command here
+    ssh.chmod(0o755)
+    target = tmp_path / "droplet" / "backups" / "keys.env.age"
+    r = subprocess.run(
+        ["bash", str(SCRIPT), "copy-ciphertext"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env={
+            "PATH": f"{bindir}:/usr/bin:/bin:/usr/local/bin:" + str(Path.home() / ".local/bin"),
+            "UMI_KEYS_AGE": str(out),
+            "UMI_DROPLET": "root@198.51.100.7",
+            "UMI_REMOTE_KEYS_COPY": str(target),
+        },
+    )
+    assert r.returncode == 0, r.stderr
+    assert target.read_bytes() == out.read_bytes()
+    assert (target.stat().st_mode & 0o777) == 0o600
+    assert not target.with_name("keys.env.age.tmp").exists()

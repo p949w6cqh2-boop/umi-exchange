@@ -152,6 +152,31 @@ for _k in ENCRYPTION_KEY ENCRYPTION_KEYS SECRET_KEY; do
     fi
 done
 
+# The key file travels with the dump (docs/key-custody-design.md, Fifth entry). A dump's
+# sensitive columns are wrapped under the keys that were current when it was taken, so
+# every dump keeps a dated copy of the age CIPHERTEXT beside it and ages out with it.
+# The identity that opens it never comes here: it stays on the steward's laptop and in
+# the sealed envelope. deploy-with-keys.sh copies the ciphertext here on every deploy.
+KEYS_CIPHERTEXT="${KEYS_CIPHERTEXT:-$BACKUP_DIR/keys.env.age}"
+KEYS_COPY=""
+if [ -f "$KEYS_CIPHERTEXT" ]; then
+    # Positive check, binary or armored age: anything else (above all a plaintext keys
+    # file left here by mistake) is never copied or uploaded.
+    _head=$(LC_ALL=C head -c 21 "$KEYS_CIPHERTEXT" | tr -d '\0')
+    if [ "$_head" != "age-encryption.org/v1" ] && [ "$_head" != "-----BEGIN AGE ENCRYP" ]; then
+        echo "ERROR: $KEYS_CIPHERTEXT is not age ciphertext — refusing to copy or upload it. If it holds plaintext keys, shred it now, then re-run deploy-with-keys.sh copy-ciphertext."
+        exit 1
+    fi
+    KEYS_COPY="umi-${TIMESTAMP}.keys.env.age"
+    # A plain cp, not cp -p: the copy must carry TODAY's mtime, or a key file older than
+    # RETENTION_DAYS would be pruned below on the very night it was copied.
+    cp "$KEYS_CIPHERTEXT" "$BACKUP_DIR/$KEYS_COPY"
+    chmod 600 "$BACKUP_DIR/$KEYS_COPY"
+    echo "[$(date)] Key file (ciphertext) kept beside the dump: $BACKUP_DIR/$KEYS_COPY"
+else
+    echo "NOTICE: no key file at $KEYS_CIPHERTEXT — this dump's encrypted fields can be restored only with the steward's own copy of the keys. Run deploy-with-keys.sh copy-ciphertext from the laptop."
+fi
+
 # Optional: Upload to Backblaze B2 (S3-compatible). Use a SCOPED B2 application
 # key — write access to THIS bucket/prefix only, never the master key.
 # Every way this leg can silently not happen must say so on stdout — a local-only
@@ -185,6 +210,21 @@ if [ "$B2_SET" -eq 3 ]; then
             echo "ERROR: B2 upload failed."
             exit 1
         fi
+        # The key file goes up beside the dump, verified the same way.
+        if [ -n "$KEYS_COPY" ]; then
+            KEYS_REMOTE="umi-backups/$KEYS_COPY"
+            if AWS_ACCESS_KEY_ID="$BACKUP_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$BACKUP_SECRET_KEY" \
+                aws s3 cp "$BACKUP_DIR/$KEYS_COPY" "s3://$BACKUP_BUCKET/$KEYS_REMOTE" \
+                --endpoint-url "$ENDPOINT" --sse AES256 --only-show-errors \
+                && AWS_ACCESS_KEY_ID="$BACKUP_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$BACKUP_SECRET_KEY" \
+                aws s3api head-object --bucket "$BACKUP_BUCKET" --key "$KEYS_REMOTE" \
+                --endpoint-url "$ENDPOINT" > /dev/null 2>&1; then
+                echo "[$(date)] Key file (ciphertext) uploaded beside the dump: s3://$BACKUP_BUCKET/$KEYS_REMOTE"
+            else
+                echo "ERROR: the key file (ciphertext) could not be uploaded or verified beside the dump."
+                exit 1
+            fi
+        fi
     fi
 else
     # B2_SET is 0 here (partial config already failed in preflight; REQUIRE_REMOTE
@@ -193,7 +233,7 @@ else
 fi
 
 # Rotate old backups
-DELETED=$(find "$BACKUP_DIR" -name "umi-*.sql.gz" -mtime +"$RETENTION_DAYS" -delete -print | wc -l)
+DELETED=$(find "$BACKUP_DIR" \( -name "umi-*.sql.gz" -o -name "umi-*.keys.env.age" \) -mtime +"$RETENTION_DAYS" -delete -print | wc -l)
 echo "[$(date)] Cleaned $DELETED backups older than $RETENTION_DAYS days."
 echo "[$(date)] Backup complete."
 

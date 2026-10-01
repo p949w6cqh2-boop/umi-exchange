@@ -11,8 +11,11 @@
 #   * refuse loudly when half-armed (no identity, no recipients, no ciphertext).
 #
 # Modes:
-#   encrypt <plaintext-env-file>   age-encrypt key material -> $UMI_KEYS_AGE
-#   deploy                         decrypt -> ssh -> tmpfs merge -> compose up -> shred -> migrate
+#   encrypt <plaintext-env-file>   age-encrypt key material -> $UMI_KEYS_AGE (armored: printable)
+#   deploy                         decrypt -> ssh -> tmpfs merge -> compose up -> shred -> migrate,
+#                                  then copy-ciphertext
+#   copy-ciphertext                copy the CIPHERTEXT (never plaintext) to the droplet's backup
+#                                  dir, so backup.sh carries it beside every dump
 #   check                          prove the droplet .env holds no plaintext keys
 #   check --local-file <file>      same proof against a local file (used by tests)
 #
@@ -20,8 +23,9 @@
 #   UMI_AGE_IDENTITY   age identity file        (default ~/.config/umi/age-identity.txt)
 #   UMI_AGE_RECIPIENTS age recipients file      (default ~/.config/umi/age-recipients.txt)
 #   UMI_KEYS_AGE       ciphertext path          (default ~/.config/umi/keys.env.age)
-#   UMI_DROPLET        ssh target               (REQUIRED for deploy/check — no default)
+#   UMI_DROPLET        ssh target               (REQUIRED for deploy/check/copy-ciphertext — no default)
 #   UMI_REMOTE_DIR     compose dir on droplet   (default /opt/umi-exchange)
+#   UMI_REMOTE_KEYS_COPY  ciphertext copy on the droplet (default /var/backups/umi/keys.env.age)
 #   DRY_RUN=1          print the plan, run nothing remote
 
 set -euo pipefail
@@ -35,6 +39,9 @@ KEYS_AGE="${UMI_KEYS_AGE:-$CONF_HOME/.config/umi/keys.env.age}"
 # Checked lazily by need_droplet(), because encrypt and `check --local-file` need none.
 DROPLET="${UMI_DROPLET:-}"
 REMOTE_DIR="${UMI_REMOTE_DIR:-/opt/umi-exchange}"
+# Outside the repo on purpose: the image is built with `COPY . .`, and .dockerignore does
+# not exclude secrets/, so a copy inside the checkout would be baked into every image.
+REMOTE_KEYS_COPY="${UMI_REMOTE_KEYS_COPY:-/var/backups/umi/keys.env.age}"
 COMPOSE="docker compose --env-file /dev/shm/umi-full.env -f docker/docker-compose.prod.yml"
 
 # The names that must never sit in plaintext on the droplet (key-custody design).
@@ -43,7 +50,7 @@ KEY_NAMES='ENCRYPTION_KEYS?|BLIND_INDEX_KEY|SECRET_KEY'
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 usage() {
-  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'  # the whole header comment, however long it grows
   exit "${1:-0}"
 }
 
@@ -64,7 +71,8 @@ cmd_encrypt() {
     *) : ;;
   esac
   mkdir -p "$(dirname "$KEYS_AGE")"
-  age -e -R "$RECIPIENTS" -o "$KEYS_AGE" < "$plain"
+  # Armored (-a): plain ASCII, so the envelope can carry it on paper as well as a USB drive.
+  age -e -a -R "$RECIPIENTS" -o "$KEYS_AGE" < "$plain"
   echo "encrypted -> $KEYS_AGE"
   echo "NOW SHRED THE PLAINTEXT: shred -u '$plain'  (ciphertext is the only copy that should remain)"
 }
@@ -106,7 +114,8 @@ REMOTE
 )
 
   if [ "${DRY_RUN:-0}" = "1" ]; then
-    echo "== DRY RUN: would decrypt $KEYS_AGE with $IDENTITY and pipe it to the STDIN of: ssh $DROPLET bash -c <the script below> =="
+    # One banner line (the tests run everything below it as the remote script).
+    echo "== DRY RUN: would decrypt $KEYS_AGE with $IDENTITY and pipe it to the STDIN of: ssh $DROPLET bash -c <the script below>, then copy the ciphertext (never plaintext) to $DROPLET:$REMOTE_KEYS_COPY =="
     echo "$remote_script"
     return 0
   fi
@@ -120,6 +129,34 @@ REMOTE
   age -d -i "$IDENTITY" "$KEYS_AGE" | ssh "$DROPLET" "bash -c $(printf '%q' "$remote_script")" \
     || die "deploy failed — plaintext was confined to the pipe and tmpfs; re-run after fixing"
   # shellcheck disable=SC2181
+  # Every deploy refreshes the droplet's ciphertext copy, so after a key rotation the
+  # next nightly backup carries the new key file without anyone remembering to.
+  cmd_copy_ciphertext || die "deploy done, but the ciphertext copy failed: backups will not carry the key file until 'copy-ciphertext' succeeds"
+}
+
+# Binary or armored age, by the file's first bytes. Anything else, above all a plaintext
+# keys file in the wrong place, is never copied anywhere.
+is_age_ciphertext() {
+  local head
+  head=$(LC_ALL=C head -c 21 "$1" | tr -d '\0')
+  [ "$head" = "age-encryption.org/v1" ] || [ "$head" = "-----BEGIN AGE ENCRYP" ]
+}
+
+cmd_copy_ciphertext() {
+  need_droplet
+  [ -f "$KEYS_AGE" ] || die "ciphertext not found: $KEYS_AGE"
+  is_age_ciphertext "$KEYS_AGE" || die "$KEYS_AGE is not age ciphertext — refusing to copy it anywhere"
+  local dir
+  dir=$(dirname "$REMOTE_KEYS_COPY")
+  if [ "${DRY_RUN:-0}" = "1" ]; then
+    echo "== DRY RUN: would copy the ciphertext (never plaintext) $KEYS_AGE to $DROPLET:$REMOTE_KEYS_COPY, mode 600 =="
+    return 0
+  fi
+  # Written beside the target, then renamed: a dropped connection never leaves a half file
+  # where backup.sh would pick it up.
+  ssh "$DROPLET" "umask 077 && mkdir -p $(printf '%q' "$dir") && cat > $(printf '%q' "$REMOTE_KEYS_COPY.tmp") && mv $(printf '%q' "$REMOTE_KEYS_COPY.tmp") $(printf '%q' "$REMOTE_KEYS_COPY")" < "$KEYS_AGE" \
+    || die "could not copy the ciphertext to $DROPLET:$REMOTE_KEYS_COPY"
+  echo "ciphertext copied -> $DROPLET:$REMOTE_KEYS_COPY (backup.sh now carries it beside every dump)"
 }
 
 cmd_check() {
@@ -146,6 +183,7 @@ cmd_check() {
 case "${1:-}" in
   encrypt) shift; cmd_encrypt "$@" ;;
   deploy)  shift; cmd_deploy  "$@" ;;
+  copy-ciphertext) shift; cmd_copy_ciphertext ;;
   check)   shift; cmd_check   "$@" ;;
   -h|--help|"") usage 0 ;;
   *) die "unknown mode: $1 (encrypt|deploy|check)" ;;
