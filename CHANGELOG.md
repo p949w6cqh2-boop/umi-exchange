@@ -11,6 +11,11 @@
   choose "Have a recovery code?" on the sign-in page, type your username and the code, and set a
   new password. Each code works once, and you get a new one as soon as you use it. We don't keep a
   copy. Lost yours? Print a new one from Settings, and the old one stops working.
+- **Locked out and no code? A coordinator can help, without ever knowing your password.** Standing
+  with you, a coordinator can make a short code that works for 15 minutes. You type it on your own
+  phone or computer and choose your new password yourself; the coordinator never sees it. Their
+  name is recorded every time, and if you have a confirmed email we tell you it happened.
+  Coordinators can only do this for members, never for another coordinator.
 
 ## 2026-09-28
 
