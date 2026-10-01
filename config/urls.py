@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.accounts.views import StaffUnlockView
 from apps.communities.views import LandingView, SecurityTxtView
 
 urlpatterns = [
@@ -13,6 +14,8 @@ urlpatterns = [
     path(".well-known/security.txt", SecurityTxtView.as_view(), name="security-txt"),
     path("health/", include("apps.health.urls")),
     path("auth/", include("apps.accounts.urls")),
+    # The audited admin unlock (account-recovery.md §A4), outside every community surface.
+    path("staff/unlock/", StaffUnlockView.as_view(), name="staff-unlock"),
     path("join/", include("apps.households.urls_join")),
     path("hub/", include("apps.hub.urls")),
     path("c/<slug:slug>/cases/", include(("apps.casework.urls", "casework"), namespace="casework")),

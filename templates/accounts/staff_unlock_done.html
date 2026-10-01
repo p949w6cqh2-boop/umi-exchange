@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Unlock code{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto umi-card space-y-4">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Unlock code for {{ target.username }}</h1>
+  <p class="text-center font-mono font-semibold tracking-widest text-parish-ink text-3xl py-2 select-all">{{ code }}</p>
+  <p class="text-base text-parish-ink">
+    Give this to the person directly, in person or by phone. It works for one hour, once. They go to
+    the sign-in page, choose "Have a recovery code?", and type their username and this code.
+  </p>
+  <p class="text-sm text-parish-ink/70">This page is the only place the code is shown. It is not stored.</p>
+</div>
+{% endblock %}

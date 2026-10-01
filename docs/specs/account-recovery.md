@@ -201,6 +201,22 @@ powers across five apps — moderation hide/remove/reinstate, role changes, vouc
 visibility, coordinator page surfaces. There is no way today to grant reset without also
 granting removal. **A narrow role is a precondition of C, not an enhancement to it.**
 
+### A4. Admin unlock — as built (2026-09-30)
+
+`/staff/unlock/`, staff only, outside every community surface. Exact username (no search, no
+listing) and a required reason. The result is an `admin_unlock` credential (one hour, single use)
+that the person redeems at `/auth/recover/code/`, the same page as the paper code. **It never
+sets a password.** Every use is audited as `account.unlock.admin` and emailed to every superuser
+with a confirmed address, the issuer included.
+
+⚠️ **One deliberate difference from the build plan: the reason is NOT in the audit `details`.**
+The plan said to store it there, but `tests/test_audit_pii_hygiene.py` exists because free text in
+the append-only log can never be redacted or shredded. The reason lives on the credential row
+(`RecoveryCredential.note`), and the audit records `{"reason_provided": true}`. The email says an
+unlock happened and by whom, not why.
+
+Honest limit, unchanged: Django `/admin/` still exists and still bypasses all of this.
+
 ## Build notes (for the keyed implementation PRs)
 
 - Accounts is at migration `0005_backfill_verified`; the credential table is `0006`.
