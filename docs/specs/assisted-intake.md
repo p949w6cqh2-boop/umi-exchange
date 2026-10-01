@@ -174,7 +174,8 @@ not from this file.**
 ## Not this spec
 
 - **Posting on someone's behalf without an account** (option D). Larger change, weaker position for
-  the subject, and it needs its own consent story. Deferred, not refused.
+  the subject, and it needs its own consent story. Deferred, not refused. **Specced 2026-10-01:
+  `on-behalf-requests.md`.**
 - **Splitting `is_coordinator`** — precondition, specced separately.
 - **The consent text** — pastoral, see above.
 
