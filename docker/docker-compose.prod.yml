@@ -17,6 +17,10 @@ services:
       # not using the rig.
       - SECRET_KEY=${SECRET_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # The key LIST, primary first, which a rotation needs (2026-10-01: without this line
+      # the first real rotation booted the app with no key). `:-` keeps a single-key
+      # setup working: empty parses to [] and the app falls back to ENCRYPTION_KEY.
+      - ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}
       - BLIND_INDEX_KEY=${BLIND_INDEX_KEY}
       # Runtime role: defaults keep the single-role setup working, but the
       # append-only audit gate (threat-model must-fix #1) needs the app on a
