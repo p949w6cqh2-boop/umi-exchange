@@ -92,6 +92,23 @@ and printed as text (`age -a`), replaced after every rotation; and `backup.sh` u
 beside each dump, so a second copy exists off the laptop. `docs/envelope-instructions.md` is written
 for the first option.
 
+**Chosen the same day, both halves (his key "6"), and the code half is BUILT:**
+- `deploy-with-keys.sh encrypt` writes **armored** age, plain ASCII that can be printed. The file
+  made before this change is binary; it becomes printable at its next `encrypt`.
+- Every `deploy` ends by copying the **ciphertext** (never plaintext) to the droplet at
+  `/var/backups/umi/keys.env.age`, mode 600, written beside the target and renamed. The path is
+  outside the checkout on purpose: the image is built with `COPY . .`. `copy-ciphertext` does the
+  copy alone.
+- `backup.sh` keeps a dated copy beside every dump (`umi-<stamp>.keys.env.age`) and uploads it
+  next to the dump, verified the same way. It ages out with the dump, so **every backup carries
+  the key file it needs for exactly as long as the backup lives**, which is the archive rule above,
+  done by the nightly job instead of by memory. It refuses any file that does not start like age
+  ciphertext (binary or armored), so a plaintext keys file left there by mistake is never copied
+  or uploaded.
+- The envelope half is the steward's hand: the printed key file and a USB copy beside the identity.
+- Pinned by `tests/test_deploy_with_keys.py` and `tests/test_backup_script.py` (§"The key file
+  travels with the dump").
+
 **After any break-glass opening, replace the identity too, not only the keys.** `rotate_keks` moves
 records to a new key, but a new key file encrypted to the old recipient is readable by anyone who
 saw the old identity.
