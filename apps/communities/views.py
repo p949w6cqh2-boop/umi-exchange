@@ -633,6 +633,12 @@ class AboutView(TemplateView):
 
     template_name = "pages/about.html"
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # DB-IP's CC BY 4.0 attribution, shown only while its data is configured.
+        ctx["geo_attribution"] = bool(django_settings.GEO_DB_PATH)
+        return ctx
+
 
 class PrivacyView(TemplateView):
     """Public: the retention/privacy promise in plain language (policy set

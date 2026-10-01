@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libpq5 curl && 
 COPY --from=builder /install /usr/local
 WORKDIR /app
 COPY --chown=umi:umi . .
-RUN mkdir -p /app/logs /app/staticfiles && chown -R umi:umi /app/logs /app/staticfiles
+RUN mkdir -p /app/logs /app/staticfiles /app/geo && chown -R umi:umi /app/logs /app/staticfiles /app/geo
 
 USER umi
 

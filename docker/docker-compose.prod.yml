@@ -31,6 +31,10 @@ services:
         condition: service_started
     volumes:
       - app_logs:/app/logs
+      # GeoIP country database (docs/specs/geolocking.md). Unused unless GEO_DB_PATH points here,
+      # e.g. GEO_DB_PATH=/app/geo/dbip-country-lite.mmdb. A volume, so the monthly
+      # `manage.py refresh_geoip` survives the container being recreated by a deploy.
+      - geo_data:/app/geo
     # Health monitoring: the app had no healthcheck (db does). Uses python (always
     # in the image) so we don't depend on curl. Sends X-Forwarded-Proto: https so
     # SECURE_SSL_REDIRECT doesn't 301 the probe to TLS (prod trusts that header),
@@ -109,3 +113,4 @@ volumes:
   caddyconfig:
   app_logs:
   uptime_data:
+  geo_data:
