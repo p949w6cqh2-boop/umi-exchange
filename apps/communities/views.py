@@ -11,6 +11,7 @@ from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.mail import send_mail
 from django.core.validators import URLValidator
 from django.db import transaction
 from django.http import HttpResponse
@@ -20,7 +21,10 @@ from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import CreateView, FormView, ListView, TemplateView
+from django_ratelimit.decorators import ratelimit
 
+from apps.accounts.credentials import issue as issue_credential
+from apps.accounts.models import RecoveryCredential
 from apps.accounts.ratelimit import rate_limit
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
@@ -747,8 +751,12 @@ class VouchMemberView(LoginRequiredMixin, View):
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug)
         member = Member.objects.filter(user=request.user, community=community, is_active=True).first()
-        if member is None or not member.is_coordinator:
-            raise PermissionDenied("Only a coordinator can vouch for a neighbour.")
+        # can_vouch, not is_coordinator: an intake helper vouches too (coordinator-roles.md).
+        if member is None or not member.can_vouch:
+            raise PermissionDenied("Only a coordinator or intake helper can vouch for a neighbour.")
+        # A helper cannot load community settings, so send them back to their own vouch page.
+        back = "member-vouch-page" if request.POST.get("return_to") == "vouch" or not member.is_coordinator else None
+        back = back or "community-settings"
 
         username = (request.POST.get("username") or "").strip()
         from django.contrib.auth import get_user_model
@@ -756,10 +764,10 @@ class VouchMemberView(LoginRequiredMixin, View):
         target = get_user_model().objects.filter(username__iexact=username, is_active=True).first()
         if target is None:
             messages.error(request, "No account with that username. Check the spelling with your neighbour.")
-            return redirect("community-settings", slug=slug)
+            return redirect(back, slug=slug)
         if target.is_human_verified:
             messages.info(request, f"{target.username} is already verified.")
-            return redirect("community-settings", slug=slug)
+            return redirect(back, slug=slug)
 
         from django.utils import timezone as dj_timezone
 
@@ -774,4 +782,145 @@ class VouchMemberView(LoginRequiredMixin, View):
             details={"vouched_username": target.username, "community": community.slug},
         )
         messages.success(request, f"Vouched for {target.username} — they can now join and post.")
-        return redirect("community-settings", slug=slug)
+        return redirect(back, slug=slug)
+
+
+@method_decorator(ratelimit(key="user", rate="5/h", method="POST", block=True), name="post")
+class CoordinatorResetView(LoginRequiredMixin, View):
+    """A coordinator-issued reset (docs/specs/account-recovery.md §C, A2): a 15-minute code the
+    coordinator reads aloud; the person sets their own password at /auth/recover/code/. The
+    coordinator never sees or sets the password.
+
+    His ruling 2026-09-30: coordinators and admins only (can_reset). Unlike VouchMemberView, the
+    target must be an ACTIVE, PLAIN member of THIS community, and never the issuer, a coordinator
+    or an admin: a reset must never be a way to climb. Every issue is audited with both members
+    and the community, the person is emailed if they have a confirmed address, and the limit is
+    per coordinator (5/hour), which is what bounds a compromised coordinator account.
+    """
+
+    NOT_FOUND = "No plain member of this community has that username. Check the spelling with them."
+
+    def post(self, request, slug):
+        community = get_object_or_404(Community, slug=slug)
+        issuer = Member.objects.filter(user=request.user, community=community, is_active=True).first()
+        if issuer is None or not issuer.can_reset:
+            raise PermissionDenied("Only a coordinator can issue a reset code.")
+
+        username = (request.POST.get("username") or "").strip()
+        target = (
+            Member.objects.filter(community=community, is_active=True, role="member", user__username=username)
+            .exclude(pk=issuer.pk)
+            .select_related("user")
+            .first()
+        )
+        if target is None:
+            messages.error(request, self.NOT_FOUND)
+            return render(request, "communities/reset_done.html", {"community": community, "code": None})
+
+        _, code = issue_credential(target.user, RecoveryCredential.PURPOSE_COORDINATOR_RESET, issued_by=issuer)
+        emit(
+            "account.reset.coordinator",
+            target.user,
+            user=request.user,
+            request=request,
+            details={"community": community.slug, "issuer_member": str(issuer.pk), "target_member": str(target.pk)},
+        )
+        if target.user.deliverable_email:
+            send_mail(
+                "A coordinator started a password reset for you — UMI Exchange",
+                f"{issuer.display_name}, a coordinator of {community.name}, made a reset code for your "
+                "account. It works for 15 minutes.\n\nIf you asked them for this, nothing else to do. "
+                "If you did not, tell someone you trust at your parish and sign in to change your password.",
+                None,
+                [target.user.deliverable_email],
+                fail_silently=True,
+            )
+        return render(request, "communities/reset_done.html", {"community": community, "code": code, "target": target})
+
+
+@method_decorator(ratelimit(key="user", rate="30/h", method="POST", block=True), name="post")
+class IntakeRegisterView(LoginRequiredMixin, TemplateView):
+    """Coordinator-assisted sign-up (#170, build plan B8). His ruling 2026-09-30: build now,
+    outside the ethics gate.
+
+    The public sign-up silently drops a form that comes back faster than a human reads it, which
+    is right against a script and wrong against a coordinator on their tenth neighbor of the
+    morning. This route is for this community's coordinators, admins and intake helpers, signed in. It drops ONLY
+    the speed check: the hidden-field check still applies. RegisterView is untouched.
+
+    Named cost: this is an authenticated path around an anti-abuse control. It is compensated by
+    the per-coordinator limit (30/hour) and an audit row for every account made here. The new
+    person is never signed in (the coordinator stays themselves), and someone with no email leaves
+    with their paper recovery code, because otherwise they could never get back in.
+    """
+
+    template_name = "communities/intake_register.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.member = Member.objects.filter(user=request.user, community=self.community, is_active=True).first()
+        # can_vouch: coordinators, admins and intake helpers (his B8 ruling 2026-09-30 named
+        # "coordinators and helpers"). Never can_reset: a helper still cannot touch a password.
+        if self.member is None or not self.member.can_vouch:
+            raise PermissionDenied("Only a coordinator or intake helper can register neighbors here.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        from apps.accounts.forms import RegistrationForm
+
+        ctx = super().get_context_data(**kwargs)
+        ctx.setdefault("form", RegistrationForm())
+        ctx.update({"community": self.community, "member": self.member})
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        from apps.accounts.forms import RegistrationForm
+        from apps.accounts.verification import send_registration_email
+        from apps.accounts.views import issue_recovery_code, render_recovery_code
+
+        here = reverse("intake-register", kwargs={"slug": self.community.slug})
+        if request.POST.get("website", "").strip():
+            # The hidden field still trips: same quiet answer as the public door, no account.
+            return redirect(here)
+        form = RegistrationForm(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+        email = form.cleaned_data.get("email")
+        with transaction.atomic():
+            user = form.save()
+            code = None if email else issue_recovery_code(request, user)
+            emit(
+                "account.registered.intake",
+                user,
+                user=request.user,
+                request=request,
+                details={"community": self.community.slug},
+            )
+        if email:
+            send_registration_email(request, user, email)
+            messages.success(request, f"Account {user.username} made. A confirmation link went to their email.")
+            return redirect(here)
+        return render_recovery_code(request, code, continue_url=here, first_time=True)
+
+
+class VouchPageView(LoginRequiredMixin, TemplateView):
+    """The vouch form on its own page, for anyone who can vouch. It exists because an intake
+    helper cannot open community settings, where coordinators find the same form."""
+
+    template_name = "communities/vouch.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.member = Member.objects.filter(user=request.user, community=self.community, is_active=True).first()
+        if self.member is None or not self.member.can_vouch:
+            raise PermissionDenied("Only a coordinator or intake helper can vouch for a neighbour.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update({"community": self.community, "member": self.member})
+        return ctx

@@ -18,6 +18,10 @@ urlpatterns = [
     # shared salt would let an old registration link be replayed here to attach
     # an attacker-chosen address. docs/specs/account-recovery.md §A.
     path("email/confirm/<str:token>/", views.ConfirmAddEmailView.as_view(), name="account-confirm-email"),
+    # The printed recovery code (docs/specs/account-recovery.md §B). The redeem path sits
+    # under RATELIMIT_AUTH_PATHS: throttled on the client IP AND the submitted username.
+    path("recover/code/", views.RecoveryCodeRedeemView.as_view(), name="recovery-code-redeem"),
+    path("recovery-code/new/", views.RecoveryCodeNewView.as_view(), name="recovery-code-new"),
     # Password change (logged in)
     path(
         "password/change/",

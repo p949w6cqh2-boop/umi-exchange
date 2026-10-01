@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Admin unlock{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-2">Admin unlock</h1>
+  <p class="text-base text-parish-ink/70 mb-6">
+    Last resort, for someone with no email and no recovery code. This makes a one-hour code the
+    person uses at "Have a recovery code?" to set their own password. It never sets a password.
+    Every use is recorded and emailed to every administrator, you included.
+  </p>
+  <form method="post" class="umi-card space-y-4">
+    {% csrf_token %}
+    {% for field in form %}
+    <div>
+      <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="w-full btn-primary">Make an unlock code</button>
+  </form>
+</div>
+{% endblock %}

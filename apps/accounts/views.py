@@ -6,21 +6,39 @@ import time
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.contrib.auth.views import LogoutView
+from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.views import View
 from django.views.generic import CreateView, FormView, TemplateView, UpdateView
 from django_otp import login as otp_login
 from django_otp import match_token, user_has_device
 from django_ratelimit.decorators import ratelimit
 
-from .forms import LoginForm, OTPTokenForm, ProfileForm, RegistrationForm, UsernameRecoveryForm
+from apps.audit.services import emit
+
+from .credentials import issue as issue_credential
+from .credentials import redeem as redeem_credential
+from .forms import (
+    LoginForm,
+    OTPTokenForm,
+    ProfileForm,
+    RecoveryCodeForm,
+    RegistrationForm,
+    StaffUnlockForm,
+    UsernameRecoveryForm,
+)
+from .models import RecoveryCredential
 from .verification import (
     PENDING_EMAIL_KEY,
     honeypot_timestamp,
@@ -59,9 +77,16 @@ class RegisterView(CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        login(self.request, self.object, backend="django.contrib.auth.backends.ModelBackend")
         email = form.cleaned_data.get("email")
+        # The account and its paper recovery code are created together or not at all: an
+        # email-less account that failed to get its code would have no way back in, ever
+        # (docs/specs/account-recovery.md §B).
+        with transaction.atomic():
+            response = super().form_valid(form)
+            code = None if email else issue_recovery_code(self.request, self.object)
+        login(self.request, self.object, backend="django.contrib.auth.backends.ModelBackend")
+        if code:
+            return render_recovery_code(self.request, code, continue_url=self.success_url, first_time=True)
         if email:
             # Option C: the address is NOT on the account. It rides in the link, and the
             # click writes it. It waits in the session (set AFTER login, which rotates the
@@ -389,3 +414,123 @@ class VerifyPendingView(LoginRequiredMixin, TemplateView):
         # clicked (option C); the session is the only place it waits.
         ctx["pending_email"] = self.request.session.get(PENDING_EMAIL_KEY)
         return ctx
+
+
+# ── The printed recovery code (docs/specs/account-recovery.md §B, A1) ──────────
+#
+# For the person with no email: reset and username recovery are both email-only, so
+# without this a forgotten password is a lost account. The code is shown exactly once and
+# never stored, logged, emailed or audited in plain text. Redeeming it STARTS a password
+# reset (the stock confirm view) and never signs anyone in, which is the mitigation for it
+# being a bearer credential. It is single-use and replaced at the moment it is used.
+
+RECOVERY_CODE_TEMPLATE = "accounts/recovery_code.html"
+
+
+def issue_recovery_code(request, user):
+    """Issue (or re-issue, retiring the old one) and audit. Returns the plaintext."""
+    cred, plaintext = issue_credential(user, RecoveryCredential.PURPOSE_RECOVERY_CODE)
+    emit("account.recovery_code.issued", user, user=request.user, request=request)
+    return plaintext
+
+
+def render_recovery_code(request, code, *, continue_url, first_time=False, reset_url=None):
+    return render(
+        request,
+        RECOVERY_CODE_TEMPLATE,
+        {"code": code, "continue_url": reset_url or continue_url, "first_time": first_time, "reset_url": reset_url},
+    )
+
+
+class RecoveryCodeRedeemView(FormView):
+    """Username + code -> a fresh code on paper, then the ordinary set-a-new-password form.
+
+    Throttled by AuthRateLimitMiddleware on BOTH the client IP and the submitted username
+    (settings.RATELIMIT_AUTH_PATHS). Every failure renders the same page with the same words,
+    whether the username exists or not.
+    """
+
+    template_name = "accounts/recovery_code_redeem.html"
+    form_class = RecoveryCodeForm
+    FAILED = "That username and recovery code don't match. Check the code on your paper and try again."
+
+    def form_valid(self, form):
+        user = get_user_model().objects.filter(username=form.cleaned_data["username"].strip()).first()
+        # The paper code, or a one-hour code the board's staff issued (A4). Same page, same answer.
+        for purpose, action in (
+            (RecoveryCredential.PURPOSE_RECOVERY_CODE, "account.recovery_code.redeemed"),
+            (RecoveryCredential.PURPOSE_ADMIN_UNLOCK, "account.unlock.redeemed"),
+            (RecoveryCredential.PURPOSE_COORDINATOR_RESET, "account.reset.redeemed"),
+        ):
+            cred = redeem_credential(user, purpose, form.cleaned_data["code"])
+            if cred is not None:
+                break
+        if cred is None:
+            form.add_error(None, self.FAILED)
+            return self.form_invalid(form)
+        emit(action, user, request=self.request)
+        fresh = issue_recovery_code(self.request, user)
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_url = reverse("password_reset_confirm", kwargs={"uidb64": uidb64, "token": token})
+        return render_recovery_code(self.request, fresh, continue_url=reset_url, reset_url=reset_url)
+
+
+@method_decorator(ratelimit(key="user", rate="5/m", method="POST", block=True), name="post")
+class RecoveryCodeNewView(LoginRequiredMixin, View):
+    """Print a replacement from settings. The old code stops working immediately."""
+
+    http_method_names = ["post"]
+
+    def post(self, request):
+        code = issue_recovery_code(request, request.user)
+        return render_recovery_code(request, code, continue_url=reverse("account-settings"))
+
+
+# ── The audited admin unlock (docs/specs/account-recovery.md §A4) ──────────────
+#
+# A last resort for the board's staff that is not Django /admin/: exact username, a required
+# reason, and the result is a one-hour CODE the person redeems themselves at
+# /auth/recover/code/. It never sets a password. The reason is kept on the credential row (which
+# can be redacted), never in the append-only audit log; the audit records only that one was
+# given. Every use is emailed to every superuser, including the one who did it, because a use you
+# did not make is the thing worth seeing. Django /admin/ still exists and still bypasses all of
+# this; this adds a better door, it does not close the old one.
+
+
+@method_decorator(ratelimit(key="user", rate="10/h", method="POST", block=True), name="post")
+class StaffUnlockView(LoginRequiredMixin, FormView):
+    template_name = "accounts/staff_unlock.html"
+    form_class = StaffUnlockForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.is_staff:
+            raise PermissionDenied("Staff only.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        target = get_user_model().objects.filter(username=form.cleaned_data["username"].strip()).first()
+        if target is None:
+            form.add_error("username", "No account has exactly that username.")
+            return self.form_invalid(form)
+        staff = self.request.user
+        _, code = issue_credential(
+            target,
+            RecoveryCredential.PURPOSE_ADMIN_UNLOCK,
+            issued_by_label=staff.username,
+            note=form.cleaned_data["reason"],
+        )
+        emit("account.unlock.admin", target, user=staff, request=self.request, details={"reason_provided": True})
+        _tell_superusers(target, staff)
+        return render(self.request, "accounts/staff_unlock_done.html", {"code": code, "target": target})
+
+
+def _tell_superusers(target, staff):
+    body = (
+        f"An admin unlock was issued for the account '{target.username}' by '{staff.username}'.\n\n"
+        "It is a one-hour code the person uses to set their own password. The reason is recorded "
+        "with it on the board.\n\nIf you did not expect this, look into it now."
+    )
+    for su in get_user_model().objects.filter(is_superuser=True, is_active=True):
+        if su.deliverable_email:
+            send_mail("Admin unlock issued — UMI Exchange", body, None, [su.deliverable_email], fail_silently=True)

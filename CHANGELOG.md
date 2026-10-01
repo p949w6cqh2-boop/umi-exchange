@@ -5,9 +5,32 @@
 
 ## Unreleased
 
+- **No email? You now get a recovery code on paper.** Until now, if you signed up without an
+  email and forgot your password, there was no way back in. Now, when you sign up without an
+  email, we show you a short code once, to write down or print. If you ever forget your password,
+  choose "Have a recovery code?" on the sign-in page, type your username and the code, and set a
+  new password. Each code works once, and you get a new one as soon as you use it. We don't keep a
+  copy. Lost yours? Print a new one from Settings, and the old one stops working.
+- **Locked out and no code? A coordinator can help, without ever knowing your password.** Standing
+  with you, a coordinator can make a short code that works for 15 minutes. You type it on your own
+  phone or computer and choose your new password yourself; the coordinator never sees it. Their
+  name is recorded every time, and if you have a confirmed email we tell you it happened.
+  Coordinators can only do this for members, never for another coordinator.
+- **Helping neighbors sign up in person no longer loses accounts.** Our sign-up page quietly
+  ignores forms filled in faster than a person could read them, to stop robots. A coordinator
+  helping several people in a row got fast enough to trip it, and those accounts were never made,
+  with no error. Coordinators and intake helpers now have a sign-up helper that skips that one
+  check. Each neighbor still types their own password, and anyone without an email
+  gets their recovery code right there.
+- **A new role for helpers who vouch: intake helper.** Some parishes have someone who meets new
+  neighbors at church and can say "yes, this is a real person" — but until now the only way to let
+  them do that was to make them a full coordinator, with the moderation queue, member removal and
+  the community settings that come with it. An admin can now make someone an *intake helper*
+  instead. They can vouch for neighbors and help them sign up, and nothing else: no moderation, no
+  settings, no hidden posts, no password resets. Everything they do is recorded with their name.
 - **Coordinators can now see who did what.** A new page, linked from community settings, lists
-  every vouch, role change, removal, moderation step and settings change in your community,
-  newest first, with the name of the person who did it. It covers everything already on record,
+  every vouch, role change, removal, moderation step, password reset code and settings change in
+  your community, newest first, with the name of the person who did it. It covers everything already on record,
   not just what happens from today, and nobody can edit or delete it. What neighbors do privately,
   like blocking someone or raising a concern, is never shown there.
 

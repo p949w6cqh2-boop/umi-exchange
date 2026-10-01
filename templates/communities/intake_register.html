@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Sign up a neighbor · {{ community.name }}{% endblock %}
+{% block content %}
+{% comment %}
+  #170 / build plan B8: the coordinator-assisted sign-up. The hidden field below still trips the
+  bot check; the speed check is the only thing this page skips.
+{% endcomment %}
+<div class="max-w-md mx-auto space-y-4">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink">Sign up a neighbor</h1>
+  <p class="text-base text-parish-ink/70">
+    For helping someone make an account with you, one after another. Let them choose and type
+    their own password. You stay signed in as yourself. If they have no email, the next page shows
+    their paper recovery code: give it to them before you go on. Each sign-up here is recorded with
+    your name.
+  </p>
+  {% if messages %}{% for m in messages %}<p class="text-sm text-parish-ink bg-parish-soft rounded-lg px-4 py-3">{{ m }}</p>{% endfor %}{% endif %}
+  <form method="post" class="umi-card space-y-4">
+    {% csrf_token %}
+    <div style="position:absolute;left:-9999px;top:-9999px" aria-hidden="true">
+      <label for="id_website">Website</label>
+      <input type="text" name="website" id="id_website" tabindex="-1" autocomplete="off" value="">
+    </div>
+    {% if form.non_field_errors %}<p class="text-sm text-red-600" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+    {% for field in form %}
+    <div>
+      <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}{% if not field.field.required %} <span class="font-normal text-parish-ink/70">(optional)</span>{% endif %}</label>
+      {{ field }}
+      {% if field.help_text %}<p class="text-xs text-parish-ink/70 mt-1.5">{{ field.help_text }}</p>{% endif %}
+      {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="w-full btn-primary">Make their account</button>
+  </form>
+  {% if member.is_coordinator %}
+  <p><a href="{% url 'community-settings' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to settings</a></p>
+  {% else %}
+  <p><a href="{% url 'member-vouch-page' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to vouching</a></p>
+  {% endif %}
+</div>
+{% endblock %}

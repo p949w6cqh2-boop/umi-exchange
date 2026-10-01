@@ -98,3 +98,50 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class RecoveryCredential(models.Model):
+    """One-time credential: a secret tied to a user, hashed at rest, single-use, per-purpose
+    expiry (docs/specs/account-recovery.md §One credential model, F0-a).
+
+    One table for every "hand someone a secret that lets them back in" path — the paper
+    recovery code, the coordinator-read reset, the admin unlock, the claim link — so the
+    properties are enforced once, in apps/accounts/credentials.py, not per feature.
+    The plaintext is never stored: only its SHA-256.
+    """
+
+    PURPOSE_RECOVERY_CODE = "recovery_code"
+    PURPOSE_COORDINATOR_RESET = "coordinator_reset"
+    PURPOSE_ADMIN_UNLOCK = "admin_unlock"
+    PURPOSE_CLAIM = "claim"
+    PURPOSE_CHOICES = [
+        (PURPOSE_RECOVERY_CODE, "Printed recovery code"),
+        (PURPOSE_COORDINATOR_RESET, "Coordinator-issued reset"),
+        (PURPOSE_ADMIN_UNLOCK, "Admin unlock"),
+        (PURPOSE_CLAIM, "Account claim link"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recovery_credentials")
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
+    token_hash = models.CharField(max_length=64, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)  # null = never (recovery_code only)
+    used_at = models.DateTimeField(null=True, blank=True)
+    # Set when a newer credential of the same purpose replaced this one before it was used —
+    # re-issuing a lost paper code must kill the lost one, or "lost" means "still live".
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    issued_by = models.ForeignKey(
+        "communities.Member", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    # Denormalized so the record still says who issued it after that Member row is gone.
+    issued_by_label = models.CharField(max_length=150, blank=True, default="")
+    # Why it was issued (the admin unlock's required reason). Kept HERE, on a row that can be
+    # redacted, and never in the append-only audit log (tests/test_audit_pii_hygiene.py doctrine).
+    note = models.TextField(blank=True, default="")
+
+    class Meta:
+        db_table = "accounts_recovery_credential"
+        indexes = [models.Index(fields=["user", "purpose"], name="recovery_cred_user_purpose")]
+
+    def __str__(self):
+        return f"{self.purpose} for {self.user_id}"

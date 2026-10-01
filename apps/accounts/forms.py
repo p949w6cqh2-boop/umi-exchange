@@ -223,3 +223,47 @@ class UsernameRecoveryForm(forms.Form):
             }
         ),
     )
+
+
+class RecoveryCodeForm(forms.Form):
+    """Logged-out recovery with the printed code (docs/specs/account-recovery.md §B).
+    Username + code; the view gives one answer for every failure (no enumeration)."""
+
+    _input = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]"
+
+    username = forms.CharField(
+        label="Username",
+        max_length=150,
+        widget=forms.TextInput(attrs={"class": _input, "autocomplete": "username", "autocapitalize": "none"}),
+    )
+    code = forms.CharField(
+        label="Recovery code",
+        max_length=40,
+        help_text="The code on your paper, like K4M2-9XQ7-BT3W. Capital letters or small, dashes or not.",
+        widget=forms.TextInput(
+            attrs={
+                "class": _input + " font-mono tracking-widest uppercase",
+                "autocomplete": "off",
+                "autocapitalize": "characters",
+                "spellcheck": "false",
+            }
+        ),
+    )
+
+
+class StaffUnlockForm(forms.Form):
+    """The admin unlock (account-recovery.md §A4): exact username and a reason, both required."""
+
+    _input = "w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]"
+
+    username = forms.CharField(
+        label="Exact username",
+        max_length=150,
+        widget=forms.TextInput(attrs={"class": _input, "autocomplete": "off", "autocapitalize": "none"}),
+    )
+    reason = forms.CharField(
+        label="Why, and how you confirmed it is them",
+        min_length=10,
+        max_length=1000,
+        widget=forms.Textarea(attrs={"class": _input, "rows": 3}),
+    )
