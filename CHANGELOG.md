@@ -33,6 +33,11 @@
   your community, newest first, with the name of the person who did it. It covers everything already on record,
   not just what happens from today, and nobody can edit or delete it. What neighbors do privately,
   like blocking someone or raising a concern, is never shown there.
+- **New sign-ups can now be limited to our pilot area, but this is switched off.** Reading the
+  board stays open to anyone, anywhere. Switched on, the board can first count which countries
+  sign-ups come from, as one number per country, and later turn away sign-ups from outside the
+  area, with a page that explains how to run a board of your own. The country check happens on
+  our own server, and we never keep your internet address. Neither part is on yet.
 
 ## 2026-09-28
 
