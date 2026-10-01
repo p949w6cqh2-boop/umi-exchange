@@ -114,6 +114,9 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.accounts.ratelimit.AuthRateLimitMiddleware",
+    # After the rate limiter on purpose: a refused region still counts against the per-IP
+    # throttle. Inert unless a GEO_* switch below is on (docs/specs/geolocking.md).
+    "apps.accounts.geo.GeoGateMiddleware",
     "apps.casework.middleware.SensitiveSessionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -294,6 +297,16 @@ RATELIMIT_AUTH_PATHS = (
 # so it never raises ImproperlyConfigured when the header is absent (a bare
 # "HTTP_X_REAL_IP" string key would 500 on any request that skipped Caddy).
 RATELIMIT_IP_META_KEY = "apps.accounts.ratelimit.client_ip"
+
+# ── Geolocking (docs/specs/geolocking.md) ─────────────
+# Gate who can SIGN UP by country, never who can read. EVERYTHING DEFAULTS OFF: UMI is meant to be
+# self-hosted anywhere, so a lock belongs to one deployment's .env, never to the code.
+GEO_DB_PATH = env("GEO_DB_PATH", default="")  # DB-IP "IP to Country Lite" .mmdb (CC BY 4.0)
+GEO_COUNT = env.bool("GEO_COUNT", default=False)  # Phase 0: count sign-up attempts per country
+GEO_ALLOWED_COUNTRIES = [c.strip().upper() for c in env.list("GEO_ALLOWED_COUNTRIES", default=[]) if c.strip()]
+GEO_REGION_LABEL = env("GEO_REGION_LABEL", default="")  # e.g. "the United States", for the refusal page
+GEO_GATED_PATHS = ("/auth/register/",)
+GEO_GATE_ADMIN = env.bool("GEO_GATE_ADMIN", default=False)  # opt-in: can lock a travelling admin out
 
 # ── Health Check ──────────────────────────────────────
 HEALTH_CHECK_TOKEN = env("HEALTH_CHECK_TOKEN", default="")

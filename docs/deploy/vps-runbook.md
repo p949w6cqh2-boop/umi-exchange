@@ -853,6 +853,27 @@ Handy checks:
 | Firewall / fail2ban | `ufw status && fail2ban-client status sshd` |
 | Disk space | `df -h` |
 
+### §10.1 — Optional: the sign-up country gate (`docs/specs/geolocking.md`)
+
+Off unless you turn it on. **Phase 0 counts; it blocks nothing.**
+
+```bash
+# one time: fetch the free DB-IP country file into the geo_data volume
+docker exec docker-app-1 python manage.py refresh_geoip --dest /app/geo/dbip-country-lite.mmdb
+# .env (then redeploy): count sign-up attempts per country
+GEO_DB_PATH=/app/geo/dbip-country-lite.mmdb
+GEO_COUNT=True
+# after two weeks: read the table
+docker exec docker-app-1 python manage.py geo_counts
+# Phase 1, only if the table gives a reason: allow-list sign-up
+GEO_ALLOWED_COUNTRIES=US
+GEO_REGION_LABEL=the United States
+```
+
+Refresh monthly from host cron: `0 4 2 * * docker exec docker-app-1 python manage.py refresh_geoip`.
+A failed refresh keeps the old file, and the gate fails open, so a stale or missing file blocks no
+one. The about page shows DB-IP's CC BY 4.0 attribution while `GEO_DB_PATH` is set.
+
 ---
 
 ## §11 — Finish the hardening harden.sh didn't complete (optional)
