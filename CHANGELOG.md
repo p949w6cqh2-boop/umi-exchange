@@ -3,7 +3,7 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased
+## 2026-10-01
 
 - **No email? You now get a recovery code on paper.** Until now, if you signed up without an
   email and forgot your password, there was no way back in. Now, when you sign up without an
