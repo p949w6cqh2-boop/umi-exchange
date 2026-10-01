@@ -249,6 +249,20 @@ def test_compose_passes_key_material_into_the_container():
         )
 
 
+def test_compose_passes_the_key_list_so_rotation_can_reach_production():
+    """The same defect, found again by the first real rotation (2026-10-01).
+
+    Rotation stages ENCRYPTION_KEYS=<new>,<old> (docs/key-custody-design.md, the rotation
+    line). The compose file passed only the single ENCRYPTION_KEY, so the container booted
+    with no key at all and the site served 502 until the old key file was put back.
+    The `:-` default keeps a single-key setup working: an empty list parses to [] and
+    crypto._keks() falls back to ENCRYPTION_KEY.
+    """
+    compose = (Path(__file__).resolve().parent.parent / "docker" / "docker-compose.prod.yml").read_text()
+    app = compose[compose.index("  app:") : compose.index("  db:")]
+    assert "- ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}" in app
+
+
 # ── The migrate step, 2026-09-28 ──────────────────────────────────────────────
 #
 # Nothing in this stack migrates on its own: the image runs gunicorn and nothing else,

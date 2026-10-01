@@ -5,6 +5,12 @@
 
 ## Unreleased
 
+- **Sign-up country counting is on, since October 1.** The board now counts which countries
+  sign-up attempts come from, as one number per country. It blocks nobody, the check happens on our
+  own server, and we never keep your internet address. Turning sign-ups away by country is still off.
+- **The board was down for about four minutes on October 1,** around 5:50 in the evening Eastern
+  time, while we changed one of its security keys. Nothing was lost or exposed. We put the old key
+  back, found the cause, and fixed it before trying again.
 - **Every backup now carries what it needs to be restored.** Nothing you can see changed. The most
   private parts of the board are locked, and until now the only copy of the locked key file lived
   on one laptop. Now a copy goes beside every nightly backup, still locked, so the backup can be
