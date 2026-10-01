@@ -296,9 +296,9 @@ because they are not yet true. Each item names how you know it is done.
   there; puts the refusal decision with the steward, in writing, never on the spot. Guarded by
   `tests/test_incident_response_plan.py`.
   **Two things it does not pretend:** the sections marked ⚖️ need a lawyer before they are relied on,
-  and **there is no scoped legal-hold switch in the code** — suspending the deletion sweeps to
-  preserve evidence today means stopping the scheduler by hand, which also suspends erasure for
-  people who are not involved and are entitled to it.
+  and ~~there is no scoped legal-hold switch in the code~~ **a scoped legal hold now exists
+  (2026-10-01, `docs/specs/legal-hold.md`)**: a hold covers one case, person, need, community or
+  everything, and erasure continues for everyone it does not cover. Backups still pause by hand.
 
 - [x] **The consent flow honestly handles the on-behalf-of third party, and the board states its own
   limits.** Done when a need or case that names a person who is not a user either captures a real path

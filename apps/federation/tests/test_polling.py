@@ -139,3 +139,19 @@ def test_poll_all_polls_active_links(fed_settings, active_link, remote, monkeypa
     _mock_feed(monkeypatch, [_row(remote)])
     assert tasks.poll_all_active_links() == 1
     assert ShadowListing.objects.filter(link=active_link).count() == 1
+
+
+def test_a_hold_on_everything_pauses_polling_and_its_tombstone_deletes(fed_settings, active_link, remote, monkeypatch):
+    """Polling deletes shadows a peer withdrew (polling.py tombstone), so the legal hold on everything
+    must freeze it too (docs/specs/legal-hold.md; review BLOCKER 2026-10-01)."""
+    from apps.holds.models import LegalHold
+
+    _mock_feed(monkeypatch, [_row(remote)])
+    tasks.poll_all_active_links()
+    hold = LegalHold.objects.create(scope=LegalHold.SCOPE_ALL, reference="matter")
+    _mock_feed(monkeypatch, [])  # the peer withdrew it: an unheld poll would delete the shadow
+    assert tasks.poll_all_active_links() == 0
+    assert ShadowListing.objects.filter(link=active_link).count() == 1
+    LegalHold.objects.filter(pk=hold.pk).update(released_at=timezone.now())
+    tasks.poll_all_active_links()
+    assert not ShadowListing.objects.filter(link=active_link).exists()  # released: the tombstone runs again

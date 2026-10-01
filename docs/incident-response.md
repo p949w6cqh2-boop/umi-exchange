@@ -157,15 +157,22 @@ duty attaches as soon as the matter is objectively foreseeable, not when a court
 Routine retention and a legal hold are different things. The first is a policy that runs on a timer.
 The second is a reactive instruction that overrides it.
 
-**What to do:** the steward stops the scheduled jobs (`django-q` schedules, and the backup cron)
-before anything else, and writes down the time they were stopped and why. They stay stopped until a
-lawyer says otherwise.
+**What to do:** the steward places a **legal hold** before anything else, scoped to what the demand
+names (one case, one person, one need, one community, or everything), and writes down why
+(`docs/specs/legal-hold.md`):
 
-> **Known gap, stated plainly:** there is no legal-hold switch in this codebase today. Stopping the
-> sweeps means stopping the scheduler by hand, which also stops deletion for people who are *not*
-> involved and are entitled to it. A real hold needs to be scoped to the affected records. That is
-> not built. Until it is, the honest move is the blunt one — stop everything, and un-stop it as soon
-> as the scope is known.
+```bash
+docker exec docker-app-1 python manage.py legal_hold place --scope person --id <uuid> \
+    --reference "<matter reference, no personal details>" --by <steward-username>
+```
+
+Every automated deletion then skips what the hold covers, while erasure continues for everyone else.
+**Backups are the exception:** a nightly dump holds everyone, so under any hold the steward also
+pauses backup aging by hand (the local prune in `scripts/backup.sh` and the B2 lifecycle rule).
+Holds stay in force until a lawyer says otherwise; `legal_hold release` lifts one.
+
+> *(Was, until 2026-10-01: "there is no legal-hold switch in this codebase today", and preserving
+> evidence meant stopping the whole scheduler. The scoped hold replaced that.)*
 
 ### What we can and cannot produce
 
@@ -230,8 +237,8 @@ Including — especially — a coordinator.
    nonprofit. Get the name now.
 2. **A second person exists** who can hold a role in Part 0. Everything here degrades to "call one
    man" until then (gate item 6).
-3. **A scoped legal hold is built**, so preservation does not mean switching off other people's
-   right to erasure (the known gap above).
+3. ~~**A scoped legal hold is built**~~ ✅ **Built 2026-10-01** (`docs/specs/legal-hold.md`):
+   preservation no longer switches off other people's right to erasure. Backups still pause by hand.
 4. **Someone reads the holding sentence out loud once**, so the first time is not the real time.
 
 ---

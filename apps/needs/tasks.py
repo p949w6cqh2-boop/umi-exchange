@@ -116,12 +116,16 @@ def shred_aged_need_pii():
     """
     from datetime import timedelta
 
+    from apps.holds.services import everything_held, held_needs_q
+
+    if everything_held():  # legal hold on everything (docs/specs/legal-hold.md)
+        return "Legal hold in force on everything: no need was shredded"
     cutoff = timezone.now() - timedelta(days=NEED_PII_RETENTION_DAYS)
     aged = Need.objects.filter(
         status__in=("fulfilled", "closed", "expired"),
         updated_at__lt=cutoff,
         on_behalf_of_dek__isnull=False,
-    )
+    ).exclude(held_needs_q())
     count = 0
     for need in aged:
         Need.objects.filter(pk=need.pk).update(on_behalf_of=None, on_behalf_of_dek=None)

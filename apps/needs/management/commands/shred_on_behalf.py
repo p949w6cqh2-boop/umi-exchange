@@ -27,6 +27,10 @@ class Command(BaseCommand):
                 need = Need.objects.get(pk=need_id)
             except (Need.DoesNotExist, ValueError) as exc:
                 raise CommandError(f"Unknown need {need_id}") from exc
+            from apps.holds.services import need_is_held
+
+            if need_is_held(need):
+                raise CommandError(f"Need {need_id} is under a legal hold; nothing was shredded.")
             if not need.on_behalf_of and not need.on_behalf_of_dek:
                 self.stdout.write(f"{need_id}: nothing to shred.")
                 continue

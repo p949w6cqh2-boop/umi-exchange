@@ -85,10 +85,16 @@ def discard_stale_drafts():
     guard is respected — never a bulk queryset.update() (skips the machine + audit).
     System event (user=None), PII-free details. Idempotent: only acts on drafts
     past the window, so re-runs are no-ops."""
-    from .models import CaseNote
+    from apps.holds.services import everything_held, held_cases_q
 
+    from .models import CaseFile, CaseNote
+
+    if everything_held():
+        return "Legal hold in force on everything: no draft was discarded"
     cutoff = timezone.now() - timezone.timedelta(hours=72)
-    stale = CaseNote.objects.filter(status=CaseNote.STATUS_DRAFT, updated_at__lt=cutoff)
+    stale = CaseNote.objects.filter(status=CaseNote.STATUS_DRAFT, updated_at__lt=cutoff).exclude(
+        case__in=CaseFile.objects.filter(held_cases_q())
+    )
     discarded = 0
     for note in stale.iterator():
         try:
@@ -149,11 +155,16 @@ def shred_aged_cases():
 
     from django.db.models import Q
 
+    from apps.holds.services import everything_held, held_cases_q
+
     from .models import CaseFile
 
+    if everything_held():  # legal hold on everything (docs/specs/legal-hold.md)
+        return "Legal hold in force on everything: no case was shredded"
     cutoff = timezone.now() - timedelta(days=CASE_RETENTION_DAYS)
     aged = (
         CaseFile.objects.filter(status=CaseFile.STATUS_CLOSED, closed_at__lt=cutoff)
+        .exclude(held_cases_q())
         .filter(
             Q(summary_enc__isnull=False)
             | Q(emergency_justification_enc__isnull=False)

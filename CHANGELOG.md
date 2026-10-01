@@ -38,6 +38,12 @@
   sign-ups come from, as one number per country, and later turn away sign-ups from outside the
   area, with a page that explains how to run a board of your own. The country check happens on
   our own server, and we never keep your internet address. Neither part is on yet.
+- **If the parish ever gets a legal demand, we can now keep just the records it covers.** Some
+  information is erased on a schedule: a coordinator's private notes about a neighbor, seven years
+  after their file is closed, and the name on a request made for someone else, a year after the
+  request closes. Until now, keeping records for a legal matter meant pausing that erasure for
+  everyone. Now we can hold only the records involved, and everyone else's information is still
+  erased on time. Every hold is recorded with the name of the person who placed it.
 
 ## 2026-09-28
 
