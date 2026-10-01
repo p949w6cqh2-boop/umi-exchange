@@ -29,8 +29,11 @@ CONTENT = ("content.hidden", "content.unhidden")
 PAGE = ("page.created", "page.updated", "page.published", "page.unpublished", "page.archived", "page.restored")
 TAG = ("tag.verified", "tag.rejected", "tag.revoked")
 VOUCH = ("user.vouched",)
+# A2's coordinator-issued reset records {community, issuer_member, target_member}. The most
+# sensitive coordinator power, so the one this page most needs to show.
+RESET = ("account.reset.coordinator",)
 
-ACTIONS = COMMUNITY + MEMBER + RESOURCE + FLAG + CONTENT + PAGE + TAG + VOUCH
+ACTIONS = COMMUNITY + MEMBER + RESOURCE + FLAG + CONTENT + PAGE + TAG + VOUCH + RESET
 
 LABELS = {
     "community.updated": "changed the community settings",
@@ -55,6 +58,7 @@ LABELS = {
     "tag.rejected": "declined a tag",
     "tag.revoked": "revoked a tag",
     "user.vouched": "vouched for a neighbor",
+    "account.reset.coordinator": "made a password reset code",
 }
 
 
@@ -79,7 +83,7 @@ def scope(community) -> Q:
         | Q(action__in=CONTENT, resource_id__in=ids(Offer.objects.filter(community=community)))
         | Q(action__in=CONTENT + PAGE, resource_id__in=ids(CommunityPage.objects.filter(community=community)))
         | Q(action__in=TAG, resource_id__in=ids(MemberTag.objects.filter(member__community=community)))
-        | Q(action__in=VOUCH, details__community=community.slug)
+        | Q(action__in=VOUCH + RESET, details__community=community.slug)
     )
 
 
@@ -97,18 +101,19 @@ def describe(rows, community):
         m.user_id: m.display_name
         for m in Member.objects.filter(community=community, user_id__in={r.user_id for r in rows if r.user_id})
     }
-    targets = {
-        m.pk: m.display_name
-        for m in Member.objects.filter(community=community, pk__in={r.resource_id for r in rows if r.action in MEMBER})
-    }
+    target_ids = {r.resource_id for r in rows if r.action in MEMBER}
+    target_ids |= {(r.details or {}).get("target_member") for r in rows if r.action in RESET} - {None}
+    targets = {str(m.pk): m.display_name for m in Member.objects.filter(community=community, pk__in=target_ids)}
     out = []
     for r in rows:
         details = r.details or {}
         subject = ""
         if r.action in MEMBER:
-            subject = targets.get(r.resource_id, "a former member")
+            subject = targets.get(str(r.resource_id), "a former member")
             if r.action == "member.role_changed" and {"from", "to"} <= details.keys():
                 subject += f" ({details['from']} → {details['to']})"
+        elif r.action in RESET:
+            subject = f"for {targets.get(details.get('target_member'), 'a former member')}"
         elif r.action in VOUCH:
             subject = details.get("vouched_username", "")
         elif r.action in TAG:

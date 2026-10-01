@@ -177,6 +177,29 @@ def test_date_filter(parish):
     assert len(_page(coord).context["events"]) == 1
 
 
+def test_coordinator_reset_codes_show_with_whom_and_stay_in_their_community(parish):
+    """A2's reset is the most sensitive coordinator power, so this page must show it (#186)."""
+    coord = _coord(parish, "Dan")
+    target = MemberFactory(community=parish, display_name="Agnes")
+    other = CommunityFactory()
+    other_coord, other_target = _coord(other, "Zed"), MemberFactory(community=other, display_name="Far")
+    emit(
+        "account.reset.coordinator",
+        target.user,
+        user=coord.user,
+        details={"community": parish.slug, "issuer_member": str(coord.pk), "target_member": str(target.pk)},
+    )
+    emit(
+        "account.reset.coordinator",
+        other_target.user,
+        user=other_coord.user,
+        details={"community": other.slug, "issuer_member": str(other_coord.pk), "target_member": str(other_target.pk)},
+    )
+    body = _page(coord).content.decode()
+    assert "made a password reset code" in body and "Agnes" in body and "Dan" in body
+    assert "Far" not in body and "Zed" not in body
+
+
 def test_a_real_vouch_shows_up(parish):
     coord = _coord(parish, "Dan")
     UserFactory(username="walkin", verified_at=None, verified_via="")
