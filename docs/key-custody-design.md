@@ -97,6 +97,24 @@ founder's key "3", run one command at a time with his approval):
   Stage 2 re-runs after this merges and the droplet pulls it (compose is read from the droplet's
   checkout; the image does not change).
 
+**Stage 2 re-ran the same night and is DONE** (22:28–22:32 UTC, every command on his approval,
+with an automatic rollback armed on each deploy):
+
+| Step | Result |
+|---|---|
+| Preflight, laptop, throwaway keys: production settings with an empty `ENCRYPTION_KEY` and a two-key list | boots, 2 keys loaded, envelope round-trip ok |
+| Droplet pulls `ca1efe0d` (the compose fix); fresh backup | `umi-20261001-222813`, off-site, its key file beside it |
+| Deploy `ENCRYPTION_KEYS=<new>,<old>` | `/health/` 200; the container loaded **2** keys |
+| `rotate_keks --dry-run`, then `rotate_keks` | **0 wraps**: production holds no envelope rows (`bright_line`: 0 sensitive) |
+| Census before retiring the old key (`migrate_on_behalf_envelope --verify`) | legacy 0, unreadable 0 |
+| Deploy `<new>` alone | `/health/` 200; the container loaded **1** key |
+| Verify | `/dev/shm` 0 · `.env` key lines 0 · pages 200 · backup `umi-20261001-223156` carries the new, armored key file |
+
+**Honest scope:** production had nothing to re-wrap, so tonight proved the whole path (staging,
+compose, deploy, rotate, retire) but not the re-wrap of real rows; that is proven on the scratch box
+(5 of 5). The old key is kept: the laptop archives `keys.env.age.pre-rotation-20261001-*` until
+2026-10-31, for backups taken before tonight, which carry no key file of their own.
+
 ### The envelope needs the key FILE, not only the identity
 
 The identity unlocks `keys.env.age`; it is not the keys. That file exists only on the steward's
@@ -193,7 +211,8 @@ security-upgrade reboot is safe.
 - [x] **Deploy-from-laptop rehearsed on the real droplet**
 - [x] Survives an unattended reboot — residual disproved by test
 - [ ] **Sealed envelope in the parish safe; two named people know it exists** — needs the conversation
-- [ ] Rotation rehearsed once end-to-end
+- [x] Rotation rehearsed once end-to-end: 2026-10-01 on production (Fifth entry; 0 rows to re-wrap
+  there, 5 of 5 on the scratch box)
 
 🔴 **Until the envelope exists, the age identity is the ONLY copy of the keys, on one laptop.** That
 costs nothing today — every table requiring them is empty — and it stops being true the moment real
@@ -347,5 +366,5 @@ laptop, and tick the rehearsal line for real.
 - [ ] No plaintext key material at rest on the droplet (verified by inspection).
 - [ ] Deploy-from-laptop rehearsed on the real droplet.
 - [ ] Sealed envelope in the parish safe; two named people know it exists and what it is.
-- [ ] Rotation rehearsed once end-to-end after the change.
+- [x] Rotation rehearsed once end-to-end after the change. (2026-10-01, Fifth entry.)
 - [ ] Residuals section above updated to describe what was actually built.
