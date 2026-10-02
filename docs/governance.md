@@ -15,8 +15,8 @@
 |---|---|---|
 | **Steward** | Jasiah (founder) | Runs the ministry day-to-day (the pastor's mandate, 2026-08-12) and the software: deploys, admin seat, key custody day-to-day. |
 | **Pastor** | the parish pastor | The ministry's authority, not its operator: can HALT the board outright, names and removes coordinators and the steward's ministry mandate, co-holds refusal power. Runs nothing day-to-day. |
-| **Keeper of the envelope** | parish office (pastor + one named trustee, e.g. the Sister). **Proposed 2026-10-01: the first coordinator as the trustee, with the pastor.** Pending: the envelope is not yet sealed and the pastor has not yet accepted. | Break-glass custody of the sealed key envelope (see `docs/key-custody-design.md`; the printed instructions are `docs/envelope-instructions.md`). Two-person act to open, always logged. |
-| **Coordinators** | named parishioners, gathered by the steward at the pastor's request. **First named by the steward 2026-10-01: a trusted parishioner who helps older neighbours who don't use technology.** Pending: the pastor's naming, and their own sign-up before the seat exists. | Day-to-day care: propose matches, see accepted connections for safety, freeze/remove an account that harms someone (every act on the audit record). |
+| **Keeper of the envelope** | parish office (pastor + one named trustee, e.g. the Sister). **Proposed 2026-10-01: the first coordinator as the trustee, with the pastor.** **2026-10-02: the first coordinator said yes, and the pastor was told and agreed** (both reported by the steward; nothing in writing yet). Pending: the seal, planned for the week of 2026-10-05. | Break-glass custody of the sealed key envelope (see `docs/key-custody-design.md`; the printed instructions are `docs/envelope-instructions.md`). Two-person act to open, always logged. |
+| **Coordinators** | named parishioners, gathered by the steward at the pastor's request. **First named by the steward 2026-10-01: a trusted parishioner who helps older neighbours who don't use technology.** **2026-10-02: they made their own account (reported by the steward) and hold a coordinator seat on the live instance** (verified read-only that day: one active membership, role coordinator, community `test1`). The pastor was told and agreed (reported by the steward); his naming in writing is still owed. | Day-to-day care: propose matches, see accepted connections for safety, freeze/remove an account that harms someone (every act on the audit record). |
 
 That table, filled with real names, is the whole point: after it is filled, no single
 person is the entire trust boundary — including the founder.
@@ -89,10 +89,16 @@ exists for cannot honestly tick.
 - [ ] Envelope sealed and in the safe; keeper(s) named in writing.
       *2026-10-01: trustee proposed; contents and printed instructions written
       (`docs/envelope-instructions.md`); not yet sealed.*
+      *2026-10-02: the trustee said yes and the pastor agreed (reported by the steward); sealing
+      planned for the week of 2026-10-05. Still open: the seal itself, and the keepers named in
+      writing.*
 - [ ] At least one coordinator beyond the steward appointed and holding a real coordinator
       seat on the live instance.
       *2026-10-01: first coordinator named by the steward; the seat waits for their own sign-up
       and the pastor's naming.*
+      *2026-10-02: they made their own account (reported by the steward) and hold the seat
+      (verified read-only on the live instance). Left unticked: the pastor's agreement is
+      reported, not yet in writing.*
 - [ ] This page updated with the real names and the date; incident-response cross-checked
       so the names match there too.
 - [ ] Then, and only then: tick the governance box in `docs/ethics-and-safety.md`
