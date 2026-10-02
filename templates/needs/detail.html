@@ -38,7 +38,8 @@
             </span>
           </span>
         {% endif %}
-        &middot; {{ need.created_at|timesince }} ago
+        &middot; <time datetime="{{ need.created_at|date:'c' }}">{{ need.created_at|date:"M j, Y" }}</time>
+        {% if need.fulfilled_at %}&middot; Done <time datetime="{{ need.fulfilled_at|date:'c' }}">{{ need.fulfilled_at|date:"M j, Y" }}</time>{% endif %}
       </div>
       {% if need.description %}
       <p class="text-base text-parish-ink/80 leading-relaxed mt-5 umi-measure">{{ need.description }}</p>

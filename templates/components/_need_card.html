@@ -16,7 +16,7 @@
       {{ need.get_urgency_display }}
     </span>
   </div>
-  <h3 class="text-lg font-serif font-semibold text-parish-ink mt-2 line-clamp-1">{{ need.title }}</h3>
+  <h3 class="text-lg font-serif font-semibold text-parish-ink mt-2 line-clamp-2">{{ need.title }}</h3>
   {% if need.description %}
   <p class="text-base text-parish-ink/70 mt-1 line-clamp-2">{{ need.description }}</p>
   {% endif %}
@@ -25,6 +25,10 @@
     {% include "tags/_badges_inline.html" with badges=need.poster_badges %}
     {% if need.neighborhood %}<span>&middot;</span><span>{{ need.neighborhood }}</span>{% endif %}
     <span>&middot;</span>
-    <span>{{ need.created_at|timesince }} ago</span>
+    <span>Posted <time datetime="{{ need.created_at|date:'c' }}">{{ need.created_at|date:"M j" }}</time></span>
+    {% if need.fulfilled_at %}
+    <span>&middot;</span>
+    <span>Done <time datetime="{{ need.fulfilled_at|date:'c' }}">{{ need.fulfilled_at|date:"M j" }}</time></span>
+    {% endif %}
   </div>
 </a>
