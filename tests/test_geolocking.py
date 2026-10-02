@@ -218,3 +218,22 @@ def test_refresh_swaps_in_a_valid_download_and_keeps_the_old_file_on_failure(set
     with mock.patch.object(geo.urllib.request, "urlopen", return_value=bad), pytest.raises(Exception):
         call_command("refresh_geoip", "--month", "2026-11")
     assert dest.read_bytes() == b"NEWDB"
+
+
+def test_the_download_identifies_itself_because_db_ip_refuses_pythons_default(tmp_path):
+    """Measured 2026-10-01 from the droplet and a laptop: DB-IP answers 403 to Python's default
+    user agent and 200 to curl's or an identifying one. Without this, the first refresh failed
+    (safely: the old file was kept) and counting could only be switched on by hand. The agent
+    names the software, not a deployment, because self-hosted copies run it too."""
+    good = mock.Mock()
+    good.read.return_value = gzip.compress(b"NEWDB")
+    with (
+        mock.patch.object(geo.urllib.request, "urlopen", return_value=good) as opened,
+        mock.patch.object(geo.maxminddb, "open_database", return_value=mock.Mock()),
+    ):
+        geo.download_database("2026-10", str(tmp_path / "geo.mmdb"))
+    request = opened.call_args.args[0]
+    agent = request.get_header("User-agent") or ""
+    assert "umi-exchange" in agent
+    assert "Python-urllib" not in agent
+    assert "reciprocalaid" not in agent
