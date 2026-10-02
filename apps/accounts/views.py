@@ -12,6 +12,7 @@ from django.contrib.auth.views import LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import transaction
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -38,6 +39,7 @@ from .forms import (
     StaffUnlockForm,
     UsernameRecoveryForm,
 )
+from .idle import SESSION_KEY as IDLE_SESSION_KEY
 from .models import RecoveryCredential
 from .verification import (
     PENDING_EMAIL_KEY,
@@ -544,3 +546,26 @@ def _tell_superusers(target, staff):
     for su in get_user_model().objects.filter(is_superuser=True, is_active=True):
         if su.deliverable_email:
             send_mail("Admin unlock issued — UMI Exchange", body, None, [su.deliverable_email], fail_silently=True)
+
+
+class StillHereView(View):
+    """The idle warning's "I'm still here", its quiet ping while someone types, and its
+    background question "how long is left?" (static/js/idle-timeout.js).
+
+    IdleTimeoutMiddleware runs first: a plain request is activity and restamps, one
+    marked X-Umi-Background is not. This view only reports the seconds left on the
+    stamp, so the page warns and signs out on the server's clock, never its own; a
+    page that reloaded itself on its own clock would count as activity forever.
+    401 tells a page that is already signed out to reload."""
+
+    def get(self, request):
+        from django.conf import settings
+
+        if request.user.is_authenticated:
+            stamp = request.session.get(IDLE_SESSION_KEY) or time.time()
+            remaining = settings.SESSION_IDLE_TIMEOUT_SECONDS - (time.time() - stamp)
+            response = JsonResponse({"remaining": max(0, int(remaining))})
+        else:
+            response = HttpResponse(status=401)
+        response["Cache-Control"] = "no-store"
+        return response

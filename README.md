@@ -107,6 +107,8 @@ This implementation conforms to **UMI Protocol v0.1 at Core + Casework + Federat
 - **Code**: AGPL-3.0
 - **Protocol Specification**: CC-BY-4.0
 
+Copyright © 2026 Jasiah Williams.
+
 Built on UMI Protocol v0.1 — [build your own](docs/protocol/spec.md). Every running instance
 also serves the protocol at `/protocol/` and the raw spec at `/protocol/spec.md`.
 

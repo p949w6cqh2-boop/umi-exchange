@@ -44,6 +44,7 @@ CATEGORIES = [
     ("Tutoring", "\U0001f4da"),
     ("Company", "☕"),
     ("Groceries", "\U0001f9fa"),
+    ("Communion at home", "✝️"),  # the first coordinator's ask, 2026-10-02
 ]
 
 NEEDS = [

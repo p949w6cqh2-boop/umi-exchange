@@ -9,6 +9,8 @@ urlpatterns = [
     path("login/", views.UMILoginView.as_view(), name="login"),
     path("login/otp/", views.OTPVerifyView.as_view(), name="login-otp"),
     path("logout/", views.UMILogoutView.as_view(), name="logout"),
+    # Idle sign-out's keep-alive (apps/accounts/idle.py).
+    path("still-here/", views.StillHereView.as_view(), name="idle-ping"),
     # Human verification (docs/specs/human-verification.md, A+C)
     path("verify/pending/", views.VerifyPendingView.as_view(), name="verify-pending"),
     path("verify/send/", views.VerifySendView.as_view(), name="verify-send"),
