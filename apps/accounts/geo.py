@@ -38,6 +38,9 @@ log = logging.getLogger(__name__)
 
 UNKNOWN = "--"
 DBIP_URL = "https://download.db-ip.com/free/dbip-country-lite-{month}.mmdb.gz"
+# DB-IP answers 403 to Python's default user agent (measured 2026-10-01). Name the software, not
+# a deployment: self-hosted copies run this too.
+USER_AGENT = "umi-exchange-geoip/1.0 (+https://github.com/p949w6cqh2-boop/umi-exchange)"
 
 _reader = None
 _reader_key = None
@@ -134,7 +137,8 @@ def download_database(month, dest):
     """Fetch DB-IP's monthly country file and swap it in atomically. The old file stays in place
     unless the new one decompresses AND opens as a database."""
     url = DBIP_URL.format(month=month)
-    resp = urllib.request.urlopen(url, timeout=60)  # noqa: S310 (fixed https URL)
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    resp = urllib.request.urlopen(request, timeout=60)  # noqa: S310 (fixed https URL)
     try:
         payload = gzip.decompress(resp.read())
     finally:
