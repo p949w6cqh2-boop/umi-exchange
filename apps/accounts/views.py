@@ -205,10 +205,12 @@ class SettingsView(LoginRequiredMixin, UpdateView):
         does not: it goes out as a confirmation link and is written only when
         that link is clicked (docs/specs/account-recovery.md §A).
 
-        The address the form was given is never stored anywhere in the meantime
-        — it rides inside the signed token — because User.email is unique=True
-        and an unconfirmed write lets someone claim an address they do not own,
-        which also denies it to its real owner permanently.
+        The address the form was given is never written to the account in the
+        meantime — it rides inside the signed token — because User.email is
+        unique=True and an unconfirmed write lets someone claim an address they
+        do not own, which also denies it to its real owner permanently. This
+        browser's session keeps a copy only to show it back on this page, as
+        registration already does.
         """
         response = super().form_valid(form)
         user = self.request.user
@@ -224,6 +226,8 @@ class SettingsView(LoginRequiredMixin, UpdateView):
         taken = get_user_model().objects.filter(email__iexact=requested).exclude(pk=user.pk).exists()
         if not taken:
             send_add_email_verification(self.request, user, requested)
+        # Kept for a taken address too, so the page answers exactly like success.
+        self.request.session[PENDING_EMAIL_KEY] = requested
 
         messages.success(
             self.request,
@@ -234,6 +238,12 @@ class SettingsView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["memberships"] = self.request.user.member_set.filter(is_active=True).select_related("community")
+        pending = self.request.session.get(PENDING_EMAIL_KEY)
+        if pending and pending.lower() == (self.request.user.email or "").lower():
+            # Confirmed from another device (a phone's mail app): nothing is waiting any more.
+            self.request.session.pop(PENDING_EMAIL_KEY, None)
+            pending = None
+        ctx["pending_email"] = pending
         from django.conf import settings
 
         ctx["enable_2fa"] = getattr(settings, "ENABLE_2FA", False)

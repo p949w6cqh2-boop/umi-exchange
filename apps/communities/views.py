@@ -16,6 +16,7 @@ from django.core.validators import URLValidator
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -28,7 +29,7 @@ from apps.accounts.models import RecoveryCredential
 from apps.accounts.ratelimit import rate_limit
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
-from apps.communities.identity import SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
+from apps.communities.identity import SCENE_LABELS, SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
 from apps.moderation.services import blocked_member_ids
 from apps.needs.models import Need
 from apps.offers.models import Offer
@@ -429,6 +430,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
         ctx["is_admin"] = self.member.is_admin
         ctx["role_choices"] = Member.ROLE_CHOICES
         ctx["current_theme"] = (self.community.settings or {}).get("theme", THEME_DEFAULT)
+        ctx["current_preset"] = THEMES.get(ctx["current_theme"], THEMES[THEME_DEFAULT])
         ctx["theme_custom"] = (self.community.settings or {}).get("theme_custom", {})
         s = self.community.settings or {}
         ctx["identity"] = {
@@ -437,7 +439,17 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             "signin_blurb": s.get("signin_blurb", ""),
             "scene_choices": s.get("scene_choices", {}),
         }
-        ctx["scene_slugs"] = SCENE_SLUGS
+        ctx["scene_options"] = [
+            {"slug": slug, "label": SCENE_LABELS[slug], "preview": static(f"img/scenes/{slug}.webp")}
+            for slug in SCENE_SLUGS
+        ]
+        chosen = ctx["identity"]["scene_choices"]
+        # The saved choice, previewed without JavaScript; the hub's default is the well, the
+        # front page's is no picture at all (identity.scene_template's defaults).
+        ctx["scene_preview"] = {
+            "hub": static(f"img/scenes/{chosen.get('hub') or 'well'}.webp"),
+            "landing": static(f"img/scenes/{chosen['landing']}.webp") if chosen.get("landing") else "",
+        }
         if "form" not in ctx:
             ctx["form"] = CommunitySettingsForm(instance=self.community)
         return ctx
@@ -454,9 +466,13 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
 
         if action == "set_theme":
             key = request.POST.get("theme", THEME_DEFAULT)
-            # Optional custom overrides — only accept valid #RRGGBB hex.
+            # Optional custom overrides — only accept valid #RRGGBB hex, and only when the
+            # "use my own colours" box is ticked. A colour picker ALWAYS submits a value, so
+            # without the box the untouched pickers sent the evergreen defaults with every
+            # save and silently undid whichever preset was picked (first coordinator,
+            # 2026-10-02: "the color customization doesn't work").
             custom = {}
-            for var in ("primary", "accent"):
+            for var in ("primary", "accent") if request.POST.get("use_custom") else ():
                 val = (request.POST.get(f"custom_{var}") or "").strip()
                 if re.fullmatch(r"#[0-9A-Fa-f]{6}", val):
                     custom[var] = val

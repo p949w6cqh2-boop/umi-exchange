@@ -29,6 +29,21 @@ SCENE_SLUGS = (
     "well",
 )
 
+# What the settings menus show: each print's own title, never its file stem. The first
+# coordinator read "one_place" in the menu as the page being broken (2026-10-02).
+SCENE_LABELS = {
+    "board": "The notice board",
+    "carrying": "Carried together",
+    "exchange": "The exchange",
+    "hill": "The city on the hill",
+    "lakes": "The first lake",
+    "one_place": "One place set",
+    "priest": "The priest planting",
+    "spring": "The spring",
+    "threshold": "The open door",
+    "well": "The well",
+}
+
 
 def parse_identity_post(post):
     """POST → (updates, errors). Only fields PRESENT in the POST are parsed —
