@@ -60,6 +60,11 @@
     line-height: 1.65;
     font-feature-settings: "ss01" on;
     -webkit-font-smoothing: antialiased;
+    /* A long unbroken word (an email used as a name, a pasted link) wraps instead of running
+       off a phone screen. `anywhere` also lets a flex box shrink past it; `break-word` is the
+       fallback for browsers older than `anywhere`. */
+    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
   }
   /* Film grain — fixed, pointer-safe, breaks digital flatness. */
   body::after {
@@ -487,13 +492,27 @@
 [x-cloak] { display: none !important; }
 
 /* Phase 2 "Member's Day" — scene washes + empty-state vignettes */
+/* Shown on phones too: a community picks its scene in settings, and a print that only appears
+   on wide screens read as a setting that does nothing (first coordinator, 2026-10-02). */
 .umi-scene-wash {
-  position: absolute; right: -1.5rem; top: 50%; transform: translateY(-50%);
-  width: 15rem; opacity: 0.14; pointer-events: none; display: none;
+  position: absolute; right: -1rem; top: 0;
+  width: 10rem; opacity: 0.22; pointer-events: none;
   -webkit-mask-image: linear-gradient(to left, black 55%, transparent);
   mask-image: linear-gradient(to left, black 55%, transparent);
 }
-@media (min-width: 768px) { .umi-scene-wash { display: block; } }
+@media (min-width: 768px) {
+  .umi-scene-wash { right: -1.5rem; top: 50%; transform: translateY(-50%); width: 15rem; }
+}
+
+/* Show password — a word, not an eye icon, added beside every password field by
+   static/js/password-toggle.js. Without JavaScript the field is simply a password field. */
+.umi-pw-toggle {
+  display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.25rem;
+  font-size: 0.875rem; font-weight: 600; color: var(--umi-primary);
+  background: none; border: 0; padding: 0; cursor: pointer;
+}
+.umi-pw-toggle:hover { color: var(--umi-primary-hover); text-decoration: underline; }
+.umi-pw-toggle:focus-visible { outline: 2px solid var(--umi-primary); outline-offset: 2px; border-radius: 4px; }
 .umi-vignette { max-width: 11rem; margin: 0 auto 0.75rem; opacity: 0.85; }
 
 /* Layer C (§G): the community-page prose well. Sanitized content renders

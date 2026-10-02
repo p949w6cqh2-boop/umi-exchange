@@ -25,6 +25,18 @@
         <button type="submit" form="confirm-resend" class="underline text-umi-primary">Send the link again</button>
       </p>
       {% endif %}
+      {% if pending_email %}
+      {% comment %}
+        An address added here is not on the account until its link is clicked
+        (account-recovery.md §A), so the field above stays blank. Without this
+        line that read as "adding an email doesn't update" (first coordinator,
+        2026-10-02). A taken address shows the same words: no oracle.
+      {% endcomment %}
+      <p class="text-sm text-parish-ink/80 mt-2" role="status">
+        We sent a link to <strong>{{ pending_email }}</strong>. Your email shows here once you click it.
+        Nothing came? Look in your spam or junk folder. To get a new link, type the address again and press Save changes.
+      </p>
+      {% endif %}
     </div>
     <div>
       <label for="id_phone" class="umi-label">Phone</label>

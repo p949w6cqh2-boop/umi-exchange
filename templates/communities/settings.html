@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ community.name }} Settings{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-8">
@@ -79,38 +80,65 @@
   </form>
 
   {# Theme — each community its own look #}
-  <form method="post" class="umi-card">
+  {% comment %}
+    Own colours apply only with "Use my own colours" ticked: a colour picker always
+    submits a value, so before 2026-10-02 the untouched pickers silently undid every
+    preset. The preview shows where the colours land: live with JavaScript, as saved
+    without it.
+  {% endcomment %}
+  <form method="post" class="umi-card"
+        x-data="{ custom: {{ theme_custom|yesno:'true,false' }}, pp: '{{ current_preset.primary }}', pa: '{{ current_preset.accent }}', mp: '{{ theme_custom.primary|default:current_preset.primary }}', ma: '{{ theme_custom.accent|default:current_preset.accent }}' }">
     {% csrf_token %}
     <input type="hidden" name="action" value="set_theme">
     <h2 class="text-lg text-parish-ink">Appearance</h2>
-    <p class="text-sm text-parish-ink/70 mt-1">Pick a look for your community, or set your own colours below.</p>
+    <p class="text-sm text-parish-ink/70 mt-1">Pick a look for your community. Your colours show on buttons, links, and the edges of request and offer cards.</p>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
       {% for key, t in themes.items %}
-      <label class="cursor-pointer rounded-lg border p-3 flex items-center gap-3 has-[:checked]:ring-2"
+      <label class="cursor-pointer rounded-lg border p-3 flex items-center gap-3 min-h-[44px] has-[:checked]:ring-2 has-[:checked]:ring-[var(--umi-primary)]"
              style="border-color:{{ t.border }}; background:{{ t.bg }};">
-        <input type="radio" name="theme" value="{{ key }}" class="sr-only" {% if key == current_theme %}checked{% endif %}>
-        <span class="inline-flex gap-1">
-          <span class="w-5 h-5 rounded-full" style="background:{{ t.primary }}"></span>
-          <span class="w-5 h-5 rounded-full" style="background:{{ t.accent }}"></span>
+        <input type="radio" name="theme" value="{{ key }}" class="sr-only" data-primary="{{ t.primary }}" data-accent="{{ t.accent }}"
+               @change="pp = $el.dataset.primary; pa = $el.dataset.accent" {% if key == current_theme %}checked{% endif %}>
+        <span class="inline-flex gap-1" aria-hidden="true">
+          <span class="w-7 h-7 rounded-full" style="background:{{ t.primary }}"></span>
+          <span class="w-7 h-7 rounded-full" style="background:{{ t.accent }}"></span>
         </span>
         <span class="text-sm" style="color:{{ t.ink }}">{{ t.label }}{% if key == current_theme %} ✓{% endif %}</span>
       </label>
       {% endfor %}
     </div>
 
-    <div class="mt-4 flex flex-wrap items-end gap-4">
+    <label class="flex items-center gap-3 mt-4 min-h-[44px] cursor-pointer">
+      <input type="checkbox" name="use_custom" x-model="custom" class="w-5 h-5" {% if theme_custom %}checked{% endif %}>
+      <span class="text-sm text-parish-ink">Use my own colours instead</span>
+    </label>
+    <div class="mt-2 flex flex-wrap items-end gap-4" x-show="custom">
       <div>
-        <label for="custom_primary" class="block text-sm text-parish-ink/70 mb-1">Custom primary (optional)</label>
-        <input type="color" id="custom_primary" name="custom_primary" value="{{ theme_custom.primary|default:'#275D4C' }}" class="h-10 w-16 rounded border border-parish-border">
+        <label for="custom_primary" class="block text-sm text-parish-ink/70 mb-1">Buttons and links</label>
+        <input type="color" id="custom_primary" name="custom_primary" value="{{ theme_custom.primary|default:current_preset.primary }}"
+               @input="mp = $el.value" class="h-11 w-16 rounded border border-parish-border">
       </div>
       <div>
-        <label for="custom_accent" class="block text-sm text-parish-ink/70 mb-1">Custom accent (optional)</label>
-        <input type="color" id="custom_accent" name="custom_accent" value="{{ theme_custom.accent|default:'#9C7A3C' }}" class="h-10 w-16 rounded border border-parish-border">
+        <label for="custom_accent" class="block text-sm text-parish-ink/70 mb-1">Offer edges</label>
+        <input type="color" id="custom_accent" name="custom_accent" value="{{ theme_custom.accent|default:current_preset.accent }}"
+               @input="ma = $el.value" class="h-11 w-16 rounded border border-parish-border">
       </div>
-      <button type="submit" class="btn-primary">Save theme</button>
     </div>
-    <p class="text-xs text-parish-ink/70 mt-2">Leave the custom colours untouched to use the preset exactly. Changes apply to everyone in this community.</p>
+
+    <div class="mt-4 rounded-xl border border-[var(--umi-border)] p-4" data-theme-preview
+         :style="`--umi-primary: ${custom ? mp : pp}; --umi-accent: ${custom ? ma : pa}`">
+      <p class="text-xs text-parish-ink/70">How it looks</p>
+      <div class="mt-2 flex flex-wrap items-center gap-4" aria-hidden="true">
+        <span class="btn-primary pointer-events-none">Post a need</span>
+        <span class="font-semibold text-umi-primary underline">A link</span>
+        <span class="inline-flex items-center gap-2 text-sm text-parish-ink/80"><span class="w-4 h-4 rounded-full bg-[var(--umi-accent)]"></span>Offers</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn-primary">Save colours</button>
+      <p class="text-xs text-parish-ink/70">Changes apply to everyone in this community.</p>
+    </div>
   </form>
 
   {# Identity (§D) — the four small facts; pages carry the rest #}
@@ -118,47 +146,55 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="set_identity">
     <h2 class="text-lg text-parish-ink">Identity</h2>
-    <p class="text-sm text-parish-ink/70 mt-1">The small facts the board wears — your patron, your welcome, your scenes. Blank keeps the warm default.</p>
+    <p class="text-sm text-parish-ink/70 mt-1">The small facts the board wears: your patron, your welcome, your pictures. Each one says where it shows. Blank keeps the warm default.</p>
 
-    <div class="mt-4 space-y-4">
+    <div class="mt-4 space-y-5">
       <div>
         <label for="id_patron" class="umi-label">Patron</label>
         <input type="text" id="id_patron" name="patron" value="{{ identity.patron }}" maxlength="80"
                class="umi-input" placeholder="St. Brigid">
+        <p class="text-xs text-parish-ink/70 mt-1">Saved for later. It is not shown on any page yet.</p>
       </div>
       <div>
         <label for="id_welcome_lines" class="umi-label">Welcome lines</label>
         <textarea id="id_welcome_lines" name="welcome_lines" rows="3" class="umi-input"
                   placeholder="Bear one another's burdens.">{{ identity.welcome_lines }}</textarea>
-        <p class="text-xs text-parish-ink/70 mt-1">One line per row, up to 10 — the hub greeting rotates through them by the day. Your words; nothing rotates in that you didn't write.</p>
+        <p class="text-xs text-parish-ink/70 mt-1">One line per row, up to 10. Each day one of them shows under "Welcome back" at the top of your community's home page. Your words; nothing rotates in that you didn't write.</p>
       </div>
       <div>
-        <label for="id_signin_blurb" class="umi-label">Sign-in blurb</label>
+        <label for="id_signin_blurb" class="umi-label">Note for visitors</label>
         <textarea id="id_signin_blurb" name="signin_blurb" rows="2" maxlength="300" class="umi-input"
                   placeholder="A parish board for asking and answering, quietly.">{{ identity.signin_blurb }}</textarea>
-        <p class="text-xs text-parish-ink/70 mt-1">Shown to neighbours on your public pages door{% if community.visibility == 'private' %} — your community is private, so nobody sees this yet{% endif %}.</p>
+        <p class="text-xs text-parish-ink/70 mt-1">Shows to visitors who aren't members yet, on your community's public front page.{% if community.visibility == 'private' %} Your community is private, so nobody sees it yet.{% endif %}</p>
       </div>
-      <div class="flex flex-wrap items-end gap-4">
-        <div>
-          <label for="id_scene_hub" class="block text-sm text-parish-ink/70 mb-1">Hub scene</label>
-          <select id="id_scene_hub" name="scene_hub" class="text-sm border border-[var(--umi-border)] rounded-lg px-3 py-2 bg-white min-h-[44px]">
-            <option value="">Warm default (the well)</option>
-            {% for slug in scene_slugs %}
-            <option value="{{ slug }}" {% if identity.scene_choices.hub == slug %}selected{% endif %}>{{ slug }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label for="id_scene_landing" class="block text-sm text-parish-ink/70 mb-1">Landing scene</label>
-          <select id="id_scene_landing" name="scene_landing" class="text-sm border border-[var(--umi-border)] rounded-lg px-3 py-2 bg-white min-h-[44px]">
-            <option value="">Warm default (none)</option>
-            {% for slug in scene_slugs %}
-            <option value="{{ slug }}" {% if identity.scene_choices.landing == slug %}selected{% endif %}>{{ slug }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <button type="submit" class="btn-primary">Save identity</button>
+      <div x-data="{ preview: '{{ scene_preview.hub|escapejs }}' }">
+        <label for="id_scene_hub" class="umi-label">Home page picture</label>
+        <select id="id_scene_hub" name="scene_hub" class="umi-input min-h-[44px]"
+                @change="preview = $el.selectedOptions[0].dataset.preview">
+          <option value="" data-preview="{% static 'img/scenes/well.webp' %}">The well (the default)</option>
+          {% for opt in scene_options %}{% if opt.slug != "well" %}
+          <option value="{{ opt.slug }}" data-preview="{{ opt.preview }}" {% if identity.scene_choices.hub == opt.slug %}selected{% endif %}>{{ opt.label }}</option>
+          {% endif %}{% endfor %}
+        </select>
+        <img data-scene-preview="hub" src="{{ scene_preview.hub }}" :src="preview" alt=""
+             class="mt-2 w-40 h-auto rounded-lg border border-[var(--umi-border)]" width="160" height="118" loading="lazy" decoding="async">
+        <p class="text-xs text-parish-ink/70 mt-1">Shows beside the greeting at the top of your community's home page.</p>
       </div>
+      <div x-data="{ preview: '{{ scene_preview.landing|escapejs }}' }">
+        <label for="id_scene_landing" class="umi-label">Front page picture</label>
+        <select id="id_scene_landing" name="scene_landing" class="umi-input min-h-[44px]"
+                @change="preview = $el.selectedOptions[0].dataset.preview">
+          <option value="" data-preview="">No picture (the default)</option>
+          {% for opt in scene_options %}
+          <option value="{{ opt.slug }}" data-preview="{{ opt.preview }}" {% if identity.scene_choices.landing == opt.slug %}selected{% endif %}>{{ opt.label }}</option>
+          {% endfor %}
+        </select>
+        <img data-scene-preview="landing" {% if scene_preview.landing %}src="{{ scene_preview.landing }}"{% else %}hidden{% endif %}
+             :src="preview" :hidden="!preview" alt=""
+             class="mt-2 w-40 h-auto rounded-lg border border-[var(--umi-border)]" width="160" height="118" loading="lazy" decoding="async">
+        <p class="text-xs text-parish-ink/70 mt-1">Shows to visitors on your public front page.{% if community.visibility == 'private' %} Your community is private, so nobody sees it yet.{% endif %}</p>
+      </div>
+      <button type="submit" class="btn-primary">Save identity</button>
     </div>
   </form>
 

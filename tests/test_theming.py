@@ -173,8 +173,17 @@ class TestThemePickerView:
         client.force_login(admin.user)
         url = reverse("community-settings", kwargs={"slug": community.slug})
 
+        # Custom colours need the box ticked: a colour picker always submits a value, so
+        # without it the untouched pickers overrode every preset (tests/test_coordinator_feedback.py).
         resp = client.post(
-            url, {"action": "set_theme", "theme": "ocean", "custom_primary": "#aabbcc", "custom_accent": ""}
+            url,
+            {
+                "action": "set_theme",
+                "theme": "ocean",
+                "use_custom": "on",
+                "custom_primary": "#aabbcc",
+                "custom_accent": "",
+            },
         )
         assert resp.status_code == 302
         community.refresh_from_db()

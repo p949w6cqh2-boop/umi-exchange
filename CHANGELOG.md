@@ -5,6 +5,23 @@
 
 ## Unreleased
 
+- **Fixes from our first coordinator's first sit-down (October 2).** She tried the board on her own
+  phone and found five things that made it harder than it should be:
+  - **Long names and long requests no longer run off a phone screen.** They wrap onto the next line
+    instead of being cut off, and a request's title gets two lines on its card instead of one.
+  - **You can see your password while you type it.** Every password box now has a "Show password"
+    button under it. Press it again to hide it.
+  - **Adding an email now says what happens next.** Your email is saved only after you click the
+    link we send it, so the box stayed empty and it looked like nothing worked. Settings now says
+    where we sent the link, and to look in your spam or junk folder.
+  - **Community colours work.** Picking a look in Settings used to be quietly undone by the colour
+    pickers below it. Now your own colours apply only when you tick "Use my own colours instead",
+    and a preview shows where they land: buttons, links, and the edges of cards.
+  - **Settings say where each thing shows.** The pictures have names instead of file names, each
+    shows a preview, every field says where it appears, and the home page picture now shows on
+    phones too. The "Patron" field honestly says it isn't shown anywhere yet.
+  - **Requests show their dates.** Each request shows the day it was posted, and the day it was
+    done once it's done.
 - **Sign-up country counting is on, since October 1.** The board now counts which countries
   sign-up attempts come from, as one number per country. It blocks nobody, the check happens on our
   own server, and we never keep your internet address. Turning sign-ups away by country is still off.
