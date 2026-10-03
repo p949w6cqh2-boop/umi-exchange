@@ -504,15 +504,18 @@
   .umi-scene-wash { right: -1.5rem; top: 50%; transform: translateY(-50%); width: 15rem; }
 }
 
-/* Show password — a word, not an eye icon, added beside every password field by
-   static/js/password-toggle.js. Without JavaScript the field is simply a password field. */
+/* Show password: an eye inside the box, an eye with a slash once the password shows (the
+   founder's call, 2026-10-02). Added by static/js/password-toggle.js; without JavaScript the
+   field is simply a password field. The button fills the box's height and is 44px wide. */
+.umi-pw-wrap { position: relative; display: block; }
+.umi-pw-wrap > input { padding-right: 3rem; }
 .umi-pw-toggle {
-  display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.25rem;
-  font-size: 0.875rem; font-weight: 600; color: var(--umi-primary);
-  background: none; border: 0; padding: 0; cursor: pointer;
+  position: absolute; top: 0; right: 0; height: 100%; width: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--umi-text-soft, #6F6759); background: none; border: 0; padding: 0; cursor: pointer;
 }
-.umi-pw-toggle:hover { color: var(--umi-primary-hover); text-decoration: underline; }
-.umi-pw-toggle:focus-visible { outline: 2px solid var(--umi-primary); outline-offset: 2px; border-radius: 4px; }
+.umi-pw-toggle:hover { color: var(--umi-primary); }
+.umi-pw-toggle:focus-visible { outline: 2px solid var(--umi-primary); outline-offset: -4px; border-radius: 8px; }
 .umi-vignette { max-width: 11rem; margin: 0 auto 0.75rem; opacity: 0.85; }
 
 /* Layer C (§G): the community-page prose well. Sanitized content renders

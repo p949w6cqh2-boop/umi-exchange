@@ -94,12 +94,22 @@ def test_password_pages_load_the_show_password_script(client, url_name):
     assert re.search(r'<script src="/static/js/password-toggle\.js[^"]*" defer></script>', html)
 
 
-def test_the_show_password_button_is_plain_and_accessible():
+def test_the_show_password_eye_is_accessible():
+    # The founder's call, 2026-10-02: the familiar eye inside the box, and the eye with a
+    # slash once the password shows. A screen reader still hears the words.
     js = (ROOT / "static/js/password-toggle.js").read_text()
     assert 'input[type="password"]' in js
-    assert "Show password" in js and "Hide password" in js  # words, not an eye icon
-    assert "aria-pressed" in js and "aria-controls" in js
+    assert "EYE" in js and "EYE_SLASH" in js and "<svg" in js
+    assert "Show password" in js and "Hide password" in js  # spoken via aria-label
+    assert "aria-label" in js and "aria-pressed" in js and "aria-controls" in js
     assert '"submit"' in js  # the field goes back to hidden before the form is sent
+
+
+def test_the_eye_sits_inside_the_box_with_a_full_size_tap_target():
+    toggle = _css_block(INPUT_CSS, ".umi-pw-toggle")
+    assert "position: absolute" in toggle and "width: 44px" in toggle
+    assert "padding-right" in _css_block(INPUT_CSS, ".umi-pw-wrap > input")
+    assert ".umi-pw-wrap" in OUTPUT_CSS, "output.css was not recompiled"
 
 
 # ── 3. an email waiting for its link says so on the settings page ────────────
