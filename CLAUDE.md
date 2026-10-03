@@ -29,24 +29,8 @@ If you have **gstack** installed, use its skills when working in this repo:
 
 - **Web browsing:** always use the **`/browse`** skill for all web browsing. **Never** use
   `mcp__claude-in-chrome__*` tools.
-- **Available gstack skills:** `/office-hours` · `/plan-ceo-review` · `/plan-eng-review` ·
-  `/plan-design-review` · `/design-consultation` · `/design-shotgun` · `/design-html` · `/review` ·
-  `/ship` · `/land-and-deploy` · `/canary` · `/benchmark` · `/browse` · `/connect-chrome` · `/qa` ·
-  `/qa-only` · `/design-review` · `/setup-browser-cookies` · `/setup-deploy` · `/setup-gbrain` ·
-  `/retro` · `/investigate` · `/document-release` · `/document-generate` · `/codex` · `/cso` ·
-  `/autoplan` · `/plan-devex-review` · `/devex-review` · `/careful` · `/freeze` · `/guard` ·
-  `/unfreeze` · `/gstack-upgrade` · `/learn`
 
 ## Commands
-
-```bash
-make run        # runserver
-make test       # pytest (see ENCRYPTION_KEY note below)
-make migrate
-make shell
-make lint       # ruff check . && ruff format --check .   (mirrors CI)
-make format     # ruff format .
-```
 
 - **Run the suite:** `pytest -q`. Single test: `pytest tests/test_views.py::TestPublicViews::test_landing_page`.
 - **Encryption tests need a key.** Crypto/envelope tests require `ENCRYPTION_KEY` (or `ENCRYPTION_KEYS`) set, e.g.:
@@ -58,18 +42,12 @@ make format     # ruff format .
   ```bash
   DATABASE_URL="postgres://user:pass@127.0.0.1:5432/umi_test" pytest -q
   ```
-- **Lint config:** ruff, `line-length = 120`, `target-version = py312`, rules `E,F,I,N,W`. Migrations ignore `E501`; settings modules ignore `F403/F405`.
 - **Deploy check:** `DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=… ENCRYPTION_KEY=… BLIND_INDEX_KEY=… ALLOWED_HOSTS=… python manage.py check --deploy` → must be **0 issues** (`BLIND_INDEX_KEY` must differ from the encryption keys or production refuses to boot).
 - **CSS:** `output.css` is compiled, committed Tailwind — regenerate with
   `npx tailwindcss@3.4.14 -i static/css/input.css -o static/css/output.css --minify`. Never hand-edit it.
 
 ## Settings
 
-`config/settings/{base,development,production}.py`, selected by `DJANGO_SETTINGS_MODULE`
-(tests + local default to `development`).
-
-- DB via `DATABASE_URL` (django-environ); defaults to `sqlite:///db.sqlite3`.
-- Field encryption keys: `ENCRYPTION_KEYS` (list, primary first) or legacy `ENCRYPTION_KEY`.
 - **`production.py` fails fast** (`ImproperlyConfigured`) on an insecure/empty `SECRET_KEY`, an
   empty `ENCRYPTION_KEY`, or a missing/encryption-key-colliding `BLIND_INDEX_KEY` — by design.
   It also sets HSTS, SSL redirect, secure cookies, `DEBUG=False`.
