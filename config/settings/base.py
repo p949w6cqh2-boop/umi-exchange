@@ -191,6 +191,10 @@ SESSION_IDLE_TIMEOUT_SECONDS = env.int("SESSION_IDLE_TIMEOUT_SECONDS", default=1
 # PHONE_CODES_ENABLED with all three Twilio Verify values. Switching it on makes the board send
 # texts and place calls by itself, so it is his key, separate from merging the code.
 PHONE_CODES_ENABLED = env.bool("PHONE_CODES_ENABLED", default=False)
+# "firebase" now (about $0, texts only); "twilio" after the 501(c)(3) (texts and voice calls).
+# The founder's call, 2026-10-03.
+PHONE_CODES_PROVIDER = env("PHONE_CODES_PROVIDER", default="firebase")
+FIREBASE_API_KEY = env("FIREBASE_API_KEY", default="")
 TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID", default="")
 TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN", default="")
 TWILIO_VERIFY_SERVICE_SID = env("TWILIO_VERIFY_SERVICE_SID", default="")

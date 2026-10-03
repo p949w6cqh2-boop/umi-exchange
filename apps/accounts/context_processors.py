@@ -11,4 +11,4 @@ def idle_timeout(request):
 
 
 def phone_codes(request):
-    return {"phone_codes_enabled": phone.enabled()}
+    return {"phone_codes_enabled": phone.enabled(), "phone_codes_channels": phone.channels()}

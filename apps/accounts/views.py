@@ -3,6 +3,7 @@ profile settings."""
 
 import time
 
+from csp.decorators import csp_update
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -574,14 +575,21 @@ class StillHereView(View):
         return response
 
 
-# ── Codes by phone (docs/specs/phone-codes.md, decided 2026-10-02) ──────────────
+# ── Codes by phone (docs/specs/phone-codes.md, decided 2026-10-02, provider 2026-10-03) ──────
 #
 # The first coordinator: "switch paper codes to phone codes." A code goes only to a number its
 # owner has proven, and getting back in with one STARTS a password reset, never a session: the
 # rule the paper code follows. Every view here is a 404 while the feature is off.
+#
+# With Firebase as the provider, every send needs a reCAPTCHA token, so the two pages that send
+# carry Google's script and widen the CSP for it; no other page on the board loads Google.
 
-PHONE_CONFIRM_KEY = "phone_confirm_number"
-PHONE_RECOVER_KEY = "phone_recover_uid"
+PHONE_CONFIRM_KEY = "phone_confirm"
+PHONE_RECOVER_KEY = "phone_recover"
+RECAPTCHA_CSP = {
+    "script-src": ["https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
+    "frame-src": ["https://www.google.com/recaptcha/", "https://recaptcha.google.com/recaptcha/"],
+}
 
 
 def _phone_codes_or_404():
@@ -589,26 +597,46 @@ def _phone_codes_or_404():
         raise Http404
 
 
+@method_decorator(csp_update(RECAPTCHA_CSP), name="dispatch")
 @method_decorator(ratelimit(key="user", rate="10/h", method="POST", block=True), name="post")
 class PhoneSendView(LoginRequiredMixin, View):
-    """Text or call a code to the number on the account, so its owner can prove it."""
+    """Text (or, with Twilio, call) a code to the number on the account, so its owner can prove it.
+    GET is the one-button page that carries the reCAPTCHA; POST sends."""
 
-    http_method_names = ["post"]
+    def dispatch(self, request, *args, **kwargs):
+        _phone_codes_or_404()
+        return super().dispatch(request, *args, **kwargs)
+
+    def _channel(self, request):
+        channel = request.POST.get("channel") or request.GET.get("channel") or "sms"
+        return channel if channel in phone.channels() else None
+
+    def get(self, request):
+        number = phone.normalize(request.user.phone)
+        channel = self._channel(request)
+        if number is None or channel is None:
+            messages.error(request, "We can text US and Canada numbers only. Check the number in your profile.")
+            return redirect("account-settings")
+        return render(
+            request,
+            "accounts/phone_send.html",
+            {"channel": channel, "last_four": number[-4:], "recaptcha_site_key": phone.recaptcha_site_key()},
+        )
 
     def post(self, request):
-        _phone_codes_or_404()
-        channel = request.POST.get("channel")
+        channel = self._channel(request)
         number = phone.normalize(request.user.phone)
-        if channel not in phone.CHANNELS or number is None:
-            messages.error(request, "We can text or call US and Canada numbers only. Check the number in your profile.")
+        if channel is None or number is None:
+            messages.error(request, "We can text US and Canada numbers only. Check the number in your profile.")
             return redirect("account-settings")
         if not phone.within_daily_limit(request.user, number):
             messages.error(request, "That's all the codes we can send today. Try again tomorrow, or ask a coordinator.")
             return redirect("account-settings")
-        if not phone.send_code(number, channel):
+        state = phone.send_code(number, channel, recaptcha_token=request.POST.get("recaptcha_token", ""))
+        if not state:
             messages.error(request, "We couldn't send a code just now. Try again in a few minutes.")
             return redirect("account-settings")
-        request.session[PHONE_CONFIRM_KEY] = number
+        request.session[PHONE_CONFIRM_KEY] = {"number": number, "state": state}
         emit(
             "account.phone_code.sent",
             request.user,
@@ -633,17 +661,18 @@ class PhoneConfirmView(LoginRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["last_four"] = (self.request.session.get(PHONE_CONFIRM_KEY) or "")[-4:]
+        ctx["last_four"] = ((self.request.session.get(PHONE_CONFIRM_KEY) or {}).get("number") or "")[-4:]
         return ctx
 
     def form_valid(self, form):
         user = self.request.user
-        number = self.request.session.get(PHONE_CONFIRM_KEY)
+        sent = self.request.session.get(PHONE_CONFIRM_KEY) or {}
+        number = sent.get("number")
         # The number on the account must still be the one the code went to.
         if (
             not number
             or number != phone.normalize(user.phone)
-            or not phone.check_code(number, form.cleaned_data["code"])
+            or not phone.check_code(number, form.cleaned_data["code"], sent.get("state"))
         ):
             form.add_error(None, self.FAILED)
             return self.form_invalid(form)
@@ -651,12 +680,11 @@ class PhoneConfirmView(LoginRequiredMixin, FormView):
         user.save(update_fields=["phone_confirmed_at"])
         self.request.session.pop(PHONE_CONFIRM_KEY, None)
         emit("account.phone.confirmed", user, user=user, request=self.request)
-        messages.success(
-            self.request, "Phone confirmed. If you ever forget your password, we can text or call you a code."
-        )
+        messages.success(self.request, "Phone confirmed. If you ever forget your password, we can text you a code.")
         return redirect("account-settings")
 
 
+@method_decorator(csp_update(RECAPTCHA_CSP), name="dispatch")
 class PhoneRecoverView(FormView):
     """Username + text or call -> a code to the account's PROVEN number, if it has one.
 
@@ -671,13 +699,28 @@ class PhoneRecoverView(FormView):
         _phone_codes_or_404()
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Only the ways the current provider can send: Firebase texts, Twilio texts or calls.
+        form.fields["channel"].choices = [c for c in form.fields["channel"].choices if c[0] in phone.channels()]
+        return form
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["recaptcha_site_key"] = phone.recaptcha_site_key()
+        return ctx
+
     def form_valid(self, form):
         self.request.session.pop(PHONE_RECOVER_KEY, None)
         user = get_user_model().objects.filter(username=form.cleaned_data["username"].strip()).first()
         number = phone.normalize(user.deliverable_phone) if user else None
         channel = form.cleaned_data["channel"]
-        if number and phone.within_daily_limit(user, number) and phone.send_code(number, channel):
-            self.request.session[PHONE_RECOVER_KEY] = str(user.pk)
+        state = None
+        # The daily cap is counted BEFORE anything is sent: it guards money.
+        if number and phone.within_daily_limit(user, number):
+            state = phone.send_code(number, channel, recaptcha_token=self.request.POST.get("recaptcha_token", ""))
+        if state:
+            self.request.session[PHONE_RECOVER_KEY] = {"uid": str(user.pk), "state": state}
             emit(
                 "account.phone_code.sent",
                 user,
@@ -700,10 +743,11 @@ class PhoneRecoverCodeView(FormView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        uid = self.request.session.get(PHONE_RECOVER_KEY)
+        sent = self.request.session.get(PHONE_RECOVER_KEY) or {}
+        uid = sent.get("uid")
         user = get_user_model().objects.filter(pk=uid).first() if uid else None
         number = phone.normalize(user.deliverable_phone) if user else None
-        if not number or not phone.check_code(number, form.cleaned_data["code"]):
+        if not number or not phone.check_code(number, form.cleaned_data["code"], sent.get("state")):
             form.add_error(None, self.FAILED)
             return self.form_invalid(form)
         self.request.session.pop(PHONE_RECOVER_KEY, None)

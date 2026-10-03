@@ -1,8 +1,9 @@
 # Spec: codes by text message instead of on paper (and a phone, never an address, for Communion at home)
 
-> STATUS: **SPEC (DESIGNED), unbuilt**, written 2026-10-02 on the founder's key "8".
+> STATUS: **BUILT, OFF by default.** Written 2026-10-02 on the founder's key "8".
 > **Decided 2026-10-02 (night):** all four of the founder's decisions on the recommended option
-> (§Decisions). Being built next, off by default.
+> (§Decisions). Built in #205 with Twilio. ⚖️ **Provider changed 2026-10-03** (§Provider, as built):
+> Firebase now, Twilio after the 501(c)(3).
 > 💸 **Texting costs money.** Opening the provider account, adding a card, and any spend are the
 > founder's hand; no agent opens an account or spends. His word on 10-02: *"if it cost money we will
 > do it."* ⛔ **Real neighbors' phone numbers wait for the ethics gate** (`../ethics-and-safety.md`,
@@ -110,6 +111,39 @@ number, never the code, in any audit `details`.
 | 4 | Communion-at-home number | **Coordinators only**; a matched helper does not see it |
 | 5 | Landlines | **Yes**, a voice call reads the code out |
 
+## Provider, as built (changed 2026-10-03)
+
+**Decision 1 changed, in the founder's words:** Twilio needs a $20 starting balance (*"DONT HAVE
+20"*), so *"lets do firebase for now then after we get a nonprofit we will switch to twilio."* The
+research behind the switch is in the brain (`projects/phone-codes-research-2026-10-02.md`).
+
+| | Firebase / Google Identity Platform (`PHONE_CODES_PROVIDER=firebase`, now) | Twilio Verify (`=twilio`, after the 501(c)(3)) |
+|---|---|---|
+| Cost | The first 10 texts a day are not billed, then $0.01 per US text. Needs the pay-as-you-go **Blaze** plan, so a card on file | About $0.06 a code, a $20 starting balance; Twilio.org gives a one-time $100 credit to nonprofits |
+| Channels | **Texts only** | Texts and voice calls |
+| reCAPTCHA | **Required on every send.** Invisible, with the badge inline in the form, loaded only on the two pages that send a code; their CSP is widened for it, no other page loads Google | None |
+| What Google keeps | It makes a Firebase user for the number when the code checks out; **the board deletes that user right away** (`accounts:delete`) | Twilio keeps its own verification logs |
+
+How it runs: the board's server asks Google for a code, passing the person's reCAPTCHA token
+(`accounts:sendVerificationCode`). It keeps Google's session ID in the person's own session, then
+sends the typed code back to Google (`accounts:signInWithPhoneNumber`). It counts the code as good
+only if Google says it went to the same number.
+
+**Decision 5 (landlines) under Firebase:** no automated path exists that is free and within the
+carrier rules. **Proposed, the founder's call:** a coordinator calls the proven number on the
+account (never a number the caller gives) and reads the 15-minute code the board already makes.
+That turns the in-person code into a by-phone one, a small loosening, held by the rule that the
+coordinator only ever calls back the number on file.
+
+**His hand, to switch it on with Firebase:**
+1. Create a Firebase project.
+2. Move it to the Blaze plan, with a budget alert.
+3. In Authentication, enable the Phone sign-in provider.
+4. Add the board's domain to the authorized domains.
+5. Copy the Web API key into the server `.env` as `FIREBASE_API_KEY`, and restrict that key to the
+   Identity Toolkit API.
+6. Set `PHONE_CODES_ENABLED=True` on his key. Real neighbors' numbers still wait for the ethics gate.
+
 ## Honest limits
 
 - A text code is weaker than an authenticator app: a stolen or swapped SIM receives it. Fine for
@@ -132,6 +166,7 @@ number, never the code, in any audit `details`.
 
 - [x] Founder decisions 1–5 answered (2026-10-02; the alert amount is set when the account opens).
 - [ ] Provider account opened and a spending alert set (founder's hand).
-- [ ] Built behind a setting that is off by default; tests above green on Postgres.
+- [x] Built behind a setting that is off by default; tests above green on Postgres (#205 Twilio,
+      then Firebase as the provider for now).
 - [ ] Turned on in production on the founder's key, and only after the ethics gate allows real
       neighbors' numbers.

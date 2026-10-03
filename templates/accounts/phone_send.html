@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Get a code on your phone{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-6">Get a code on your phone</h1>
+  <p class="text-base text-parish-ink/70 mb-4">{% if channel == "call" %}We'll call your number ending in {{ last_four }} and read you a 6-number code.{% else %}We'll text a 6-number code to your number ending in {{ last_four }}.{% endif %} Then you type it on the next page.</p>
+  <form method="post" class="umi-card space-y-4" data-recaptcha-form>
+    {% csrf_token %}
+    <input type="hidden" name="channel" value="{{ channel }}">
+    {% include "accounts/_recaptcha.html" %}
+    <button type="submit" class="w-full btn-primary transition-colors">{% if channel == "call" %}Call me now{% else %}Text me the code{% endif %}</button>
+  </form>
+  <p class="text-center mt-4"><a href="{% url 'account-settings' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to settings</a></p>
+</div>
+{% endblock %}
