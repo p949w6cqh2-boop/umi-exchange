@@ -33,6 +33,16 @@
   on one laptop. Now a copy goes beside every nightly backup, still locked, so the backup can be
   restored even if that laptop is lost. The key that opens it stays with the steward and in a sealed
   envelope at the parish.
+- **What our first coordinator asked for (October 2):**
+  - **You're signed out after 15 minutes without activity.** The people she helps borrow phones
+    and share family tablets, and a board left signed in is an account anyone can use. A minute
+    before, the board asks "Still there?" with an "I'm still here" button. Typing counts as
+    activity, so a long request you're in the middle of writing is never lost.
+  - **A "Communion at home" category,** for homebound parishioners asking for someone to bring
+    them communion. The board never asks for a home address: a coordinator sees the phone number
+    on your account, if you've added one, and calls to arrange the visit.
+  - **The copyright notice names its holder,** Jasiah Williams. The code stays free and open
+    under the AGPL.
 
 ## 2026-10-01
 

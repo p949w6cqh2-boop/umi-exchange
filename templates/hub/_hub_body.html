@@ -73,7 +73,9 @@
         <span class="w-1.5 h-1.5 rounded-full bg-[var(--umi-primary)] animate-pulse" aria-hidden="true"></span> live
       </span>
     </div>
-    <div hx-get="{% url 'hub:pulse' slug=community.slug %}" hx-trigger="every 60s" hx-swap="innerHTML">
+    {# Background: the minute poll is not activity, or an open tab would never idle out (apps/accounts/idle.py). #}
+    <div hx-get="{% url 'hub:pulse' slug=community.slug %}" hx-trigger="every 60s" hx-swap="innerHTML"
+         hx-headers='{"X-Umi-Background": "1"}'>
       {% include "hub/_pulse.html" %}
     </div>
   </section>

@@ -121,6 +121,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
+    # Last: it needs request.htmx and the messages store set up by the two above.
+    "apps.accounts.idle.IdleTimeoutMiddleware",
 ]
 
 # Optional: OTP middleware for 2FA (must come after AuthenticationMiddleware)
@@ -181,6 +183,10 @@ LOGIN_REDIRECT_URL = "/hub/"
 LOGOUT_REDIRECT_URL = "/"
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
+# Idle sign-out (apps/accounts/idle.py): no activity for this long and the next request signs
+# the person out. The first coordinator asked for 5-10 minutes (2026-10-02); 15 was the
+# recommendation under the founder's key, with a warning a minute before. One variable to tighten.
+SESSION_IDLE_TIMEOUT_SECONDS = env.int("SESSION_IDLE_TIMEOUT_SECONDS", default=15 * 60)
 
 # Use Argon2 if its backing library is installed, else fall back to PBKDF2.
 # NOTE: import the `argon2` library itself — importing the hasher class always
@@ -247,6 +253,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.communities.context_processors.umi_context",
+                "apps.accounts.context_processors.idle_timeout",
             ],
         },
     },
