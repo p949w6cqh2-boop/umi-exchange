@@ -53,6 +53,9 @@
     on your account, if you've added one, and calls to arrange the visit.
   - **The copyright notice names its holder,** Jasiah Williams. The code stays free and open
     under the AGPL.
+- **Locked out with only a landline? A coordinator can call you back.** They call the number
+  saved on your account, never a number someone gives them, and read you a code that works once,
+  for 15 minutes. You choose your own new password; they never see it.
 
 ## 2026-10-01
 

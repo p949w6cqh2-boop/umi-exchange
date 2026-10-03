@@ -11,6 +11,19 @@
       "Have a recovery code?", type their username and this code, and choose a new password
       themselves. You never see or choose their password.
     </p>
+    {% comment %}
+      Landlines (the founder's yes, 2026-10-03): a coordinator may read the code over the phone,
+      but only on a call the coordinator places to the number saved on the account. A caller who
+      asks for a code is never given one on their own call or at a number they supply.
+    {% endcomment %}
+    {% if target.user.phone %}
+    <div class="rounded-xl border border-[var(--umi-border)] p-4">
+      <p class="text-base text-parish-ink">Not with you? You may call them back on the number saved on their account: <strong class="whitespace-nowrap">{{ target.user.phone }}</strong>{% if not target.user.phone_confirmed_at %} (not confirmed by a code){% endif %}.</p>
+      <p class="text-sm text-parish-ink/70 mt-2">Only ever that number, never one they give you, and only on a call you make.</p>
+    </div>
+    {% else %}
+    <p class="text-sm text-parish-ink/70">No phone number is saved on their account, so read this to them in person.</p>
+    {% endif %}
     <p class="text-sm text-parish-ink/70">It works once, for 15 minutes. This is the only place it is shown. Your name is recorded with it{% if target.user.deliverable_email %}, and they get an email saying you made it{% endif %}.</p>
   </div>
   {% else %}

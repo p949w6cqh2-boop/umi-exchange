@@ -251,9 +251,10 @@
     <div class="mt-5 pt-4 border-t border-[var(--umi-border)]">
       <h3 class="text-sm font-semibold text-parish-ink">Help a neighbor reset their password</h3>
       <p class="text-xs text-parish-ink/70 mt-1 mb-3">
-        For a member who is locked out and standing with you: this makes a 15-minute code you read to
-        them. They choose their own new password; you never see it. Members only, not coordinators.
-        Your name is recorded with every code.
+        For a member who is locked out, standing with you, or on a call you make to the number saved on
+        their account (never a number they give you): this makes a 15-minute code you read to them.
+        They choose their own new password; you never see it. Members only, not coordinators. Your name
+        is recorded with every code.
       </p>
       <form method="post" action="{% url 'member-reset' slug=community.slug %}" class="flex items-center gap-2">
         {% csrf_token %}
