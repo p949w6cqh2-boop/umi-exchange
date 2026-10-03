@@ -192,7 +192,10 @@ class Match(models.Model):
         if is_requester:
             return self._contact_dict(offering_member, offering_pref) if offering_member else None
         if is_offerer:
-            return self._contact_dict(requester, requester_pref)
+            # Communion at home (the founder's decision 2026-10-02, phone-codes.md): the asker's
+            # number stays with the coordinators who arrange the visit; the helper sees the name.
+            pref = "in_app" if self.need.category.coordinators_only_contact else requester_pref
+            return self._contact_dict(requester, pref)
 
         # Coordinator (not a participant): reveal both parties for oversight.
         parties = [self._contact_dict(requester, requester_pref)]

@@ -5,6 +5,14 @@
 
 ## Unreleased
 
+- **Codes by phone are built, not switched on yet.** Our first coordinator asked us to move away
+  from paper. Once it's switched on, you can confirm your phone in Settings with a code we text you,
+  or read to you in a phone call, which works on a landline. Then if you ever forget your password,
+  choose "Get a code by phone" on the sign-in page. A code works once, for 10 minutes. Your phone
+  stays optional, and the paper code stays as a backup for anyone without one.
+- **Communion at home requests keep your number with the coordinators.** When someone offers to
+  help with a Communion at home request, they see your name, not your phone number or email. A
+  coordinator calls you to arrange the visit.
 - **Fixes from our first coordinator's first sit-down (October 2).** She tried the board on her own
   phone and found five things that made it harder than it should be:
   - **Long names and long requests no longer run off a phone screen.** They wrap onto the next line

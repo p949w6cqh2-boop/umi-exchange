@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Get a code by phone{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-6">Get a code by phone</h1>
+  <p class="text-base text-parish-ink/70 mb-4">Type your username. If your account has a phone number you've confirmed, we'll text or call it with a code. Then you'll choose a new password.</p>
+  <form method="post" class="umi-card space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<p class="text-sm text-red-600" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+    <div>
+      <label for="{{ form.username.id_for_label }}" class="umi-label">{{ form.username.label }}</label>
+      {{ form.username }}
+      {% if form.username.errors %}<p class="text-sm text-red-600 mt-1.5">{{ form.username.errors.0 }}</p>{% endif %}
+    </div>
+    <fieldset>
+      <legend class="umi-label">{{ form.channel.label }}</legend>
+      <div class="space-y-2 mt-1">
+        {% for choice in form.channel %}
+        <label class="flex items-center gap-3 min-h-[44px] cursor-pointer text-base text-parish-ink">
+          {{ choice.tag }} <span>{{ choice.choice_label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <button type="submit" class="w-full btn-primary transition-colors">Send my code</button>
+  </form>
+  <p class="text-sm text-parish-ink/70 mt-4">No phone on your account? Use the recovery code on your paper, or ask a coordinator for a 15-minute code.</p>
+  <p class="text-center mt-4"><a href="{% url 'login' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to login</a></p>
+</div>
+{% endblock %}

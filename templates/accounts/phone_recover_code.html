@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Type your code{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-6">Type your code</h1>
+  {% comment %}The same words for every username, sent or not: no enumeration (phone-codes.md).{% endcomment %}
+  <p class="text-base text-parish-ink/70 mb-4">If that account has a phone we've confirmed, we just sent it a code. It works for 10 minutes. Type the 6 numbers here.</p>
+  <form method="post" class="umi-card space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<p class="text-sm text-red-600" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+    {% for field in form %}
+    <div>
+      <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<p class="text-sm text-parish-ink/70 mt-1.5">{{ field.help_text }}</p>{% endif %}
+      {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="w-full btn-primary transition-colors">Continue</button>
+  </form>
+  <p class="text-sm text-parish-ink/70 mt-4">Nothing came? <a href="{% url 'phone-recover' %}" class="text-umi-primary hover:text-umi-primary-hover">Ask for a new code</a>, or use the recovery code on your paper.</p>
+  <p class="text-center mt-4"><a href="{% url 'login' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to login</a></p>
+</div>
+{% endblock %}

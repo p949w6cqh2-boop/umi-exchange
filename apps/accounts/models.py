@@ -34,6 +34,10 @@ class User(AbstractUser):
     # address nobody has shown they read. Set ONLY when a person clicks a link sent to
     # the address; cleared by save() whenever the address changes without one.
     email_confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Phone OWNERSHIP, the same rule as email (docs/specs/phone-codes.md): set only when the
+    # person types back a code sent to the number; cleared by save() whenever the number
+    # changes without one. A code to get back in goes only to a proven number.
+    phone_confirmed_at = models.DateTimeField(null=True, blank=True)
 
     REQUIRED_FIELDS = []
     USERNAME_FIELD = "username"
@@ -55,6 +59,11 @@ class User(AbstractUser):
         """
         return self.email if self.email and self.email_confirmed_at else None
 
+    @property
+    def deliverable_phone(self):
+        """The number, if and only if its owner has proven it with a code; else None."""
+        return self.phone if self.phone and self.phone_confirmed_at else None
+
     class Meta:
         db_table = "accounts_user"
 
@@ -70,7 +79,22 @@ class User(AbstractUser):
         # also normalizes None to "") must not store "" either.
         self.email = self.email or None
         self._clear_confirmation_if_address_changed(kwargs)
+        self._clear_phone_confirmation_if_number_changed(kwargs)
         super().save(*args, **kwargs)
+
+    def _clear_phone_confirmation_if_number_changed(self, save_kwargs):
+        """The phone twin of the rule below: a proof belongs to the number it proved."""
+        update_fields = save_kwargs.get("update_fields")
+        if update_fields is not None and "phone" not in update_fields:
+            return
+        if self._state.adding or self.pk is None:
+            return
+        prev = type(self).objects.filter(pk=self.pk).values("phone", "phone_confirmed_at").first()
+        if prev is None or (prev["phone"] or "") == (self.phone or ""):
+            return
+        if self.phone_confirmed_at != prev["phone_confirmed_at"]:
+            return  # the caller is writing a fresh proof for the new number
+        self.phone_confirmed_at = None
 
     def _clear_confirmation_if_address_changed(self, save_kwargs):
         """A proof belongs to the address it proved. Changing the address WITHOUT a

@@ -63,7 +63,9 @@ def queue_match_event(match, event, *, fmatch=None):
     )
     if event == "accepted":
         need = match.need
-        ev.secret_payload = {"contact": need.requester.contact_dict(need.contact_pref)}
+        # Coordinators-only categories (Communion at home) never send the asker's number across.
+        pref = "in_app" if need.category.coordinators_only_contact else need.contact_pref
+        ev.secret_payload = {"contact": need.requester.contact_dict(pref)}
     elif fmatch.contact_expires_at is None:
         # Terminal: start the §4.4 grace on the stored counterpart contact,
         # or it would never be swept.
