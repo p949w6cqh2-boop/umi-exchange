@@ -1,6 +1,8 @@
 # Spec: codes by text message instead of on paper (and a phone, never an address, for Communion at home)
 
 > STATUS: **SPEC (DESIGNED), unbuilt**, written 2026-10-02 on the founder's key "8".
+> **Decided 2026-10-02 (night):** all four of the founder's decisions on the recommended option
+> (§Decisions). Being built next, off by default.
 > 💸 **Texting costs money.** Opening the provider account, adding a card, and any spend are the
 > founder's hand; no agent opens an account or spends. His word on 10-02: *"if it cost money we will
 > do it."* ⛔ **Real neighbors' phone numbers wait for the ethics gate** (`../ethics-and-safety.md`,
@@ -98,6 +100,16 @@ number, never the code, in any audit `details`.
 5. **Offer "call me with a code" for landlines: yes.** Many homebound parishioners have a landline
    and no mobile phone.
 
+**Decided 2026-10-02 (night), the founder's answers:**
+
+| # | Decision | Answer |
+|---|---|---|
+| 1 | Provider | **Twilio Verify** |
+| 2 | Paper | **Kept as the backup** for people with no phone |
+| 3 | Spending alert | **$10 a month**, set by the founder in the provider console when he opens the account |
+| 4 | Communion-at-home number | **Coordinators only**; a matched helper does not see it |
+| 5 | Landlines | **Yes**, a voice call reads the code out |
+
 ## Honest limits
 
 - A text code is weaker than an authenticator app: a stolen or swapped SIM receives it. Fine for
@@ -118,7 +130,7 @@ number, never the code, in any audit `details`.
 
 ## Done-when
 
-- [ ] Founder decisions 1–5 answered.
+- [x] Founder decisions 1–5 answered (2026-10-02; the alert amount is set when the account opens).
 - [ ] Provider account opened and a spending alert set (founder's hand).
 - [ ] Built behind a setting that is off by default; tests above green on Postgres.
 - [ ] Turned on in production on the founder's key, and only after the ethics gate allows real
