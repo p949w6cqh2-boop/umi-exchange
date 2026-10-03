@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `511e6fe` (merged 2026-08-19 UTC).
+> Reflects `main` @ `e678bd69` (merged 2026-10-01 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, but **a full line-by-line sweep of this file against `main` has not been run since
@@ -309,11 +309,17 @@ Do not assume/reintroduce: Stripe billing, Twilio SMS, Chart.js dashboards, blog
   `docs/monitoring/trip-test-2026-08-18/`. ⚠️ **The toggle cost four
   unannounced outages: 84.416% uptime over the prior 30 days, 4 incidents, 4d 19h 56m down, none of
   which reached a human.** Also owed: **rotate demo creds** before a
-  real parish; **outbound email — VERIFIED STILL DEAD 2026-08-19**: `printenv EMAIL_HOST_USER` on
+  real parish; ~~**outbound email — VERIFIED STILL DEAD 2026-08-19**: `printenv EMAIL_HOST_USER` on
   the app container returns **empty**, so the console→SMTP switch never fires and production mail is
   written to a log and delivered nowhere. **Blocked one step earlier than "creds": there is no
-  provider account yet** (founder's hand, external account). Reasoning written up front in
-  **`docs/email-provider-decision.md`**; hands-on path in `docs/email-delivery-runbook.md`.
+  provider account yet** (founder's hand, external account).~~ ⚖️ **Corrected 2026-10-02: this line
+  was stale for three weeks.** Outbound email has been **live since 2026-09-11** on the rebuilt
+  droplet, through the provider on port 2587 (`docs/email-delivery-runbook.md` §3), and the sending
+  domain publishes SPF, DKIM and a quarantine DMARC policy (public DNS, read 2026-10-02). Still
+  open: on 2026-10-02 the first coordinator's confirmation link did not arrive, or went to spam
+  (reported by the founder; cause unknown; the provider's dashboard shows each message's fate).
+  Reasoning written up front in **`docs/email-provider-decision.md`**; hands-on path in
+  `docs/email-delivery-runbook.md`.
   (**Separate problem — it does NOT affect monitor alerting.**) Real two-instance federation
   dark launch (runbook ready); old-KEK retirement (runbook Phase 5) once prod censuses are clean;
   DB-role step-0 check on the host. ~~DR rehearsal + B2 lifecycle rule~~ ✅ done 2026-07-29 (#131).
