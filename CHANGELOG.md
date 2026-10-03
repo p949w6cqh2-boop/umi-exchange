@@ -19,8 +19,8 @@
   phone and found five things that made it harder than it should be:
   - **Long names and long requests no longer run off a phone screen.** They wrap onto the next line
     instead of being cut off, and a request's title gets two lines on its card instead of one.
-  - **You can see your password while you type it.** Every password box now has a "Show password"
-    button under it. Press it again to hide it.
+  - **You can see your password while you type it.** Every password box has an eye at its right
+    edge. Tap the eye to see what you typed; tap the eye with the slash to hide it again.
   - **Adding an email now says what happens next.** Your email is saved only after you click the
     link we send it, so the box stayed empty and it looked like nothing worked. Settings now says
     where we sent the link, and to look in your spam or junk folder.
