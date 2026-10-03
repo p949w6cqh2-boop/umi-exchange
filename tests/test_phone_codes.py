@@ -1,11 +1,12 @@
 """Codes by phone instead of paper (docs/specs/phone-codes.md), decided 2026-10-02.
 
 The first coordinator: "we will use phones, she said we should stay away from paper. Switch paper
-codes to phone codes." The founder's four answers: Twilio Verify; paper kept as the backup;
-Communion-at-home numbers seen by coordinators only; voice-call codes for landlines.
+codes to phone codes." The founder's answers: paper kept as the backup; Communion-at-home numbers
+seen by coordinators only; voice-call codes for landlines once a provider can call. The provider,
+2026-10-03: "lets do firebase for now then after we get a nonprofit we will switch to twilio."
 
-The provider is reached through apps/accounts/phone.py alone, and every test here replaces it, so
-the suite never sends a text or places a call. The feature ships OFF (PHONE_CODES_ENABLED).
+The provider is reached through apps/accounts/phone.py alone, and every test here replaces it or its
+network call, so the suite never sends a text or places a call. The feature ships OFF.
 """
 
 import html
@@ -39,7 +40,17 @@ def _no_throttle(settings):
 
 @pytest.fixture
 def on(settings):
+    """Switched on with Firebase, the provider for now."""
     settings.PHONE_CODES_ENABLED = True
+    settings.PHONE_CODES_PROVIDER = "firebase"
+    settings.FIREBASE_API_KEY = "AIza_test"
+
+
+@pytest.fixture
+def on_twilio(settings):
+    """Switched on with Twilio, the provider after the 501(c)(3)."""
+    settings.PHONE_CODES_ENABLED = True
+    settings.PHONE_CODES_PROVIDER = "twilio"
     settings.TWILIO_ACCOUNT_SID = "AC_test"
     settings.TWILIO_AUTH_TOKEN = "token_test"
     settings.TWILIO_VERIFY_SERVICE_SID = "VA_test"
@@ -47,10 +58,13 @@ def on(settings):
 
 @pytest.fixture
 def fake():
-    """Stands in for Twilio: records sends, approves only the code 123456."""
+    """Stands in for the provider: records sends, approves only 123456 for the state it handed out."""
     with (
-        mock.patch.object(phone, "send_code", return_value=True) as send,
-        mock.patch.object(phone, "check_code", side_effect=lambda number, code: code == "123456") as check,
+        mock.patch.object(phone, "send_code", return_value="state-1") as send,
+        mock.patch.object(
+            phone, "check_code", side_effect=lambda number, code, state: code == "123456" and state == "state-1"
+        ) as check,
+        mock.patch.object(phone, "recaptcha_site_key", return_value="site-key-test"),
     ):
         yield send, check
 
@@ -95,39 +109,71 @@ def test_only_us_and_canada_numbers_get_codes(raw, expected):
 def test_off_by_default_nothing_new_appears(client, settings):
     assert settings.PHONE_CODES_ENABLED is False
     assert phone.enabled() is False
-    html = _client(_user()).get(reverse("account-settings")).content.decode()
-    assert "Text me a code" not in html
+    html_ = _client(_user()).get(reverse("account-settings")).content.decode()
+    assert "Text me a code" not in html_
     assert "Get a code by phone" not in client.get(reverse("login")).content.decode()
     assert client.get(reverse("phone-recover")).status_code == 404
 
 
-def test_switched_on_without_credentials_is_still_off(settings):
-    settings.PHONE_CODES_ENABLED = True
-    settings.TWILIO_AUTH_TOKEN = ""
+def test_firebase_is_the_provider_for_now(settings):
+    assert settings.PHONE_CODES_PROVIDER == "firebase"
+    assert phone.channels() == ("sms",)  # Firebase texts; it cannot call a landline
+
+
+def test_switched_on_without_its_key_is_still_off(on, settings):
+    settings.FIREBASE_API_KEY = ""
     assert phone.enabled() is False
 
 
 # ── proving a phone ──────────────────────────────────────────────────────────
 
 
-def test_settings_offers_a_text_and_a_call_for_an_unproven_number(on):
-    html = _client(_user()).get(reverse("account-settings")).content.decode()
-    assert "Not confirmed yet" in html
-    assert "Text me a code" in html and "Call me with a code" in html
+def test_settings_offers_a_text_but_no_call_with_firebase(on, fake):
+    page = _client(_user()).get(reverse("account-settings")).content.decode()
+    assert "Not confirmed yet" in page
+    assert "Text me a code" in page and "Call me with a code" not in page
 
 
-@pytest.mark.parametrize("channel", ["sms", "call"])
-def test_sending_a_code_texts_or_calls_the_normalized_number(on, fake, channel):
+def test_settings_offers_a_call_too_with_twilio(on_twilio, fake):
+    page = _client(_user()).get(reverse("account-settings")).content.decode()
+    assert "Text me a code" in page and "Call me with a code" in page
+
+
+def test_settings_never_loads_google(on, fake):
+    assert "google.com/recaptcha" not in _client(_user()).get(reverse("account-settings")).content.decode()
+
+
+def test_the_send_page_carries_recaptcha_and_widens_csp_only_there(on, fake):
+    resp = _client(_user()).get(reverse("phone-send") + "?channel=sms")
+    page = resp.content.decode()
+    assert 'data-sitekey="site-key-test"' in page and "www.google.com/recaptcha/api.js" in page
+    policy = resp["Content-Security-Policy"]
+    assert "https://www.google.com/recaptcha/" in policy and "frame-src" in policy
+    assert "https://www.google.com/recaptcha/" not in Client().get(reverse("login"))["Content-Security-Policy"]
+
+
+def test_sending_a_code_passes_the_recaptcha_token(on, fake):
     send, _ = fake
-    user = _user()
-    resp = _client(user).post(reverse("phone-send"), {"channel": channel})
+    resp = _client(_user()).post(reverse("phone-send"), {"channel": "sms", "recaptcha_token": "tok"})
     assert resp.status_code == 302 and resp["Location"] == reverse("phone-confirm")
-    send.assert_called_once_with(E164, channel)
+    send.assert_called_once_with(E164, "sms", recaptcha_token="tok")
+
+
+def test_firebase_never_places_a_call(on, fake):
+    send, _ = fake
+    _client(_user()).post(reverse("phone-send"), {"channel": "call", "recaptcha_token": "tok"})
+    send.assert_not_called()
+
+
+def test_twilio_can_call_a_landline(on_twilio, fake):
+    send, _ = fake
+    _client(_user()).post(reverse("phone-send"), {"channel": "call"})
+    send.assert_called_once_with(E164, "call", recaptcha_token="")
 
 
 def test_a_number_outside_us_and_canada_gets_no_code(on, fake):
     send, _ = fake
-    _client(_user("+44 20 7946 0958")).post(reverse("phone-send"), {"channel": "sms"})
+    _client(_user("+44 20 7946 0958")).post(reverse("phone-send"), {"channel": "sms", "recaptcha_token": "tok"})
     send.assert_not_called()
 
 
@@ -136,14 +182,14 @@ def test_at_most_five_codes_a_day(on, fake):
     send, _ = fake
     c = _client(_user())
     for _ in range(7):
-        c.post(reverse("phone-send"), {"channel": "sms"})
+        c.post(reverse("phone-send"), {"channel": "sms", "recaptcha_token": "tok"})
     assert send.call_count == 5
 
 
 def test_the_right_code_proves_the_number(on, fake):
     user = _user()
     c = _client(user)
-    c.post(reverse("phone-send"), {"channel": "sms"})
+    c.post(reverse("phone-send"), {"channel": "sms", "recaptcha_token": "tok"})
     c.post(reverse("phone-confirm"), {"code": "000000"})
     user.refresh_from_db()
     assert user.phone_confirmed_at is None
@@ -165,7 +211,7 @@ def test_changing_the_number_clears_the_proof(on):
 def test_no_number_and_no_code_reach_the_audit_record(on, fake):
     user = _user()
     c = _client(user)
-    c.post(reverse("phone-send"), {"channel": "sms"})
+    c.post(reverse("phone-send"), {"channel": "sms", "recaptcha_token": "tok"})
     c.post(reverse("phone-confirm"), {"code": "123456"})
     rows = AuditLog.objects.filter(action__startswith="account.phone")
     assert rows.count() >= 2
@@ -177,7 +223,7 @@ def test_no_number_and_no_code_reach_the_audit_record(on, fake):
 
 
 def _recover(client, username, channel="sms"):
-    return client.post(reverse("phone-recover"), {"username": username, "channel": channel})
+    return client.post(reverse("phone-recover"), {"username": username, "channel": channel, "recaptcha_token": "tok"})
 
 
 def test_the_recover_page_answers_the_same_for_every_account(on, fake, client):
@@ -190,12 +236,19 @@ def test_the_recover_page_answers_the_same_for_every_account(on, fake, client):
 
     answers = set()
     for name in ("nobody-by-this-name", "nophone", "unproven", "proven"):
-        resp = Client().post(reverse("phone-recover"), {"username": name, "channel": "sms"}, follow=True)
+        data = {"username": name, "channel": "sms", "recaptcha_token": "tok"}
+        resp = Client().post(reverse("phone-recover"), data, follow=True)
         answers.add(
             (resp.status_code, resp.redirect_chain[-1][0], "If that account has a phone" in resp.content.decode())
         )
     assert len(answers) == 1
-    send.assert_called_once_with(E164, "sms")  # only the proven number ever gets a code
+    send.assert_called_once_with(E164, "sms", recaptcha_token="tok")  # only the proven number gets a code
+
+
+def test_the_recover_page_offers_only_texts_with_firebase(on, fake, client):
+    page = client.get(reverse("phone-recover")).content.decode()
+    assert "Call me and read it out" not in page
+    assert 'data-sitekey="site-key-test"' in page
 
 
 def test_a_phone_code_starts_a_password_reset_and_never_signs_in(on, fake):
@@ -219,11 +272,11 @@ def test_a_wrong_or_missing_code_fails_the_same_way(on, fake):
     assert msg in wrong and msg in never_sent
 
 
-def test_landline_people_can_ask_for_a_call(on, fake):
+def test_landline_people_can_ask_for_a_call_with_twilio(on_twilio, fake):
     send, _ = fake
     _user(confirmed=True)
     _recover(Client(), "ruth", channel="call")
-    send.assert_called_once_with(E164, "call")
+    send.assert_called_once_with(E164, "call", recaptcha_token="tok")
 
 
 def test_the_sign_in_page_offers_it_once_switched_on(on, client):
@@ -237,30 +290,75 @@ def test_the_recover_pages_sit_behind_the_sign_in_throttle(settings):
 # ── the provider module itself, with the network replaced ───────────────────
 
 
-def _fake_urlopen(status):
-    resp = mock.MagicMock()
-    resp.__enter__.return_value.read.return_value = json.dumps({"status": status}).encode()
-    return mock.patch("apps.accounts.phone.urllib.request.urlopen", return_value=resp)
+def _responses(*bodies):
+    """urlopen stand-in returning each JSON body in turn; records each request."""
+    calls = []
+
+    def fake_urlopen(request, timeout=None):
+        calls.append(request)
+        resp = mock.MagicMock()
+        resp.__enter__.return_value.read.return_value = json.dumps(bodies[len(calls) - 1]).encode()
+        return resp
+
+    return calls, mock.patch("apps.accounts.phone.urllib.request.urlopen", side_effect=fake_urlopen)
 
 
-def test_send_code_is_true_only_when_twilio_says_pending(on):
-    with _fake_urlopen("pending"):
-        assert phone.send_code(E164, "sms") is True
-    with _fake_urlopen("canceled"):
-        assert phone.send_code(E164, "sms") is False
+def test_firebase_send_returns_googles_session_info(on):
+    calls, patch = _responses({"sessionInfo": "S"})
+    with patch:
+        assert phone.send_code(E164, "sms", recaptcha_token="tok") == "S"
+    body = json.loads(calls[0].data)
+    assert "accounts:sendVerificationCode" in calls[0].full_url
+    assert body == {"phoneNumber": E164, "recaptchaToken": "tok"}
 
 
-def test_check_code_is_true_only_when_twilio_says_approved(on):
-    with _fake_urlopen("approved"):
-        assert phone.check_code(E164, "123456") is True
-    with _fake_urlopen("pending"):
-        assert phone.check_code(E164, "000000") is False
+def test_firebase_send_without_a_recaptcha_token_never_leaves_the_board(on):
+    calls, patch = _responses()
+    with patch:
+        assert phone.send_code(E164, "sms") is None
+    assert calls == []
 
 
-def test_a_network_failure_is_a_quiet_false(on):
+def test_firebase_check_approves_the_right_number_then_deletes_googles_copy(on):
+    calls, patch = _responses({"phoneNumber": E164, "idToken": "T"}, {})
+    with patch:
+        assert phone.check_code(E164, "123456", "S") is True
+    assert "accounts:signInWithPhoneNumber" in calls[0].full_url
+    assert "accounts:delete" in calls[1].full_url and json.loads(calls[1].data) == {"idToken": "T"}
+
+
+def test_firebase_check_refuses_a_different_number(on):
+    _calls, patch = _responses({"phoneNumber": "+15550000000", "idToken": "T"}, {})
+    with patch:
+        assert phone.check_code(E164, "123456", "S") is False
+
+
+def test_firebase_check_without_a_session_is_false(on):
+    calls, patch = _responses()
+    with patch:
+        assert phone.check_code(E164, "123456", None) is False
+    assert calls == []
+
+
+def test_the_recaptcha_site_key_is_fetched_once_and_cached(on):
+    calls, patch = _responses({"recaptchaSiteKey": "K"})
+    with patch:
+        assert phone.recaptcha_site_key() == "K"
+        assert phone.recaptcha_site_key() == "K"
+    assert len(calls) == 1 and "recaptchaParams" in calls[0].full_url
+
+
+def test_twilio_send_and_check(on_twilio):
+    _calls, patch = _responses({"status": "pending"}, {"status": "approved"})
+    with patch:
+        assert phone.send_code(E164, "sms") == "twilio"
+        assert phone.check_code(E164, "123456", "twilio") is True
+
+
+def test_a_network_failure_is_a_quiet_nothing(on):
     with mock.patch("apps.accounts.phone.urllib.request.urlopen", side_effect=OSError("down")):
-        assert phone.send_code(E164, "sms") is False
-        assert phone.check_code(E164, "123456") is False
+        assert phone.send_code(E164, "sms", recaptcha_token="tok") is None
+        assert phone.check_code(E164, "123456", "S") is False
 
 
 def test_send_code_refuses_an_unknown_channel(on):

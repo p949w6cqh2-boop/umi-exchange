@@ -1,0 +1,12 @@
+{% load static %}
+{% comment %}
+  Inside a <form data-recaptcha-form>. Renders only when the provider needs reCAPTCHA (Firebase).
+  Google's script loads on the two pages that send a code, and nowhere else on the board.
+{% endcomment %}
+{% if recaptcha_site_key %}
+<input type="hidden" name="recaptcha_token" value="">
+<div data-sitekey="{{ recaptcha_site_key }}"></div>
+<p class="text-xs text-parish-ink/70">To stop people sending codes to numbers that aren't theirs, Google checks this page is used by a person. Usually you won't notice; sometimes it asks you to pick some pictures.</p>
+<script src="{% static 'js/recaptcha-submit.js' %}" defer></script>
+<script src="https://www.google.com/recaptcha/api.js?onload=umiRecaptchaReady&render=explicit" defer></script>
+{% endif %}

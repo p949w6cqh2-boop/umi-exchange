@@ -45,15 +45,16 @@
       {% if phone_codes_enabled and user.phone %}
       {% comment %}
         Codes by phone (phone-codes.md): a code to get back in goes only to a number its owner
-        has proven. The buttons submit the small forms below this one, because forms cannot nest.
+        has proven. The links open the one-button "send a code" page, which carries the reCAPTCHA
+        when the provider needs one, so this page never loads Google.
       {% endcomment %}
       {% if user.phone_confirmed_at %}
-      <p class="text-sm text-parish-ink/80 mt-2">Confirmed. If you ever forget your password, we can text or call this number with a code.</p>
+      <p class="text-sm text-parish-ink/80 mt-2">Confirmed. If you ever forget your password, we can {% if "call" in phone_codes_channels %}text or call{% else %}text{% endif %} this number with a code.</p>
       {% else %}
       <p class="text-sm text-parish-ink/80 mt-2">Not confirmed yet. Prove this number is yours, and you can get back in with a code by phone if you ever forget your password.</p>
       <div class="flex flex-wrap gap-3 mt-2">
-        <button type="submit" form="phone-send-sms" class="btn-secondary">Text me a code</button>
-        <button type="submit" form="phone-send-call" class="btn-secondary">Call me with a code</button>
+        <a href="{% url 'phone-send' %}?channel=sms" class="btn-secondary">Text me a code</a>
+        {% if "call" in phone_codes_channels %}<a href="{% url 'phone-send' %}?channel=call" class="btn-secondary">Call me with a code</a>{% endif %}
       </div>
       {% endif %}
       {% endif %}
@@ -77,10 +78,6 @@
   </form>
   {% if user.email and not user.email_confirmed_at %}
   <form id="confirm-resend" method="post" action="{% url 'verify-send' %}" class="hidden">{% csrf_token %}</form>
-  {% endif %}
-  {% if phone_codes_enabled and user.phone and not user.phone_confirmed_at %}
-  <form id="phone-send-sms" method="post" action="{% url 'phone-send' %}" class="hidden">{% csrf_token %}<input type="hidden" name="channel" value="sms"></form>
-  <form id="phone-send-call" method="post" action="{% url 'phone-send' %}" class="hidden">{% csrf_token %}<input type="hidden" name="channel" value="call"></form>
   {% endif %}
 
   {# Printed recovery code (account-recovery.md §B): the way back in for an account nobody can email #}

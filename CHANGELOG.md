@@ -6,10 +6,12 @@
 ## Unreleased
 
 - **Codes by phone are built, not switched on yet.** Our first coordinator asked us to move away
-  from paper. Once it's switched on, you can confirm your phone in Settings with a code we text you,
-  or read to you in a phone call, which works on a landline. Then if you ever forget your password,
-  choose "Get a code by phone" on the sign-in page. A code works once, for 10 minutes. Your phone
-  stays optional, and the paper code stays as a backup for anyone without one.
+  from paper. Once it's switched on, you can confirm your phone in Settings with a code we text you.
+  Then if you ever forget your password, choose "Get a code by phone" on the sign-in page. A code
+  works once, for 10 minutes. Your phone stays optional, and the paper code stays as a backup for
+  anyone without one. For now the texts go through Google, because it's free at our size; Google
+  checks that a person, not a robot, is asking for the code. It can't call a landline yet, so if you
+  only have a landline, a coordinator can help you get back in.
 - **Communion at home requests keep your number with the coordinators.** When someone offers to
   help with a Communion at home request, they see your name, not your phone number or email. A
   coordinator calls you to arrange the visit.
