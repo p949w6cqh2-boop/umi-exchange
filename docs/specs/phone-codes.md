@@ -130,10 +130,12 @@ sends the typed code back to Google (`accounts:signInWithPhoneNumber`). It count
 only if Google says it went to the same number.
 
 **Decision 5 (landlines) under Firebase:** no automated path exists that is free and within the
-carrier rules. **Proposed, the founder's call:** a coordinator calls the proven number on the
-account (never a number the caller gives) and reads the 15-minute code the board already makes.
+carrier rules. **Decided 2026-10-03, the founder's yes:** a coordinator calls the number saved on
+the account (never a number the caller gives) and reads the 15-minute code the board already makes.
 That turns the in-person code into a by-phone one, a small loosening, held by the rule that the
-coordinator only ever calls back the number on file.
+coordinator only ever places the call to the number on file. As built, the code page shows that
+number to call back, notes when it was never confirmed by a code, and says "in person" when the
+account has none; the coordinator's guide and practice kit say the same.
 
 **His hand, to switch it on with Firebase:**
 1. Create a Firebase project.

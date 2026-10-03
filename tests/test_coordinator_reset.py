@@ -180,3 +180,31 @@ def test_settings_page_offers_the_reset_form(parish):
     client.force_login(coord.user)
     body = client.get(reverse("community-settings", kwargs={"slug": parish.slug})).content.decode()
     assert reverse("member-reset", kwargs={"slug": parish.slug}) in body
+
+
+# ── Landlines: a call back to the number on file (the founder's yes, 2026-10-03) ──
+
+
+def test_the_code_page_shows_the_number_to_call_back_and_only_that_one(parish):
+    coord = MemberFactory(community=parish, role="coordinator")
+    _target(parish, phone="(555) 234-5678")
+    body = _post(coord, "lost").content.decode()
+    assert "(555) 234-5678" in body
+    assert "call them back on the number saved on their account" in body
+    assert "never one they give you" in body
+
+
+def test_without_a_number_on_file_it_is_in_person_only(parish):
+    coord = MemberFactory(community=parish, role="coordinator")
+    _target(parish)
+    body = _post(coord, "lost").content.decode()
+    assert "call them back" not in body
+    assert "No phone number is saved on their account" in body
+
+
+def test_settings_says_a_locked_out_member_can_be_on_the_phone(parish):
+    coord = MemberFactory(community=parish, role="coordinator")
+    client = Client()
+    client.force_login(coord.user)
+    body = client.get(reverse("community-settings", kwargs={"slug": parish.slug})).content.decode()
+    assert "standing with you, or on a call you make" in body
