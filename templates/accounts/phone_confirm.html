@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Confirm your phone{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mb-6">Confirm your phone</h1>
+  <p class="text-base text-parish-ink/70 mb-4">We just sent a code to your number{% if last_four %} ending in {{ last_four }}{% endif %}. Type the 6 numbers here. The code works for 10 minutes.</p>
+  <form method="post" class="umi-card space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<p class="text-sm text-red-600" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+    {% for field in form %}
+    <div>
+      <label for="{{ field.id_for_label }}" class="umi-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<p class="text-sm text-parish-ink/70 mt-1.5">{{ field.help_text }}</p>{% endif %}
+      {% if field.errors %}<p class="text-sm text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="w-full btn-primary transition-colors">Confirm</button>
+  </form>
+  <p class="text-sm text-parish-ink/70 mt-4">Nothing came? Wait a minute, then go back to your settings and send a new code. You can ask for a phone call instead of a text.</p>
+  <p class="text-center mt-4"><a href="{% url 'account-settings' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to settings</a></p>
+</div>
+{% endblock %}

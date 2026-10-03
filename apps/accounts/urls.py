@@ -23,6 +23,11 @@ urlpatterns = [
     # The printed recovery code (docs/specs/account-recovery.md §B). The redeem path sits
     # under RATELIMIT_AUTH_PATHS: throttled on the client IP AND the submitted username.
     path("recover/code/", views.RecoveryCodeRedeemView.as_view(), name="recovery-code-redeem"),
+    # Codes by phone (docs/specs/phone-codes.md); every one is a 404 while the feature is off.
+    path("phone/send/", views.PhoneSendView.as_view(), name="phone-send"),
+    path("phone/confirm/", views.PhoneConfirmView.as_view(), name="phone-confirm"),
+    path("recover/phone/", views.PhoneRecoverView.as_view(), name="phone-recover"),
+    path("recover/phone/code/", views.PhoneRecoverCodeView.as_view(), name="phone-recover-code"),
     path("recovery-code/new/", views.RecoveryCodeNewView.as_view(), name="recovery-code-new"),
     # Password change (logged in)
     path(

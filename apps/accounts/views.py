@@ -12,7 +12,7 @@ from django.contrib.auth.views import LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -28,11 +28,14 @@ from django_ratelimit.decorators import ratelimit
 
 from apps.audit.services import emit
 
+from . import phone
 from .credentials import issue as issue_credential
 from .credentials import redeem as redeem_credential
 from .forms import (
     LoginForm,
     OTPTokenForm,
+    PhoneCodeForm,
+    PhoneRecoverForm,
     ProfileForm,
     RecoveryCodeForm,
     RegistrationForm,
@@ -569,3 +572,142 @@ class StillHereView(View):
             response = HttpResponse(status=401)
         response["Cache-Control"] = "no-store"
         return response
+
+
+# ── Codes by phone (docs/specs/phone-codes.md, decided 2026-10-02) ──────────────
+#
+# The first coordinator: "switch paper codes to phone codes." A code goes only to a number its
+# owner has proven, and getting back in with one STARTS a password reset, never a session: the
+# rule the paper code follows. Every view here is a 404 while the feature is off.
+
+PHONE_CONFIRM_KEY = "phone_confirm_number"
+PHONE_RECOVER_KEY = "phone_recover_uid"
+
+
+def _phone_codes_or_404():
+    if not phone.enabled():
+        raise Http404
+
+
+@method_decorator(ratelimit(key="user", rate="10/h", method="POST", block=True), name="post")
+class PhoneSendView(LoginRequiredMixin, View):
+    """Text or call a code to the number on the account, so its owner can prove it."""
+
+    http_method_names = ["post"]
+
+    def post(self, request):
+        _phone_codes_or_404()
+        channel = request.POST.get("channel")
+        number = phone.normalize(request.user.phone)
+        if channel not in phone.CHANNELS or number is None:
+            messages.error(request, "We can text or call US and Canada numbers only. Check the number in your profile.")
+            return redirect("account-settings")
+        if not phone.within_daily_limit(request.user, number):
+            messages.error(request, "That's all the codes we can send today. Try again tomorrow, or ask a coordinator.")
+            return redirect("account-settings")
+        if not phone.send_code(number, channel):
+            messages.error(request, "We couldn't send a code just now. Try again in a few minutes.")
+            return redirect("account-settings")
+        request.session[PHONE_CONFIRM_KEY] = number
+        emit(
+            "account.phone_code.sent",
+            request.user,
+            user=request.user,
+            request=request,
+            details={"channel": channel, "purpose": "confirm"},
+        )
+        return redirect("phone-confirm")
+
+
+@method_decorator(ratelimit(key="user", rate="10/h", method="POST", block=True), name="post")
+class PhoneConfirmView(LoginRequiredMixin, FormView):
+    """Type back the code. Twilio locks a code after 5 wrong tries and expires it at 10 minutes."""
+
+    template_name = "accounts/phone_confirm.html"
+    form_class = PhoneCodeForm
+    FAILED = "That code didn't work. Check it and try again, or send a new one from your settings."
+
+    def dispatch(self, request, *args, **kwargs):
+        _phone_codes_or_404()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["last_four"] = (self.request.session.get(PHONE_CONFIRM_KEY) or "")[-4:]
+        return ctx
+
+    def form_valid(self, form):
+        user = self.request.user
+        number = self.request.session.get(PHONE_CONFIRM_KEY)
+        # The number on the account must still be the one the code went to.
+        if (
+            not number
+            or number != phone.normalize(user.phone)
+            or not phone.check_code(number, form.cleaned_data["code"])
+        ):
+            form.add_error(None, self.FAILED)
+            return self.form_invalid(form)
+        user.phone_confirmed_at = timezone.now()
+        user.save(update_fields=["phone_confirmed_at"])
+        self.request.session.pop(PHONE_CONFIRM_KEY, None)
+        emit("account.phone.confirmed", user, user=user, request=self.request)
+        messages.success(
+            self.request, "Phone confirmed. If you ever forget your password, we can text or call you a code."
+        )
+        return redirect("account-settings")
+
+
+class PhoneRecoverView(FormView):
+    """Username + text or call -> a code to the account's PROVEN number, if it has one.
+
+    The page answers the same way for every username, so it cannot be used to learn who is on
+    the board. Throttled on IP and username (settings.RATELIMIT_AUTH_PATHS), and the daily cap
+    in phone.py counts against the account and the number either way."""
+
+    template_name = "accounts/phone_recover.html"
+    form_class = PhoneRecoverForm
+
+    def dispatch(self, request, *args, **kwargs):
+        _phone_codes_or_404()
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        self.request.session.pop(PHONE_RECOVER_KEY, None)
+        user = get_user_model().objects.filter(username=form.cleaned_data["username"].strip()).first()
+        number = phone.normalize(user.deliverable_phone) if user else None
+        channel = form.cleaned_data["channel"]
+        if number and phone.within_daily_limit(user, number) and phone.send_code(number, channel):
+            self.request.session[PHONE_RECOVER_KEY] = str(user.pk)
+            emit(
+                "account.phone_code.sent",
+                user,
+                request=self.request,
+                details={"channel": channel, "purpose": "recover"},
+            )
+        return redirect("phone-recover-code")
+
+
+class PhoneRecoverCodeView(FormView):
+    """The code -> the ordinary set-a-new-password page. Never a session. Every failure, including
+    "no code was ever sent", gives the same words."""
+
+    template_name = "accounts/phone_recover_code.html"
+    form_class = PhoneCodeForm
+    FAILED = "That code didn't work. Check it and try again, or ask for a new one."
+
+    def dispatch(self, request, *args, **kwargs):
+        _phone_codes_or_404()
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        uid = self.request.session.get(PHONE_RECOVER_KEY)
+        user = get_user_model().objects.filter(pk=uid).first() if uid else None
+        number = phone.normalize(user.deliverable_phone) if user else None
+        if not number or not phone.check_code(number, form.cleaned_data["code"]):
+            form.add_error(None, self.FAILED)
+            return self.form_invalid(form)
+        self.request.session.pop(PHONE_RECOVER_KEY, None)
+        emit("account.phone_code.redeemed", user, request=self.request)
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        return redirect(reverse("password_reset_confirm", kwargs={"uidb64": uidb64, "token": token}))

@@ -187,6 +187,13 @@ SESSION_SAVE_EVERY_REQUEST = True
 # the person out. The first coordinator asked for 5-10 minutes (2026-10-02); 15 was the
 # recommendation under the founder's key, with a warning a minute before. One variable to tighten.
 SESSION_IDLE_TIMEOUT_SECONDS = env.int("SESSION_IDLE_TIMEOUT_SECONDS", default=15 * 60)
+# Codes by phone (apps/accounts/phone.py, docs/specs/phone-codes.md): OFF until the founder sets
+# PHONE_CODES_ENABLED with all three Twilio Verify values. Switching it on makes the board send
+# texts and place calls by itself, so it is his key, separate from merging the code.
+PHONE_CODES_ENABLED = env.bool("PHONE_CODES_ENABLED", default=False)
+TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID", default="")
+TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN", default="")
+TWILIO_VERIFY_SERVICE_SID = env("TWILIO_VERIFY_SERVICE_SID", default="")
 
 # Use Argon2 if its backing library is installed, else fall back to PBKDF2.
 # NOTE: import the `argon2` library itself — importing the hasher class always
@@ -254,6 +261,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "apps.communities.context_processors.umi_context",
                 "apps.accounts.context_processors.idle_timeout",
+                "apps.accounts.context_processors.phone_codes",
             ],
         },
     },
@@ -293,6 +301,7 @@ RATELIMIT_AUTH_PATHS = (
     "/auth/password/reset/",
     "/auth/username/recover/",
     "/auth/recover/code/",  # printed recovery code: IP + username buckets (account-recovery.md §B)
+    "/auth/recover/phone/",  # codes by phone, both steps (phone-codes.md)
     "/admin/login/",
 )
 # Third-party django_ratelimit (RegisterView/UMILoginView key="ip") must read

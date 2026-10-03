@@ -251,6 +251,8 @@ class Command(BaseCommand):
         for name, icon in CATEGORIES:
             category, _ = Category.objects.get_or_create(community=community, name=name, defaults={"icon": icon})
             categories[name] = category
+        # Migration 0006 marks existing rows; a fresh seed runs after it, so mark here too.
+        Category.objects.filter(community=community, name="Communion at home").update(coordinators_only_contact=True)
 
         needs = {}
         for requester, category, title, description, urgency in NEEDS:

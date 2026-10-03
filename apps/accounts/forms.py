@@ -267,3 +267,43 @@ class StaffUnlockForm(forms.Form):
         max_length=1000,
         widget=forms.Textarea(attrs={"class": _input, "rows": 3}),
     )
+
+
+class PhoneCodeForm(forms.Form):
+    """The 6 digits a person types back from a text or a call (docs/specs/phone-codes.md).
+    Checking the code is Twilio's job; this only tidies what was typed."""
+
+    code = forms.CharField(
+        label="Code",
+        max_length=12,
+        help_text="The 6 numbers we texted or read to you.",
+        widget=forms.TextInput(
+            attrs={
+                "class": INPUT_CLASS + " font-mono tracking-widest",
+                "inputmode": "numeric",
+                "autocomplete": "one-time-code",
+            }
+        ),
+    )
+
+    def clean_code(self):
+        digits = "".join(ch for ch in self.cleaned_data["code"] if ch.isdigit())
+        if len(digits) != 6:
+            raise forms.ValidationError("The code is 6 numbers.")
+        return digits
+
+
+class PhoneRecoverForm(forms.Form):
+    """Logged-out: whose account, and text or call. One answer for every username."""
+
+    username = forms.CharField(
+        label="Username",
+        max_length=150,
+        widget=forms.TextInput(attrs={"class": INPUT_CLASS, "autocomplete": "username", "autocapitalize": "none"}),
+    )
+    channel = forms.ChoiceField(
+        label="How should we send the code?",
+        choices=[("sms", "Text me the code"), ("call", "Call me and read it out (works on a landline)")],
+        initial="sms",
+        widget=forms.RadioSelect,
+    )

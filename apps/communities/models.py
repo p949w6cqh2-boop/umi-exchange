@@ -176,6 +176,9 @@ class Category(models.Model):
     icon = models.CharField(max_length=50, default="\U0001f527")
     sort_order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    # A request in this category keeps the asker's phone and email from the matched helper:
+    # only coordinators see them (Communion at home, the founder's decision 2026-10-02).
+    coordinators_only_contact = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
