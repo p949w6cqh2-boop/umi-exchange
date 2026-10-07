@@ -69,6 +69,17 @@ class TestSeedDemoParish:
         nuala = user_model.objects.get(username="nuala")
         assert nuala.is_human_verified, "reseeding left an existing account unverified"
 
+    def test_the_demo_ride_needs_only_nualas_yes(self, settings):
+        """Contact opens after both people say yes (the founder's call, 2026-10-06). The
+        seed's ride is Marta's introduction, so Dan's yes is recorded and Nuala's one tap
+        completes it, which is the moment the tutorial films."""
+        settings.DEBUG = True
+        call_command("seed_demo_parish")
+        ride = Match.objects.get(need__title="A ride to the 9:30 Mass on Sunday")
+        assert ride.helper_said_yes and not ride.asker_said_yes
+        nuala = Member.objects.get(user__username="nuala", community__slug="st-brigids")
+        assert ride.record_yes(nuala) is True
+
     def test_running_twice_changes_nothing(self, settings):
         settings.DEBUG = True
         call_command("seed_demo_parish")

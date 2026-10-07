@@ -111,15 +111,18 @@ def test_blocked_pair_cannot_accept_pending_match():
 
 # --------------------------------------------- coordinator exemption (design pin)
 @pytest.mark.django_db
-def test_coordinator_may_still_accept_hidden_need():
+def test_coordinator_party_may_still_accept_hidden_need():
     """The hide guard mirrors the read gate: a coordinator keeps oversight and
-    may still act on a hidden need (pins the exemption against an over-fix)."""
+    may still act on a hidden need (pins the exemption against an over-fix).
+    Since 2026-10-06 nobody says yes for anyone else, so the exemption matters
+    when the coordinator is one of the two people: here, the asker."""
     community, category, need, offer, match, requester, offerer = _proposed_scenario()
-    coordinator = MemberFactory(community=community, role="coordinator")
+    requester.role = "coordinator"
+    requester.save(update_fields=["role"])
     need.moderation_hidden = True
     need.save(update_fields=["moderation_hidden"])
 
-    resp = _client_for(coordinator).post(_update_url(community, match), {"status": "accepted"})
+    resp = _client_for(requester).post(_update_url(community, match), {"status": "accepted"})
 
     assert resp.status_code in (200, 302)
     match.refresh_from_db()

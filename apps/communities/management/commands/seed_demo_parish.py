@@ -291,6 +291,7 @@ class Command(BaseCommand):
             offers["I can drive Sunday mornings"],
             members["marta"],
             through=(),
+            helper_said_yes=True,  # Dan said yes to Marta's introduction; Nuala's yes completes it
         )
         self._match(
             needs["Someone to look at a leaky kitchen faucet"],
@@ -358,10 +359,25 @@ class Command(BaseCommand):
             )
         )
 
-    def _match(self, need, offer, proposer, through):
+    def _match(self, need, offer, proposer, through, helper_said_yes=False):
         match = Match.objects.filter(need=need, offer=offer).first()
         if match is None:
             match = Match.objects.create(need=need, offer=offer, proposed_by=proposer)
+        # Contact opens only after both people have said yes (2026-10-06), and every seeded
+        # match is a coordinator's introduction, so the yeses are recorded here: both on a
+        # match that is accepted or later, the helper's alone where the asker's tap is still
+        # to come. Outside `if created`, like everything else here, so a reseed repairs an
+        # older parish.
+        stamp = timezone.now()
+        fields = []
+        if (through or helper_said_yes) and match.helper_yes_at is None:
+            match.helper_yes_at = stamp
+            fields.append("helper_yes_at")
+        if through and match.asker_yes_at is None:
+            match.asker_yes_at = stamp
+            fields.append("asker_yes_at")
+        if fields:
+            match.save(update_fields=fields)
         for status in through:
             if match.status != status:
                 try:

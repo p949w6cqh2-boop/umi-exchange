@@ -5,6 +5,13 @@
 
 ## Unreleased
 
+- **Contact now opens only after both people say yes.** Our front page has always said so, but
+  until now one yes was enough: the person asking, the person helping, or a coordinator alone
+  could accept a match and open both people's details. Now each of the two people says yes. If
+  you offered to help on your own, your offer was your yes, so the asker's yes completes it. When
+  a coordinator puts two people together, each of them still says yes, in either order, and a
+  coordinator can never say yes for anyone. Until both have, the match waits and nothing is
+  shared; the match page says who it is waiting for.
 - **Codes by phone are built, not switched on yet.** Our first coordinator asked us to move away
   from paper. Once it's switched on, you can confirm your phone in Settings with a code we text you.
   Then if you ever forget your password, choose "Get a code by phone" on the sign-in page. A code
