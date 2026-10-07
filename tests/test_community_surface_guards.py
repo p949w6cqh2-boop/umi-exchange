@@ -94,6 +94,37 @@ def test_join_code_qr_404s_for_an_inactive_community():
     assert resp.status_code == 404
 
 
+def test_coordinator_fetches_the_join_code_qr_settings_shows_them():
+    """Settings shows every coordinator the join code and its QR (settings.html), so the image
+    must load for them too. The tutorial v2 recording (2026-10-06) caught coordinators looking
+    at a broken image: the QR answered admins only while the page around it admits coordinators."""
+    community = CommunityFactory()
+    coordinator = MemberFactory(community=community, role="coordinator")
+
+    resp = _client(coordinator).get(reverse("join-code-qr", args=[community.slug]))
+    assert resp.status_code == 200
+    assert resp["Content-Type"] == "image/png"
+
+
+def test_left_coordinator_cannot_fetch_the_join_code_qr():
+    """The #18 rule holds for coordinators as well: leaving keeps the role, not the access."""
+    community = CommunityFactory()
+    leaver = MemberFactory(community=community, role="coordinator", is_active=False)
+
+    resp = _client(leaver).get(reverse("join-code-qr", args=[community.slug]))
+    assert resp.status_code == 403
+
+
+@pytest.mark.parametrize("role", ["member", "intake"])
+def test_members_and_intake_helpers_cannot_fetch_the_join_code_qr(role):
+    """The QR keeps the settings page's door: coordinators and admins, nobody else."""
+    community = CommunityFactory()
+    member = MemberFactory(community=community, role=role)
+
+    resp = _client(member).get(reverse("join-code-qr", args=[community.slug]))
+    assert resp.status_code == 403
+
+
 # ------------------------------------------------------------------------ #33
 @pytest.fixture
 def two_communities():
