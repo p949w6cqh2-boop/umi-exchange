@@ -617,10 +617,15 @@ class JoinCodeQRView(LoginRequiredMixin, View):
 
     def get(self, request, slug):
         community = get_object_or_404(Community, slug=slug, is_active=True)
-        # Check admin permission. is_active matters: leaving is soft and keeps
-        # the role, so without it an admin who left kept serving the live join
-        # code — and rotating it no longer locked them out.
-        member = Member.objects.filter(user=request.user, community=community, role="admin", is_active=True).first()
+        # The same door as the settings page that shows this QR (CommunitySettingsView):
+        # active coordinators and admins. Admin-only left every coordinator looking at a
+        # broken image beside a join code they could already read and copy (tutorial v2
+        # recording, 2026-10-06). is_active matters: leaving is soft and keeps the role,
+        # so without it someone who left kept serving the live join code, and rotating it
+        # no longer locked them out.
+        member = Member.objects.filter(
+            user=request.user, community=community, role__in=["admin", "coordinator"], is_active=True
+        ).first()
         if not member:
             return HttpResponse(status=403)
 

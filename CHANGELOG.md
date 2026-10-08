@@ -12,6 +12,16 @@
   a coordinator puts two people together, each of them still says yes, in either order, and a
   coordinator can never say yes for anyone. Until both have, the match waits and nothing is
   shared; the match page says who it is waiting for.
+- **Coordinators can now use the join code's QR picture.** Settings shows the join code and a QR
+  picture of it to print or share, but only admins could load the picture, so coordinators saw a
+  broken image. Now everyone who can open settings can use it. Someone who has left the community
+  still can't.
+- **The demo parish shows what connecting looks like.** In the demo, saying yes to a match opened
+  onto "They prefer to arrange things through the community" every time, because none of the
+  made-up neighbors had a phone number or had chosen to share one. Each now has an invented number
+  (555-0100 to 555-0199 are set aside for fiction) and shares it, so the demo shows a real connect.
+  Nothing changes for real accounts: what you share stays your choice, and "in the app" is still
+  the default.
 - **Codes by phone are built, not switched on yet.** Our first coordinator asked us to move away
   from paper. Once it's switched on, you can confirm your phone in Settings with a code we text you.
   Then if you ever forget your password, choose "Get a code by phone" on the sign-in page. A code

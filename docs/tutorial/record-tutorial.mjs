@@ -24,6 +24,14 @@
 // Output: docs/tutorial/out/<aspect>/NN-slug.webm  (gitignored — raw video never committed).
 // The rig ABORTS if the scratch DB isn't fresh (S4's ask already present) so re-runs
 // always start from the same state. Scene S6+S7 is one continuous take by design.
+//
+// Version 2 (docs/tutorial/v2-shot-list.md): `--set=v2` records the August scenes again on
+// today's screens, then the coordinator and recovery scenes, into out/v2/<aspect>/ so the
+// August clips (which approved Shorts were cut from) are never overwritten. Use cycle.sh with
+// SET=v2, which also stages what the v2 scenes need before the camera rolls. `--scene=` takes
+// a comma list; a scene that depends on an earlier one says so and fails loudly when run alone.
+// The idle sign-out scene only runs when named, in its own cycle: IDLE=75 SET=v2 cycle.sh
+// <aspect> v2-19-idle (the server's idle limit has to be short for the warning to appear).
 
 import fs from "node:fs";
 import path from "node:path";
@@ -61,14 +69,21 @@ for (const k of ["LIFT", "PROPOSED"]) {
     process.exit(1);
   }
 }
-const IDS = { LIFT: process.env.LIFT, PROPOSED: process.env.PROPOSED };
+// COMMUNION_MATCH is staged by cycle.sh for the v2 set only; its scenes check for it.
+const IDS = { LIFT: process.env.LIFT, PROPOSED: process.env.PROPOSED, COMMUNION_MATCH: process.env.COMMUNION_MATCH };
 
 const args = process.argv.slice(2);
 const wanted = args.find((a) => !a.startsWith("--")) || "both";
 const onlyScene = (args.find((a) => a.startsWith("--scene=")) || "").split("=")[1] || null;
+const onlyScenes = onlyScene ? onlyScene.split(",").filter(Boolean) : null;
+const SET = (args.find((a) => a.startsWith("--set=")) || "").split("=")[1] || "v1";
 const runAspects = wanted === "both" ? Object.keys(ASPECTS) : [wanted];
 if (!runAspects.every((a) => ASPECTS[a])) {
   console.error(`Unknown aspect '${wanted}' — use 16x9, 9x16, or both. Optional: --scene=<slug>.`);
+  process.exit(1);
+}
+if (!["v1", "v2"].includes(SET)) {
+  console.error(`Unknown set '${SET}' — use --set=v1 (default) or --set=v2.`);
   process.exit(1);
 }
 
@@ -113,6 +128,24 @@ async function roll(page, px, stepPx = 60, stepMs = 40) {
   }
 }
 
+// The board throttles sign-in steps per IP: one shared bucket of 5 POSTs a minute across
+// sign-in, sign-up, recovery codes and set-password (apps/accounts/ratelimit.py). A refusal
+// on camera ruins a take, so every such POST is logged here and the rig waits for room first.
+const authPosts = [];
+function noteAuthPost() {
+  authPosts.push(Date.now());
+}
+async function authBudget(n) {
+  for (;;) {
+    const now = Date.now();
+    while (authPosts.length && now - authPosts[0] > 61_000) authPosts.shift();
+    if (authPosts.length + n <= 4) return;
+    const wait = 61_000 - (now - authPosts[0]) + 500;
+    console.log(`  sign-in budget: waiting ${Math.round(wait / 1000)}s for room under the per-minute limit`);
+    await sleep(wait);
+  }
+}
+
 async function login(page, username) {
   // Login is IP-throttled (5/min); with one shared session per persona we stay
   // under it, but keep the retry so a re-run inside the window still succeeds.
@@ -122,6 +155,8 @@ async function login(page, username) {
     await page.goto(`${BASE}/auth/login/`, { waitUntil: "load" });
     await typeSlow(page, page.locator('input[name="username"]'), username);
     await typeSlow(page, page.locator('input[name="password"]'), PASSWORD);
+    await authBudget(1);
+    noteAuthPost();
     await glideClick(page, page.locator('button[type="submit"], input[type="submit"]').first());
     await page.waitForURL((u) => !u.pathname.includes("/auth/login/"), { timeout: 10_000 }).catch(() => {});
     await sleep(700);
@@ -258,6 +293,10 @@ const SCENES = [
         glideClick(page, page.getByRole("button", { name: "Yes, Accept" })),
       ]);
       // The money shot: linger on the open contact panel.
+      // v2 only, so a v1 re-run stays byte-for-byte the August take: glide() moves the mouse
+      // without scrolling, and at 1280x720 the contact box sits below the fold, so the August
+      // 16:9 take never showed it (found 2026-10-06). Bring it into view first.
+      if (SET === "v2") await page.getByText("Reach out kindly and arrange the rest together").first().scrollIntoViewIfNeeded();
       await glide(page, page.getByText("Reach out kindly and arrange the rest together").first());
       await sleep(6000);
     },
@@ -274,6 +313,343 @@ const SCENES = [
     },
   },
 ];
+
+// ── Version 2 scenes (docs/tutorial/v2-shot-list.md) ─────────────────────────
+// Recorded after the August scenes in the same run. Every name typed here is invented; every
+// persona is a seeded St. Brigid's member. SHARED carries what one scene hands the next (the
+// recovery code a neighbor wrote down), so dependent scenes declare `requires`.
+
+const SHARED = {};
+const SETTINGS = `${BASE}/c/st-brigids/settings/`;
+// Invented passwords for invented neighbors on a throwaway database; shown on camera only
+// where the eye is the point of the shot.
+const MAURA_PW = "Garden-gate-27";
+const MAURA_PW2 = "Kettle-on-at-4";
+const EILEEN_PW = "Rosary-beads-19";
+
+// The code shown on the recovery-code page (templates/accounts/recovery_code.html carries it
+// in an aria-label), read so a later scene can type it the way the neighbor would.
+async function readCode(page) {
+  const el = page.locator('[aria-label^="Recovery code "]').first();
+  await el.waitFor();
+  const code = ((await el.textContent()) || "").trim();
+  if (!code) throw new Error("recovery code not found on the page");
+  return code;
+}
+
+const V2_SCENES = [
+  {
+    slug: "v2-10-signup-no-email",
+    persona: "maura", // a fresh context: genuinely signed out
+    authPosts: 1, // the sign-up itself
+    timeoutMs: 120_000,
+    async run(page) {
+      // Maura has no email. She signs up anyway, and the board hands her a paper code instead
+      // (accounts/views.py RegisterView: the account and its code are made together).
+      await page.goto(`${BASE}/auth/login/`, { waitUntil: "load" });
+      await sleep(1200);
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("link", { name: "Create an account" })),
+      ]);
+      await sleep(1200);
+      await typeSlow(page, page.locator('input[name="username"]'), "maura");
+      await glide(page, page.locator('input[name="email"]')); // left empty, on purpose
+      await sleep(1200);
+      await typeSlow(page, page.locator('input[name="password"]'), MAURA_PW);
+      await glideClick(page, page.getByRole("button", { name: "Show password" }).first()); // the eye
+      await sleep(1800);
+      await typeSlow(page, page.locator('input[name="password_confirm"]'), MAURA_PW);
+      await sleep(600);
+      noteAuthPost();
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("button", { name: "Create account" })),
+      ]);
+      await sleep(1500);
+      SHARED.mauraCode = await readCode(page);
+      await glide(page, page.locator('[aria-label^="Recovery code "]').first());
+      await sleep(3500);
+      const written = page.getByLabel("I have written this down or printed it.");
+      await written.scrollIntoViewIfNeeded();
+      await glideClick(page, written); // never "Print this page": it opens the print dialog
+      await sleep(800);
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, page.getByRole("button", { name: "Continue" }))]);
+      await sleep(1500);
+      const waiting = page.getByText("One more step before you can post").first();
+      await waiting.waitFor({ timeout: 10_000 });
+      await glide(page, waiting);
+      await sleep(3000);
+    },
+  },
+  {
+    slug: "v2-11-vouch",
+    persona: "tom",
+    prelogin: "tom",
+    requires: ["v2-10-signup-no-email"],
+    async run(page) {
+      // A coordinator who has met Maura in person vouches: settings, one username. Straight to
+      // the form: the top of settings shows coordinators a broken join-code QR (the QR view is
+      // admin-only, apps/communities/views.py:623), a bug reported to the founder, not filmed.
+      await page.goto(SETTINGS, { waitUntil: "load" });
+      const form = page.locator('form[action$="/members/vouch/"]');
+      await form.scrollIntoViewIfNeeded();
+      await glide(page, page.getByText("Vouch for a neighbour").first());
+      await sleep(1500);
+      await typeSlow(page, form.locator('input[name="username"]'), "maura");
+      await sleep(600);
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, form.getByRole("button", { name: "Vouch" }))]);
+      // The vouch reloads settings at the top, beside the broken QR: back down to the form. The
+      // "Vouched for maura" note is pinned to the window, so it stays in frame.
+      await page.locator('form[action$="/members/vouch/"]').scrollIntoViewIfNeeded();
+      await sleep(3000);
+    },
+  },
+  {
+    slug: "v2-12-recovery-redeem",
+    persona: "maura-later", // signed out again: the day she forgot her password
+    requires: ["v2-10-signup-no-email"],
+    authPosts: 2, // the code, then the new password
+    timeoutMs: 120_000,
+    async run(page) {
+      // The paper code gets her back in. Using it hands her a fresh one, then she chooses her
+      // own new password (accounts/views.py RecoveryCodeRedeemView).
+      await page.goto(`${BASE}/auth/login/`, { waitUntil: "load" });
+      await sleep(1500);
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("link", { name: "Have a recovery code?" })),
+      ]);
+      await sleep(1200);
+      await typeSlow(page, page.locator('input[name="username"]'), "maura");
+      await typeSlow(page, page.locator('input[name="code"]'), SHARED.mauraCode);
+      await sleep(600);
+      noteAuthPost();
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, page.getByRole("button", { name: "Continue" }))]);
+      await sleep(1500);
+      await glide(page, page.getByText("Your new recovery code").first());
+      await sleep(3000);
+      const written = page.getByLabel("I have written this down or printed it.");
+      await written.scrollIntoViewIfNeeded();
+      await glideClick(page, written);
+      await sleep(600);
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("button", { name: "Set my new password" })),
+      ]);
+      await sleep(1200);
+      await typeSlow(page, page.locator('input[name="new_password1"]'), MAURA_PW2);
+      await glideClick(page, page.getByRole("button", { name: "Show password" }).first());
+      await sleep(1500);
+      await typeSlow(page, page.locator('input[name="new_password2"]'), MAURA_PW2);
+      await sleep(600);
+      noteAuthPost();
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, page.getByRole("button", { name: "Set Password" }))]);
+      await sleep(3000);
+    },
+  },
+  {
+    slug: "v2-13-coordinator-reset",
+    persona: "tom",
+    prelogin: "tom",
+    async run(page) {
+      // Joe is locked out. The coordinator makes a 15-minute code; Joe's saved number (staged,
+      // fictional) brings up the call-back box. The coordinator never sees the password.
+      // Straight to the form, past the coordinator's broken QR (see v2-11).
+      await page.goto(SETTINGS, { waitUntil: "load" });
+      const form = page.locator('form[action$="/members/reset/"]');
+      await form.scrollIntoViewIfNeeded();
+      await glide(page, page.getByText("Help a neighbor reset their password").first());
+      await sleep(2000);
+      await typeSlow(page, form.locator('input[name="username"]'), "joe");
+      await sleep(600);
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, form.getByRole("button", { name: "Make a code" }))]);
+      await sleep(1500);
+      await glide(page, page.getByText("Reset code for").first());
+      await sleep(2500);
+      const callback = page.getByText("You may call them back on the number saved on their account").first();
+      await callback.scrollIntoViewIfNeeded();
+      await glide(page, callback);
+      await sleep(3000);
+    },
+  },
+  {
+    slug: "v2-14-intake-role",
+    persona: "marta",
+    prelogin: "marta",
+    async run(page) {
+      // The admin gives Grace the narrow role: vouch and help people sign up, nothing else.
+      await page.goto(SETTINGS, { waitUntil: "load" });
+      await sleep(1200);
+      const select = page.getByLabel("Role for Grace Okafor");
+      await select.scrollIntoViewIfNeeded();
+      await glide(page, select);
+      await sleep(800);
+      await select.selectOption("intake");
+      await sleep(1200);
+      const form = select.locator("xpath=ancestor::form");
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, form.getByRole("button", { name: "Save" }))]);
+      await sleep(1800); // the "role updated" note shows for 5 s at the top
+      // A headless recording never shows a native dropdown opening, so come back to the
+      // picker after the save: it now reads "Intake helper".
+      const saved = page.getByLabel("Role for Grace Okafor");
+      await saved.scrollIntoViewIfNeeded();
+      await glide(page, saved);
+      await sleep(2000);
+      const why = page.getByText("can vouch for neighbors they have met in person").first();
+      await why.scrollIntoViewIfNeeded();
+      await glide(page, why);
+      await sleep(3500);
+    },
+  },
+  {
+    slug: "v2-15-signup-helper",
+    persona: "grace",
+    prelogin: "grace",
+    requires: ["v2-14-intake-role"],
+    timeoutMs: 120_000,
+    async run(page) {
+      // Grace, now an intake helper, signs up a neighbor met after Mass. An intake helper's door
+      // in is the vouch page (intake helpers cannot open settings); Eileen has no email, so the
+      // paper code comes up right there (communities/views.py IntakeRegisterView).
+      await page.goto(`${BASE}/c/st-brigids/vouch/`, { waitUntil: "load" });
+      await sleep(1500);
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("link", { name: "Use the sign-up helper" }).first()),
+      ]);
+      await sleep(1500);
+      await glide(page, page.getByText("Sign up a neighbor").first());
+      await sleep(1200);
+      await typeSlow(page, page.locator('input[name="username"]'), "eileen");
+      await typeSlow(page, page.locator('input[name="password"]'), EILEEN_PW);
+      await typeSlow(page, page.locator('input[name="password_confirm"]'), EILEEN_PW);
+      await sleep(600);
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("button", { name: "Make their account" })),
+      ]);
+      await sleep(1500);
+      await glide(page, page.locator('[aria-label^="Recovery code "]').first());
+      await sleep(3500);
+      // Then Grace vouches for Eileen on the spot: they have met in person, which is the whole
+      // power an intake helper holds. (The sign-up never appears on "Who did what"; the vouch does.)
+      const written = page.getByLabel("I have written this down or printed it.");
+      await written.scrollIntoViewIfNeeded();
+      await glideClick(page, written);
+      await sleep(600);
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, page.getByRole("button", { name: "Continue" }))]);
+      await sleep(1000);
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("link", { name: /Back to vouching/ }).first()),
+      ]);
+      await sleep(1200);
+      await typeSlow(page, page.locator('input[name="username"]'), "eileen");
+      await sleep(600);
+      await Promise.all([page.waitForLoadState("load"), glideClick(page, page.getByRole("button", { name: "Vouch" }))]);
+      await sleep(3000);
+    },
+  },
+  {
+    slug: "v2-16a-communion-helper",
+    persona: "frank",
+    prelogin: "frank",
+    ownCycle: true, // its staging would top every hub feed, so it records in a cycle of its own
+    async run(page) {
+      // Staged off camera by cycle.sh (COMMUNION=1): Aggie asked for Communion at home, Frank
+      // volunteered directly (no standing offer), and the match was accepted. Frank sees her
+      // name, never her number (matches/models.py get_contact_info_for).
+      if (!IDS.COMMUNION_MATCH) throw new Error("COMMUNION_MATCH missing: run through cycle.sh with SET=v2");
+      await page.goto(`${BASE}/c/st-brigids/matches/${IDS.COMMUNION_MATCH}/`, { waitUntil: "load" });
+      await sleep(1500);
+      const note = page.getByText("A coordinator can pass a message along").first();
+      await note.scrollIntoViewIfNeeded();
+      await glide(page, note);
+      await sleep(4000);
+    },
+  },
+  {
+    slug: "v2-16b-communion-coordinator",
+    persona: "tom",
+    prelogin: "tom",
+    ownCycle: true,
+    async run(page) {
+      // The coordinator, who arranges the visit, sees the number on Aggie's account.
+      if (!IDS.COMMUNION_MATCH) throw new Error("COMMUNION_MATCH missing: run through cycle.sh with SET=v2");
+      await page.goto(`${BASE}/c/st-brigids/matches/${IDS.COMMUNION_MATCH}/`, { waitUntil: "load" });
+      await sleep(1500);
+      const phone = page.getByText("Phone:").first();
+      await phone.scrollIntoViewIfNeeded();
+      await glide(page, phone);
+      await sleep(3500);
+    },
+  },
+  {
+    slug: "v2-17-activity",
+    persona: "tom",
+    prelogin: "tom",
+    requires: ["v2-11-vouch", "v2-13-coordinator-reset", "v2-14-intake-role", "v2-15-signup-helper"],
+    timeoutMs: 90_000,
+    async run(page) {
+      // Who did what: the vouches, the role change and the reset code from this run, each with
+      // the name of the person who did it. Nobody can edit or delete it. Opened directly (it is
+      // linked from the top of settings, beside the coordinator's broken QR; see v2-11), with
+      // one short scroll so the newest row stays in frame at 1280x720.
+      await page.goto(`${BASE}/c/st-brigids/activity/`, { waitUntil: "load" });
+      await sleep(2500);
+      await roll(page, 300);
+      await sleep(4500);
+    },
+  },
+  {
+    slug: "v2-18-protocol-page",
+    persona: "visitor3",
+    timeoutMs: 90_000,
+    async run(page) {
+      // The footer's promise, followed: every board serves the protocol it is built on.
+      await page.goto(`${BASE}/`, { waitUntil: "load" });
+      await sleep(1200);
+      const link = page.getByRole("link", { name: /Built on the UMI Protocol/ }).first();
+      await link.scrollIntoViewIfNeeded();
+      await glide(page, link);
+      await sleep(1500);
+      await Promise.all([page.waitForLoadState("load"), link.click()]);
+      await sleep(2500);
+      for (let i = 0; i < 4; i++) {
+        await roll(page, 600, 60, 45);
+        await sleep(1800);
+      }
+    },
+  },
+  {
+    slug: "v2-19-idle",
+    persona: "nuala",
+    needsSession: true,
+    ownCycle: true, // needs a server started with a short idle limit (IDLE=75 in cycle.sh)
+    timeoutMs: 120_000,
+    async run(page) {
+      // A borrowed phone left signed in: a minute before sign-out the board asks first.
+      await page.goto(`${BASE}/hub/st-brigids/`, { waitUntil: "load" });
+      const ask = page.getByText("Still there?").first();
+      await ask.waitFor({ timeout: 60_000 });
+      await sleep(1000);
+      await glide(page, ask);
+      await sleep(2500);
+      // The board takes any tap while the warning shows as the answer, on pointerdown
+      // (static/js/idle-timeout.js touch()), so the warning is gone before a click could land
+      // and Playwright's click checks retry until they time out. Press where the button is,
+      // the way a hand would, then confirm the warning went.
+      await glide(page, page.getByRole("button", { name: "I'm still here" }));
+      await page.mouse.down();
+      await page.mouse.up();
+      await ask.waitFor({ state: "detached", timeout: 5000 });
+      await sleep(3000);
+    },
+  },
+];
+
+const SETS = { v1: SCENES, v2: [...SCENES, ...V2_SCENES] };
 
 // ── Runner ───────────────────────────────────────────────────────────────────
 
@@ -302,7 +678,8 @@ browser.on("disconnected", () => {
 await withWatchdog(assertFreshScratchDb(browser), PRELOGIN_TIMEOUT_MS, "fresh-DB probe");
 
 for (const aspect of runAspects) {
-  const outDir = path.join(HERE, "out", aspect);
+  // v1 keeps its August folder; any other set records beside it, never over it.
+  const outDir = path.join(HERE, "out", ...(SET === "v1" ? [] : [SET]), aspect);
   fs.mkdirSync(outDir, { recursive: true });
   console.log(`\n── ${aspect} pass → ${outDir}`);
 
@@ -331,12 +708,24 @@ for (const aspect of runAspects) {
     return contexts[persona];
   };
 
-  const scenesToRun = onlyScene ? SCENES.filter((s) => s.slug === onlyScene) : SCENES;
-  if (onlyScene && !scenesToRun.length) {
-    console.error(`No scene named '${onlyScene}'. Slugs: ${SCENES.map((s) => s.slug).join(", ")}`);
+  const pool = SETS[SET];
+  // A scene marked ownCycle (the idle sign-out) needs a server started for it, so it runs
+  // only when named; a full pass leaves it out.
+  const scenesToRun = onlyScenes
+    ? pool.filter((s) => onlyScenes.includes(s.slug))
+    : pool.filter((s) => !s.ownCycle);
+  const unknown = onlyScenes ? onlyScenes.filter((n) => !pool.some((s) => s.slug === n)) : [];
+  if (unknown.length || (onlyScenes && !scenesToRun.length)) {
+    console.error(`No scene named '${unknown.join(", ") || onlyScene}'. Slugs: ${pool.map((s) => s.slug).join(", ")}`);
     process.exit(1);
   }
+  const ran = new Set();
   for (const [i, scene] of scenesToRun.entries()) {
+    const missing = (scene.requires || []).filter((r) => !ran.has(r));
+    if (missing.length) {
+      console.error(`  ${scene.slug} needs ${missing.join(", ")} earlier in the same run; add it to --scene.`);
+      process.exit(1);
+    }
     const ctx = await contextFor(scene.persona);
     // Off-camera session provisioning: S2's context always needs it, and any
     // needsSession scene needs it when S3 (the on-camera login) didn't run
@@ -350,6 +739,8 @@ for (const aspect of runAspects) {
       fs.rmSync(await v.path(), { force: true });
       ctx._state.sessionFor = needUser;
     }
+    // Room for this scene's on-camera sign-in steps, made before its recording starts.
+    if (scene.authPosts) await authBudget(scene.authPosts);
     const page = await ctx.newPage();
     if (aspect === "9x16") {
       // Same convention as the still-gallery shoot: the fixed bottom nav is
@@ -389,6 +780,7 @@ for (const aspect of runAspects) {
     const raw = await video.path();
     const named = path.join(outDir, `${scene.slug}.webm`);
     fs.renameSync(raw, named);
+    ran.add(scene.slug);
     console.log(`      → ${path.basename(named)} (${Math.round(fs.statSync(named).size / 1024)} KB, ${elapsed}s)`);
     if (personaDone) {
       await contexts[scene.persona].close();

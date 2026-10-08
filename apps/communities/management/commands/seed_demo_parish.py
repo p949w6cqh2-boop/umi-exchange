@@ -37,6 +37,26 @@ MEMBERS = [
     ("liam", "Liam Tierney", "member"),
 ]
 
+# A number for the connect to open onto. Invented: 555-0100 to 555-0199 are set aside for
+# fiction. Without them, and with every seeded ask and offer on the form's default contact
+# choice ("in the app"), every reveal in the demo read "They prefer to arrange things through
+# the community" (found by the tutorial v2 recording, 2026-10-06).
+PHONES = {
+    "marta": "555-0101",
+    "nuala": "555-0102",
+    "tom": "555-0103",
+    "frank": "555-0115",
+    "sheila": "555-0120",
+    "joe": "555-0144",
+    "rosa": "555-0126",
+    "pete": "555-0137",
+    "aggie": "555-0172",
+    "dan": "555-0131",
+    "grace": "555-0150",
+    "liam": "555-0158",
+}
+DEMO_CONTACT_PREF = "phone"
+
 CATEGORIES = [
     ("Transport", "\U0001f697"),
     ("Meals", "\U0001f372"),
@@ -229,6 +249,11 @@ class Command(BaseCommand):
                 user.verified_at = timezone.now()
                 user.verified_via = "coordinator"
                 user.save(update_fields=["verified_at", "verified_via"])
+            # Same rule, same reason: outside `if created`, so a reseed gives an older
+            # parish its numbers too (the live demo's path, docs/demo-reseed-runbook.md §3).
+            if not user.phone:
+                user.phone = PHONES[username]
+                user.save(update_fields=["phone"])
             users[username] = user
 
         community, _ = Community.objects.get_or_create(
@@ -266,8 +291,12 @@ class Command(BaseCommand):
                     "urgency": urgency,
                     "status": "open",
                     "expires_at": timezone.now() + timedelta(days=60),
+                    "contact_pref": DEMO_CONTACT_PREF,
                 },
             )
+            if need.contact_pref != DEMO_CONTACT_PREF:  # repair on reseed, as above
+                need.contact_pref = DEMO_CONTACT_PREF
+                need.save(update_fields=["contact_pref"])
             needs[title] = need
 
         offers = {}
@@ -281,8 +310,12 @@ class Command(BaseCommand):
                     "description": description,
                     "status": "active",
                     "expires_at": timezone.now() + timedelta(days=120),
+                    "contact_pref": DEMO_CONTACT_PREF,
                 },
             )
+            if offer.contact_pref != DEMO_CONTACT_PREF:  # repair on reseed, as above
+                offer.contact_pref = DEMO_CONTACT_PREF
+                offer.save(update_fields=["contact_pref"])
             offers[title] = offer
 
         # Three matches: one proposed, one accepted, one fulfilled — the board mid-life.
