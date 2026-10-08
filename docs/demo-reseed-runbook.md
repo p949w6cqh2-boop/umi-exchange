@@ -1,9 +1,21 @@
 # Droplet re-seed runbook — American-English demo strings
 
-Replaces the St. Brigid's demo data on the production droplet (reciprocalaid.network,
-143.244.167.7) with the localized American-English seed. **Run by hand, by the founder** —
+Replaces the St. Brigid's demo data on the production droplet (reciprocalaid.network) with the
+localized American-English seed. **Run by hand, by the founder** —
 it deletes demo rows, which is behind the keyring. Everything it touches is fictional demo
 data; the hard stop below aborts if that ever stops being true.
+
+> **Updated 2026-10-08 for key custody** (`docs/key-custody-design.md`). The droplet is now
+> `root@157.230.185.124` (the `143.244.167.7` host was destroyed 2026-09-05; never ssh to it).
+> Its `.env` holds **no keys**: they live only in the running app container's stored config. So:
+> deploy with the custody rig (§1), and run every management command **inside the running
+> container** with `docker exec` (§3, §3b). A new container from `compose run`/`compose up` reads
+> `.env` alone and has no keys. Proven on production 2026-10-07: §3 as written below, the exact
+> closing line, then §3b.
+>
+> **The flush (§2) is only for a seed that RETITLES rows.** The seed matches needs and offers by
+> title and repairs everything else in place (phones, contact choices, verification, the demo
+> ride's first yes), so a reseed after a non-retitling change skips §2. It was skipped 2026-10-07.
 
 Why a flush is mandatory: the seed's `get_or_create` keys needs/offers by **title**. The
 localization retitled them, so re-seeding over the old rows would create a second, parallel
@@ -14,9 +26,9 @@ Order matters: deploy the new code **before** seeding — the strings live in th
 ## 0. Back up (2 min)
 
 ```bash
-ssh root@143.244.167.7
-cd /opt/umi-exchange   # adjust if the checkout lives elsewhere
-bash scripts/backup.sh
+ssh root@157.230.185.124
+cd /opt/umi-exchange
+bash scripts/backup.sh     # expect "Remote upload verified" and the key ciphertext beside the dump
 ls -la /var/backups/umi/   # confirm today's dump exists before going further
 ```
 
@@ -32,9 +44,17 @@ git pull
 
 # (To preview before merging instead: git fetch && git checkout localize-demo-american-english)
 
-docker build -t umi-exchange:local .
-docker compose --env-file .env -f docker/docker-compose.prod.yml up -d
-docker compose --env-file .env -f docker/docker-compose.prod.yml ps   # app healthy
+docker build -t umi-exchange:local -f docker/Dockerfile .
+```
+
+Then bring it up **from the laptop**, with the custody rig (it decrypts the keys, pipes them to
+droplet tmpfs, recreates the app, shreds them, and runs `migrate`). A plain `compose up` on the
+droplet no longer works: `.env` holds no keys.
+
+```bash
+# on the laptop, in the umi-exchange checkout
+UMI_DROPLET=root@157.230.185.124 scripts/deploy-with-keys.sh deploy
+UMI_DROPLET=root@157.230.185.124 scripts/deploy-with-keys.sh check    # "clean: droplet .env holds no plaintext key material"
 ```
 
 The rebuild is required — the seed command and the landing template are baked into the image
@@ -99,13 +119,14 @@ PY
 
 `seed_demo_parish` hard-refuses when `DEBUG` is off, and the prod container pins
 `config.settings.production` (`DEBUG = False`). The override below applies development
-settings to **this one command process only** — it reads the same `DATABASE_URL`/keys from
-the compose env, serves nothing, and exits. Nothing about the running app changes.
+settings to **this one command process only**, inside the RUNNING app container, so it reads the
+real `DATABASE_URL` and keys from that container's environment, serves nothing, and exits.
+Nothing about the running app changes. (Before key custody this used `compose run --rm`; that
+starts a new container from `.env`, which no longer holds the keys.)
 
 ```bash
-docker compose --env-file .env -f docker/docker-compose.prod.yml run --rm --no-deps \
-  -e DJANGO_SETTINGS_MODULE=config.settings.development -e DEBUG=True \
-  app python manage.py seed_demo_parish
+docker exec -e DJANGO_SETTINGS_MODULE=config.settings.development -e DEBUG=True \
+  docker-app-1 python manage.py seed_demo_parish
 ```
 
 Expected closing line (exact counts matter):
@@ -125,7 +146,7 @@ lives only in the steward's private file (`~/.config/umi/demo-password.txt` on t
 600) and travels on stdin, so it never appears on a command line, in a process list or in a log:
 
 ```bash
-ssh root@<droplet> 'docker exec -i docker-app-1 python manage.py rotate_demo_password' \
+ssh root@157.230.185.124 'docker exec -i docker-app-1 python manage.py rotate_demo_password' \
   < ~/.config/umi/demo-password.txt
 ```
 
