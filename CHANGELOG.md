@@ -5,6 +5,13 @@
 
 ## Unreleased
 
+- **Contact now opens only after both people say yes.** Our front page has always said so, but
+  until now one yes was enough: the person asking, the person helping, or a coordinator alone
+  could accept a match and open both people's details. Now each of the two people says yes. If
+  you offered to help on your own, your offer was your yes, so the asker's yes completes it. When
+  a coordinator puts two people together, each of them still says yes, in either order, and a
+  coordinator can never say yes for anyone. Until both have, the match waits and nothing is
+  shared; the match page says who it is waiting for.
 - **Coordinators can now use the join code's QR picture.** Settings shows the join code and a QR
   picture of it to print or share, but only admins could load the picture, so coordinators saw a
   broken image. Now everyone who can open settings can use it. Someone who has left the community

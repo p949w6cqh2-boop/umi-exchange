@@ -110,24 +110,36 @@ class TestMatchUpdateAuthorization:
         match.refresh_from_db()
         assert match.status == "accepted"
 
-    def test_offerer_can_accept(self):
+    def test_offerer_who_proposed_waits_for_the_asker(self):
+        """Proposing their own offer was the offerer's yes, so accepting again cannot open
+        contact alone: both people say yes (the founder's call, 2026-10-06). Until then an
+        offerer could accept their own proposal and reveal the asker's details unilaterally."""
         community, need, offer, match, requester, offerer = _scenario()
-        client = _client_for(offerer)
-        response = client.post(_update_url(community, match), {"status": "accepted"})
+        response = _client_for(offerer).post(_update_url(community, match), {"status": "accepted"})
 
         assert response.status_code == 302
         match.refresh_from_db()
+        assert match.status == "proposed"
+
+        _client_for(requester).post(_update_url(community, match), {"status": "accepted"})
+        match.refresh_from_db()
         assert match.status == "accepted"
 
-    def test_coordinator_can_update(self):
+    def test_coordinator_can_update_but_never_says_yes(self):
+        """Coordinators keep oversight (they may still cancel), but a yes is the member's own:
+        spec §4.1, and the founder's call of 2026-10-06."""
         community, need, offer, match, requester, offerer = _scenario()
         coordinator = MemberFactory(community=community, role="coordinator")
         client = _client_for(coordinator)
-        response = client.post(_update_url(community, match), {"status": "accepted"})
 
+        assert client.post(_update_url(community, match), {"status": "accepted"}).status_code == 403
+        match.refresh_from_db()
+        assert match.status == "proposed"
+
+        response = client.post(_update_url(community, match), {"status": "cancelled"})
         assert response.status_code == 302
         match.refresh_from_db()
-        assert match.status == "accepted"
+        assert match.status == "cancelled"
 
 
 @pytest.mark.django_db

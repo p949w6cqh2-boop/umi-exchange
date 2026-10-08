@@ -161,6 +161,14 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         ctx["is_participant"] = ctx["is_requester"] or ctx["is_offerer"]
         ctx["is_coordinator"] = member and member.is_coordinator
 
+        # Every person says yes (2026-10-06): who has, and who the page is waiting for.
+        if ctx["is_requester"]:
+            ctx["my_yes"], ctx["their_yes"] = match.asker_said_yes, match.helper_said_yes
+            ctx["other_party"] = match.helper_member
+        elif ctx["is_offerer"]:
+            ctx["my_yes"], ctx["their_yes"] = match.helper_said_yes, match.asker_said_yes
+            ctx["other_party"] = match.need.requester
+
         # Contact revelation (Protocol Section 8.2)
         ctx["contact_info"] = match.get_contact_info_for(member)
         ctx["show_contact"] = ctx["contact_info"] is not None
@@ -286,25 +294,59 @@ class MatchUpdateView(LoginRequiredMixin, View):
                 if is_blocked_between(need.requester, offering_member):
                     return _reject(request, slug, pk, "You can't accept a match with this neighbour.", 409)
 
-            # Persist an optional note alongside the status change (saved by
-            # transition_to()'s final save()). Blank input leaves notes intact.
-            if notes:
-                match.notes = notes
+            # Every person says yes (the founder's call, 2026-10-06). Only the two people in
+            # the match can say it, never a coordinator for them (spec §4.1), and contact opens
+            # (§8.2) only once both have: a first yes is recorded and the match stays proposed.
+            # A helper who proposed their own offer, or volunteered, said yes by proposing.
+            first_yes_only = False
+            if new_status == "accepted":
+                if not (is_requester or is_offerer):
+                    return _reject(request, slug, pk, "Only the two people in a match can say yes to it.", 403)
+                if not match.record_yes(member):
+                    first_yes_only = True
 
-            # Capture pre-transition status so we only audit a real cascade change.
-            old_need_status = need.status
-            old_offer_status = match.offer.status if match.offer else None
-            try:
-                match.transition_to(new_status)
-            except ValidationError as e:
-                return _reject(request, slug, pk, str(e.message), 409)
+            if not first_yes_only:
+                # Persist an optional note alongside the status change (saved by
+                # transition_to()'s final save()). Blank input leaves notes intact.
+                if notes:
+                    match.notes = notes
 
-            # Federation (Stage C2): queue the peer event INSIDE the
-            # transaction so it commits (or rolls back) with the transition —
-            # no-op for local matches or when the flag is off.
-            from apps.federation.outbox import queue_match_event
+                # Capture pre-transition status so we only audit a real cascade change.
+                old_need_status = need.status
+                old_offer_status = match.offer.status if match.offer else None
+                try:
+                    match.transition_to(new_status)
+                except ValidationError as e:
+                    return _reject(request, slug, pk, str(e.message), 409)
 
-            queue_match_event(match, new_status)
+                # Federation (Stage C2): queue the peer event INSIDE the
+                # transaction so it commits (or rolls back) with the transition —
+                # no-op for local matches or when the flag is off.
+                from apps.federation.outbox import queue_match_event
+
+                queue_match_event(match, new_status)
+
+        # A first yes: recorded and committed above; the match stays proposed and nothing is
+        # revealed. Tell the other person it is their turn, after the commit like every notice.
+        if first_yes_only:
+            other = match.helper_member if is_requester else need.requester
+            AuditLog.log(
+                member.user,
+                "update",
+                "match",
+                match.id,
+                details={"yes": "asker" if is_requester else "helper"},
+                request=request,
+            )
+            NotificationAdapter.send(
+                other.user,
+                "match_proposed",
+                f"{member.display_name} said yes to a match on '{need.title}'",
+                "Contact opens once you say yes too. Open the match to say yes or no.",
+                link=f"/c/{slug}/matches/{match.id}/",
+            )
+            messages.success(request, f"Your yes is in. Contact opens once {other.display_name} says yes too.")
+            return redirect("match-detail", slug=slug, pk=pk)
 
         # Audit log. Record THAT a note was provided, never the note: the audit
         # table is append-only (UPDATE/DELETE revoked), so free text here could

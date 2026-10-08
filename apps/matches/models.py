@@ -50,6 +50,11 @@ class Match(models.Model):
     accepted_at = models.DateTimeField(null=True, blank=True)
     fulfilled_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    # Contact opens only after both people have said yes (the founder's call, 2026-10-06).
+    # A helper who proposed their own offer, or volunteered directly, said yes by proposing
+    # (helper_said_yes); these record the yeses a coordinator-brokered match still needs.
+    asker_yes_at = models.DateTimeField(null=True, blank=True)
+    helper_yes_at = models.DateTimeField(null=True, blank=True)
     custom = models.JSONField(default=dict, blank=True)
 
     class Meta:
@@ -58,6 +63,40 @@ class Match(models.Model):
 
     def __str__(self):
         return f"Match {self.id} ({self.status}): {self.need.title}"
+
+    @property
+    def helper_member(self):
+        """The helping party: the offer's owner, or the direct volunteer who proposed."""
+        return self.offer.offerer if self.offer is not None else self.proposed_by
+
+    @property
+    def asker_said_yes(self):
+        return self.asker_yes_at is not None
+
+    @property
+    def helper_said_yes(self):
+        """A helper who proposed the match themselves said yes by proposing it."""
+        return self.helper_yes_at is not None or self.proposed_by_id == self.helper_member.id
+
+    def record_yes(self, member):
+        """Record `member`'s yes and return whether both people have now said it.
+
+        Only the asker and the helper can say yes. A coordinator never says it for them
+        (spec §4.1: coordinators must not consent on a member's behalf), so anyone else is
+        refused. Saves only the yes; acceptance itself stays transition_to("accepted"),
+        which the caller makes once this returns True.
+        """
+        if member.id == self.need.requester_id:
+            if self.asker_yes_at is None:
+                self.asker_yes_at = timezone.now()
+                self.save(update_fields=["asker_yes_at"])
+        elif member.id == self.helper_member.id:
+            if not self.helper_said_yes:
+                self.helper_yes_at = timezone.now()
+                self.save(update_fields=["helper_yes_at"])
+        else:
+            raise ValidationError("Only the two people in a match can say yes to it.")
+        return self.asker_said_yes and self.helper_said_yes
 
     def transition_to(self, new_status):
         """
