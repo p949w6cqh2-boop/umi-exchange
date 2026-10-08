@@ -1,6 +1,11 @@
 # Spec: confirm an email before anything trusts it
 
-> STATUS: **SPEC**, written 2026-09-26 on the founder's key. Decision recommended below;
+> STATUS: ✅ **BUILT and live since 2026-09-28**: option B, every sender reads `deliverable_email`
+> (#174), and option C, registration writes no address until its link is clicked (#181, which also
+> closed #171). Done-when below is ticked against the tests that prove each line (2026-10-08); the one
+> line that needs production and the founder's key is still open.
+>
+> *As written:* STATUS: **SPEC**, written 2026-09-26 on the founder's key. Decision recommended below;
 > **BUILD happens on a separate key after the founder reads this.** No code in this PR.
 >
 > Origin: issue #172. Found by counting production immediately after #169 deployed. #169
@@ -176,11 +181,22 @@ recommendation takes that trade; the founder may not, and option D is the named 
 
 ## Done-when
 
-- [ ] `User.email_confirmed_at` exists and is set **only** by a clicked link.
-- [ ] Changing the address through any path clears it — enforced in the model.
-- [ ] All five consumers read `deliverable_email`; a test fails if a new one reads `.email`.
-- [ ] Password reset and username recovery answer identically for an unconfirmed address.
-- [ ] No coordinator vouch has been overwritten.
+- [x] `User.email_confirmed_at` exists and is set **only** by a clicked link.
+      *(`tests/test_email_confirmation.py::test_a_new_address_is_unconfirmed`,
+      `::test_the_registration_link_confirms_the_address`, `::test_the_add_email_link_confirms_the_new_address`)*
+- [x] Changing the address through any path clears it — enforced in the model. *(`::test_changing_the_address_clears_confirmation_through_a_plain_save`,
+      `::…_through_a_modelform_clears_it_too`, `::…_with_update_fields_still_clears_it`)*
+- [x] All five consumers read `deliverable_email`; a test fails if a new one reads `.email`.
+      *(`::test_no_sender_builds_a_recipient_from_the_raw_address`, plus one test per consumer)*
+- [x] Password reset and username recovery answer identically for an unconfirmed address.
+      *(`::test_password_reset_answers_identically_either_way`; username recovery sends nothing,
+      `::test_username_recovery_sends_nothing_to_an_unconfirmed_address`, and gives every address the
+      same answer, `tests/test_auth_recovery.py::test_unknown_email_gets_identical_response_and_no_mail`)*
+- [x] No coordinator vouch has been overwritten. *(in code: `::test_the_link_confirms_an_already_verified_account_and_leaves_its_verification_alone`,
+      `tests/test_add_email_later.py::test_a_coordinator_vouch_survives_confirming_an_email`)*
 - [ ] The eight existing accounts have either confirmed or been given a working path to — **on the
-      founder's key for the send.**
-- [ ] Casework follow-up mail to an unproven address is named in `ethics-and-safety.md`.
+      founder's key for the send.** ⏳ Open. Last measured 2026-09-28, after the deploy: 0 confirmed
+      addresses, 0 clicks on the 4 links sent 09-26. Needs a production count and his key for any send.
+- [x] Casework follow-up mail to an unproven address is named in `ethics-and-safety.md`. *(Part 4,
+      "Casework mail goes only to a proven address", 2026-10-08; the test is
+      `apps/casework/tests/test_consent_and_access_guards.py::test_digest_withholds_email_from_an_unproven_address_but_keeps_the_notice`)*

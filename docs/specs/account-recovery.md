@@ -1,6 +1,12 @@
 # Spec: account recovery without email, and assisted access
 
-> STATUS: **SPEC**, written 2026-09-23 on the founder's key. Decision recommended below;
+> STATUS: ✅ **BUILT and live since 2026-10-01** (production `42fd75eb`): the credential model F0-a
+> (#183), the printed recovery code A1 (#184), admin unlock A4 (#185), the coordinator reset (#186, the
+> "C" below), plus A5 add-an-email-later earlier (#169, 2026-09-26). The helper-assisted sign-up and
+> the intake role shipped beside it (#187, #188, #190; `coordinator-roles.md`). Done-when below is ticked
+> against the tests that prove each line (2026-10-08).
+>
+> *As written:* STATUS: **SPEC**, written 2026-09-23 on the founder's key. Decision recommended below;
 > **BUILD happens on a separate key after the founder reads this.** No code in this PR.
 >
 > Origin: the founder has two people willing to coordinate at the pilot parish. One offered to
@@ -220,8 +226,8 @@ redeems it at `/auth/recover/code/` and chooses their own password.
 - Audited as `account.reset.coordinator` with `{community, issuer_member, target_member}`.
 - The person is emailed if they have a confirmed address.
 - Limited to 5 per hour per coordinator.
-- ⏳ Not yet on the "Who did what" page (C13 is a separate branch). Add `account.reset.coordinator`
-  to its allow-list, scoped by `details.community`, when both have merged.
+- ✅ On the "Who did what" page since both merged (2026-10-01): `account.reset.coordinator` is on its
+  allow-list (`apps/audit/coordinator_activity.py:34,61`).
 
 ### A4. Admin unlock — as built (2026-09-30)
 
@@ -282,11 +288,28 @@ One week, no code, and it decides several PRs.
 
 ## Done-when
 
-- [ ] An account with no email can recover access without a superuser.
-- [ ] A recovery code's plaintext exists nowhere in the database, the logs, or the audit table.
-- [ ] A coordinator can help someone regain access **without ever knowing their password.**
-- [ ] Confirming a later-added email does not overwrite a `"coordinator"` verification.
-- [ ] Every reset issued by one person for another is on the append-only audit log, with the
-      community, and — where an address exists — notified to the account holder.
-- [ ] `tests/test_audit_pii_hygiene.py` passes unchanged.
-- [ ] Option C has not shipped, or `is_coordinator` has been split. Not both false.
+- [x] An account with no email can recover access without a superuser. *(the paper code:
+      `tests/test_recovery_code.py::test_right_code_leads_to_a_password_reset_and_a_fresh_code`; a
+      coordinator's code: `tests/test_coordinator_reset.py::test_person_redeems_it_at_the_recovery_page_and_it_dies_after_fifteen_minutes`)*
+- [x] A recovery code's plaintext exists nowhere in the database, the logs, or the audit table.
+      *(`test_recovery_credential.py::test_plaintext_is_never_stored`,
+      `test_recovery_code.py::test_the_code_never_reaches_the_logs`,
+      `test_recovery_code.py::test_issuance_is_audited_without_the_code`)*
+- [x] A coordinator can help someone regain access **without ever knowing their password.** *(the
+      person chooses it at `/auth/recover/code/`; `test_coordinator_reset.py` and
+      `test_admin_unlock.py::test_unlock_issues_a_one_hour_code_and_never_touches_the_password`)*
+- [x] Confirming a later-added email does not overwrite a `"coordinator"` verification.
+      *(`test_add_email_later.py::test_a_coordinator_vouch_survives_confirming_an_email`)*
+- [x] Every reset issued by one person for another is on the append-only audit log, with the
+      community, and — where an address exists — notified to the account holder. *(coordinator
+      reset: `test_coordinator_reset.py::test_audited_with_both_members_and_the_community`,
+      `::test_person_with_an_email_is_told`; it also shows on "Who did what". Admin unlock is a
+      staff act with no community: audited as `account.unlock.admin` and emailed to every
+      superuser, `test_admin_unlock.py`; the person is not emailed.)*
+- [x] `tests/test_audit_pii_hygiene.py` passes unchanged. *(no commit has touched it since this spec
+      was written; it passes)*
+- [ ] Option C has not shipped, or `is_coordinator` has been split. Not both false. ⚖️ **Both are
+      false, on the founder's ruling of 2026-09-30** (§C as built): the coordinator reset shipped for
+      coordinators and admins without the split, and he accepted the takeover risk with detection, not
+      prevention (audited, the person emailed, 5 an hour, a plain member only). Left unticked on purpose:
+      the line it guards is now his decision, not a test.
