@@ -1,6 +1,13 @@
 # Outbound email provider: decision record
 
-> STATUS: **NOT DECIDED. This is the record written before the choice, not after it.**
+> STATUS: ✅ **DECIDED IN PRACTICE: Resend, the recommendation, sending since 2026-09-11.**
+> ⚖️ **Corrected 2026-10-08.** The line below stayed "NOT DECIDED" for four weeks after production
+> mail went live through Resend on the rebuilt droplet (`docs/email-delivery-runbook.md` §3, port
+> 2587). The decision lines at the bottom were never filled in at the time, so they were
+> **reconstructed on 2026-10-08 from the receipts**, which is exactly what this note set out to
+> avoid; each one says where it came from.
+>
+> *As written:* STATUS: **NOT DECIDED. This is the record written before the choice, not after it.**
 > Jasiah has no provider account as of 2026-08-19. A recommendation is stated below; the decision
 > line stays empty until he rules, and then it gets filled in here rather than reconstructed later.
 >
@@ -131,11 +138,17 @@ SMTP relays carry per-day limits and terms aimed at a different use.
 
 ## The decision
 
-> **Provider:** _(unfilled)_
-> **Sending domain:** _(unfilled)_
-> **Decided by Jasiah on:** _(unfilled)_
-> **Reasoning, if it differs from the recommendation above:** _(unfilled)_
+> **Provider:** **Resend** *(reconstructed 2026-10-08: `docs/email-delivery-runbook.md` §3 names it,
+> including its alternate port 2587 and its literal `resend` SMTP username)*
+> **Sending domain:** _(not recorded. The recommendation named `reciprocalaid.network`, and a domain
+> was verified in Resend before the 2026-09-11 rebuild; which one, read it off the Resend dashboard
+> and write it here)_
+> **Decided by Jasiah on:** _(not recorded; in use from **2026-09-11**, when production mail first
+> went out through Resend on the rebuilt droplet)_
+> **Reasoning, if it differs from the recommendation above:** _(not recorded; the choice matches
+> the recommendation's first pick)_
 
-Until those lines are filled, the console backend stays the default and **no application email
-reaches any human.** That is the safe-fail state, and the ethics gate is not blocked by it —
-nothing here is a gate box. It is blocked only when a real person needs to reset a real password.
+~~Until those lines are filled, the console backend stays the default and **no application email
+reaches any human.**~~ *(True until 2026-09-11.)* That is the safe-fail state, and the ethics gate is
+not blocked by it — nothing here is a gate box. It is blocked only when a real person needs to reset
+a real password.

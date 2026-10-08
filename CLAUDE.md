@@ -19,8 +19,11 @@ password verification).
 
 - **`PRODUCT.md`** — strategic: register (product), users, purpose, brand personality, anti-references,
   design principles, a11y. The "who/what/why."
-- **`DESIGN.md`** — visual: "The Wellspring" system (water-teal + gold, warm neutrals, editorial
-  noticeboard), tokens, typography, components, motion. The "how it looks."
+- **`DESIGN.md`** — visual principles, components, motion. The "how it looks." ⚠️ The live system
+  is **"The Commons"** (evergreen `#275D4C` + bronze, stone paper, Newsreader over Schibsted
+  Grotesk), since `ab2aae1d` on 2026-07-06; DESIGN.md's body still describes the superseded
+  "Wellspring" (water-teal + gold) and carries a correction at its top. Live tokens:
+  `static/css/input.css` `:root`.
 - Read both before any UI work so changes stay on-brand. (Generated via `/impeccable init`.)
 
 ## gstack
