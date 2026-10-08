@@ -1,5 +1,7 @@
 """The demo seed must be idempotent, believable, and impossible in production."""
 
+import re
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
@@ -68,6 +70,51 @@ class TestSeedDemoParish:
         call_command("seed_demo_parish")
         nuala = user_model.objects.get(username="nuala")
         assert nuala.is_human_verified, "reseeding left an existing account unverified"
+
+    def test_the_demo_connect_opens_onto_a_phone_number(self, settings):
+        """The connect is the payoff, so the demo has to show one.
+
+        Every seeded ask and offer used to keep the form's default contact choice, "in the
+        app", and no seeded account had a number, so every reveal in the demo read "They
+        prefer to arrange things through the community." Found 2026-10-06 by the tutorial v2
+        recording, on the clip the whole video builds to.
+        """
+        settings.DEBUG = True
+        call_command("seed_demo_parish")
+        ride = Match.objects.get(need__title="A ride to the 9:30 Mass on Sunday")
+        ride.transition_to("accepted")
+        nuala = Member.objects.get(user__username="nuala", community__slug="st-brigids")
+        assert ride.get_contact_info_for(nuala).get("phone") == "555-0131"  # Dan, the driver
+
+        faucet = Match.objects.get(need__title="Someone to look at a leaky kitchen faucet")
+        assert faucet.status == "accepted"
+        asker = faucet.need.requester
+        helper = faucet.offer.offerer
+        assert faucet.get_contact_info_for(asker).get("phone") == helper.user.phone
+        assert faucet.get_contact_info_for(helper).get("phone") == asker.user.phone
+
+    def test_every_seeded_number_is_a_fictional_one(self, settings):
+        """555-0100 to 555-0199 are set aside for fiction; nothing else may appear."""
+        settings.DEBUG = True
+        call_command("seed_demo_parish")
+        phones = list(Member.objects.filter(community__slug="st-brigids").values_list("user__phone", flat=True))
+        assert len(phones) == 12
+        assert all(re.fullmatch(r"555-01\d\d", p or "") for p in phones), phones
+        assert len(set(phones)) == 12
+
+    def test_contact_choices_are_repaired_on_reseed(self, settings):
+        """Same rule as verification: set outside `if created`, so a parish seeded before this
+        change gets its numbers and choices on the next reseed (the live demo's path,
+        docs/demo-reseed-runbook.md §3)."""
+        settings.DEBUG = True
+        call_command("seed_demo_parish")
+        get_user_model().objects.filter(username="dan").update(phone="")
+        Offer.objects.filter(title="I can drive Sunday mornings").update(contact_pref="in_app")
+        Need.objects.filter(title="A ride to the 9:30 Mass on Sunday").update(contact_pref="in_app")
+        call_command("seed_demo_parish")
+        assert get_user_model().objects.get(username="dan").phone == "555-0131"
+        assert Offer.objects.get(title="I can drive Sunday mornings").contact_pref == "phone"
+        assert Need.objects.get(title="A ride to the 9:30 Mass on Sunday").contact_pref == "phone"
 
     def test_running_twice_changes_nothing(self, settings):
         settings.DEBUG = True
