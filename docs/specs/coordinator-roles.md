@@ -1,6 +1,7 @@
 # Spec: a narrow role — the intake helper (vouch, and nothing else yet)
 
-> ✅ **BUILT and live since 2026-10-01 (#190, the intake helper role).** *(Status line updated
+> ✅ **BUILT and live since 2026-10-01 (#188, the intake helper role; its commit landed through
+> #190's merge, which GitHub counts as #188 merging).** *(Status line updated
 > 2026-10-08; it had kept saying "SPEC + BUILD in one PR" after the merge.)*
 >
 > STATUS: **SPEC + BUILD in one PR**, written 2026-09-30 on the founder's key ("work on roadmap").

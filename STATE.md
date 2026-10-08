@@ -109,7 +109,7 @@
   at this size, with its own robot check); Twilio Verify kept as the alternative. Landlines: a
   coordinator reads a 15-minute code on a call back to the number on file, never a number given
   on the call (#208). Switching on needs a Firebase project, which is the founder's hand.
-- **Coordinator-assisted sign-up (#187, #190):** a sign-up helper for coordinators and intake
+- **Coordinator-assisted sign-up (#187, #188, #190):** a sign-up helper for coordinators and intake
   helpers that skips only the speed check (helping a queue of neighbours tripped it and silently
   dropped their accounts). Each neighbour types their own password; a no-email account gets its
   recovery code on the spot. **Intake helper** is the narrow role (`Member.role="intake"`,
