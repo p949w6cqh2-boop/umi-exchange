@@ -30,7 +30,9 @@ def _encryption_key(settings):
 def make_user(handle, email_confirmed=True):
     """A casework actor. Its address is PROVEN by default (#172) — a coordinator doing
     casework has clicked their link — so digest-delivery tests exercise delivery, not
-    the unconfirmed gate. The gate has its own test, passing email_confirmed=False."""
+    the unconfirmed gate. The gate has its own test, which clears the stamp on an existing
+    user: test_consent_and_access_guards.py::
+    test_digest_withholds_email_from_an_unproven_address_but_keeps_the_notice."""
     User = get_user_model()  # noqa: N806
     confirmed = {"email_confirmed_at": timezone.now()} if email_confirmed else {}
     try:
