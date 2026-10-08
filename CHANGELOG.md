@@ -3,7 +3,7 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased
+## 2026-10-07
 
 - **Contact now opens only after both people say yes.** Our front page has always said so, but
   until now one yes was enough: the person asking, the person helping, or a coordinator alone
@@ -22,6 +22,9 @@
   (555-0100 to 555-0199 are set aside for fiction) and shares it, so the demo shows a real connect.
   Nothing changes for real accounts: what you share stays your choice, and "in the app" is still
   the default.
+
+## 2026-10-03
+
 - **Codes by phone are built, not switched on yet.** Our first coordinator asked us to move away
   from paper. Once it's switched on, you can confirm your phone in Settings with a code we text you.
   Then if you ever forget your password, choose "Get a code by phone" on the sign-in page. A code
@@ -32,6 +35,12 @@
 - **Communion at home requests keep your number with the coordinators.** When someone offers to
   help with a Communion at home request, they see your name, not your phone number or email. A
   coordinator calls you to arrange the visit.
+- **Locked out with only a landline? A coordinator can call you back.** They call the number
+  saved on your account, never a number someone gives them, and read you a code that works once,
+  for 15 minutes. You choose your own new password; they never see it.
+
+## 2026-10-02
+
 - **Fixes from our first coordinator's first sit-down (October 2).** She tried the board on her own
   phone and found five things that made it harder than it should be:
   - **Long names and long requests no longer run off a phone screen.** They wrap onto the next line
@@ -49,6 +58,19 @@
     phones too. The "Patron" field honestly says it isn't shown anywhere yet.
   - **Requests show their dates.** Each request shows the day it was posted, and the day it was
     done once it's done.
+- **What our first coordinator asked for (October 2):**
+  - **You're signed out after 15 minutes without activity.** The people she helps borrow phones
+    and share family tablets, and a board left signed in is an account anyone can use. A minute
+    before, the board asks "Still there?" with an "I'm still here" button. Typing counts as
+    activity, so a long request you're in the middle of writing is never lost.
+  - **A "Communion at home" category,** for homebound parishioners asking for someone to bring
+    them communion. The board never asks for a home address: a coordinator sees the phone number
+    on your account, if you've added one, and calls to arrange the visit.
+  - **The copyright notice names its holder,** Jasiah Williams. The code stays free and open
+    under the AGPL.
+
+## 2026-10-01
+
 - **Sign-up country counting is on, since October 1.** The board now counts which countries
   sign-up attempts come from, as one number per country. It blocks nobody, the check happens on our
   own server, and we never keep your internet address. Turning sign-ups away by country is still off.
@@ -60,22 +82,6 @@
   on one laptop. Now a copy goes beside every nightly backup, still locked, so the backup can be
   restored even if that laptop is lost. The key that opens it stays with the steward and in a sealed
   envelope at the parish.
-- **What our first coordinator asked for (October 2):**
-  - **You're signed out after 15 minutes without activity.** The people she helps borrow phones
-    and share family tablets, and a board left signed in is an account anyone can use. A minute
-    before, the board asks "Still there?" with an "I'm still here" button. Typing counts as
-    activity, so a long request you're in the middle of writing is never lost.
-  - **A "Communion at home" category,** for homebound parishioners asking for someone to bring
-    them communion. The board never asks for a home address: a coordinator sees the phone number
-    on your account, if you've added one, and calls to arrange the visit.
-  - **The copyright notice names its holder,** Jasiah Williams. The code stays free and open
-    under the AGPL.
-- **Locked out with only a landline? A coordinator can call you back.** They call the number
-  saved on your account, never a number someone gives them, and read you a code that works once,
-  for 15 minutes. You choose your own new password; they never see it.
-
-## 2026-10-01
-
 - **No email? You now get a recovery code on paper.** Until now, if you signed up without an
   email and forgot your password, there was no way back in. Now, when you sign up without an
   email, we show you a short code once, to write down or print. If you ever forget your password,

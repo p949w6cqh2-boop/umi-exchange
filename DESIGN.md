@@ -1,5 +1,33 @@
 # Design
 
+> 🔴 **Corrected 2026-10-08: the board does not look like the rest of this file, and has not since
+> 2026-07-06.** "The Wellspring" below (water-teal `#0F6B73`, soft gold, cream paper) is the
+> 2026-06-28 direction. **"The Commons" replaced it in `ab2aae1d` ("system v2 — complete visual
+> redesign")**, and this file was never updated, so for three months it sent anyone doing UI work
+> to the wrong palette. Read the live system from the code, which is the source of truth:
+> `static/css/input.css` (`:root` and its header comment) and the defaults in `templates/base.html`;
+> per-community presets in `apps/communities/themes.py` (the default `parish` preset is evergreen).
+> `STATE.md` § Visual design summarises it.
+>
+> | token | The Commons (live) | role |
+> |---|---|---|
+> | `--umi-primary` | `#275D4C` | evergreen, the one accent: actions, links, need rail |
+> | `--umi-primary-hover` | `#1C4739` | hover + focus |
+> | `--umi-primary-soft` | `#E8EFE9` | tints |
+> | `--umi-accent` | `#9C7A3C` | muted bronze: offers only, never decoration |
+> | `--umi-accent-ink` | `#7A5F2E` | bronze legible as text |
+> | `--umi-bg` | `#F6F4EE` | warm stone paper |
+> | `--umi-bg-soft` | `#EDEAE2` | deeper stone |
+> | `--umi-card` | `#FFFFFF` | true white cards |
+> | `--umi-border` | `#E5E1D6` | warm hairline |
+> | `--umi-text` | `#1F1C18` | espresso ink |
+> | `--umi-text-soft` | `#6F6759` | warm muted |
+>
+> Type: **Newsreader** (serif display) over **Schibsted Grotesk** (body), self-hosted. Elevation:
+> layered, espresso-tinted shadows. The principles below (light-only, theming-safe, editorial
+> noticeboard, scan-first) still hold; the colours, the fonts and anything below that names them
+> are the superseded direction, kept as written.
+
 > Visual system for UMI Exchange — **"The Wellspring"** (Direction D). Light-only, theming-safe,
 > scan-first editorial noticeboard. Tokens are CSS custom properties (`--umi-*`) injected per request
 > in `templates/base.html` (defaults) and `static/css/input.css` (`:root`), compiled to

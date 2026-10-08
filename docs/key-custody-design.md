@@ -16,6 +16,15 @@ same droplet as the PostgreSQL data they protect, readable by the same root acco
 by one person. Whoever gets the machine gets both the lock and the key. That is exactly
 what the gate item says must end before real parishioners onboard.
 
+> ⚖️ **Updated 2026-10-08: the paragraph above was written 2026-08-12 and stopped being true on
+> 2026-09-11.** Since then the droplet `.env` holds none of the three (`deploy-with-keys.sh check`),
+> every deploy comes from the steward's laptop through the rig, and the armored ciphertext rides
+> beside every backup (Fifth entry). **Two things are still true:** Docker keeps the keys in the
+> app container's config on the droplet disk for as long as the container exists, readable by
+> root (§Implementation, "Path chosen for the container residue"), so whoever roots the machine
+> still gets the key while the app exists; and the identity is held by one person until the sealed
+> envelope is in the safe.
+
 ## The design (v1 — smallest thing that honestly meets the words)
 
 Three changes, in order:
@@ -50,10 +59,18 @@ Three changes, in order:
   took and what a root attacker can still read. If the residue cannot be closed, the honest
   fallback is a small secrets sidecar or a managed secret store — which changes the
   cost/subsidiarity math and is the steward's call, documented here when made.
-- **Availability coupling.** The droplet can no longer restart the app unattended after a
-  reboot; the steward's laptop (or the safe) is needed. For a parish notice-board this is
+- **Availability coupling.** ~~The droplet can no longer restart the app unattended after a
+  reboot; the steward's laptop (or the safe) is needed.~~ For a parish notice-board this is
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
   The uptime monitor (monitoring runbook) makes the downtime loud.
+  ⚖️ **What was built, 2026-10-08 (this section was never updated after the build):** the
+  reboot half was **disproved by rebooting production on 2026-09-11** (Third entry): Docker
+  replays the container's stored environment, so the app restarts unattended with its keys.
+  The coupling that remains is narrower: any **recreate** (a new image, a compose change) needs
+  the steward's laptop. **And the reason restarts work is the Docker-metadata residual above,
+  which is real:** the keys sit in the container's config on disk for the container's lifetime
+  (§Implementation). That residual is open, and closing it (a secrets sidecar or a managed
+  store) or accepting it in writing is the steward's call.
 
 ## Fifth entry, 2026-10-01: rotation rehearsed on a scratch box, and the envelope's missing half
 
@@ -214,6 +231,13 @@ security-upgrade reboot is safe.
 - [x] Rotation rehearsed once end-to-end: 2026-10-01 on production (Fifth entry; 0 rows to re-wrap
   there, 5 of 5 on the scratch box)
 
+⚖️ **Corrected 2026-10-08: the first tick above holds for `.env`, not for the droplet.** `check`
+reads `.env` only. The reboot result in this same entry is the counter-evidence: the keys came back
+after a reboot because Docker had written them into the container's config on disk
+(`/var/lib/docker/containers/<id>/config.v2.json`), the residue §Implementation already names. So
+step 6's "the keys exist only in container memory and in `keys.env.age` on the laptop" was
+overstated by one place, and the Done-when line it was meant to close stays open below.
+
 🔴 **Until the envelope exists, the age identity is the ONLY copy of the keys, on one laptop.** That
 costs nothing today — every table requiring them is empty — and it stops being true the moment real
 casework lands. **No real parishioner data goes behind this key before the envelope is in the safe.**
@@ -328,7 +352,7 @@ not a checkbox in a design doc.
 a fresh host with nothing on it to lose. Generate the identity, encrypt the keys, deploy from the
 laptop, and tick the rehearsal line for real.
 
-## Implementation (BUILT 2026-08-12, keyed; rehearsal still owed)
+## Implementation (BUILT 2026-08-12, keyed; ~~rehearsal still owed~~ rehearsed and armed on production 2026-09-11, Third entry)
 
 - **`scripts/deploy-with-keys.sh` exists** (tests: `tests/test_deploy_with_keys.py`,
   skipped where `age` is absent). Three modes:
@@ -356,15 +380,20 @@ laptop, and tick the rehearsal line for real.
   lines into a scratch file → `encrypt` it → remove those lines from `/opt/umi-exchange/.env`
   → `deploy` → `check`. Rotation unchanged: new KEK prepended to `ENCRYPTION_KEYS` in the
   plaintext staging file, re-`encrypt`, `deploy`, `manage.py rotate_keks`, retire old.
-- **Still owed before the gate box ticks (unchanged):** the rehearsal (scratch box, then
-  droplet at a quiet hour, screenshots + date recorded here) and the sealed envelope in
+- **Still owed before the gate box ticks (unchanged):** ~~the rehearsal (scratch box, then
+  droplet at a quiet hour, screenshots + date recorded here) and~~ the sealed envelope in
   the parish safe (printed identity + plain-English instructions), recorded in
-  `docs/governance.md`.
+  `docs/governance.md`. *(The rehearsal ran on production 2026-09-11, Third entry; updated
+  2026-10-08.)*
 
 ## Done-when checklist (tick the gate box only when ALL are true)
 
 - [ ] No plaintext key material at rest on the droplet (verified by inspection).
-- [ ] Deploy-from-laptop rehearsed on the real droplet.
+  *2026-10-08: half done. `.env` is clean since 2026-09-11 (Third entry). The container-config
+  residue (§Implementation) still holds the keys on disk for the container's lifetime; this line
+  ticks when that is closed or the steward accepts it in writing.*
+- [x] Deploy-from-laptop rehearsed on the real droplet. (2026-09-11, Third entry; ticked here
+  2026-10-08, where it had stayed open after the entry ticked it.)
 - [ ] Sealed envelope in the parish safe; two named people know it exists and what it is.
 - [x] Rotation rehearsed once end-to-end after the change. (2026-10-01, Fifth entry.)
-- [ ] Residuals section above updated to describe what was actually built.
+- [x] Residuals section above updated to describe what was actually built. (2026-10-08.)

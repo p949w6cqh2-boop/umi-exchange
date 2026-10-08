@@ -228,9 +228,13 @@ systemctl is-active fail2ban docker
 
 ⚠️ **The 02:00 auto-reboot is only safe if the stack restarts itself.** Every service in
 `docker/docker-compose.prod.yml` carries `restart: unless-stopped` and Docker is enabled under
-systemd, so it does. **If you later arm the key-custody rig, that stops being true** — the app then
+systemd, so it does. ~~**If you later arm the key-custody rig, that stops being true** — the app then
 needs keys delivered from the steward's laptop at boot (`docs/key-custody-design.md`, §Named
-residuals). Re-check this assumption when you arm it.
+residuals). Re-check this assumption when you arm it.~~
+✅ **Re-checked when the rig was armed, 2026-09-11, by rebooting production: it stays true.** Docker
+replays a container's stored environment on restart, so the armed app came back unattended, healthy,
+with all three keys, while `.env` held none (`docs/key-custody-design.md`, Third entry). What needs
+the steward's laptop is a **recreate** (a new image, a compose change), never a reboot.
 
 > ⚠️ **Known risk at step [3/6].** The fail2ban jail reads `/var/log/auth.log`, which exists only
 > when `rsyslog` is installed. If the jail is invalid, `systemctl restart fail2ban` returns
@@ -806,6 +810,14 @@ Because you're running a **specific image** (local build or a pinned GHCR tag), 
 which option you chose in §3. Note: the shipped `scripts/deploy.sh` is written for the **GHCR
 (pull)** flow and calls a non-existent `docker compose rollback` — use the explicit commands below
 instead.
+
+> ⚠️ **Once the key-custody rig is armed, the `up -d` lines below take production down.** An armed
+> droplet's `.env` holds no keys, so a container that compose creates from it boots without them and
+> production refuses to start. From then on, build here, then bring the app up **from the laptop**:
+> `UMI_DROPLET=root@<droplet-ip> scripts/deploy-with-keys.sh deploy` (it also runs `migrate`), and
+> run management commands inside the running container (`docker exec docker-app-1 python manage.py
+> …`). The recurring sequence for the live board is `docs/deploy-runbook.md`, updated 2026-10-08.
+> The commands below are for a droplet that has not armed the rig yet.
 
 **If you built locally (Option A):**
 

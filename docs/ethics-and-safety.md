@@ -280,6 +280,13 @@ because they are not yet true. Each item names how you know it is done.
   account, so that compromising the host alone does not hand over the key, and when at least two
   distinct roles are required to reach it. Today the key and the data it protects live on the same
   machine, which means whoever gets the machine gets both.
+  **Progress, recorded 2026-10-08 (`docs/key-custody-design.md`):** the custody rig has been armed
+  on production since 2026-09-11 (#164, #165). The droplet `.env` holds no keys, deploys decrypt on
+  the steward's laptop, the key ciphertext rides beside every backup (#196), and a rotation ran on
+  production on 2026-10-01 (#199). **Two things keep this box open.** Docker still holds the keys in
+  the app container's config on the droplet disk for as long as the container exists, so
+  compromising the host still hands over the key; and the second role, the sealed envelope in the
+  parish safe with its two keepers, is not in place yet.
 
 - [x] **There is a written incident, breach, and legal-request response plan.** Done when a document
   exists that names who is notified and within what timebox when data is exposed, who decides to refuse
@@ -385,6 +392,20 @@ only if opted in) from the reverse-proxy-set client IP.
 - **It gates sign-up only, never reading.** Someone outside the area is shown how to run their own
   board.
 - **Honest limit:** a VPN defeats it in one click. It is a speed bump, not a wall.
+
+### Casework mail goes only to a proven address
+
+`docs/specs/email-confirmation.md`, built 2026-09-28 (#174). The daily follow-up digest is the one
+email the sensitive lake sends. Nothing in it decrypts, but follow-up **titles** are a coordinator's
+own plaintext ("Call Maria about the eviction hearing"), so a mistyped address would send case detail
+to a stranger.
+- **It mails only an address its owner has proven by clicking a link** (`deliverable_email`,
+  `apps/casework/tasks.py`). An unproven address gets no email; the reminder still lands in the app.
+  Tested: `apps/casework/tests/test_consent_and_access_guards.py::test_digest_withholds_email_from_an_unproven_address_but_keeps_the_notice`.
+- **A test fails the build if any sender builds a recipient from the raw address**
+  (`tests/test_email_confirmation.py::test_no_sender_builds_a_recipient_from_the_raw_address`).
+- **Honest limit:** a proven address can still be a shared family inbox. Proving an address shows
+  who controls it, not who reads it.
 
 ---
 

@@ -1,5 +1,8 @@
 # Spec: the scoped legal hold (ethics gate box 4's missing half)
 
+> ✅ **BUILT, merged 2026-10-01 (#193, `apps/holds`).** *(Status line updated 2026-10-08; it had
+> kept saying "SPEC + BUILD in one PR" after the merge.)*
+>
 > STATUS: **SPEC + BUILD in one PR**, written 2026-10-01 on the founder's key "3". Closes the
 > known gap stated in `../incident-response.md` Part 2 and `../ethics-and-safety.md` box 4.
 

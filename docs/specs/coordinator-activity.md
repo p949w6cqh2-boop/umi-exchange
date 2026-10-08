@@ -1,5 +1,8 @@
 # Spec: "Who did what" — the coordinator activity page
 
+> ✅ **BUILT and live since 2026-10-01 (#189, production `42fd75eb`).** *(Status line updated
+> 2026-10-08; it had kept saying "SPEC + BUILD in one PR" after the merge.)*
+>
 > STATUS: **SPEC + BUILD in one PR**, written 2026-09-30 on the founder's pick (build plan **C13**,
 > brain `projects/coordinator-features-buildplan-2026-09-23.md`). The detection half that any future
 > coordinator-issued reset (A2) needs before it ships.

@@ -1,6 +1,10 @@
 # Spec: geolocking — gate who can SIGN UP by region, not who can READ
 
-> STATUS: **SPEC**, written 2026-09-26 on the founder's key. Decision recommended below;
+> STATUS: ✅ **BUILT 2026-10-01 (#192), OFF in the code by default.** In production, Phase 0 (count
+> mode) has been on in the deployment's `.env` since 2026-10-01; the gate itself is off. Done-when below
+> is ticked against the tests that prove each line (2026-10-08); Phase 0's two weeks end 2026-10-15.
+>
+> *As written:* STATUS: **SPEC**, written 2026-09-26 on the founder's key. Decision recommended below;
 > **BUILD happens on a separate key after the founder reads this.** No code in this PR.
 >
 > Origin, his words: *"this is a good opportunity to start geolocking"* → *"the great chinese
@@ -113,9 +117,16 @@ rarely move — which is part of why fail-open is safe.
 
 ## Done-when
 
-- [ ] Phase 0 has run two weeks and the per-country table is recorded.
-- [ ] With `GEO_ALLOWED_COUNTRIES` unset, nothing is gated — proven by a test.
-- [ ] With it set, an out-of-region sign-up gets the plain page and the self-host link.
-- [ ] A missing database blocks no one.
-- [ ] No IP is stored or logged beside a country.
-- [ ] The public pages — landing, demo, source link — load from anywhere.
+- [ ] Phase 0 has run two weeks and the per-country table is recorded. ⏳ Counting started
+      2026-10-01, so the two weeks end **2026-10-15**; then `python manage.py geo_counts` on production
+      prints the table to record here.
+- [x] With `GEO_ALLOWED_COUNTRIES` unset, nothing is gated — proven by a test.
+      *(`tests/test_geolocking.py::test_with_nothing_configured_sign_up_is_untouched_and_no_lookup_happens`,
+      `::test_empty_allow_list_means_the_gate_is_off_even_for_a_far_country`)*
+- [x] With it set, an out-of-region sign-up gets the plain page and the self-host link.
+      *(`::test_blocked_country_gets_the_plain_page_with_the_self_host_link_and_no_account`)*
+- [x] A missing database blocks no one. *(`::test_missing_database_fails_open_and_says_so`,
+      `::test_any_lookup_error_fails_open_not_a_500`)*
+- [x] No IP is stored or logged beside a country. *(`::test_no_ip_is_stored_or_logged`)*
+- [x] The public pages — landing, demo, source link — load from anywhere.
+      *(`::test_reading_pages_are_never_gated`)*

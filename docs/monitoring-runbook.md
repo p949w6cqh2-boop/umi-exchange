@@ -102,9 +102,12 @@ brief production outage.
 5. **The trip test (the gate's own proof — a real alert, not a dry run):** ✅ **DONE 2026-08-18.**
    **Receipt: `docs/monitoring/trip-test-2026-08-18/`.**
    - Pick a quiet minute (the board serves fictional data; there is no parishioner harm today).
-   - On the droplet:
+   - On the droplet (`157.230.185.124` since the 2026-09-11 rebuild; this line named the destroyed
+     `143.244.167.7` until 2026-10-08, an address now back in DigitalOcean's pool). `stop`/`start`
+     keep the same container, so under key custody the app comes back with its keys; never swap
+     them for `up`:
      ```bash
-     ssh root@143.244.167.7
+     ssh root@157.230.185.124
      cd /opt/umi-exchange
      docker compose --env-file .env -f docker/docker-compose.prod.yml stop app
      ```

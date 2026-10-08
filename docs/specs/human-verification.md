@@ -1,11 +1,22 @@
 # Spec: human verification at sign-up
 
-> STATUS: SPEC, written 2026-08-11 on the founder's key, from the pastor's ask at the
+> STATUS: ✅ **BUILT and live since 2026-08-12 (#148)**: the recommended A + C, with the founder's
+> two-exit amendment (an email link OR an audited coordinator vouch, because email is optional).
+> Done-when below is ticked against the tests that prove each line (2026-10-08).
+>
+> *As written:* STATUS: SPEC, written 2026-08-11 on the founder's key, from the pastor's ask at the
 > pilot-blessing meeting ("sign-in verification to make sure one is human"). Decision
 > recommended below; BUILD happens on a separate key after the founder reads this.
 > Companion concern from the same meeting, deliberately NOT this spec: a phone path for
 > non-tech members (already served by coordinator on-behalf-of posting; ministry practice,
 > not code).
+>
+> ⚠️ **Corrected 2026-10-08: "already served by coordinator on-behalf-of posting" was false.** That
+> capability did not exist; the field had been pulled from the need form because no template rendered
+> it (found 2026-09-23, `account-recovery.md`). What serves a non-tech member now: the paper recovery
+> code (#184), the sign-up helper a coordinator or intake helper runs in person (#187, #190), and a
+> coordinator's reset code, read aloud on a call back to a landline on file (#186, #208). Posting on
+> someone's behalf is designed and gated: `on-behalf-requests.md`.
 
 ## The question
 
@@ -70,7 +81,14 @@ join code being used remotely by someone who was never handed it in person.
 
 ## Done-when
 
-- [ ] Founder read this spec and keyed the build (or amended the recommendation).
-- [ ] Email verification live behind working delivery; join/post/propose soft-gated.
-- [ ] Honeypot + timing on register, tests prove both trip paths.
-- [ ] Board-meeting sentence added to the Sept 15 pack.
+- [x] Founder read this spec and keyed the build (or amended the recommendation). *(keyed and amended
+      2026-08-12: the two-exit option; merged as #148)*
+- [x] Email verification live behind working delivery; join/post/propose soft-gated.
+      *(`tests/test_human_verification.py::test_unverified_cannot_join_community`, `::…_post_need`,
+      `::…_post_offer`, `::…_propose_match`; delivery is live since 2026-09-11,
+      `docs/email-delivery-runbook.md`)*
+- [x] Honeypot + timing on register, tests prove both trip paths.
+      *(`::test_honeypot_filled_creates_no_account_same_shape_response`,
+      `::test_too_fast_submit_creates_no_account`, `::test_missing_timestamp_creates_no_account`)*
+- [ ] Board-meeting sentence added to the Sept 15 pack. ⏳ The 2026-09-15 meeting did not happen; the
+      pack for the rescheduled meeting is the founder's to assemble.

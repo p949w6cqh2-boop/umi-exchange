@@ -21,7 +21,8 @@
 //   source /tmp/tutorial-ids.env && node docs/tutorial/record-tutorial.mjs            # both aspects
 //   source /tmp/tutorial-ids.env && node docs/tutorial/record-tutorial.mjs 16x9      # one aspect
 //
-// Output: docs/tutorial/out/<aspect>/NN-slug.webm  (gitignored — raw video never committed).
+// Output: docs/tutorial/out/<aspect>/NN-slug.webm  (gitignored — raw video never committed),
+// and beside each clip NN-slug.events.json: every action the scene took, on the clip's clock.
 // The rig ABORTS if the scratch DB isn't fresh (S4's ask already present) so re-runs
 // always start from the same state. Scene S6+S7 is one continuous take by design.
 //
@@ -33,6 +34,7 @@
 // The idle sign-out scene only runs when named, in its own cycle: IDLE=75 SET=v2 cycle.sh
 // <aspect> v2-19-idle (the server's idle limit has to be short for the warning to appear).
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -106,11 +108,57 @@ async function withWatchdog(promise, ms, label) {
   }
 }
 
+// The action log. Every action a scene takes is written beside its clip as <slug>.events.json,
+// timed on the clip's own clock (seconds since the page was created, which is when its video
+// starts). An edit list anchors on these: motion-run numbers read off the picture shift between
+// takes and machines (2026-10-08: a one-frame flicker renumbered every later run of 04-post-ask in
+// one take; on a faster box the connect scene's page load and the scroll after it merged into one
+// run), but the rig takes the same actions in the same order on every take. Logging only: no
+// action, wait or frame changes.
+let EVENTS = null;
+let evT0 = 0;
+// Nesting is tracked per call chain, not globally: 06-07 waits for a page load and clicks
+// "Yes, Accept" at the same time (Promise.all), and both must be logged.
+const evInside = new AsyncLocalStorage();
+const evNow = () => +((Date.now() - evT0) / 1000).toFixed(3);
+async function logged(kind, label, fn) {
+  if (!EVENTS || evInside.getStore()) return fn(); // outside a scene, or inside an action already logged
+  const ev = { t: evNow(), kind, label };
+  EVENTS.push(ev);
+  try {
+    return await evInside.run(true, fn);
+  } finally {
+    ev.t_end = evNow();
+  }
+}
+let locatorsLogged = false;
+function logActions(page) {
+  if (!locatorsLogged) {
+    const proto = Object.getPrototypeOf(page.locator("html"));
+    for (const m of ["click", "fill", "pressSequentially", "selectOption", "check", "scrollIntoViewIfNeeded", "waitFor"]) {
+      const orig = proto[m];
+      proto[m] = function (...args) {
+        return logged(m, String(this), () => orig.apply(this, args));
+      };
+    }
+    locatorsLogged = true;
+  }
+  for (const m of ["goto", "waitForLoadState", "waitForURL"]) {
+    const orig = page[m].bind(page);
+    page[m] = (...args) => logged(m, String(args[0] ?? ""), () => orig(...args));
+  }
+  // A press made by hand where Playwright's click cannot land (v2-19, the idle warning).
+  const down = page.mouse.down.bind(page.mouse);
+  page.mouse.down = (...args) => logged("press", "mouse", () => down(...args));
+}
+
 // Human-feel helpers: the cursor glides, typing breathes, scrolling rolls.
 async function glide(page, locator) {
-  const box = await locator.boundingBox();
-  if (!box) throw new Error("glide target has no box");
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 30 });
+  await logged("glide", String(locator), async () => {
+    const box = await locator.boundingBox();
+    if (!box) throw new Error("glide target has no box");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 30 });
+  });
   await sleep(500);
 }
 async function glideClick(page, locator) {
@@ -122,10 +170,12 @@ async function typeSlow(page, locator, text) {
   await locator.pressSequentially(text, { delay: 70 });
 }
 async function roll(page, px, stepPx = 60, stepMs = 40) {
-  for (let done = 0; done < px; done += stepPx) {
-    await page.mouse.wheel(0, stepPx);
-    await sleep(stepMs);
-  }
+  await logged("roll", `${px}px`, async () => {
+    for (let done = 0; done < px; done += stepPx) {
+      await page.mouse.wheel(0, stepPx);
+      await sleep(stepMs);
+    }
+  });
 }
 
 // The board throttles sign-in steps per IP: one shared bucket of 5 POSTs a minute across
@@ -742,6 +792,10 @@ for (const aspect of runAspects) {
     // Room for this scene's on-camera sign-in steps, made before its recording starts.
     if (scene.authPosts) await authBudget(scene.authPosts);
     const page = await ctx.newPage();
+    // Its video starts with the page, so the action log's clock starts here too.
+    evT0 = Date.now();
+    EVENTS = [];
+    logActions(page);
     if (aspect === "9x16") {
       // Same convention as the still-gallery shoot: the fixed bottom nav is
       // viewport chrome, and at phone width it z-orders OVER the fixed form
@@ -780,6 +834,11 @@ for (const aspect of runAspects) {
     const raw = await video.path();
     const named = path.join(outDir, `${scene.slug}.webm`);
     fs.renameSync(raw, named);
+    fs.writeFileSync(
+      path.join(outDir, `${scene.slug}.events.json`),
+      JSON.stringify({ clip: `${scene.slug}.webm`, aspect, set: SET, clock: "seconds from page creation", events: EVENTS }, null, 1),
+    );
+    EVENTS = null;
     ran.add(scene.slug);
     console.log(`      → ${path.basename(named)} (${Math.round(fs.statSync(named).size / 1024)} KB, ${elapsed}s)`);
     if (personaDone) {
