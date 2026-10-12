@@ -12,7 +12,8 @@ from apps.communities.models import Member
 from apps.consent.models import Consent
 from apps.people.models import Person
 
-from .models import CaseNote
+from . import access
+from .models import CaseFile, CaseNote
 
 PRIMARY_NEEDS = [
     ("food", "Food"),
@@ -79,7 +80,19 @@ class CaseCreateForm(forms.Form):
     def __init__(self, community, member, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.community, self.member = community, member
-        self.fields["person"].queryset = Person.objects.filter(created_in_community=community, merged_into__isnull=True)
+        persons = Person.objects.filter(created_in_community=community, merged_into__isnull=True)
+        if not access.is_admin(member):
+            # Only people whose every case this member can open. Picking anyone else opens a
+            # fresh case that shows their name, which is how a coordinator locked out of a
+            # restricted case could learn who it is about (2026-10 bug hunt). The queryset is
+            # also what validates a POST, so a hand-built submit is refused the same way.
+            hidden = {
+                case.subject_person_id
+                for case in CaseFile.objects.filter(community=community)
+                if access.case_access(member, case) < access.CONTRIBUTOR
+            }
+            persons = persons.exclude(pk__in=hidden)
+        self.fields["person"].queryset = persons
         self.fields["assigned_to"].queryset = Member.objects.filter(
             community=community, is_active=True, role__in=("coordinator", "admin")
         )

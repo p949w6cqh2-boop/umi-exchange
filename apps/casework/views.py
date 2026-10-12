@@ -123,7 +123,11 @@ class CaseListView(CommunityMixin, View):
         if not access.is_coordinator(self.membership):
             return _forbidden("Case files are visible to coordinators and admins.")
         m, now = self.membership, timezone.now()
-        qs = CaseFile.objects.filter(community=self.community).select_related("subject_person", "assigned_to")
+        qs = (
+            CaseFile.objects.filter(community=self.community)
+            .select_related("subject_person", "assigned_to")
+            .prefetch_related("subject_person__consents_about")
+        )
         if not access.is_admin(m):
             grant_q = Q(grants__member=m, grants__revoked_at__isnull=True) & (
                 Q(grants__expires_at__isnull=True) | Q(grants__expires_at__gt=now)
@@ -142,7 +146,9 @@ class CaseListView(CommunityMixin, View):
             qu = q.upper()
             cases = [c for c in cases if qu in c.short_code or q.lower() in c.physical_ref.lower()]
 
-        rows = [{"case": c, "name": c.subject_person.display_name or c.subject_person.short_code} for c in cases]
+        # subject_display, not display_name: a person who has not spoken for themselves is shown
+        # by initials everywhere, and the list was the one place that printed the full name.
+        rows = [{"case": c, "name": access.subject_display(c)["label"]} for c in cases]
         template = "casework/_case_rows.html" if _is_htmx(request) else "casework/list.html"
         return render(
             request,
@@ -828,6 +834,10 @@ class FollowUpCreateView(CommunityMixin, View):
         if not form.is_valid():
             return HttpResponse(form.errors.as_text(), status=400)
         d = form.cleaned_data
+        # An assignee who cannot open the case would be told its title and never be able to
+        # see, complete or bump the follow-up (2026-10 bug hunt).
+        if access.case_access(d["assigned_to"], case) == access.NONE:
+            return HttpResponse("That member has no access to this case — grant access first.", status=400)
         source = None
         if d.get("source_note"):
             source = CaseNote.objects.filter(pk=d["source_note"], case=case).first()
@@ -926,6 +936,10 @@ class GrantCreateView(CommunityMixin, View):
         case = self.get_case(pk)
         if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
             return _forbidden("Only an admin or the assignee can grant access.")
+        # Revocation freeze (§3.6), as on handoff: a grant widens who can read the case, and the
+        # subject has withdrawn. Revoking a grant (GrantRevokeView) stays open, since it narrows.
+        if self._consent_frozen(case):
+            return _forbidden("Consent was revoked — the case is frozen; access cannot be widened.")
         form = GrantForm(self.community, request.POST)
         if not form.is_valid():
             return HttpResponse(form.errors.as_text(), status=400)
