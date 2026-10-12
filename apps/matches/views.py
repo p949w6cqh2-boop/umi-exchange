@@ -143,8 +143,16 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         from django.http import Http404
 
         obj = super().get_object(queryset)
-        if not Member.objects.filter(user=self.request.user, community=obj.need.community, is_active=True).exists():
+        viewer = Member.objects.filter(user=self.request.user, community=obj.need.community, is_active=True).first()
+        if viewer is None:
             raise Http404("You are not a member of this community.")
+        # Someone outside the match who has a block with either person in it does not see it,
+        # as on the board. The two people in it always do (a block is not a recall), and so do
+        # coordinators, for oversight (2026-10 bug hunt).
+        participants = (obj.need.requester, obj.helper_member)
+        if viewer not in participants and not viewer.is_coordinator:
+            if any(is_blocked_between(viewer, p) for p in participants):
+                raise Http404("This match is not available.")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -232,14 +240,16 @@ class MatchUpdateView(LoginRequiredMixin, View):
         # Lock the Need (the contended resource) so two concurrent accepts on the
         # same need cannot both succeed; then lock the Match row itself.
         with transaction.atomic():
+            # One lock order everywhere: Need, then Match, then Offer. The hourly need sweep
+            # (apps/needs/tasks.py) locks a Need and then writes its Matches; taking the Match
+            # first here deadlocked against it under load (2026-10 bug hunt, reproduced on
+            # Postgres). A match's need never changes, so reading need_id unlocked is safe.
+            need_id = get_object_or_404(Match.objects.values_list("need_id", flat=True), pk=pk)
+            need = Need.objects.select_for_update().get(pk=need_id)
             # Lock only the Match row (of=("self",)): select_related pulls in the
             # nullable `offer` as a LEFT OUTER JOIN, and Postgres refuses a bare
-            # FOR UPDATE on the nullable side of an outer join. We only need to
-            # lock the match itself here; the Need is locked separately below.
-            match = get_object_or_404(
-                Match.objects.select_for_update(of=("self",)).select_related("need", "offer"), pk=pk
-            )
-            need = Need.objects.select_for_update().get(pk=match.need_id)
+            # FOR UPDATE on the nullable side of an outer join.
+            match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
             match.need = need  # operate on the freshly locked instance
             # Lock the offer too (separately, for the same nullable-outer-join
             # reason as the match): an accept commits the offer, so two matches
@@ -329,6 +339,8 @@ class MatchUpdateView(LoginRequiredMixin, View):
 
                 queue_match_event(match, new_status)
 
+                closed_proposals = _expire_competing_proposals(match) if new_status == "fulfilled" else []
+
         # A first yes: recorded and committed above; the match stays proposed and nothing is
         # revealed. Tell the other person it is their turn, after the commit like every notice.
         if first_yes_only:
@@ -391,9 +403,68 @@ class MatchUpdateView(LoginRequiredMixin, View):
                     "Contact info has been shared — open the match page to see it.",
                     link=f"/c/{slug}/matches/{match.id}/",
                 )
-        elif new_status == "fulfilled":
-            messages.success(request, "Match marked as fulfilled! Thank you.")
-        elif new_status == "cancelled":
-            messages.info(request, "Match cancelled.")
+        else:
+            # Every other ending reaches the other person too, never the one who acted (2026-10
+            # bug hunt: only an accept was ever announced, so a declined proposal or a cancelled
+            # match left the other person waiting on nothing).
+            kind, title, body = {
+                "cancelled": (
+                    "match_cancelled",
+                    "Match on '{}' was cancelled",
+                    "Open the match to see where things stand.",
+                ),
+                "unfulfilled": (
+                    "match_cancelled",
+                    "Match on '{}' was marked not done",
+                    "The ask is back on the board.",
+                ),
+                "fulfilled": (
+                    "match_fulfilled",
+                    "Match on '{}' was marked done",
+                    "Thank you for helping each other.",
+                ),
+            }[new_status]
+            for other in {need.requester, match.helper_member} - {member}:
+                NotificationAdapter.send(
+                    other.user, kind, title.format(need.title), body, link=f"/c/{slug}/matches/{match.id}/"
+                )
+            for closed in closed_proposals:
+                NotificationAdapter.send(
+                    closed.proposed_by.user,
+                    "match_cancelled",
+                    f"Your proposal on '{closed.need.title}' has closed",
+                    "Someone else helped with this one. Thank you for offering.",
+                    link=f"/c/{slug}/matches/{closed.id}/",
+                )
+            if new_status == "fulfilled":
+                messages.success(request, "Match marked as fulfilled! Thank you.")
+            elif new_status == "cancelled":
+                messages.info(request, "Match cancelled.")
 
         return redirect("match-detail", slug=slug, pk=pk)
+
+
+def _expire_competing_proposals(match):
+    """When a match is fulfilled, the other open proposals on its need, and on its offer, can never
+    happen: close them so their proposers are not left waiting (2026-10 bug hunt). Only at
+    fulfilled, not accepted, so a cancelled match still has its backups. Runs under the need lock
+    and takes each sibling's lock in pk order, keeping the Need-then-Match order."""
+    from django.db.models import Q
+
+    from apps.federation.outbox import queue_match_event
+
+    same = Q(need_id=match.need_id)
+    if match.offer_id is not None:
+        same |= Q(offer_id=match.offer_id)
+    siblings = list(
+        Match.objects.select_for_update(of=("self",))
+        .select_related("need", "proposed_by__user")
+        .filter(same, status="proposed")
+        .exclude(pk=match.pk)
+        .order_by("pk")
+    )
+    for sibling in siblings:
+        sibling.transition_to("expired")
+        emit("match.expired", sibling, details={"reason": "fulfilled_elsewhere"})
+        queue_match_event(sibling, "expired")
+    return siblings

@@ -2,9 +2,12 @@
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.db.models import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, DetailView
 
 from apps.accounts.verification import VerifiedRequiredMixin
@@ -128,7 +131,16 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
                 offerer=member,
             ).select_related("offerer")[:5]
         # Active matches on this need
-        ctx["matches"] = need.matches.select_related("offer", "proposed_by").order_by("-proposed_at")
+        matches = need.matches.select_related("offer", "proposed_by").order_by("-proposed_at")
+        if member and need.requester != member and not member.is_coordinator:
+            # On someone else's need, a neighbour this member blocked (or who blocked them) is not
+            # listed, as on the board. The asker keeps every match on their own need: a block is
+            # preventative, not a recall; coordinators keep oversight (2026-10 bug hunt).
+            from apps.moderation.services import blocked_member_ids
+
+            blocked = blocked_member_ids(member)
+            matches = matches.exclude(proposed_by_id__in=blocked).exclude(offer__offerer_id__in=blocked)
+        ctx["matches"] = matches
         return ctx
 
 
@@ -145,15 +157,41 @@ class NeedDeleteView(LoginRequiredMixin, DeleteView):
                 status=409,
                 content_type="text/plain",
             )
-        # self.object is loaded in post() before deletion — emit while its pk still exists.
-        emit(
-            "need.deleted",
-            self.object,
-            user=self.request.user,
-            request=self.request,
-            details={"status": self.object.status},
-        )
-        return super().form_valid(form)
+        # A need under an active legal hold is evidence: nothing deletes it (docs/specs/legal-hold.md).
+        from apps.holds.services import need_is_held
+
+        if need_is_held(self.object):
+            return HttpResponse(
+                "This need is under a legal hold and can't be deleted.",
+                status=409,
+                content_type="text/plain",
+            )
+        # The audit row and the delete go together or not at all: the audit table is append-only,
+        # so a delete that then failed left a need.deleted row that could never be taken back.
+        try:
+            with transaction.atomic():
+                # self.object is loaded in post() before deletion — emit while its pk still exists.
+                emit(
+                    "need.deleted",
+                    self.object,
+                    user=self.request.user,
+                    request=self.request,
+                    details={"status": self.object.status},
+                )
+                return super().form_valid(form)
+        except ProtectedError:
+            # A record must outlive the post (a released legal hold still points at it). Keep it
+            # and take it off the board instead of failing with a 500 (2026-10 bug hunt).
+            Need.objects.filter(pk=self.object.pk).update(status="closed", updated_at=timezone.now())
+            emit(
+                "need.closed",
+                self.object,
+                user=self.request.user,
+                request=self.request,
+                details={"status": self.object.status, "kept": True},
+            )
+            messages.info(self.request, "This need was closed and taken off the board.")
+            return redirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse_lazy("community-feed", kwargs={"slug": self.object.community.slug})

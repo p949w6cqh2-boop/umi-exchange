@@ -37,7 +37,10 @@ class HealthCheckView(View):
             checks["status"] = "degraded"
             status_code = 503
 
-        # Redis/cache check
+        # Redis/cache check. Production keeps sessions and the auth rate limiter in this cache,
+        # so a cache that fails is sign-in failing: report it and 503, like the database. It
+        # used to say "not configured" with a 200, so monitoring saw a healthy site while
+        # nobody could sign in (2026-10 bug hunt). The local default (LocMem) cannot fail here.
         try:
             from django.core.cache import cache
 
@@ -46,7 +49,11 @@ class HealthCheckView(View):
                 checks["cache"] = "ok"
             else:
                 checks["cache"] = "error: read mismatch"
-        except Exception:
-            checks["cache"] = "not configured"
+                checks["status"] = "degraded"
+                status_code = 503
+        except Exception as e:
+            checks["cache"] = f"error: {type(e).__name__}"
+            checks["status"] = "degraded"
+            status_code = 503
 
         return JsonResponse(checks, status=status_code)

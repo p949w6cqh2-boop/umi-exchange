@@ -7,6 +7,7 @@ Register once (mirrors apps/casework, apps/matches, apps/federation):
     python manage.py shell -c "from apps.needs.tasks import register_schedule; register_schedule()"
 """
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -54,9 +55,15 @@ def expire_stale_needs():
 
             # Expire proposed matches individually so each leaves an audit entry
             # (§8.3) — was a silent bulk .update() that bypassed the audit trail.
-            for m in need.matches.filter(status="proposed"):
-                m.status = "expired"
-                m.save(update_fields=["status"])
+            # Through the state machine, in pk order, under the need lock (Need, then Match, the
+            # order MatchUpdateView now takes too). transition_to re-reads each row under its own
+            # lock, so a match cancelled or accepted a moment ago is left as it is instead of
+            # being overwritten to 'expired' (2026-10 bug hunt).
+            for m in need.matches.filter(status="proposed").order_by("pk"):
+                try:
+                    m.transition_to("expired")
+                except ValidationError:  # TransitionConflict subclasses it: the match moved meanwhile
+                    continue
                 emit("match.expired", m, details={"reason": "need_expired"})
 
             AuditLog.log(None, "update", "need", need.id, details={"status": ["open", "expired"]})
