@@ -47,8 +47,12 @@ if getattr(settings, "ENABLE_2FA", False):
     try:
         from two_factor.urls import urlpatterns as tf_urls
 
+        # Everything except the package's own LoginView. Mounted, /account/login/ was a second
+        # password door beside UMILoginView (/auth/login/): outside RATELIMIT_AUTH_PATHS, so the
+        # per-IP and per-account throttles never saw it (2026-10 bug hunt). One door, one throttle.
+        tf_patterns, tf_app = tf_urls
         urlpatterns += [
-            path("", include(tf_urls)),
+            path("", include(([p for p in tf_patterns if getattr(p, "name", None) != "login"], tf_app))),
         ]
     except ImportError:
         pass

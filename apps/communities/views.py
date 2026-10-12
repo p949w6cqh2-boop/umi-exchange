@@ -769,11 +769,17 @@ class SecurityTxtView(View):
         return HttpResponse("\n".join(lines) + "\n", content_type="text/plain; charset=utf-8")
 
 
+@method_decorator(ratelimit(key="user", rate="30/h", method="POST", block=True), name="post")
 class VouchMemberView(LoginRequiredMixin, View):
     """The vouch exit of the human-verification gate (his key, option 1,
     2026-08-12): a coordinator who has met the neighbour in person marks their
     account verified — the path for members who don't use email. Coordinator-only,
-    audited (§8.3); the vouched account still needs a join code like everyone."""
+    audited (§8.3); the vouched account still needs a join code like everyone.
+
+    The voucher must be a verified person themselves (2026-10 bug hunt): creating a community
+    needs only a sign-in and makes the creator its admin, so without this an unverified account
+    could vouch for itself, or for any number of other accounts. 30/hour per voucher matches the
+    intake sign-up limit, the busiest legitimate vouching morning."""
 
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug)
@@ -781,6 +787,8 @@ class VouchMemberView(LoginRequiredMixin, View):
         # can_vouch, not is_coordinator: an intake helper vouches too (coordinator-roles.md).
         if member is None or not member.can_vouch:
             raise PermissionDenied("Only a coordinator or intake helper can vouch for a neighbour.")
+        if not request.user.is_human_verified:
+            raise PermissionDenied("Confirm your own email, or be vouched for, before you vouch for anyone.")
         # A helper cannot load community settings, so send them back to their own vouch page.
         back = "member-vouch-page" if request.POST.get("return_to") == "vouch" or not member.is_coordinator else None
         back = back or "community-settings"
@@ -826,6 +834,7 @@ class CoordinatorResetView(LoginRequiredMixin, View):
     """
 
     NOT_FOUND = "No plain member of this community has that username. Check the spelling with them."
+    REFUSED = "A coordinator can't reset this account. The board's staff can unlock it instead."
 
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug)
@@ -842,6 +851,15 @@ class CoordinatorResetView(LoginRequiredMixin, View):
         )
         if target is None:
             messages.error(request, self.NOT_FOUND)
+            return render(request, "communities/reset_done.html", {"community": community, "code": None})
+        # The code opens the whole ACCOUNT, not this membership, so "plain member here" is not
+        # enough: a person who holds any role in any community (past seats included, since a
+        # rejoin with an unrotated code restores the role) or a staff flag is out of reach.
+        # Found 2026-10 (bug hunt): any account can create a community, become its admin, and
+        # so reach a parish admin who had joined it as a plain member.
+        user = target.user
+        if user.is_staff or user.is_superuser or Member.objects.filter(user=user).exclude(role="member").exists():
+            messages.error(request, self.REFUSED)
             return render(request, "communities/reset_done.html", {"community": community, "code": None})
 
         _, code = issue_credential(target.user, RecoveryCredential.PURPOSE_COORDINATOR_RESET, issued_by=issuer)
