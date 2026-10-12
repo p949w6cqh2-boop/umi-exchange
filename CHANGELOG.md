@@ -3,6 +3,36 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## Unreleased: fixes from the October check-up
+
+- **If a post can't go up, the page now says why.** Before, an ask or offer whose description
+  used certain words was quietly refused: the page came back with no message and your choices
+  reset. Now you see the reason and your choices stay. Ordinary writing like "data:" or
+  "Donations = welcome" is no longer refused, and text inside <angle brackets> is kept as you
+  typed it.
+- **Long titles no longer break matching.** An ask with a very long title failed at every step,
+  and trying again made extra copies of the match. That's fixed.
+- **You hear how a match ends.** The other person is now told when a proposal is declined, when
+  a match is cancelled, and when it's marked done or not done. When an ask is fulfilled, other
+  people's open offers on it close and they're thanked. An ask that reopens after a cancelled
+  match gets a fresh expiry date instead of disappearing an hour later.
+- **Community names that clash now work.** A name that matched an existing community, or was
+  only symbols, used to fail. Now it gets its own web address.
+- **Account safety.** A coordinator's reset code can no longer be used on anyone who is a
+  coordinator, admin or helper in any community, or on board staff. There is one sign-in page,
+  with its limits on repeated tries. Only someone verified can vouch for a neighbor, and only 30
+  times an hour. Asking to change your email is limited to 10 times an hour, and an old
+  confirmation link stops working once a newer address is confirmed.
+- **Blocking reaches further.** Someone you blocked no longer shows up on other people's asks
+  or their match pages. People already in a match together still see it.
+- **For coordinators doing casework.** Opening a case no longer lets you pick, and so learn
+  about, someone whose private case you can't open. The case list shows initials where a person
+  hasn't been asked directly. Access can't be widened after someone withdraws consent. Follow-ups
+  only go to people who can open the case. Visits saved offline on a shared tablet stay with the
+  person who wrote them.
+- **Records under a legal hold are kept.** An ask under a hold can't be deleted, and one that was
+  ever under a hold is closed and taken off the board instead of deleted.
+
 ## 2026-10-07
 
 - **Contact now opens only after both people say yes.** Our front page has always said so, but
