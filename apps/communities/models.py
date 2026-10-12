@@ -62,10 +62,23 @@ class Community(models.Model):
     def __str__(self):
         return self.name
 
+    # /c/create/ is the creation page: a community slugged "create" could never be reached.
+    RESERVED_SLUGS = frozenset({"create"})
+
+    def _free_slug(self):
+        """A slug from the name that is non-empty, not reserved and not taken. A clashing,
+        empty ("!!!") or reserved name used to fail the save with a 500 (2026-10 bug hunt)."""
+        base = slugify(self.name)[:90] or "community"
+        candidate, n = base, 1
+        while candidate in self.RESERVED_SLUGS or Community.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+            n += 1
+            candidate = f"{base}-{n}"
+        return candidate
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         if not self.slug:
-            self.slug = slugify(self.name)[:100]
+            self.slug = self._free_slug()
         if not self.settings:
             self.settings = DEFAULT_SETTINGS.copy()
         super().save(*args, **kwargs)

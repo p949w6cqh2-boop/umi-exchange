@@ -76,10 +76,15 @@ def validate_clean_content(value):
 
 
 def sanitize_text_field(value):
-    """Strip HTML tags and check for injection patterns. Returns cleaned value."""
+    """Check free text against the content word list. Returns it trimmed, otherwise unchanged.
+
+    Until 2026-10 this also deleted anything between '<' and '>' and refused text matching
+    SCRIPT_PATTERNS. Both broke ordinary posts ("I need <5 lbs of rice>", "Phone ran out of
+    data: need a top-up", "Donations = welcome") and protected nothing: every surface that
+    shows this text autoescapes it, and none of it reaches |safe (bug hunt, 2026-10). The word
+    list is a policy question for the founder and is unchanged here.
+    """
     if not value:
         return value
-    cleaned = strip_html_tags(value)
-    validate_no_script_injection(cleaned)
-    validate_clean_content(cleaned)
-    return cleaned.strip()
+    validate_clean_content(value)
+    return value.strip()

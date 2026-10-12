@@ -99,32 +99,35 @@ class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
             messages.error(request, "This need is not accepting matches.")
             return redirect("need-detail", slug=slug, pk=need_id)
 
-        match = Match.objects.create(need=need, offer=offer, proposed_by=member)
+        # One unit: a proposal whose notification fails must not survive as a half-made match
+        # that the member's retry then duplicates (2026-10 bug hunt: a long title did exactly that).
+        with transaction.atomic():
+            match = Match.objects.create(need=need, offer=offer, proposed_by=member)
 
-        # Audit log
-        AuditLog.log(member.user, "create", "match", match.id, request=request)
+            # Audit log
+            AuditLog.log(member.user, "create", "match", match.id, request=request)
 
-        # Notifications
-        NotificationAdapter.send(
-            need.requester.user,
-            "match_proposed",
-            f"{member.display_name} proposed a match on your need '{need.title}'",
-            "View the match to accept or decline.",
-            link=f"/c/{slug}/matches/{match.id}/",
-        )
-
-        # Coordinator-brokered match: the offerer did not propose their own offer,
-        # so signal them explicitly. This is the consent safeguard that keeps
-        # brokering subsidiarity (assist) rather than substitution — the offerer
-        # can still accept or decline the match.
-        if offer is not None and offer.offerer_id != member.id:
+            # Notifications
             NotificationAdapter.send(
-                offer.offerer.user,
+                need.requester.user,
                 "match_proposed",
-                f"{member.display_name} proposed your offer '{offer.title}' for a match",
-                "Review the match — you can accept or decline.",
+                f"{member.display_name} proposed a match on your need '{need.title}'",
+                "View the match to accept or decline.",
                 link=f"/c/{slug}/matches/{match.id}/",
             )
+
+            # Coordinator-brokered match: the offerer did not propose their own offer,
+            # so signal them explicitly. This is the consent safeguard that keeps
+            # brokering subsidiarity (assist) rather than substitution — the offerer
+            # can still accept or decline the match.
+            if offer is not None and offer.offerer_id != member.id:
+                NotificationAdapter.send(
+                    offer.offerer.user,
+                    "match_proposed",
+                    f"{member.display_name} proposed your offer '{offer.title}' for a match",
+                    "Review the match — you can accept or decline.",
+                    link=f"/c/{slug}/matches/{match.id}/",
+                )
 
         messages.success(request, "Match proposed! Both parties will be notified.")
         return redirect("match-detail", slug=slug, pk=match.id)

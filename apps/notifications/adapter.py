@@ -15,6 +15,7 @@ import logging
 from django.conf import settings as django_settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils.text import Truncator
 
 from .models import Notification
 
@@ -34,6 +35,11 @@ class NotificationAdapter:
             link: str — optional relative URL to the relevant page
         """
         channels_sent = ["in_app"]
+        # Callers quote a need or offer title (itself up to 200 characters) into the title, so
+        # fit it to the column here, once, for every caller. Postgres rejects the overflow that
+        # SQLite silently stored, and that failed every step of matching on a long title.
+        title = Truncator(title).chars(Notification._meta.get_field("title").max_length)
+        link = link[: Notification._meta.get_field("link").max_length]
 
         # 1. Always create in-app notification
         notification = Notification.objects.create(

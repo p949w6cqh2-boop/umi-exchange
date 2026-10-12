@@ -10,17 +10,19 @@
   </div>
   <form method="post" class="space-y-6">
     {% csrf_token %}
+    {% if form.non_field_errors %}<p class="text-sm text-red-600" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
     <fieldset>
       <legend class="umi-label">What can you help with?</legend>
       <div class="grid grid-cols-3 sm:grid-cols-5 gap-3" role="radiogroup">
         {% for cat in categories %}
         <label class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] border-2 rounded-xl cursor-pointer transition-colors hover:border-parish-border hover:bg-parish-soft has-[:checked]:border-[var(--umi-primary)] has-[:checked]:bg-[#E8F2F1]">
-          <input type="radio" name="category" value="{{ cat.id }}" class="sr-only" {% if forloop.first %}checked{% endif %}>
+          <input type="radio" name="category" value="{{ cat.id }}" class="sr-only" {% if form.is_bound %}{% if form.category.value|stringformat:"s" == cat.id|stringformat:"s" %}checked{% endif %}{% elif forloop.first %}checked{% endif %}>
           <span class="text-2xl">{{ cat.icon }}</span>
           <span class="text-xs text-center mt-1">{{ cat.name }}</span>
         </label>
         {% endfor %}
       </div>
+      {% if form.category.errors %}<p class="text-sm text-red-600 mt-1" role="alert">{{ form.category.errors.0 }}</p>{% endif %}
     </fieldset>
     <div>
       <label for="id_title" class="umi-label">What can you offer? *</label>
@@ -30,13 +32,14 @@
     <div>
       <label for="id_description" class="umi-label">Description <span class="text-parish-ink/70">(optional)</span></label>
       {{ form.description }}
+      {% if form.description.errors %}<p class="text-sm text-red-600 mt-1" role="alert">{{ form.description.errors.0 }}</p>{% endif %}
     </div>
     <fieldset>
       <legend class="umi-label">How should the person contact you?</legend>
       <div class="space-y-2">
         {% for value, label in form.fields.contact_pref.choices %}
         <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
-          <input type="radio" name="contact_pref" value="{{ value }}" {% if value == "in_app" %}checked{% endif %} class="w-4 h-4 accent-[var(--umi-primary)]">
+          <input type="radio" name="contact_pref" value="{{ value }}" {% if form.is_bound %}{% if form.contact_pref.value == value %}checked{% endif %}{% elif value == "in_app" %}checked{% endif %} class="w-4 h-4 accent-[var(--umi-primary)]">
           <span class="text-base text-parish-ink/80">{{ label }}</span>
         </label>
         {% endfor %}

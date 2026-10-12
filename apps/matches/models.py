@@ -156,20 +156,28 @@ class Match(models.Model):
             self.cancelled_at = now
             # If cancelling from accepted, re-open need and offer
             if old_status == "accepted":
-                self.need.status = "open"
-                self.need.save(update_fields=["status", "updated_at"])
+                self._reopen_need(now)
                 if self.offer:
                     self.offer.status = "active"
                     self.offer.save(update_fields=["status", "updated_at"])
 
         elif new_status == "unfulfilled":
-            self.need.status = "open"
-            self.need.save(update_fields=["status", "updated_at"])
+            self._reopen_need(now)
             if self.offer:
                 self.offer.status = "active"
                 self.offer.save(update_fields=["status", "updated_at"])
 
         self.save()
+
+    def _reopen_need(self, now):
+        """Put the need back on the board. A need whose expiry passed while it was matched gets
+        a fresh window; with its old date the hourly sweep expired it straight away (2026-10)."""
+        self.need.status = "open"
+        fields = ["status", "updated_at"]
+        if self.need.expires_at <= now:
+            self.need.expires_at = now + timezone.timedelta(days=self.need.community.auto_expire_days)
+            fields.append("expires_at")
+        self.need.save(update_fields=fields)
 
     def counterpart_member_for(self, member):
         """The other participant Member (the one whose contact is revealed to
