@@ -96,6 +96,8 @@ def _cancel_in_flight_matches(member):
     the nullable offer in as an outer join, and Postgres refuses FOR UPDATE on its nullable
     side.) Call it inside a transaction.
     """
+    from apps.federation import mirror, outbox
+    from apps.federation.models import FederatedMatch
     from apps.matches.models import Match
     from apps.needs.models import Need
 
@@ -112,7 +114,15 @@ def _cancel_in_flight_matches(member):
         if match.status not in ("proposed", "accepted"):
             continue
         match.transition_to("cancelled")
+        # A federated match tells its peer and arms the contact-retention shred; a no-op for a
+        # local match or with federation off (2026-10 bug hunt #17).
+        outbox.queue_match_event(match, "cancelled")
         cancelled.append(match)
+    # Where they are the helper on another instance's ask, ask that authority to cancel.
+    for fmatch in FederatedMatch.objects.filter(role="mirror", offer__offerer=member).exclude(
+        mirror_status__in=mirror.MIRROR_TERMINAL
+    ):
+        outbox.queue_cancel_request(fmatch)
     return cancelled
 
 
@@ -137,9 +147,11 @@ def leave_community(member, *, request=None):
         needs_hidden = Need.objects.filter(requester=member, status="open", moderation_hidden=False).update(
             moderation_hidden=True, hidden_on_leave_at=now
         )
-        offers_hidden = Offer.objects.filter(offerer=member, status="active", moderation_hidden=False).update(
-            moderation_hidden=True, hidden_on_leave_at=now
-        )
+        # "matched" too: an offer held by a match on another instance comes back to active when
+        # that authority's cancel arrives, and must not reappear on the board then.
+        offers_hidden = Offer.objects.filter(
+            offerer=member, status__in=("active", "matched"), moderation_hidden=False
+        ).update(moderation_hidden=True, hidden_on_leave_at=now)
         member.is_active = False
         member.save(update_fields=["is_active"])
 
@@ -175,9 +187,9 @@ def remove_member(member, *, by, request=None):
         needs_hidden = Need.objects.filter(requester=member, status="open", moderation_hidden=False).update(
             moderation_hidden=True
         )
-        offers_hidden = Offer.objects.filter(offerer=member, status="active", moderation_hidden=False).update(
-            moderation_hidden=True
-        )
+        offers_hidden = Offer.objects.filter(
+            offerer=member, status__in=("active", "matched"), moderation_hidden=False
+        ).update(moderation_hidden=True)
 
         member.is_active = False
         member.removed_at = timezone.now()

@@ -62,10 +62,7 @@ def queue_match_event(match, event, *, fmatch=None):
         next_attempt_at=timezone.now(),
     )
     if event == "accepted":
-        need = match.need
-        # Coordinators-only categories (Communion at home) never send the asker's number across.
-        pref = "in_app" if need.category.coordinators_only_contact else need.contact_pref
-        ev.secret_payload = {"contact": need.requester.contact_dict(pref)}
+        ev.secret_payload = _accept_secret(match)
     elif fmatch.contact_expires_at is None:
         # Terminal: start the §4.4 grace on the stored counterpart contact,
         # or it would never be swept.
@@ -73,6 +70,14 @@ def queue_match_event(match, event, *, fmatch=None):
         fmatch.save(update_fields=["contact_expires_at"])
     ev.save()
     return ev
+
+
+def _accept_secret(match):
+    """What an `accepted` event carries across: the requester's §8.2 contact."""
+    need = match.need
+    # Coordinators-only categories (Communion at home) never send the asker's number across.
+    pref = "in_app" if need.category.coordinators_only_contact else need.contact_pref
+    return {"contact": need.requester.contact_dict(pref)}
 
 
 def queue_cancel_request(fmatch):
@@ -143,8 +148,9 @@ def deliver_due_events(now=None) -> int:
             ok = _deliver_one(locked, now)
         if ok:
             delivered += 1
-        else:
+        elif ok is False:
             blocked.add(key)
+        # None: superseded and closed without a send; the event after it may go.
     return delivered
 
 
@@ -162,11 +168,31 @@ def _older_pending_exists(ev) -> bool:
     )
 
 
-def _deliver_one(ev, now) -> bool:
+def _deliver_one(ev, now):
+    """True once acked, False on a failure (it retries), None when superseded unsent."""
     peer = ev.link.peer
     match_uuid = str(ev.payload.get("match_uuid", ""))
     item = {"event_uuid": str(ev.event_uuid), "event": ev.kind}
     secret = ev.secret_payload
+    if ev.kind == "accepted" and not isinstance(secret, dict):
+        # Its contact was shredded while the link was down (suspending shreds pending payloads,
+        # and so does the 72 h retention sweep). Sent as it was, the mirror accepted, sent its
+        # helper's contact back, and ours never arrived: a one-sided exchange (2026-10 bug hunt
+        # #20). Rebuild it for this send only, never stored again, while the match is still the
+        # accepted one the requester agreed to; if it moved on, the event saying so follows, and
+        # a stale accept is closed unsent.
+        from apps.matches.models import Match
+
+        match = Match.objects.filter(pk=match_uuid, status="accepted").select_related(
+            "need__category", "need__requester__user"
+        )
+        match = match.first()
+        if match is None:
+            ev.state = "failed"
+            ev.save(update_fields=["state"])
+            emit("fed.event_superseded", ev, details={"event": ev.kind, "match": match_uuid, "link": str(ev.link_id)})
+            return None
+        secret = _accept_secret(match)
     if isinstance(secret, dict):
         item.update(secret)
     body = {"events": [item]}

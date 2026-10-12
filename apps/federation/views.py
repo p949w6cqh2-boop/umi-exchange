@@ -80,6 +80,15 @@ def _json_object(request):
     return payload if isinstance(payload, dict) else None
 
 
+def _uuid_or_404(raw):
+    """A POSTed id, parsed. A malformed one made UUIDField raise ValidationError, which
+    get_object_or_404 does not catch, so it was a 500 (2026-10 bug hunt): a junk id is a miss."""
+    try:
+        return uuid.UUID(str(raw))
+    except (ValueError, TypeError, AttributeError):
+        raise Http404("malformed id")
+
+
 def _object(value):
     """A nested field that must be a JSON object; anything else reads as empty, so the existing
     field checks refuse it with their own 400."""
@@ -191,17 +200,19 @@ class HandshakeConfirmView(FederationGateMixin, View):
         link.pairing_code_hash = ""  # one-time: consumed
         link.approved_at = timezone.now()
         try:
-            link.transition_to(
-                "active",
-                extra_update_fields=(
-                    "remote_community_uuid",
-                    "remote_community_label",
-                    "pairing_pepper",
-                    "pairing_code_hash",
-                    "approved_at",
-                ),
-            )
-        except TransitionConflict:
+            with transaction.atomic():
+                link.transition_to(
+                    "active",
+                    extra_update_fields=(
+                        "remote_community_uuid",
+                        "remote_community_label",
+                        "pairing_pepper",
+                        "pairing_code_hash",
+                        "approved_at",
+                    ),
+                )
+        except (TransitionConflict, IntegrityError):
+            # IntegrityError: a live (not revoked) link to that remote community already exists.
             return JsonResponse({"error": "conflict"}, status=409)
         if peer.status != "active":
             peer.status = "active"
@@ -559,7 +570,9 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
         messages.success(request, "Link requested — the one-time pairing code is pinned below.")
 
     def _approve(self, request, member, _action):
-        peer = get_object_or_404(FederationPeer, pk=request.POST.get("peer_id"), status="pending")
+        peer = get_object_or_404(
+            FederationPeer, pk=_uuid_or_404(request.POST.get("peer_id")), status__in=("pending", "active")
+        )
         code = str(request.POST.get("code", "")).strip().upper()[:32]
         if peer.is_pairing_expired() or not crypto.codes_match(
             peer.pairing_hash, crypto.remote_code_hash(code, peer.pairing_salt)
@@ -612,14 +625,16 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
             client_mod.post_confirm(peer.base_url, payload, {"X-UMI-Signature": signature})
         except FederationClientError as e:
             messages.warning(request, f"Link approved locally, but confirming to the peer failed: {e}")
-        peer.status = "active"
         peer.pairing_salt = ""
         peer.pairing_hash = ""
         peer.pairing_expires_at = None
-        peer.approved_by = member
-        peer.save(
-            update_fields=["status", "pairing_salt", "pairing_hash", "pairing_expires_at", "approved_by", "updated_at"]
-        )
+        fields = ["pairing_salt", "pairing_hash", "pairing_expires_at", "updated_at"]
+        if peer.status != "active":
+            # A peer already active (this is its second community) keeps who approved it first.
+            peer.status = "active"
+            peer.approved_by = member
+            fields += ["status", "approved_by"]
+        peer.save(update_fields=fields)
         emit("fed.link_approved", link, user=request.user, request=request, details={"origin": "admin"})
         messages.success(request, "Peer approved — the link is active.")
 
@@ -632,7 +647,12 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
 
     def _transition(self, request, member, action):
         target, audit_action = self.TRANSITION_ACTIONS[action]
-        link = get_object_or_404(FederationLink, pk=request.POST.get("link_id"), community=self.community)
+        link = get_object_or_404(FederationLink, pk=_uuid_or_404(request.POST.get("link_id")), community=self.community)
+        if action == "resume" and link.status != "suspended":
+            # pending -> active is the peer's signed confirm, never an admin click: resuming a
+            # pending link activated one the peer never confirmed (2026-10 bug hunt, L59).
+            messages.error(request, "Only a suspended link can be resumed.")
+            return
         try:
             with transaction.atomic():
                 link.transition_to(target)
@@ -661,7 +681,15 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
 
                     shred_link_event_payloads(link)
                 if target == "revoked":
+                    revoked = list(link.shares.filter(status="active").select_related("need", "offer"))
                     link.shares.filter(status="active").update(status="revoked", revoked_at=timezone.now())
+                    for share in revoked:
+                        # A record shared nowhere any more is local again, as unsharing makes it
+                        # (2026-10 bug hunt, L63: it stayed marked "federated").
+                        record, field = (share.need, "need") if share.need_id else (share.offer, "offer")
+                        if not FederatedShare.objects.filter(status="active", **{field: record}).exists():
+                            record.share_scope = "local"
+                            record.save(update_fields=["share_scope", "updated_at"])
                     # Cancel in-flight authoritative Matches created via this link:
                     # once the peer is cut, a federated match can't proceed, so we
                     # tear them down (not just stop new proposals). transition_to
@@ -799,7 +827,7 @@ class FederatedProposeView(LoginRequiredMixin, FederationGateMixin, View):
         shadow = get_object_or_404(
             ShadowListing, pk=shadow_id, link__community=community, link__status="active", kind="need"
         )
-        offer = get_object_or_404(Offer, pk=request.POST.get("offer_id"), community=community)
+        offer = get_object_or_404(Offer, pk=_uuid_or_404(request.POST.get("offer_id")), community=community)
         try:
             mirror.send_proposal(shadow, offer, actor_user=request.user)
         except mirror.ProposalError as e:
@@ -900,11 +928,11 @@ class FederatedShareToggleView(LoginRequiredMixin, FederationGateMixin, View):
         model = {"need": Need, "offer": Offer}.get(kind)
         if model is None:
             return JsonResponse({"error": "invalid kind"}, status=400)
-        record = get_object_or_404(model, pk=request.POST.get("record_id"), community=community)
+        record = get_object_or_404(model, pk=_uuid_or_404(request.POST.get("record_id")), community=community)
         owner_user_id = record.requester.user_id if kind == "need" else record.offerer.user_id
         if owner_user_id != request.user.id:
             raise Http404  # only the person whose record it is may share it
-        link = get_object_or_404(FederationLink, pk=request.POST.get("link_id"), community=community)
+        link = get_object_or_404(FederationLink, pk=_uuid_or_404(request.POST.get("link_id")), community=community)
         action = request.POST.get("action")
 
         if action == "share":

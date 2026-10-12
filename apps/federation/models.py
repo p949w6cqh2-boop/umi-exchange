@@ -113,7 +113,15 @@ class FederationLink(StateMachineMixin, models.Model):
     class Meta:
         db_table = "federation_link"
         ordering = ["-created_at"]
-        unique_together = [["peer", "community", "remote_community_uuid"]]
+        constraints = [
+            # One live link per (peer, community, remote community). Revoked is terminal history:
+            # counting it made every re-link after a revoke fail on this key (2026-10 bug hunt #18).
+            models.UniqueConstraint(
+                fields=["peer", "community", "remote_community_uuid"],
+                condition=~models.Q(status="revoked"),
+                name="fed_link_one_live_per_pair",
+            ),
+        ]
         indexes = [models.Index(fields=["community", "status"])]
 
     def __str__(self):
