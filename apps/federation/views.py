@@ -89,6 +89,30 @@ def _uuid_or_404(raw):
         raise Http404("malformed id")
 
 
+def _scoped_link(peer, scope):
+    """(link, error): the one active link to `peer` a request is for (2026-10 bug hunt #6).
+
+    A request names it by our community and theirs. Unnamed, a peer with a single active link
+    means that one, which cannot leak; with two or more it must name one, or a record shared
+    with one of its communities would reach all of them. A named link that isn't active (or
+    doesn't exist) serves nothing.
+    """
+    community, peer_community = scope.get("community"), scope.get("peer_community")
+    if community or peer_community:
+        try:
+            community, peer_community = uuid.UUID(str(community)), uuid.UUID(str(peer_community))
+        except ValueError:
+            return None, "invalid_scope"
+        link = FederationLink.objects.filter(
+            peer=peer, status="active", community_id=community, remote_community_uuid=peer_community
+        ).first()
+        return link, None
+    links = list(FederationLink.objects.filter(peer=peer, status="active")[:2])
+    if len(links) > 1:
+        return None, "scope_required"
+    return (links[0] if links else None), None
+
+
 def _object(value):
     """A nested field that must be a JSON object; anything else reads as empty, so the existing
     field checks refuse it with their own 400."""
@@ -241,15 +265,18 @@ class DiscoveryView(FederationGateMixin, View):
         # underlying record is hidden, matched or withdrawn, so a removed
         # member's need kept being advertised to the peer indefinitely. Gate on
         # the live record too — the same two filters the local board applies.
+        link, error = _scoped_link(peer, request.GET)
+        if error:
+            return JsonResponse({"error": error}, status=400)
         live_record = Q(need__status="open", need__moderation_hidden=False) | Q(
             offer__status="active", offer__moderation_hidden=False
         )
         shares = (
-            FederatedShare.objects.filter(link__peer=peer, link__status="active", status="active")
+            FederatedShare.objects.filter(link=link, link__status="active", status="active")
             .filter(live_record)
             .select_related("link__community", "need__category", "offer__category")
         )
-        listings = [redact(s) for s in shares]
+        listings = [redact(s) for s in shares] if link is not None else []
         emit("fed.discovery_served", peer, request=request, details={"count": len(listings)})
         return JsonResponse({"listings": listings})
 
@@ -319,6 +346,9 @@ class ProposalsView(FederationGateMixin, View):
         payload = _json_object(request)
         if payload is None:
             return JsonResponse({"error": "invalid JSON"}, status=400)
+        link, error = _scoped_link(peer, _object(payload.get("link")))
+        if error:
+            return JsonResponse({"error": error}, status=400)
 
         results = []
         for item in (payload.get("proposals") or [])[:50]:
@@ -331,12 +361,16 @@ class ProposalsView(FederationGateMixin, View):
             except (ValueError, TypeError):
                 results.append({"status": "error", "error": "invalid uuid"})
                 continue
-            result = matching.receive_proposal(
-                peer,
-                need_remote_uuid=need_remote_uuid,
-                proposal_uuid=proposal_uuid,
-                blind_token=item.get("blind_token"),
-            )
+            if link is None:
+                result = {"status": "rejected", "reason": "not_shared"}
+            else:
+                result = matching.receive_proposal(
+                    peer,
+                    need_remote_uuid=need_remote_uuid,
+                    proposal_uuid=proposal_uuid,
+                    blind_token=item.get("blind_token"),
+                    link=link,
+                )
             result["proposal_uuid"] = str(proposal_uuid)
             results.append(result)
         return JsonResponse({"results": results})

@@ -78,6 +78,9 @@ def send_proposal(shadow, offer, *, actor_user):
         item["blind_token"] = crypto.blind_token(bytes(link.pairing_pepper), email)
 
     payload = {"proposals": [item]}
+    if link.remote_community_uuid is not None:
+        # From the authority's side, "community" is theirs and "peer_community" ours (bug hunt #6).
+        payload["link"] = {"community": str(link.remote_community_uuid), "peer_community": str(link.community_id)}
     url = client_mod.proposals_url(link.peer.base_url)
     signature = crypto.sign_request("POST", url, json.dumps(payload).encode(), aud=link.peer.instance_id)
     try:

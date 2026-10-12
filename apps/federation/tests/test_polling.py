@@ -38,7 +38,7 @@ def _row(remote, kind="need", **kw):
 
 def _mock_feed(monkeypatch, listings):
     monkeypatch.setattr(
-        "apps.federation.polling.client_mod.get_discovery", lambda base_url, headers: {"listings": listings}
+        "apps.federation.polling.client_mod.get_discovery", lambda base_url, headers, **scope: {"listings": listings}
     )
 
 
@@ -75,7 +75,7 @@ def test_poll_updates_existing_in_place(fed_settings, active_link, remote, monke
 
 
 def test_poll_unreachable_peer_is_audited_not_fatal(fed_settings, active_link, monkeypatch):
-    def boom(base_url, headers):
+    def boom(base_url, headers, **scope):
         raise FederationClientError("timeout")
 
     monkeypatch.setattr("apps.federation.polling.client_mod.get_discovery", boom)

@@ -64,6 +64,12 @@ Federation introduces all four — the revocation-audit gap gets fixed as part o
 ### 2.1 Topology: pull, peer-to-peer, directory optional
 - **Pull, not push** (DESIGN DECISION, not in sources): a peer polls
   `GET /federation/v1/discovery` on each active link (default every 15 min via django-q2).
+  **Each poll names its link** (BUILT 2026-10-12, bug hunt #6): `?community=<the serving
+  instance's community uuid>&peer_community=<the polling instance's community uuid>`, inside
+  the signed `htu`. The server answers with that link's shares only. Two links to one peer
+  instance are allowed, and an unscoped feed advertised a record shared with one of its
+  communities to all of them. A peer with a single active link may still poll unscoped (it
+  cannot leak); with two or more, an unscoped poll is `400 scope_required`.
   Rationale: push requires the receiver to accept unsolicited writes (larger authz surface);
   pull means an unreachable peer degrades to "stale listings", never to data loss; and the
   home instance serves only what is currently shared — revocation is effective at the next poll
@@ -483,8 +489,8 @@ per-item `status` (`created` / `duplicate` / `applied` / `conflict` / `rejected`
 | `GET /.well-known/umi-federation` | none (public, cacheable) | instance document (§3.1) |
 | `POST /federation/v1/handshake` | self-signed doc + pairing code | link request (§3.3); 5/hr/IP |
 | `POST /federation/v1/handshake/confirm` | signed | complete pairing |
-| `GET /federation/v1/discovery?since=<iso>&cursor=` | signed | `{"listings": [≤50 rows §2.2], "next": cursor|null}`; deltas since last poll incl. tombstones `{"remote_uuid":..., "gone": true}` |
-| `POST /federation/v1/proposals` | signed | `{"proposals": [{proposal_uuid, need_remote_uuid, offer: {title≤200, category_slug, radius_km?}, blind_token?, attestation_ref?}]}` → per-item `created/duplicate/rejected(gone|self_match|not_shared)` |
+| `GET /federation/v1/discovery?community=&peer_community=&since=<iso>&cursor=` | signed | `{"listings": [≤50 rows §2.2], "next": cursor|null}`; deltas since last poll incl. tombstones `{"remote_uuid":..., "gone": true}`. Scoped to one link (§2.1); `400 scope_required` when a multi-link peer omits it |
+| `POST /federation/v1/proposals` | signed | `{"link": {community, peer_community}, "proposals": [{proposal_uuid, need_remote_uuid, offer: {title≤200, category_slug, radius_km?}, blind_token?, attestation_ref?}]}` → per-item `created/duplicate/rejected(gone|self_match|not_shared)`; an ask not shared on the named link is `not_shared` |
 | `POST /federation/v1/matches/<uuid>/events` | signed | `{"events": [{event_uuid, event: accepted|cancel_requested|fulfilled|unfulfilled|expired, contact?: contact_dict}]}` → `applied/duplicate/conflict{authoritative_state}` |
 | `GET /federation/v1/matches/<uuid>` | signed | signed authoritative state (mirror re-sync) |
 | `POST /federation/v1/consent/revocations` | signed | `{"revocations": [{receipt_id, record, reason}]}` → `shredded/unknown` (§4.3) |

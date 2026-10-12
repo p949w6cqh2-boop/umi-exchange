@@ -23,10 +23,15 @@ MAX_ROWS = 500
 def poll_link(link) -> int:
     """Fetch `link`'s peer feed and upsert ShadowListings. Returns the number
     of live rows after the poll. Unreachable peer → audited, no rows changed."""
-    url = client_mod.discovery_url(link.peer.base_url)
+    # Name the link being polled, so the peer serves only what was shared on it (2026-10 bug
+    # hunt #6). From the serving side, "community" is theirs and "peer_community" ours.
+    scope = {}
+    if link.remote_community_uuid is not None:
+        scope = {"community": str(link.remote_community_uuid), "peer_community": str(link.community_id)}
+    url = client_mod.discovery_url(link.peer.base_url, **scope)
     signature = crypto.sign_request("GET", url, b"", aud=link.peer.instance_id)
     try:
-        data = client_mod.get_discovery(link.peer.base_url, {"X-UMI-Signature": signature})
+        data = client_mod.get_discovery(link.peer.base_url, {"X-UMI-Signature": signature}, **scope)
     except client_mod.FederationClientError as e:
         emit("fed.peer_unreachable", link, details={"peer": link.peer.instance_id, "error": str(e)[:100]})
         outbox.mark_link_unreachable(link)

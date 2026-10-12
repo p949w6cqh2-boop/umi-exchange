@@ -60,8 +60,9 @@ def _is_requester_self_match(need, link, incoming_token) -> bool:
     return hmac.compare_digest(crypto.blind_token(bytes(link.pairing_pepper), email), str(incoming_token))
 
 
-def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None) -> dict:
-    """Handle one inbound proposal. Idempotent on (link, proposal_uuid)."""
+def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None, link=None) -> dict:
+    """Handle one inbound proposal. Idempotent on (link, proposal_uuid). With `link` (the view
+    always resolves one), the ask must have been shared on that link (2026-10 bug hunt #6)."""
     from apps.needs.models import Need
 
     # link__status="active" is load-bearing: revoking/suspending a link only
@@ -69,13 +70,12 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None)
     # revoked link's still-"active" share would keep accepting proposals — the
     # exact containment the threat model relies on ("revoke link → immediate
     # 403"). Mirrors DiscoveryView's already-correct share query.
-    share = (
-        FederatedShare.objects.filter(
-            link__peer=peer, link__status="active", remote_uuid=need_remote_uuid, status="active"
-        )
-        .select_related("need", "link")
-        .first()
+    shares = FederatedShare.objects.filter(
+        link__peer=peer, link__status="active", remote_uuid=need_remote_uuid, status="active"
     )
+    if link is not None:
+        shares = shares.filter(link=link)
+    share = shares.select_related("need", "link").first()
     if share is None or share.need_id is None:
         return {"status": "rejected", "reason": "not_shared"}
     link = share.link

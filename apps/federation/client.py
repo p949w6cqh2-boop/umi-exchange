@@ -11,7 +11,7 @@ import json
 import socket
 import urllib.error
 import urllib.request
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from django.conf import settings
 
@@ -132,14 +132,20 @@ def confirm_url(base_url: str) -> str:
     return base_url.rstrip("/") + "/federation/v1/handshake/confirm"
 
 
-def discovery_url(base_url: str) -> str:
-    return base_url.rstrip("/") + "/federation/v1/discovery"
+def discovery_url(base_url: str, *, community=None, peer_community=None) -> str:
+    """The discovery feed, scoped to one link when both ends are named: `community` is the
+    serving instance's community, `peer_community` the polling one's (2026-10 bug hunt #6)."""
+    url = base_url.rstrip("/") + "/federation/v1/discovery"
+    if community and peer_community:
+        url += "?" + urlencode({"community": community, "peer_community": peer_community})
+    return url
 
 
-def get_discovery(base_url: str, headers: dict) -> dict:
+def get_discovery(base_url: str, headers: dict, *, community=None, peer_community=None) -> dict:
     """Signed GET of a peer's discovery feed. The caller builds the
-    X-UMI-Signature header (crypto.sign_request over method+url+empty body)."""
-    return _request("GET", discovery_url(base_url), None, headers)
+    X-UMI-Signature header (crypto.sign_request over method+url+empty body),
+    over the same scoped URL."""
+    return _request("GET", discovery_url(base_url, community=community, peer_community=peer_community), None, headers)
 
 
 def revocations_url(base_url: str) -> str:
