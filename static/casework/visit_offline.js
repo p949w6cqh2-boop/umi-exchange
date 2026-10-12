@@ -5,6 +5,9 @@
  * - On reconnect (or page load), POSTs the queue to /cases/sync/; replies of
  *   "created"/"duplicate" clear items; a 403 {"reauth": true} keeps the
  *   queue and surfaces the re-auth link (4-hour rule).
+ * Each draft names its author (data-user-id): only the signed-in person's
+ * drafts are sent, and another account's stay queued for them (2026-10 bug
+ * hunt: a shared parish tablet filed one coordinator's notes under the next).
  * The only PII cached is the note body the user typed into their own queued
  * drafts; it is encrypted at rest in IndexedDB with a non-extractable
  * AES-GCM key and decrypted only in-memory, just before sync. The cached
@@ -17,6 +20,8 @@
   var syncUrl = form.dataset.syncUrl;
   var manifestUrl = form.dataset.manifestUrl;
   var swUrl = form.dataset.swUrl;
+  var userId = form.dataset.userId || "";
+  function isMine(draft) { return !!userId && draft.author === userId; }
   var banner = document.getElementById("offline-banner");
   var bannerText = document.getElementById("offline-banner-text");
   var reauthLink = document.getElementById("offline-reauth-link");
@@ -135,9 +140,15 @@
   }
   function refreshBanner() {
     allDrafts().then(function (items) {
-      if (items.length) {
-        showBanner(items.length + " visit(s) queued on this device — " +
-          (navigator.onLine ? "syncing…" : "will sync when you're back online."), false);
+      var mine = items.filter(isMine).length;
+      var others = items.length - mine;
+      var waiting = others ? " " + others + " more were saved here by another account and wait for them." : "";
+      if (mine) {
+        showBanner(mine + " visit(s) queued on this device — " +
+          (navigator.onLine ? "syncing…" : "will sync when you're back online.") + waiting, false);
+      } else if (others) {
+        showBanner(others + " visit(s) saved on this device by another account are waiting for them " +
+          "to sign in. They are never sent from yours.", false);
       } else if (navigator.onLine) {
         banner.hidden = true;
       }
@@ -156,6 +167,7 @@
     var body = form.querySelector('[name="body"]').value;
     var draft = {
       client_uuid: form.querySelector('[name="client_uuid"]').value,
+      author: userId,
       case_id: form.querySelector('[name="case"]').value,
       kind: form.querySelector('[name="kind"]').value,
       occurred_at: form.querySelector('[name="occurred_at"]').value,
@@ -183,7 +195,9 @@
   var flushing = false;
   function flush() {
     if (flushing || !navigator.onLine) return;
-    allDrafts().then(function (items) {
+    allDrafts().then(function (all) {
+      // Only this person's drafts: another account's stay queued for them.
+      var items = all.filter(isMine);
       if (!items.length) { refreshBanner(); return; }
       flushing = true;
       // Decrypt each body in-memory and build a plaintext copy for the wire;

@@ -722,6 +722,13 @@ class SyncView(CommunityMixin, View):
             cu = str(uuid.UUID(str(raw_cu)))
         except (ValueError, TypeError, AttributeError):
             return {"client_uuid": None, "status": "error", "error": "invalid client_uuid"}
+        # A queued draft names the account that wrote it (visit_offline.js). On a shared device
+        # the next person to sign in must not file someone else's notes as their own (2026-10
+        # bug hunt). A draft queued before drafts carried an author has none and is accepted;
+        # the client no longer sends those, since nobody can tell whose they are.
+        author = item.get("author")
+        if author not in (None, "") and str(author) != str(request.user.pk):
+            return {"client_uuid": cu, "status": "error", "error": "wrong_author"}
         # Same pre-validation as client_uuid above, and for the same reason: a
         # non-uuid case_id (a legacy short_code, a corrupted IndexedDB entry) makes
         # UUIDField raise django.core.exceptions.ValidationError — not ValueError or
