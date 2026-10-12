@@ -69,6 +69,23 @@ class FederationGateMixin:
 # ── Public instance document (§3.1) ──────────────────
 
 
+def _json_object(request):
+    """The request body as a JSON object, or None. Valid JSON of another shape (a list, a string,
+    a number) used to reach payload.get() and answer 500 instead of 400; the handshake is
+    anonymous, so anyone could trigger it (2026-10 bug hunt)."""
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _object(value):
+    """A nested field that must be a JSON object; anything else reads as empty, so the existing
+    field checks refuse it with their own 400."""
+    return value if isinstance(value, dict) else {}
+
+
 class WellKnownView(FederationGateMixin, View):
     def get(self, request):
         resp = JsonResponse({"umi_federation": "1", "document": crypto.build_instance_document()})
@@ -89,9 +106,8 @@ class HandshakeView(FederationGateMixin, View):
     def post(self, request):
         if len(request.body) > MAX_BODY_BYTES:
             return JsonResponse({"error": "too_large"}, status=400)
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
+        payload = _json_object(request)
+        if payload is None:
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
         try:
@@ -99,10 +115,10 @@ class HandshakeView(FederationGateMixin, View):
         except FederationAuthError:
             return JsonResponse({"error": "bad_document"}, status=400)
 
-        pairing = payload.get("pairing") or {}
+        pairing = _object(payload.get("pairing"))
         salt = str(pairing.get("salt", ""))[:64]
         code_hash = str(pairing.get("hash", ""))[:64]
-        community = payload.get("community") or {}
+        community = _object(payload.get("community"))
         if not (salt and code_hash):
             return JsonResponse({"error": "bad_pairing"}, status=400)
 
@@ -146,9 +162,8 @@ class HandshakeConfirmView(FederationGateMixin, View):
             peer, _claims = crypto.verify_signed_request(request)
         except FederationAuthError as e:
             return JsonResponse({"error": e.code}, status=403)
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
+        payload = _json_object(request)
+        if payload is None:
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
         # Normalize like the minting/entry sides (mint is uppercase; the admin
@@ -164,7 +179,7 @@ class HandshakeConfirmView(FederationGateMixin, View):
         if link is None or not link.pairing_code_hash or link.is_pairing_expired():
             return JsonResponse({"error": "bad_pairing"}, status=403)
 
-        remote_c = payload.get("community") or {}
+        remote_c = _object(payload.get("community"))
         try:
             remote_uuid = uuid.UUID(str(remote_c.get("uuid", "")))
         except ValueError:
@@ -244,9 +259,8 @@ class ConsentRevocationsView(FederationGateMixin, View):
             return JsonResponse({"error": e.code}, status=403)
         if _peer_over_cap("revocations", peer):
             return JsonResponse({"error": "rate_limited"}, status=429)
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
+        payload = _json_object(request)
+        if payload is None:
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
         results = []
@@ -291,9 +305,8 @@ class ProposalsView(FederationGateMixin, View):
             return JsonResponse({"error": e.code}, status=403)
         if _peer_over_cap("proposals", peer):
             return JsonResponse({"error": "rate_limited"}, status=429)
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
+        payload = _json_object(request)
+        if payload is None:
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
         results = []
@@ -347,9 +360,8 @@ class MatchEventsView(FederationGateMixin, View):
             peer, _claims = crypto.verify_signed_request(request)
         except FederationAuthError as e:
             return JsonResponse({"error": e.code}, status=403)
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
+        payload = _json_object(request)
+        if payload is None:
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
         if _peer_over_cap("events", peer):
@@ -962,9 +974,8 @@ class AttestationsQueryView(FederationGateMixin, View):
             return JsonResponse({"error": "capability_unsupported"}, status=403)
         if _peer_over_cap("attest", peer):
             return JsonResponse({"error": "rate_limited"}, status=429)
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
+        payload = _json_object(request)
+        if payload is None:
             return JsonResponse({"error": "invalid JSON"}, status=400)
 
         results = []
