@@ -11,6 +11,8 @@ One helper module, three jobs:
   link, or a coordinator vouches in person (a robot doesn't sit in a pew).
 """
 
+import logging
+import smtplib
 import time
 
 from django.contrib import messages
@@ -20,6 +22,24 @@ from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.crypto import salted_hmac
+
+logger = logging.getLogger(__name__)
+
+
+def mail_quietly(send, *args, **kwargs):
+    """Run a send; log a delivery failure instead of raising it.
+
+    Whether mail went out must never decide the response. These views send on only SOME
+    branches (a free address gets a link, a taken one does not; a known address gets its
+    usernames, an unknown one gets nothing), so an SMTP failure that turns into a 500 says
+    which branch ran, and that is exactly the registered-or-not answer the pages refuse to
+    give (2026-10 bug hunt). Django's own PasswordResetForm swallows the same way."""
+    try:
+        send(*args, **kwargs)
+    except (smtplib.SMTPException, OSError):
+        logger.exception("mail delivery failed in %s", getattr(send, "__name__", "send"))
+
 
 EMAIL_VERIFY_SALT = "accounts.email-verify"
 HONEYPOT_TS_SALT = "accounts.register-ts"
@@ -75,17 +95,32 @@ def read_email_token(token):
 EMAIL_ADD_SALT = "accounts.email-add"
 
 
+def email_state(user):
+    """A fingerprint of the account's email as it stands now.
+
+    An add-email link carries the fingerprint from when it was sent and is refused once the
+    account's email has changed since, so confirming any address retires every older link,
+    the one just used included. Without it, a link to a mistyped inbox opened later replaced
+    the address confirmed after it, and a used link could revert a later change for 48 hours
+    (2026-10 bug hunt). The same idea as PasswordResetTokenGenerator's hash of the password."""
+    confirmed = user.email_confirmed_at.isoformat() if user.email_confirmed_at else ""
+    return salted_hmac(f"{EMAIL_ADD_SALT}.state", f"{user.pk}|{user.email or ''}|{confirmed}").hexdigest()[:32]
+
+
 def make_add_email_token(user, email):
-    return signing.dumps({"uid": str(user.pk), "email": email}, salt=EMAIL_ADD_SALT)
+    return signing.dumps({"uid": str(user.pk), "email": email, "st": email_state(user)}, salt=EMAIL_ADD_SALT)
 
 
 def read_add_email_token(token):
-    """(uid, email) from a valid, unexpired token; (None, None) otherwise."""
+    """(uid, email, state) from a valid, unexpired token; (None, None, None) otherwise.
+
+    state is None for a link sent before links carried one; those expire within 48 hours on
+    their own, so accepting them costs at most one window after the deploy."""
     try:
         data = signing.loads(token, salt=EMAIL_ADD_SALT, max_age=EMAIL_TOKEN_MAX_AGE)
     except signing.BadSignature:  # SignatureExpired subclasses BadSignature
-        return None, None
-    return data.get("uid"), data.get("email")
+        return None, None, None
+    return data.get("uid"), data.get("email"), data.get("st")
 
 
 def send_add_email_verification(request, user, email):
