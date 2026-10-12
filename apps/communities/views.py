@@ -14,10 +14,11 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.mail import send_mail
 from django.core.validators import URLValidator
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
+from django.utils import timezone as dj_timezone
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
@@ -30,7 +31,7 @@ from apps.accounts.ratelimit import rate_limit
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
 from apps.communities.identity import SCENE_LABELS, SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
-from apps.moderation.services import blocked_member_ids, flag_listed_words, review_note
+from apps.moderation.services import blocked_member_ids, flag_listed_words, leave_community, review_note
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -112,8 +113,10 @@ class JoinCommunityView(LoginRequiredMixin, VerifiedRequiredMixin, FormView):
 
 class LeaveCommunityView(LoginRequiredMixin, View):
     """POST: the requesting member leaves a community. Soft (is_active=False) so
-    history/audit/FK references survive (keyring: archive > delete). The last
-    active admin cannot leave — they'd orphan the community."""
+    history/audit/FK references survive (keyring: archive > delete). Their open
+    asks and offers come off the board, hidden and never deleted, and their matches
+    still in progress are cancelled (leave_community). The last active admin cannot
+    leave — they'd orphan the community."""
 
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug)
@@ -121,11 +124,96 @@ class LeaveCommunityView(LoginRequiredMixin, View):
         if member.is_last_active_admin:
             messages.error(request, "Make someone else an admin before you leave this community.")
             return redirect("community-feed", slug=slug)
-        member.is_active = False
-        member.save(update_fields=["is_active"])
-        emit("member.left", member, user=request.user, request=request, details={"role": member.role})
-        messages.success(request, f"You have left {community.name}.")
+        leave_community(member, request=request)
+        messages.success(
+            request,
+            f"You have left {community.name}. Your open asks and offers are off the board. "
+            "If you come back, you choose which ones return.",
+        )
         return redirect("landing")
+
+
+def _left_posts(member):
+    """What leaving hid that is still theirs to put back: open asks and active offers."""
+    needs = Need.objects.filter(requester=member, status="open", hidden_on_leave_at__isnull=False)
+    offers = Offer.objects.filter(offerer=member, status="active", hidden_on_leave_at__isnull=False)
+    return needs, offers
+
+
+class LeftPostsView(LoginRequiredMixin, TemplateView):
+    """Your posts from before you left (founder's decision 2026-10-12: "a toggle for them to
+    unhide it when they join instead of it just re posting, so they can consent").
+
+    Leaving hid them; rejoining reposts nothing. Here the member puts each one back on the
+    board, or closes it (closed, never deleted). A post a coordinator hid is not offered: its
+    hidden_on_leave_at was cleared when they hid it.
+    """
+
+    template_name = "communities/left_posts.html"
+    LIVE = {"need": (Need, "requester", "open", "closed"), "offer": (Offer, "offerer", "active", "withdrawn")}
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
+        self.member = get_object_or_404(Member, user=request.user, community=self.community, is_active=True)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        needs, offers = _left_posts(self.member)
+        ctx.update(
+            {
+                "community": self.community,
+                "member": self.member,
+                "needs": needs.select_related("category"),
+                "offers": offers.select_related("category"),
+            }
+        )
+        return ctx
+
+    def post(self, request, slug):
+        action, kind = request.POST.get("action"), request.POST.get("kind")
+        if action not in ("restore", "close") or kind not in self.LIVE:
+            return HttpResponse(status=400)
+        try:
+            pk = uuid.UUID(str(request.POST.get("id")))
+        except ValueError:
+            raise Http404("malformed id")
+        model, owner, live, closed = self.LIVE[kind]
+        with transaction.atomic():
+            post = get_object_or_404(
+                model.objects.select_for_update(),
+                pk=pk,
+                community=self.community,
+                status=live,
+                hidden_on_leave_at__isnull=False,
+                **{owner: self.member},
+            )
+            post.hidden_on_leave_at = None
+            fields = ["hidden_on_leave_at", "updated_at"]
+            if action == "restore":
+                post.moderation_hidden = False
+                fields.append("moderation_hidden")
+                now = dj_timezone.now()
+                if kind == "need" and post.expires_at <= now:
+                    # Its date passed while it was off the board: a fresh window, as a reopened ask gets.
+                    post.expires_at = now + timedelta(days=self.community.auto_expire_days)
+                    fields.append("expires_at")
+            else:
+                post.status = closed
+                fields.append("status")
+            post.save(update_fields=fields)
+        if action == "restore":
+            emit(f"{kind}.restored", post, user=request.user, request=request, details={"after_leaving": True})
+            messages.success(request, f"'{post.title}' is back on the board.")
+        else:
+            emit(f"{kind}.updated", post, user=request.user, request=request, details={"status": closed})
+            messages.success(request, f"'{post.title}' is closed. It stays in your history.")
+        needs, offers = _left_posts(self.member)
+        if needs.exists() or offers.exists():
+            return redirect("left-posts", slug=slug)
+        return redirect("community-feed", slug=slug)
 
 
 class CommunityCreateView(LoginRequiredMixin, CreateView):
@@ -379,6 +467,9 @@ class FeedView(LoginRequiredMixin, ListView):
             from apps.hub.selectors import week_stats
 
             ctx["week_stats"] = week_stats(self.community)
+            # Back after leaving: their old posts wait off the board until they choose.
+            needs, offers = _left_posts(self.member)
+            ctx["left_posts_count"] = needs.count() + offers.count()
         self._attach_poster_badges(ctx.get("items", []))
         # Federation (Stage C3): surface the cross-community board only when
         # the flag is on AND this community holds a live link (no query when off).

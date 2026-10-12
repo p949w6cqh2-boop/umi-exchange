@@ -81,7 +81,7 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         ctx["is_own_offer"] = member and offer.offerer == member
         # §8.2: contact locked for ordinary members; coordinators get audited oversight.
         contact_info = None
-        if member and member.is_coordinator and offer.offerer != member:
+        if member and member.is_coordinator and offer.offerer != member and offer.offerer.is_active:
             contact_info = offer.offerer.contact_dict(offer.contact_pref)
             emit(
                 "offer.contact_disclosed",

@@ -86,6 +86,78 @@ def blocked_member_ids(member):
     return set(made) | set(got)
 
 
+def _cancel_in_flight_matches(member):
+    """Cancel every proposed or accepted match `member` is a party to, and return them.
+
+    Cancelling from accepted re-opens the counterpart's need or offer (Match.transition_to).
+    Each match is locked Need first, the order MatchUpdateView and the hourly sweep take, and
+    re-read under its lock: the ids were listed before the loop, so a match fulfilled or
+    cancelled in between is left alone, not rewritten. (of=("self",): select_related pulls
+    the nullable offer in as an outer join, and Postgres refuses FOR UPDATE on its nullable
+    side.) Call it inside a transaction.
+    """
+    from apps.matches.models import Match
+    from apps.needs.models import Need
+
+    in_flight = list(
+        Match.objects.filter(status__in=("proposed", "accepted"))
+        .filter(Q(need__requester=member) | Q(offer__offerer=member) | Q(proposed_by=member))
+        .order_by("pk")
+        .values_list("pk", "need_id")
+    )
+    cancelled = []
+    for pk, need_id in in_flight:
+        Need.objects.select_for_update().get(pk=need_id)
+        match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
+        if match.status not in ("proposed", "accepted"):
+            continue
+        match.transition_to("cancelled")
+        cancelled.append(match)
+    return cancelled
+
+
+def leave_community(member, *, request=None):
+    """A member's own choice to leave (founder's decision 2026-10-12, bug hunt #8).
+
+    Leaving used to withdraw nothing: their asks stayed on the board, neighbours proposed on
+    them, and they were emailed links that 404. Now it deactivates the membership, cancels the
+    matches still in progress (nobody could answer them; each other person is told), and takes
+    their open asks and active offers off the board: hidden, never deleted, and stamped
+    hidden_on_leave_at, so that coming back reposts nothing until they choose (LeftPostsView).
+    Unlike a removal there is no removal stamp: they can rejoin with the code. Returns the
+    audited counts.
+    """
+    from apps.needs.models import Need
+    from apps.notifications.adapter import NotificationAdapter
+    from apps.offers.models import Offer
+
+    now = timezone.now()
+    with transaction.atomic():
+        cancelled = _cancel_in_flight_matches(member)
+        needs_hidden = Need.objects.filter(requester=member, status="open", moderation_hidden=False).update(
+            moderation_hidden=True, hidden_on_leave_at=now
+        )
+        offers_hidden = Offer.objects.filter(offerer=member, status="active", moderation_hidden=False).update(
+            moderation_hidden=True, hidden_on_leave_at=now
+        )
+        member.is_active = False
+        member.save(update_fields=["is_active"])
+
+    counts = {"matches_cancelled": len(cancelled), "needs_hidden": needs_hidden, "offers_hidden": offers_hidden}
+    emit("member.left", member, user=member.user, request=request, details={"role": member.role, **counts})
+    slug = member.community.slug
+    for match in cancelled:
+        for other in {match.need.requester, match.helper_member} - {member}:
+            NotificationAdapter.send(
+                other.user,
+                "match_cancelled",
+                f"Match on '{match.need.title}' was cancelled",
+                "Open the match to see where things stand.",
+                link=f"/c/{slug}/matches/{match.id}/",
+            )
+    return counts
+
+
 def remove_member(member, *, by, request=None):
     """Durably remove `member` from their community.
 
@@ -94,29 +166,11 @@ def remove_member(member, *, by, request=None):
     in-flight match they are a party to (which re-opens the counterpart's need
     or offer). Returns the audited counts.
     """
-    from apps.matches.models import Match
     from apps.needs.models import Need
     from apps.offers.models import Offer
 
     with transaction.atomic():
-        # In-flight matches where this member is any party → cancel. Cancelling
-        # from "accepted" re-opens the counterpart's need/offer (see Match.transition_to).
-        in_flight_ids = list(
-            Match.objects.filter(status__in=("proposed", "accepted"))
-            .filter(Q(need__requester=member) | Q(offer__offerer=member) | Q(proposed_by=member))
-            .values_list("pk", flat=True)
-        )
-        cancelled = 0
-        for pk in in_flight_ids:
-            # Lock and re-read each row: the ids were listed before this loop, so a
-            # match fulfilled or cancelled in between must be left alone, not
-            # rewritten. (of=("self",): select_related pulls the nullable offer in
-            # as an outer join, and Postgres refuses FOR UPDATE on its nullable side.)
-            match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
-            if match.status not in ("proposed", "accepted"):
-                continue
-            match.transition_to("cancelled")
-            cancelled += 1
+        cancelled = len(_cancel_in_flight_matches(member))
 
         needs_hidden = Need.objects.filter(requester=member, status="open", moderation_hidden=False).update(
             moderation_hidden=True
@@ -151,14 +205,19 @@ def reinstate_member(member, *, by, request=None):
     Note: this unhides their open needs / active offers. If a single item had
     also been hidden by a separate content flag, reinstating the member unhides
     it too — the `moderation_hidden` boolean does not distinguish who hid it. A
-    coordinator can re-hide that one item from the queue.
+    coordinator can re-hide that one item from the queue. What their own leaving
+    hid (hidden_on_leave_at) stays hidden: that is theirs to put back.
     """
     from apps.needs.models import Need
     from apps.offers.models import Offer
 
     with transaction.atomic():
-        Need.objects.filter(requester=member, status="open", moderation_hidden=True).update(moderation_hidden=False)
-        Offer.objects.filter(offerer=member, status="active", moderation_hidden=True).update(moderation_hidden=False)
+        Need.objects.filter(
+            requester=member, status="open", moderation_hidden=True, hidden_on_leave_at__isnull=True
+        ).update(moderation_hidden=False)
+        Offer.objects.filter(
+            offerer=member, status="active", moderation_hidden=True, hidden_on_leave_at__isnull=True
+        ).update(moderation_hidden=False)
         member.is_active = True
         member.removed_at = None
         member.removed_by = None

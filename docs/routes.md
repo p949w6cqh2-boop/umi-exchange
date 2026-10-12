@@ -108,6 +108,7 @@
 | GET | `/c/<slug:slug>/welcome/` | CommunityWelcomeView | login | `community-welcome` |
 | GET,POST | `/c/<slug:slug>/resources/` | ResourceListView | login | `community-resources` |
 | POST | `/c/<slug:slug>/leave/` | LeaveCommunityView | login | `community-leave` |
+| GET,POST | `/c/<slug:slug>/posts-from-before/` | LeftPostsView | login | `left-posts` |
 | GET | `/c/<slug:slug>/settings/qr/` | JoinCodeQRView | login | `join-code-qr` |
 | GET | `/c/<slug:slug>/dashboard/` | DashboardView | login | `community-dashboard` |
 | GET | `/c/<slug:slug>/dashboard/export/` | DashboardExportView | login | `dashboard-export` |
@@ -143,4 +144,4 @@
 | GET | `/account/two_factor/` | ProfileView | public | `profile` |
 | GET,POST | `/account/two_factor/disable/` | DisableView | public | `disable` |
 
-_127 routes, generated from the live URLconf by `scripts/gen_routes.py`._
+_128 routes, generated from the live URLconf by `scripts/gen_routes.py`._

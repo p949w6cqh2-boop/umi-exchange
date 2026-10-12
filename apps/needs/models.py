@@ -32,6 +32,11 @@ class Need(models.Model):
     status = models.CharField(max_length=10, default="open", choices=STATUS_CHOICES)
     # Reversible coordinator action (moderation queue) — never a delete.
     moderation_hidden = models.BooleanField(default=False)
+    # Set when its author left the community and leaving took it off the board (hidden, never
+    # deleted). Coming back reposts nothing: the author puts it back or closes it
+    # (LeftPostsView). Cleared when they do, or when a coordinator hides it, so their choice can
+    # never undo a coordinator's (founder's decision 2026-10-12).
+    hidden_on_leave_at = models.DateTimeField(null=True, blank=True)
     # Federation (Stage B): per-record opt-in, default OFF. "federated" makes a
     # REDACTED row discoverable to linked communities that carry an active
     # consent; identity/contact/free-text never cross (see apps/federation).

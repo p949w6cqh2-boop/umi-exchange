@@ -92,7 +92,7 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         # §8.2: contact stays locked for ordinary members (revealed only via an
         # accepted match). Coordinators get oversight access here — audited (§8.3).
         contact_info = None
-        if member and member.is_coordinator and need.requester != member:
+        if member and member.is_coordinator and need.requester != member and need.requester.is_active:
             contact_info = need.requester.contact_dict(need.contact_pref)
             emit(
                 "need.contact_disclosed",

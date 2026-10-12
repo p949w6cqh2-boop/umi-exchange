@@ -161,6 +161,11 @@ class Member(models.Model):
         """§8.2 contact shape: display name + only the channels `pref` opts into.
         Shared by match contact-revelation and coordinator oversight on need/offer detail."""
         info = {"display_name": self.display_name, "preference": pref}
+        # Someone who left (or was removed) is no longer handed out: not to a coordinator, not to
+        # an old match partner, and never a number they changed after leaving (bug hunt #8).
+        if not self.is_active:
+            info["left"] = True
+            return info
         # A neighbour is handed this address to reach the member — so only an address
         # the member has PROVEN they read (#172). An unproven one may be someone else's.
         if pref in ("email", "any") and self.user.deliverable_email:

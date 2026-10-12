@@ -202,7 +202,13 @@ class FlagResolveView(LoginRequiredMixin, View):
                     remove_member(target, by=member, request=request)
                 else:
                     target.moderation_hidden = True
-                    target.save(update_fields=["moderation_hidden"])
+                    fields = ["moderation_hidden"]
+                    if getattr(target, "hidden_on_leave_at", None) is not None:
+                        # Hidden when its author left: now a coordinator's hide, which the
+                        # author's choice on coming back must never undo.
+                        target.hidden_on_leave_at = None
+                        fields.append("hidden_on_leave_at")
+                    target.save(update_fields=fields)
                     emit(
                         "content.hidden",
                         target,

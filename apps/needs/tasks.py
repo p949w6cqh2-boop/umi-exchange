@@ -70,13 +70,15 @@ def expire_stale_needs():
 
         # Notify the requester outside the row lock: the send is synchronous, and
         # holding a lock across it is what made the stale-candidate window wide.
-        NotificationAdapter.send(
-            need.requester.user,
-            "need_expired",
-            f'Your need "{need.title}" has expired.',
-            "You can repost it if you still need help.",
-            link=need.get_absolute_url(),
-        )
+        # Not someone who left: the link would 404 for them (bug hunt #8).
+        if need.requester.is_active:
+            NotificationAdapter.send(
+                need.requester.user,
+                "need_expired",
+                f'Your need "{need.title}" has expired.',
+                "You can repost it if you still need help.",
+                link=need.get_absolute_url(),
+            )
         count += 1
 
     return f"Expired {count} needs"

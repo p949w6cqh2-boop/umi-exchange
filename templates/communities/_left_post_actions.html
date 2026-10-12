@@ -1,0 +1,12 @@
+<form method="post" action="{% url 'left-posts' community.slug %}">
+  {% csrf_token %}
+  <input type="hidden" name="kind" value="{{ kind }}">
+  <input type="hidden" name="id" value="{{ post.pk }}">
+  <button name="action" value="restore" class="btn-primary text-sm !min-h-[40px] !px-3.5">Put it back</button>
+</form>
+<form method="post" action="{% url 'left-posts' community.slug %}">
+  {% csrf_token %}
+  <input type="hidden" name="kind" value="{{ kind }}">
+  <input type="hidden" name="id" value="{{ post.pk }}">
+  <button name="action" value="close" class="btn-secondary text-sm !min-h-[40px] !px-3.5">Close it</button>
+</form>

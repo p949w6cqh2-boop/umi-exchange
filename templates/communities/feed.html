@@ -19,6 +19,17 @@
   <a href="{% url 'need-create' community.slug %}" class="btn-primary hidden sm:inline-flex">Post an ask</a>
 </header>
 
+{# Back after leaving: what leaving hid waits off the board until they choose (2026-10-12). #}
+{% if left_posts_count %}
+<div class="umi-card mb-6 flex flex-wrap items-center justify-between gap-3" role="status">
+  <p class="text-base text-parish-ink max-w-prose">
+    While you were away, {{ left_posts_count }} of your post{{ left_posts_count|pluralize }} stayed off the board.
+    Only coordinators can see {{ left_posts_count|pluralize:"it,them" }} until you choose.
+  </p>
+  <a href="{% url 'left-posts' community.slug %}" class="btn-secondary text-sm">Choose what comes back</a>
+</div>
+{% endif %}
+
 {# Sticky surf bar: tabs + filters stay with you as the board scrolls. #}
 <div class="sticky top-[57px] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 umi-header rounded-b-2xl">
   <div class="flex flex-wrap items-center gap-2.5">
@@ -67,7 +78,7 @@
 
 {# Leave community — quiet, confirm before posting. #}
 <form method="post" action="{% url 'community-leave' community.slug %}" class="mt-6"
-      onsubmit="return confirm('Leave {{ community.name|escapejs }}? You can rejoin later with the code.');">
+      onsubmit="return confirm('Leave {{ community.name|escapejs }}? Your open asks and offers come off the board, and matches still in progress are cancelled. You can rejoin later with the code.');">
   {% csrf_token %}
   <button type="submit" class="text-xs text-parish-ink/40 hover:text-red-600 min-h-[44px]">Leave this community</button>
 </form>

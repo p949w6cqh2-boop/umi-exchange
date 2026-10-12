@@ -13,13 +13,16 @@
         <p class="text-base text-parish-ink font-medium {% if not forloop.first %}mt-3{% endif %}">{{ party.display_name }}</p>
         {% if party.email %}<p class="text-sm text-parish-ink/70 mt-1">Email: {{ party.email }}</p>{% endif %}
         {% if party.phone %}<p class="text-sm text-parish-ink/70 mt-1">Phone: {{ party.phone }}</p>{% endif %}
-        {% if not party.email and not party.phone %}<p class="text-sm text-parish-ink/70 mt-1">Prefers to arrange things through the community. A coordinator can pass a message.</p>{% endif %}
+        {% if party.left %}<p class="text-sm text-parish-ink/70 mt-1">Has left this community, so their contact details aren't shared any more.</p>
+        {% elif not party.email and not party.phone %}<p class="text-sm text-parish-ink/70 mt-1">Prefers to arrange things through the community. A coordinator can pass a message.</p>{% endif %}
       {% endfor %}
     {% else %}
       <p class="text-base text-parish-ink font-medium">{{ contact_info.display_name }}</p>
       {% if contact_info.email %}<p class="text-sm text-parish-ink/70 mt-1">Email: {{ contact_info.email }}</p>{% endif %}
       {% if contact_info.phone %}<p class="text-sm text-parish-ink/70 mt-1">Phone: {{ contact_info.phone }}</p>{% endif %}
-      {% if not contact_info.email and not contact_info.phone %}
+      {% if contact_info.left %}
+      <p class="text-sm text-parish-ink/70 mt-1">They've left this community, so their contact details aren't shared any more.</p>
+      {% elif not contact_info.email and not contact_info.phone %}
       <p class="text-sm text-parish-ink/70 mt-1">They prefer to arrange things through the community. A coordinator can pass a message along.</p>
       {% endif %}
     {% endif %}
