@@ -7,7 +7,8 @@
    title errors were shown), and the category, urgency and contact choices were reset.
 3. The script-pattern check refused ordinary text ("data:", "Donations = welcome") and the tag
    stripper silently deleted anything between '<' and '>'. Every place this text is shown
-   autoescapes it, so neither protected anything. The word list itself is unchanged (his call).
+   autoescapes it, so neither protected anything. (The word list then stopped refusing too:
+   since 2026-10-12 it flags for review, see tests/test_word_list_flags.py.)
 4. A community whose name slugified to an existing slug, to nothing, or to "create" failed.
 5. Cancelling an accepted match (or marking it unfulfilled) reopened the need with its old
    expiry date, so the hourly sweep expired it straight away.
@@ -92,20 +93,35 @@ def _post_need(member, category, **fields):
     return _client(member).post(reverse("need-create", args=[member.community.slug]), data)
 
 
-def test_a_refused_description_says_why_and_keeps_the_choices():
+def test_a_refused_post_says_why_and_keeps_the_choices():
+    # The word list no longer refuses anything (2026-10-12: it flags), so an over-long title
+    # stands in as the refusal here.
     community, category, asker, _, _ = _parish()
     other = CategoryFactory(community=community, name="Errands", sort_order=99)
     before = Need.objects.count()
 
-    resp = _post_need(asker, other, description="Pick up my prescription drugs", urgency="critical")
+    resp = _post_need(asker, other, title="x" * 201, description="Pick up my prescription", urgency="critical")
 
     assert resp.status_code == 200
     assert Need.objects.count() == before
     html = resp.content.decode()
-    assert "violates community guidelines" in html
+    assert "at most 200 characters" in html
     assert re.search(r'name="urgency" value="critical"[^>]*checked', html)
     assert re.search(rf'name="category" value="{other.id}"[^>]*checked', html)
     assert re.search(r'name="contact_pref" value="in_app"[^>]*checked', html)
+
+
+def test_a_category_error_is_shown():
+    # Only title errors used to reach the page; a stale or foreign category refused in silence.
+    community, category, asker, _, _ = _parish()
+    foreign = CategoryFactory(community=CommunityFactory())
+
+    resp = _post_need(asker, foreign, urgency="critical")
+
+    assert resp.status_code == 200
+    html = resp.content.decode()
+    assert "Select a valid choice" in html
+    assert re.search(r'name="urgency" value="critical"[^>]*checked', html)
 
 
 def test_a_fresh_need_form_keeps_its_safe_defaults():

@@ -23,6 +23,7 @@ from django.views.generic import ListView
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
 from apps.communities.models import Community, Member
+from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.notifications.adapter import NotificationAdapter
 from apps.offers.models import Offer
@@ -32,6 +33,7 @@ from .forms import FlagForm
 from .models import Block, Flag
 from .services import reinstate_member, remove_member
 
+# What a member can report. A match is only flagged automatically, for a listed word in its notes.
 TARGET_MODELS = {"need": Need, "offer": Offer, "member": Member, "page": CommunityPage}
 
 
@@ -47,8 +49,10 @@ def _uuid_or_404(raw):
 
 def _resolve_target(community, target_type, target_id):
     """The flagged thing, scoped HARD to this community (IDOR guard)."""
-    model = TARGET_MODELS[target_type]
     target_id = _uuid_or_404(target_id)
+    if target_type == "match":
+        return get_object_or_404(Match.objects.select_related("need"), pk=target_id, need__community=community)
+    model = TARGET_MODELS[target_type]
     if target_type == "member":
         return get_object_or_404(model, pk=target_id, community=community, is_active=True)
     if target_type == "page":
@@ -64,6 +68,8 @@ def _target_url(community, target_type, target):
         return f"/c/{community.slug}/offers/{target.pk}/"
     if target_type == "page":
         return reverse("pages:view", kwargs={"slug": community.slug, "page_slug": target.slug})
+    if target_type == "match":
+        return reverse("match-detail", args=[community.slug, target.pk])
     return f"/c/{community.slug}/"
 
 
@@ -181,6 +187,10 @@ class FlagResolveView(LoginRequiredMixin, View):
 
         with transaction.atomic():
             flag = get_object_or_404(Flag.objects.select_for_update(), pk=pk, community=community, status="open")
+            if action == "hide" and flag.target_type == "match":
+                # A match is between two people and has nothing to take off the board.
+                messages.error(request, "A match can't be hidden. Open it and talk with the two people in it.")
+                return redirect("moderation:queue", slug=community.slug)
             if action == "hide":
                 target = _resolve_target(community, flag.target_type, flag.target_id)
                 if flag.target_type == "member":
@@ -207,13 +217,14 @@ class FlagResolveView(LoginRequiredMixin, View):
             flag.save(update_fields=["status", "resolution", "resolved_by", "resolved_at"])
 
         emit(f"flag.{flag.status}", flag, user=request.user, request=request, details={"action": action})
-        NotificationAdapter.send(
-            flag.reporter.user,
-            "flag_reviewed",
-            "Your report was reviewed",
-            "A coordinator looked into the concern you raised. Thank you for speaking up.",
-            link="",
-        )
+        if flag.reporter is not None:  # an automatic flag has nobody to tell
+            NotificationAdapter.send(
+                flag.reporter.user,
+                "flag_reviewed",
+                "Your report was reviewed",
+                "A coordinator looked into the concern you raised. Thank you for speaking up.",
+                link="",
+            )
         messages.success(request, "Handled — thank you.")
         return redirect("moderation:queue", slug=community.slug)
 

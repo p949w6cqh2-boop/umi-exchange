@@ -2,9 +2,10 @@
 
 - Registration enforces password strength (AUTH_PASSWORD_VALIDATORS were unset).
 - The password-reset POST is covered by the auth rate-limit middleware.
-- MatchUpdateView returns 400 (not 500) when `notes` trips the content validator.
-  (Since the 2026-10 bug hunt that is the word list only: script-looking text is kept and
-  shown escaped, like every other free-text field.)
+- MatchUpdateView returned 500 when `notes` tripped the content validator. Notes are no longer
+  refused at all: script-looking text is kept and shown escaped (2026-10 bug hunt), and a word
+  on the review list flags the match instead (2026-10-12, tests/test_word_list_flags.py). What
+  stays pinned here is that the note's content never blocks the status change.
 - The community feed ignores a malformed ?category= instead of 500-ing.
 """
 
@@ -76,7 +77,7 @@ def _proposed_match():
     return community, requester, match
 
 
-def test_match_update_rejects_refused_notes_with_400_not_500():
+def test_match_update_with_a_listed_word_in_the_notes_still_goes_through():
     community, requester, match = _proposed_match()
 
     client = _login(requester.user)
@@ -84,9 +85,9 @@ def test_match_update_rejects_refused_notes_with_400_not_500():
         reverse("match-update", kwargs={"slug": community.slug, "pk": match.id}),
         {"status": "accepted", "notes": "Pick up my prescription drugs"},
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 302
     match.refresh_from_db()
-    assert match.status == "proposed"  # the status change did not slip through
+    assert match.status == "accepted"
 
 
 def test_match_update_keeps_script_looking_notes_and_shows_them_escaped():

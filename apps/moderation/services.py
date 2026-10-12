@@ -6,11 +6,66 @@ and *complete* (their content leaves the board and their in-flight matches are
 cancelled). Every action is audited (§8.3) with PII-free details.
 """
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
 
 from apps.audit.services import emit
+
+
+def review_note(subject):
+    """What the poster is told when a listed word flagged their text: the UI narrates its own
+    restraint and names who will see it (voice rule 4)."""
+    return f"{subject} uses a word on this community's review list, so a coordinator will take a look."
+
+
+def flag_listed_words(target, target_type, *texts, author, request=None):
+    """Put a saved post that uses a review-list word in front of the coordinators.
+
+    The word list never refuses (founder's decision, 2026-10-12): help requests need those
+    words. The post stays up, and an automatic flag (no reporter) joins the review queue; one
+    open automatic flag per target, so a second note on the same match does not pile on.
+    Every coordinator but the author is told, as for a member's report. Returns the listed
+    word the text used (whether or not a new flag was needed), or None.
+    """
+    from apps.communities.models import Member
+    from apps.communities.validators import find_listed_word
+    from apps.notifications.adapter import NotificationAdapter
+
+    from .models import Flag
+
+    word = find_listed_word(*texts)
+    if word is None:
+        return None
+    community = author.community
+    try:
+        # Inner atomic block: a duplicate's rollback stays contained instead of poisoning
+        # the caller's transaction.
+        with transaction.atomic():
+            flag = Flag.objects.create(
+                community=community,
+                reporter=None,
+                target_type=target_type,
+                target_id=target.pk,
+                reason="word_list",
+                detail=word,
+            )
+    except IntegrityError:
+        return word  # already waiting in the queue
+    emit("flag.created", flag, request=request, details={"target_type": target_type, "automatic": True})
+    for coordinator in (
+        Member.objects.filter(community=community, is_active=True, role__in=("coordinator", "admin"))
+        .exclude(pk=author.pk)
+        .select_related("user")
+    ):
+        NotificationAdapter.send(
+            coordinator.user,
+            "flag_received",
+            "A post needs a look",
+            "Something on the board uses a word on the review list.",
+            link=f"/c/{community.slug}/moderation/",
+        )
+    return word
 
 
 def is_blocked_between(member_a, member_b):

@@ -30,7 +30,7 @@ from apps.accounts.ratelimit import rate_limit
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
 from apps.communities.identity import SCENE_LABELS, SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
-from apps.moderation.services import blocked_member_ids
+from apps.moderation.services import blocked_member_ids, flag_listed_words, review_note
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
@@ -105,6 +105,8 @@ class JoinCommunityView(LoginRequiredMixin, VerifiedRequiredMixin, FormView):
         )
         emit("member.joined", member, user=self.request.user, request=self.request, details={"role": member.role})
         messages.success(self.request, f"Welcome to {community.name}!")
+        if flag_listed_words(member, "member", member.display_name, author=member, request=self.request):
+            messages.info(self.request, review_note("Your display name"))
         return redirect("community-feed", slug=community.slug)
 
 

@@ -23,11 +23,11 @@ class OfferForm(forms.ModelForm):
         }
 
     def clean_title(self):
-        """Strip HTML tags from title as defense-in-depth."""
+        """Trimmed. A listed word flags the saved post for review; it never refuses it."""
         return sanitize_text_field(self.cleaned_data.get("title", ""))
 
     def clean_description(self):
-        """Strip HTML tags from description as defense-in-depth."""
+        """Trimmed. A listed word flags the saved post for review; it never refuses it."""
         return sanitize_text_field(self.cleaned_data.get("description", ""))
 
     def __init__(self, *args, community=None, member=None, **kwargs):

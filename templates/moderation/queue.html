@@ -25,16 +25,23 @@
           <div class="min-w-0">
             <p class="font-medium text-parish-ink">{{ row.flag.get_reason_display }}</p>
             <p class="text-sm text-parish-ink/70 mt-0.5">
-              {{ row.flag.get_target_type_display }} · reported {{ row.flag.created_at|timesince }} ago
+              {{ row.flag.get_target_type_display }} · {% if row.flag.reporter_id %}reported{% else %}flagged automatically{% endif %} {{ row.flag.created_at|timesince }} ago
             </p>
             {% if row.flag.detail %}
-            <p class="text-sm text-parish-ink/80 mt-2 max-w-prose">&ldquo;{{ row.flag.detail }}&rdquo;</p>
+              {% if row.flag.reporter_id %}
+              <p class="text-sm text-parish-ink/80 mt-2 max-w-prose">&ldquo;{{ row.flag.detail }}&rdquo;</p>
+              {% else %}
+              <p class="text-sm text-parish-ink/80 mt-2 max-w-prose">The word on the list: <strong>{{ row.flag.detail }}</strong>. It stays up until you decide.</p>
+              {% endif %}
             {% endif %}
             {% if row.target %}
               {% if row.flag.target_type == "need" %}
                 <a href="{% url 'need-detail' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">View the ask: {{ row.target.title }}</a>
               {% elif row.flag.target_type == "offer" %}
                 <a href="{% url 'offer-detail' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">View the offer: {{ row.target.title }}</a>
+              {% elif row.flag.target_type == "match" %}
+                <a href="{% url 'match-detail' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">View the match on: {{ row.target.need.title }}</a>
+                <p class="text-sm text-parish-ink/70 mt-1 max-w-prose">&ldquo;{{ row.target.notes|truncatechars:120 }}&rdquo;</p>
               {% elif row.flag.target_type == "page" %}
                 {# Editor link by pk: a slug link would misdirect once archived or the slug is reclaimed. #}
                 <a href="{% url 'pages:edit' community.slug row.target.pk %}" class="inline-block text-sm text-[var(--umi-primary)] hover:underline mt-2">Open the page: {{ row.target.title }}</a>
@@ -54,8 +61,10 @@
                 class="flex flex-wrap items-center gap-2">
             {% csrf_token %}
             {% if row.target %}
+            {% if row.flag.target_type != "match" %}
             <button name="action" value="hide" class="btn-secondary text-sm !min-h-[40px] !px-3.5"
                     title="Take it off the board. Reversible; nothing is deleted.">Hide it</button>
+            {% endif %}
             <button name="action" value="keep" class="btn-secondary text-sm !min-h-[40px] !px-3.5"
                     title="Reviewed; the post stays up">Looks fine</button>
             {% endif %}

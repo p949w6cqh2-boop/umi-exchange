@@ -12,23 +12,33 @@ from django.db import models
 
 
 class Flag(models.Model):
-    TARGET_CHOICES = [("need", "Need"), ("offer", "Offer"), ("member", "Member"), ("page", "Page")]
+    # "match" is only ever flagged automatically (its notes); members report needs, offers,
+    # members and pages (apps.moderation.views.TARGET_MODELS).
+    TARGET_CHOICES = [("need", "Need"), ("offer", "Offer"), ("member", "Member"), ("page", "Page"), ("match", "Match")]
+    # What a member can pick when they raise a concern (FlagForm).
     REASON_CHOICES = [
         ("fake", "Seems fake or misleading"),
         ("unsafe", "Unsafe or threatening"),
         ("spam", "Spam or off-topic"),
         ("other", "Something else"),
     ]
+    # Filed by the app itself, with no reporter: a post used a word on the review list
+    # (apps.moderation.services.flag_listed_words; founder's decision 2026-10-12).
+    AUTOMATIC_REASON_CHOICES = [("word_list", "Uses a word on the review list")]
     STATUS_CHOICES = [("open", "Open"), ("resolved", "Resolved"), ("dismissed", "Dismissed")]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     community = models.ForeignKey("communities.Community", on_delete=models.CASCADE, related_name="flags")
-    reporter = models.ForeignKey("communities.Member", on_delete=models.PROTECT, related_name="flags_raised")
+    # None for an automatic flag: nobody reported it, so nobody is told it was reviewed.
+    reporter = models.ForeignKey(
+        "communities.Member", null=True, blank=True, on_delete=models.PROTECT, related_name="flags_raised"
+    )
     target_type = models.CharField(max_length=12, choices=TARGET_CHOICES)
     target_id = models.UUIDField()
-    reason = models.CharField(max_length=12, choices=REASON_CHOICES)
+    reason = models.CharField(max_length=12, choices=REASON_CHOICES + AUTOMATIC_REASON_CHOICES)
     # Short, member-authored. The form coaches against names/private details;
-    # the coordinator can see the flagged content itself.
+    # the coordinator can see the flagged content itself. On an automatic flag it is the
+    # listed word the post used.
     detail = models.CharField(max_length=500, blank=True)
 
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="open")
@@ -53,6 +63,13 @@ class Flag(models.Model):
                 fields=["reporter", "target_type", "target_id"],
                 condition=models.Q(status="open"),
                 name="mod_flag_one_open_per_reporter",
+            ),
+            # The same for automatic flags, which have no reporter (NULLs never collide in the
+            # constraint above): a post edited or noted again waits in the queue once.
+            models.UniqueConstraint(
+                fields=["target_type", "target_id"],
+                condition=models.Q(status="open", reporter__isnull=True),
+                name="mod_flag_one_open_automatic",
             ),
         ]
 

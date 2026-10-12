@@ -19,7 +19,7 @@ from apps.audit.models import AuditLog
 from apps.audit.services import emit
 from apps.communities.models import Community, Member
 from apps.communities.validators import sanitize_text_field
-from apps.moderation.services import is_blocked_between
+from apps.moderation.services import flag_listed_words, is_blocked_between, review_note
 from apps.needs.models import Need
 from apps.notifications.adapter import NotificationAdapter
 from apps.offers.models import Offer
@@ -225,13 +225,9 @@ class MatchUpdateView(LoginRequiredMixin, View):
         new_status = request.POST.get("status")
         if new_status not in ("accepted", "fulfilled", "unfulfilled", "cancelled"):
             return HttpResponse(status=400)
-        # sanitize_text_field raises ValidationError on word-list content. It ran
-        # before the try/except below, so a refused note 500'd the request instead
-        # of a clean 400 — validate it up front and reject cleanly.
-        try:
-            notes = sanitize_text_field(request.POST.get("notes", ""))
-        except ValidationError as exc:
-            return HttpResponse("; ".join(exc.messages), status=400)
+        # Trimmed only. A listed word no longer refuses the note (it used to, with a 400);
+        # once the change is saved, it flags the match for the coordinators instead.
+        notes = sanitize_text_field(request.POST.get("notes", ""))
 
         community = get_object_or_404(Community, slug=slug)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
@@ -372,6 +368,8 @@ class MatchUpdateView(LoginRequiredMixin, View):
         if notes:
             details["notes_provided"] = True
         AuditLog.log(member.user, "update", "match", match.id, details=details, request=request)
+        if notes and flag_listed_words(match, "match", notes, author=member, request=request):
+            messages.info(request, review_note("Your note"))
 
         # Dotted state-change audit (§8.3) for the need/offer that transition_to()
         # cascaded — only when it actually changed them, so no-op saves don't log.

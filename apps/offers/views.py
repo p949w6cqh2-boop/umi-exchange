@@ -8,7 +8,7 @@ from django.views.generic import CreateView, DeleteView, DetailView
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
 from apps.communities.models import Community, Member
-from apps.moderation.services import is_blocked_between
+from apps.moderation.services import flag_listed_words, is_blocked_between, review_note
 from apps.needs.models import Need
 from apps.tags.badges import verified_badges_for
 
@@ -44,7 +44,12 @@ class OfferCreateView(LoginRequiredMixin, VerifiedRequiredMixin, CreateView):
             request=self.request,
             details={"status": self.object.status},
         )
-        messages.success(self.request, "Your offer has been posted!")
+        if flag_listed_words(
+            self.object, "offer", self.object.title, self.object.description, author=self.member, request=self.request
+        ):
+            messages.info(self.request, "Your offer is on the board. " + review_note("It"))
+        else:
+            messages.success(self.request, "Your offer has been posted!")
         return redirect("community-feed", slug=self.community.slug)
 
 
