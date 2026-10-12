@@ -1,9 +1,9 @@
 """
-Shared input sanitization for all user-generated text fields.
+Shared input checks for user-generated text fields.
 
-Django's template auto-escaping prevents XSS on OUTPUT. This module provides
-defense-in-depth by stripping HTML tags on INPUT, so we never store raw HTML
-in the database. This is a belt-and-suspenders approach.
+Django's template auto-escaping prevents XSS on OUTPUT, and that is what keeps free text safe.
+Since the 2026-10 bug hunt sanitize_text_field checks the content word list only; the tag and
+script-pattern helpers below are no longer applied to free text (see sanitize_text_field).
 """
 
 import re
