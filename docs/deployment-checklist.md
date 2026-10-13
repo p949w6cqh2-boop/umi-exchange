@@ -106,6 +106,12 @@ from apps.casework.tasks import register_schedule as _c; _c()"
 - [ ] **Sentry**: Trigger a test error — verify it appears in Sentry dashboard
 - [ ] **SSL**: Verify with `curl -vI https://yourdomain.org` — look for `HTTP/2 200`
 - [ ] **Security headers**: Test at https://observatory.mozilla.org
+- [ ] **Once, after the first deploy that includes #218: hide the posts of members who left before it.**
+      `docker compose -f docker/docker-compose.prod.yml exec app python manage.py hide_left_members_posts`
+      only counts them, per community. Read the counts, then run it again with `--apply`. It hides
+      their open asks and active offers the way leaving now does (founder's call, 2026-10-13): nothing
+      is deleted, nobody is notified, matches in progress are left as they are, and a member who rejoins
+      chooses what comes back. A second run finds nothing, so the line can stay.
 - [ ] **Create test community**: Register, create community, post need, propose match, accept, verify contact revelation
 - [ ] **Backup test**: Run `bash scripts/backup.sh`, then rehearse the restore into a scratch database with `bash scripts/dr_sim.sh` (see vps-runbook §9.1 — it refuses to touch prod, asserts the restore is not empty, and checks a known record). `scripts/restore.sh` is the *production* restore, not the rehearsal.
 - [ ] **Retention check**: Confirm nothing in `/var/backups/umi/` is older than `RETENTION_DAYS`, **and** that the B2 bucket lifecycle rule exists — `backup.sh` never deletes remote copies (vps-runbook §9.2)
