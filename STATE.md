@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `557ca257` (merged 2026-10-08 UTC).
+> Reflects `main` @ `4eca3e26` (merged 2026-10-13 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -61,16 +61,24 @@
   coordinator removal:** sets `Member.removed_at`/`removed_by` so a removed member can't rejoin on the
   same still-valid code; ripples (their open needs/active offers off the board, in-flight matches
   cancelled) and is reversible via a coordinator **reinstate** action in the queue. All audited (§8.3).
+  **Since #218 (2026-10-13):** a word on the community's review list no longer refuses a post; the ask,
+  offer, match note or display name goes up, its author is told, and an automatic `Flag` (no reporter,
+  one open per target, `moderation 0004`) lands in the coordinators' queue. **Leaving** (the member's
+  own choice, `leave_community`) hides their open asks and active offers (`hidden_on_leave_at`, nothing
+  deleted) and cancels their matches in progress, each other person told; rejoining reposts nothing,
+  and a "your old posts" page lets them put each back or close it. A rejoin comes back as a member. A
+  block also stops a coordinator brokering a match between the two people, and no refusal says why.
 - **Not implemented:** referrals; in-app chat (**by design** — brokered contact + §8.2
   revelation is the model; chat only ships with reporting/retention/moderation around it).
 - **Match state machine:** `proposed → accepted | cancelled | expired`; `accepted → fulfilled | unfulfilled | cancelled`. Terminal states enforced via `transition_to()`, which now opens a transaction, locks the row and re-checks committed state — a stale snapshot raises `TransitionConflict` (409); `expire_stale_needs` likewise locks + re-checks per row, so a mid-sweep accept is never overwritten (#110).
+- **Needs and offers expire (spec §10.6):** needs by `expire_stale_needs`; offers 90 days after posting by `expire_stale_offers` (#218, `offers 0005`), registered with the needs schedule, so the deploy checklist's schedule step must be re-run before it starts. An expiring offer's waiting proposals expire with it, and its owner is told.
 - **Security / consent rules enforced in code:**
   - Contact info revealed only after acceptance (§8.2), to participants/coordinators; every disclosure is audited. A volunteer who proposed without an offer counts as participant.
   - **Acceptance takes both people's yes (#215, 2026-10-07).** `Match.record_yes()` stamps `asker_yes_at` / `helper_yes_at`; only when both have said yes does the match move to `accepted` and contact open. A helper who proposed (their own offer, or volunteering directly) said yes by proposing; a coordinator-brokered match waits for both, in either order; **a coordinator can never say yes for anyone** (§4.1). Before #215 one yes (the asker, the helper, or a coordinator alone) accepted the match and opened both people's details, while the front page already promised both.
   - **Communion at home (#202, #205):** a category flagged `coordinators_only_contact` shows the helper the asker's name and never their number; a coordinator calls to arrange the visit. The board never asks for a home address.
   - Self-match prevention (§8.6): proposer ≠ requester **and** offer-owner ≠ requester.
   - Match-update authz: requester / offer-owner / proposer / coordinator only; others **403**.
-  - Race handling (§8.7): match accept locks the **Match** row (`select_for_update(of=("self",))`, Postgres-safe with the nullable `offer` outer join) **and** the **Need**; second concurrent accept → **409**.
+  - Race handling (§8.7): match accept locks the **Match** row (`select_for_update(of=("self",))`, Postgres-safe with the nullable `offer` outer join) **and** the **Need**; second concurrent accept → **409**. Every match write now locks the Need, then the Match: the view and the hourly sweep took them in opposite orders until #218, a deadlock reproduced on Postgres.
   - Append-only audit (§8.3): model-level `save`/`delete` blocks + Postgres `REVOKE`; **IPs salted-SHA-256** (`SECRET_KEY`); client IP read from the trusted `X-Real-IP`, never the spoofable left-most `X-Forwarded-For`. Deployment checklist provisions **separate owner/runtime DB roles** (`AUDIT_DB_APP_ROLE`) so the append-only REVOKE binds the app's own role.
   - Federated sharing is **owner-only** (coordinators cannot consent on a member's behalf); only redacted outline fields cross (category, urgency, coarse locality, week bucket) until an accepted match.
   - **Consent grantor is the subject, never the coordinator (§4.1, #120):** `Consent.subject_person` names a person with no account (`participant` now nullable; a `CheckConstraint` enforces exactly one grantor); the coordinator who heard it is `recorded_by` — a **witness** — and can see/withdraw it (`ConsentListView`/`ConsentRevokeView`). Casework renders a not-yet-asked subject as **initials + a plain "not asked directly" line** until an active consent names them (`apps/casework/access.py::subject_display()`); a revoked consent takes the name back down. Migration `consent/0004` moved the dead `on_behalf_person_id` breadcrumb rows onto the real field; intake "paper" consent stores the valid `written` enum and `consent/0005_repair_paper_method` repaired old rows (#128).
@@ -78,16 +86,20 @@
   - **Enrolled 2FA now gates login (#117):** a confirmed OTP device forces the `/auth/login/otp/` token step (`django_otp.match_token` — TOTP + static recovery codes, per-device throttling, 5-minute pending expiry, own 5/m IP throttle); un-enrolled users proceed unchanged.
   - **No free text in the append-only audit log (#116):** match notes and tag-review reasons land as `notes_provided`/`reason_provided` flags; the words stay on redactable model fields (`Match.notes`, `MemberTag.rejection_reason`) where erasure can still reach them.
   - Join/household codes via CSPRNG (`secrets`); health-check token compared in constant time.
-  - Auth throttle hardening (#107): per-account buckets are scoped **per path** (a register flood can't lock the victim's login), the decoy-`login`-field bypass is dead, `/admin/login/` is throttled, and a password equal to the username is rejected.
+  - Auth throttle hardening (#107): per-account buckets are scoped **per path** (a register flood can't lock the victim's login), the decoy-`login`-field bypass is dead, `/admin/login/` is throttled, and a password equal to the username is rejected. Since #218: a browser that has signed in to an account passes that account's sign-in bucket (a signed, HttpOnly `umi_device` cookie), so failed tries in someone's name can no longer lock them out of a browser they use; IPv6 is counted by its /64; and there is one password door (two_factor's own `/account/login/` is no longer mounted).
   - Production **refuses to boot** on an insecure `SECRET_KEY`, an empty `ENCRYPTION_KEY`, or a missing / encryption-key-colliding `BLIND_INDEX_KEY` (`config/settings/production.py`).
 
 ## Accounts, sign-up & recovery (built 2026-08-12 → 2026-10-03)
 - **Human verification (#148, `docs/specs/human-verification.md`):** `User.verified_at` /
-  `verified_via` (`email` · `coordinator` · `backfill`). `VerifiedRequiredMixin` gates the four
-  write doors (join, post a need, post an offer, propose); reading stays open. Two exits: answer
+  `verified_via` (`email` · `coordinator` · `backfill`). `VerifiedRequiredMixin` gates the write
+  doors (join, post a need, post an offer, propose, and since #218 publishing or un-hiding a
+  community page, which anonymous visitors see); reading stays open. Two exits: answer
   the emailed link, or be **vouched** in person (`Member.VOUCH_ROLES`: coordinator, admin, intake
-  helper; audited `user.vouched`). Register bot checks: a hidden honeypot plus a signed minimum
-  form age; a trip returns the success redirect and creates nothing (no oracle). The property is
+  helper; audited `user.vouched`; since #218 only a verified person vouches, 30 an hour, to the exact
+  username typed, and sign-up refuses a username that differs from another only in capitals).
+  Register bot checks: a hidden honeypot plus a signed minimum form age; a trip returns the success
+  redirect and creates nothing (no oracle); the signed stamp lasts a day and works once (#218). The
+  property is
   `is_human_verified`, because django-otp's middleware owns `user.is_verified`. The pending page
   names both exits in plain words since #162 (it had been a dead end for the people it serves).
 - **An email is trusted only once its owner proves it (#169; #174 for issue #172; #181 for issue
@@ -96,13 +108,18 @@
   address or swap their own in, and sign-up answers the same way whether or not an address is
   taken. Every sender reads `User.deliverable_email`, so reset links, username reminders,
   notifications and the casework digest go only to a proven address. Addresses already on the
-  board started unconfirmed. Username recovery and the `send_smoke` delivery check: #144.
+  board started unconfirmed. Username recovery and the `send_smoke` delivery check: #144. Since #218
+  a change of address takes the current password and is limited to 10 an hour, an older link dies once
+  a newer address is confirmed, and the proven address it replaces is told.
 - **Recovery without email (#183–#186, `docs/specs/account-recovery.md`):** one-time
   `RecoveryCredential` (hashed, single use; purposes recovery code · coordinator reset · admin
   unlock · claim). A printed **recovery code** for accounts with no email (shown once; a reissue
-  kills the lost one); a **coordinator-issued reset code** (15 minutes, members only and never
-  another coordinator, audited, the member chooses their own password); an **audited admin
-  unlock** outside Django `/admin/`; `manage.py purge_recovery_credentials`.
+  kills the lost one and, since #218, takes the current password); a **coordinator-issued reset
+  code** (15 minutes, audited, the member chooses their own password; since #218 refused for anyone
+  holding a non-member role in any community, and for staff); an **audited admin unlock** outside
+  Django `/admin/` (since #218 only a superuser unlocks a staff or superuser account);
+  `manage.py purge_recovery_credentials`. Since #218 redeeming a reset or an unlock mints no paper
+  code for an account with a proven email, and two-factor setup refuses re-enrolment on POST too.
 - **Codes by phone (#205, #207, #208, `docs/specs/phone-codes.md`) — BUILT, OFF.**
   `PHONE_CODES_ENABLED` defaults to False. Once on: confirm a phone in Settings, then "Get a code
   by phone" at sign-in (single use, 10 minutes). `PHONE_CODES_PROVIDER=firebase` by default (free
@@ -122,7 +139,8 @@
 - **Sign-up country gate (#192, #198, `docs/specs/geolocking.md`) — BUILT, OFF by default.**
   `GEO_COUNT` (Phase 0: one counter per country in `GeoSignupCount`, no IP kept, a local DB-IP
   Lite lookup refreshed by `manage.py refresh_geoip`) and `GEO_ALLOWED_COUNTRIES` (refusal, with a
-  page on running a board of your own). Reading is never gated. Production turned Phase 0
+  page on running a board of your own). Reading is never gated. `GEO_GATE_ADMIN` (opt-in) covers
+  all of `/admin/` and `/staff/` since #218, not only `/admin/login/`. Production turned Phase 0
   counting **on** 2026-10-01; refusal stays off until the Phase 0 table (`manage.py geo_counts`)
   is read after 2026-10-15.
 - **Sessions and forms (#200, #202, #206):** sign-out after 15 minutes idle, with a "Still
@@ -133,16 +151,21 @@
   federation apps fails it (exit 2). Counts only, never a name or an address.
 
 ## Encryption (crypto-shred) — A–E complete
-- `apps/people/crypto.py`: **direct-KEK** (`encrypt_str`/`decrypt_str`, MultiFernet over `ENCRYPTION_KEYS`, rotation-ready) **and envelope** (per-record DEK wrapped by the KEK list → crypto-shred: delete the `*_enc_dek` and the ciphertext is permanently opaque).
+- `apps/people/crypto.py`: **direct-KEK** (`encrypt_str`/`decrypt_str`, MultiFernet over `ENCRYPTION_KEYS`, rotation-ready) **and envelope** (per-record DEK wrapped by the KEK list → crypto-shred: null the ciphertext **and** its `*_enc_dek` together. Deleting the DEK alone leaves a ciphertext that every read fails loud on, a 500 on the case page, and for a name a blind index that still matches; the key-rotation runbook said to do exactly that until #218).
 - **Envelope-encrypted PII** (Stage E everywhere — getters **fail loud** on a DEK-less ciphertext):
   - `needs.Need.on_behalf_of` (via the `on_behalf_of_name` property)
   - casework: `CaseFile.summary`, `CaseNote.body`, `FollowUp.detail`, `WarmHandoff.summary`
   - `people.Person`: `display_name`, `contact` (JSON), `dob`
   - federation: shared-record + disclosure payload columns (registered in `rotate_keks`)
 - **Retention is code, not promise** (public `/privacy/` + `docs/privacy-retention.md`):
-  scheduled sweeps crypto-shred aged-need PII (365d), closed casework (7y), and revealed
-  contact snapshots (72h). Deletion = null ciphertext **and** DEK.
-- **Ops:** `rotate_keks` re-wraps every DEK under the new primary KEK (registry covers all fields incl. federation). Census commands `casework_envelope_status` + `people_envelope_status`. Old-KEK retirement unblocked. Full sequence: `docs/envelope-rollout-runbook.md`.
+  scheduled sweeps crypto-shred aged-need PII (365d; legacy direct-KEK names too since #218), closed
+  casework (7y), and revealed contact snapshots (72h). Deletion = null ciphertext **and** DEK. Since
+  #218 the 7-year sweep also overwrites what a case says in plain text (follow-up titles, grant
+  reasons, the notification bodies that repeat them) and erases the subject once their last case ages
+  out. **Erasing one person on request** is `manage.py shred_person` (name, contact, date of birth,
+  blind index, every case about them and every record merged into theirs); it refuses under a legal
+  hold or while a case about them is open.
+- **Ops:** `rotate_keks` re-wraps every DEK under the new primary KEK (registry covers all fields incl. federation). Census commands `casework_envelope_status` + `people_envelope_status`. Old-KEK retirement unblocked. Full sequence: `docs/envelope-rollout-runbook.md`. Since #218 a DEK that no configured key opens no longer aborts the run: every other row is re-wrapped, and the command fails at the end naming each row it could not.
 - **Rotation/backfill lifecycle repaired (#105):** `rotate_keks` re-wraps via queryset `.update()`, so a finalized (A7-immutable) CaseNote no longer aborts it mid-corpus; `CaseFile.emergency_justification` is registered in `ENVELOPE_DEK_FIELDS` and a guard test enumerates every `*_enc_dek` column so a new envelope field can't escape rotation; all three envelope backfills exclude failed pks and **terminate** on an unreadable row instead of looping forever.
 - **Person name blind index (§12.3) — Stages A/B/D BUILT (PR #71, merged `623faa1`, 2026-07-22):** `Person.name_bidx` = HMAC-SHA256(`BLIND_INDEX_KEY`, normalized name) for equality lookup without decrypting; `by_name()` **requires** a `community=` scope; census `person_bidx_status`; prod boots only with the key present **and** distinct from every encryption key. Stage C backfill NOT included — gated, not yet run.
 - **Federation can't strand PII (#118):** suspending/revoking a link shreds its queued event payloads (`shred_link_event_payloads`, wired into the admin transition **and** `auto_suspend_unreachable_links`), plus a daily `sweep_stale_event_payloads` retention backstop that runs even with `FEDERATION_ENABLED` off — deliberately, so switching federation off can't preserve contact PII past the give-up window.
@@ -172,17 +195,18 @@
 - Finalized notes are immutable (amendments are new rows; retention sweep uses bulk `.update()` for that reason).
 - **Offline visit capture:** scope-limited **service worker** + IndexedDB queue; draft note bodies **AES-GCM encrypted at rest** (non-extractable WebCrypto key); idempotent sync endpoint. Sync validates `case_id` **per item** (one malformed entry no longer 500s and wedges the whole batch, #112); an edited visit re-send that collides returns an explicit **409 "amend the existing note"** instead of dropping the edit under a green "Visit saved" (savepoint around the save; identical replays stay idempotent, #112).
 - Warm handoffs, follow-ups, access grants (viewer/contributor, expiring/revocable), case export gated by `case_export` consent scope.
+- **Since #218 (2026-10-13):** a non-admin's person picker offers only people whose every case they can open, and the case list shows initials; a revoked consent freezes grants too; a follow-up goes only to someone who can open the case; a closed case takes no new note, follow-up or handoff until it is reopened (409); search covers every case, not only the 200 most recent; re-auth returns to the page (htmx gets `HX-Redirect`); an expired grant can be renewed, and its reason is asked for without names and kept out of the grantee's notification; the overdue digest goes per community; exports print local time; an offline draft belongs to its author; a recorder who has left can no longer withdraw a consent.
 
 ## Codebase
 - **Stack:** Django 5.2, PostgreSQL (prod/CI) / SQLite (local default), Redis (optional), HTMX, Alpine.js, Tailwind 3.4 (`static/css/output.css`), WhiteNoise, gunicorn, Argon2, django-q2 (optional).
 - **19 Django apps** (holds joined 2026-10-01, #193): accounts, audit, casework, communities, consent, dashboard, **federation**, health, **holds**, households, **hub**, matches, **moderation**, needs, notifications, offers, **pages**, people, tags. Plus `apps/common` — shared non-registered module (`state.py` `StateMachineMixin`).
 - **Hub ("The Pulse"):** per-member community hub — pulse feed, spotlight, verified-badge surface, community switcher, data-derived **first-steps onboarding** (post → raise a hand → connect; dismissible, never nags twice). `pulse_events()` and `spotlight_need()` are viewer-aware: blocked members are excluded from all five event kinds and from the spotlight, both directions (#113).
-- **Member tags & verification:** claim → coordinator verify/reject/revoke (state machine); **verified-only** badges surface (visibility-honoured); a self-reported or revoked claim never renders as endorsed.
+- **Member tags & verification:** claim → coordinator verify/reject/revoke (state machine); **verified-only** badges surface (visibility-honoured); a self-reported or revoked claim never renders as endorsed. Nobody verifies their own tag (#218).
 - **Search & feed:** model-aware keyword + **area** matching with relevance ordering (`order_by_relevance`); rank-aware feed merge when searching; honest empty states with one-tap clear.
-- **Communities:** per-community theming (presets + hex overrides → CSS custom properties), admin-gated **setup wizard** (join code + printable QR, colours, coordinators, first ask), coordinator-curated **resources directory** (archive-not-delete), two-doors welcome. Since the first coordinator's sit-down (#200): own colours apply only when "Use my own colours instead" is ticked, with a preview; long names and titles wrap on a phone; each request shows the day it was posted and the day it was done. The join code's QR loads for coordinators too, not only admins, and never for someone who has left (#214).
-- **Demo parish (`seed_demo_parish`):** twelve made-up members who can all use the board (#158); invented 555-01xx numbers, shared, so a demo connect opens onto a real-looking number (#214); off its public password since 2026-09-28, and every reseed rotates it (`manage.py rotate_demo_password`, password on stdin from the steward's private file, #180).
+- **Communities:** per-community theming (presets + hex overrides → CSS custom properties), admin-gated **setup wizard** (join code + printable QR, colours, coordinators, first ask), coordinator-curated **resources directory** (archive-not-delete), two-doors welcome. Since the first coordinator's sit-down (#200): own colours apply only when "Use my own colours instead" is ticked, with a preview; long names and titles wrap on a phone; each request shows the day it was posted and the day it was done. The join code's QR loads for coordinators too, not only admins, and never for someone who has left (#214). Since #218 a closed community stays closed (its pages, asks, offers and settings no longer open from an old link), and leaving or a role change takes the community's lock, so two admins leaving at once leave one.
+- **Demo parish (`seed_demo_parish`):** twelve made-up members who can all use the board (#158); invented 555-01xx numbers, shared, so a demo connect opens onto a real-looking number (#214); off its public password since 2026-09-28, and every reseed rotates it (`manage.py rotate_demo_password`, password on stdin from the steward's private file, #180). Since #218 the seeder refuses to adopt a real account by username.
 - **Notifications:** in-app always; **consented email delivery** — SMTP auto-enables in production when creds exist, per-user `email_notifications` opt-out honored everywhere, console backend is the safe-fail default. Production mail is **live since 2026-09-11** through Resend on port 2587 (`docs/email-delivery-runbook.md` §3), and every sender reads `deliverable_email`, so mail goes only to an address its owner has proven (#174).
-- **Rate limiting:** fixed-window limiter (`apps/accounts/ratelimit.py`); auth POSTs per trusted IP + per account (buckets scoped per path, `/admin/login/` covered, #107); the OTP login step carries its own 5/m IP throttle (#117); flag POSTs 10/hr per user.
+- **Rate limiting:** fixed-window limiter (`apps/accounts/ratelimit.py`); auth POSTs per trusted IP + per account (buckets scoped per path, `/admin/login/` covered, #107); the OTP login step carries its own 5/m IP throttle (#117); flag POSTs 10/hr per user. Since #218 a known-device cookie passes the per-account sign-in bucket, and IPv6 is counted by its /64.
 - **Migrations:** all model apps; backfills batched, idempotent, resumable (`atomic=False`), reversible.
 
 ## Visual design — "The Commons"
@@ -226,8 +250,10 @@
   (`tests/test_template_comments.py` caught the wrapped form, which would have rendered as visible text).
 
 ## Testing / CI / Deploy
-- **1597 passed** on **Postgres 16 + Redis** in the 2026-10-08 sweep run (full suite on `main` @
-  `557ca257` plus this branch's docs-only commits, CI's environment including `ENCRYPTION_KEY=""`; 0 failed, exit
+- **1835 passed** on **Postgres 16 + Redis** in #218's gate (2026-10-13, full suite at `6bb42520`,
+  count read from its file; 0 failed), and CI 3/3 green on #218's head and again on `main` @
+  `4eca3e26`. *The 2026-10-08 sweep read:* **1597 passed** on **Postgres 16 + Redis** (full suite on
+  `main` @ `557ca257` plus that branch's docs-only commits, CI's environment including `ENCRYPTION_KEY=""`; 0 failed, exit
   0, 9m48s). *Before the sweep this line read:* **1224 tests** green on **Postgres 16 + Redis** ("Gate: 1224 passed on Postgres 16 + Redis" per
   `851ef24`, #137; `pytest --collect-only` = 1224; SQLite works locally, minus one Postgres-only
   full-text relevance test in `test_search_area.py` that needs PG — `apps/needs/search.py` gates
@@ -274,7 +300,7 @@
   §9.2 retention), `docs/threat-model.md`, `docs/guides/` (get-a-tag, start-your-own-community, parish starter kit #176), `docs/INTEGRATION-PLAN.md`.
 
 ## NOT in this codebase (guard against scope creep)
-Do not assume/reintroduce: Stripe billing, ~~Twilio SMS~~ SMS notifications, Chart.js dashboards, blog, scheduled email digests for the board (only an `email_digest` config key), account-deletion flow, **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
+Do not assume/reintroduce: Stripe billing, ~~Twilio SMS~~ SMS notifications, Chart.js dashboards, blog, scheduled email digests for the board (only an `email_digest` config key), account-deletion flow (erasing a casework subject is the operator command `shred_person`, #218, not a self-serve flow), **in-app chat** (deliberate — see Protocol section), REST/DRF API (federation speaks its own signed endpoints). (Service worker exists **only** for casework offline capture — not a site-wide PWA.)
 *Corrected 2026-10-08, two overbroad words:* texted **sign-in codes** exist since #205/#207 (Firebase by
 default, Twilio Verify kept as the alternative, both OFF unless `PHONE_CODES_ENABLED`), so "Twilio
 SMS" no longer meant nothing; and one scheduled email has existed since casework landed: the daily
@@ -287,6 +313,19 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   (Caddy → gunicorn → postgres:16 + redis:7). Serves the **fictional St. Brigid's** demo
   (`seed_demo_parish`, DEBUG-only). ~~**Demo creds must rotate before any real parish onboards.**~~
   ✅ Rotated on the live board 2026-09-28 (#180), and every reseed rotates them again.
+- **The October bug hunt MERGED (#218, `4eca3e26`, 2026-10-13; not yet deployed):** six reviewers
+  and a verifier per finding, then batches 1 to 5 (security, core flows, mediums, lows, federation),
+  the founder's two decisions of 2026-10-12 (the word list flags instead of refusing; leaving hides,
+  and coming back is a choice), and the weaker leads: 46 fixed, 6 more fixed in batch 5, 11 already
+  fixed or duplicates, 1 refuted. Each fix test-first; gate 1835. Merging built the image only (the
+  Deploy job is skipped while `DEPLOY_ENABLED` is unset), so the hand-run deploy is owed, then the
+  schedule step re-run so offers start expiring: every offer older than 90 days expires at once and
+  its owner is told. Left for the founder: six design calls (L1 a member can block a coordinator out
+  of oversight; L10 vouch and sign-up answers say whether a username exists; L13 a demoted coordinator
+  keeps their cases; L26 an emergency case's consent can't be recorded afterwards; L61 a received
+  proposal drops the offer title; L64 a pending peer can pass signature checks), and whether to hide
+  the posts of members who left before #218, which would change live data. Receipts: the PR body and
+  `CHANGELOG.md` 2026-10-13.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards
