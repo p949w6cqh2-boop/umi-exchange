@@ -32,6 +32,39 @@
   person who wrote them.
 - **Records under a legal hold are kept.** An ask under a hold can't be deleted, and one that was
   ever under a hold is closed and taken off the board instead of deleted.
+- **A word on the review list no longer stops a post.** If your ask, offer, match note or display
+  name uses one, it goes up as you wrote it, you're told, and your community's coordinators see it
+  in their review queue to look over.
+- **Leaving takes your posts down, and coming back is your choice.** When you leave a community,
+  your open asks and offers come off the board. Nothing is deleted. Matches still in progress are
+  cancelled, and the other person is told. If you rejoin, nothing goes back up on its own: a page
+  lists your old posts, and you choose which to put back and which to close. You come back as a
+  member; if you were a coordinator or admin, an admin can give you the role again.
+- **Blocking covers every match.** A coordinator can no longer put two people together when one
+  has blocked the other, and the messages about a match no longer tell someone they were blocked.
+- **Signing in is harder to get in the way of.** Someone typing wrong passwords for your username
+  can no longer lock you out of a browser you have signed in on before. Changing your email now
+  asks for your password, and your old address is told about the change. Printing a new recovery
+  code asks for your password too. A coordinator's reset code no longer leaves a paper code behind
+  for an account that has an email. A new username can't be a copy of another one in different
+  capital letters, and a vouch goes to exactly the name typed. Nobody can verify their own tag.
+- **New accounts confirm before they publish.** An account that hasn't confirmed its email, or
+  been vouched for, can't publish a community page that visitors see.
+- **Offers expire too.** An offer comes off the board 90 days after it was posted, the way asks
+  expire, and you get a note so you can post it again if you can still help.
+- **A closed community stays closed.** Its asks, offers, settings and pages no longer open from an
+  old link.
+- **For coordinators doing casework.** Search looks through every case, not only the 200 most
+  recently updated. A closed case takes no new notes or follow-ups until it is reopened. When your
+  4-hour sign-in for case notes runs out, you come back to the page you were on. An expired access
+  grant can be renewed. Someone who has left the community can no longer withdraw a consent they wrote down.
+  The case export prints local times. The access-grant form asks for a reason with no names or
+  circumstances, says who can read it, and the reason is no longer copied into the notification.
+- **Erasing someone helped through casework is one step.** When a person asks to be erased, their
+  name, contact details and date of birth, and what every case about them says, are erased
+  together, as our privacy page promises. When every case about a person has been closed for seven
+  years, their name and details are erased too.
+- **Connecting with other boards got a round of safety fixes.** It is built and still switched off.
 
 ## 2026-10-07
 
