@@ -137,8 +137,10 @@ prefix; never assume the shell is where you left it.
 - **Django ≥4.1 caches templates even in DEBUG** — restart `runserver` to see template edits.
 - **Auth endpoints are IP-throttled** (register 3/min, login 5/min, django_ratelimit) — tests that
   POST them repeatedly need a distinct `REMOTE_ADDR` per request or they collect 429s.
-- **Known flake:** `test_reauth_returns_429_after_five_attempts` straddles a fixed-window minute
-  boundary (~rare). Green in isolation ⇒ flake; anything else failing ⇒ real.
+- **No known flakes.** `test_reauth_returns_429_after_five_attempts` used to straddle the rate
+  limiter's fixed one-minute window (it failed CI on `main` @ `4f1ea527`); since 2026-10-13 it pins
+  the limiter's clock (`apps.accounts.ratelimit.time`). A test that counts against a fixed window
+  pins that clock the same way. A red test is real until shown otherwise.
 - **Prefer Edit over sed/heredoc for source changes** — sed has mangled apostrophes and
   duplicated content here; any quote in the text makes sed fragile. Edit tool, always, for code.
 - **Inserting a class right after a method SILENTLY REPARENTS every method below it.** Adding
