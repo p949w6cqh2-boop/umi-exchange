@@ -121,7 +121,9 @@ def no_email_user():
 
 
 def _request_email(client, address):
-    return client.post(reverse("account-settings"), {"email": address, "phone": ""})
+    # A change of address takes the current password (2026-10 bug hunt, L48).
+    data = {"email": address, "phone": "", "current_password": "Str0ng-p4ss!x9"}
+    return client.post(reverse("account-settings"), data)
 
 
 def test_settings_shows_the_address_waiting_for_its_link(client, no_email_user):

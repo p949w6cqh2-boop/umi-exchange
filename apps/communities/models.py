@@ -177,7 +177,8 @@ class Member(models.Model):
     @property
     def is_last_active_admin(self):
         """True if this is the only active admin — guards self-leave / demotion
-        that would orphan the community with no admin."""
+        that would orphan the community with no admin. Read it under
+        lock_admin_seats(), or two requests can both see another admin."""
         if self.role != "admin" or not self.is_active:
             return False
         return (
@@ -185,6 +186,21 @@ class Member(models.Model):
             .exclude(pk=self.pk)
             .exists()
         )
+
+
+class LastAdminError(Exception):
+    """Leaving or a role change would leave the community with no admin."""
+
+
+def lock_admin_seats(community_id):
+    """Take the community's row lock for the rest of the transaction.
+
+    Leaving and every role change take it before the last-admin check, so the check and the change
+    are one step: two admins leaving at once both passed the check and left none (2026-10 bug
+    hunt, L2). NO KEY, so the inserts that reference a community (a new ask, a new member) never
+    wait on it.
+    """
+    Community.objects.select_for_update(no_key=True).filter(pk=community_id).first()
 
 
 class Category(models.Model):

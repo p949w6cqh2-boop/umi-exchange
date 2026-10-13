@@ -90,5 +90,9 @@ join code being used remotely by someone who was never handed it in person.
 - [x] Honeypot + timing on register, tests prove both trip paths.
       *(`::test_honeypot_filled_creates_no_account_same_shape_response`,
       `::test_too_fast_submit_creates_no_account`, `::test_missing_timestamp_creates_no_account`)*
+- [x] 2026-10-13 (bug hunt, weaker leads): **publishing a community page** is gated too. An
+      unverified account could create a community and publish a landing page, which is what
+      anonymous visitors see (L11). The register form's signed stamp now expires after a day and
+      works once (L52). *(`tests/test_weak_leads_community_roles.py`, `tests/test_weak_leads_auth.py`)*
 - [ ] Board-meeting sentence added to the Sept 15 pack. ⏳ The 2026-09-15 meeting did not happen; the
       pack for the rescheduled meeting is the founder's to assemble.

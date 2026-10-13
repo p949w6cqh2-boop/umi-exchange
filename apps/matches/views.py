@@ -73,11 +73,16 @@ class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
 
         # Block: two neighbours who've blocked each other are not matched. The
         # proposer must not be blocked-with the need's requester, nor (when an
-        # offer is supplied) with the offer's owner. Preventative, not a recall.
-        if is_blocked_between(member, need.requester) or (
-            offer is not None and is_blocked_between(member, offer.offerer)
+        # offer is supplied) with the offer's owner, and a coordinator brokering
+        # a match cannot pair the two people in it when one blocked the other
+        # (2026-10 bug hunt, L4). Preventative, not a recall. The words never say
+        # "block": "this neighbour" told a blocked person they were blocked.
+        if (
+            is_blocked_between(member, need.requester)
+            or (offer is not None and is_blocked_between(member, offer.offerer))
+            or (offer is not None and is_blocked_between(need.requester, offer.offerer))
         ):
-            return _reject(request, slug, need_id, "You can't propose a match with this neighbour.", 409)
+            return _reject(request, slug, need_id, "This match can't be made.", 409)
 
         # H-2: a member may only propose an OFFER THEY OWN — UNLESS they are a
         # coordinator/admin brokering the match on a member's behalf.
@@ -318,7 +323,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
             if new_status == "accepted":
                 offering_member = match.offer.offerer if match.offer is not None else match.proposed_by
                 if is_blocked_between(need.requester, offering_member):
-                    return _reject(request, slug, pk, "You can't accept a match with this neighbour.", 409)
+                    return _reject(request, slug, pk, "This match can't go ahead.", 409)
 
             # Every person says yes (the founder's call, 2026-10-06). Only the two people in
             # the match can say it, never a coordinator for them (spec §4.1), and contact opens

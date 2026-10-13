@@ -51,8 +51,15 @@ if getattr(settings, "ENABLE_2FA", False):
         # password door beside UMILoginView (/auth/login/): outside RATELIMIT_AUTH_PATHS, so the
         # per-IP and per-account throttles never saw it (2026-10 bug hunt). One door, one throttle.
         tf_patterns, tf_app = tf_urls
-        urlpatterns += [
-            path("", include(([p for p in tf_patterns if getattr(p, "name", None) != "login"], tf_app))),
+        # The setup wizard is swapped for one that refuses re-enrolment on POST as well as GET
+        # (apps/accounts/twofactor.py; 2026-10 bug hunt, L54).
+        from apps.accounts.twofactor import GuardedSetupView
+
+        tf_patterns = [
+            path(str(p.pattern), GuardedSetupView.as_view(), name="setup") if getattr(p, "name", None) == "setup" else p
+            for p in tf_patterns
+            if getattr(p, "name", None) != "login"
         ]
+        urlpatterns += [path("", include((tf_patterns, tf_app)))]
     except ImportError:
         pass

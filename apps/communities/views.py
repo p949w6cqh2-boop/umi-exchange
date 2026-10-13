@@ -38,7 +38,7 @@ from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
 
 from .forms import CommunityCreateForm, CommunitySettingsForm, JoinForm
-from .models import Community, Member, Resource, generate_join_code
+from .models import Community, LastAdminError, Member, Resource, generate_join_code, lock_admin_seats
 from .themes import THEME_DEFAULT, THEMES
 
 
@@ -86,16 +86,19 @@ class JoinCommunityView(LoginRequiredMixin, VerifiedRequiredMixin, FormView):
                 # per (user, community), so a stale is_active=False row can't be
                 # replaced — and feed access requires is_active=True, so without
                 # this the returning member is told "already a member" and then
-                # 404s on the feed). Role/display_name are preserved as archived.
+                # 404s on the feed). The display name is kept; the role is not.
+                # Coming back with the code is open to anyone who has it, so it
+                # comes back as a member: a coordinator who left got the seat, and
+                # casework on every standard case, back by re-entering the code
+                # (2026-10 bug hunt, L3). An admin can make them a coordinator again.
+                role_before = existing.role
                 existing.is_active = True
-                existing.save(update_fields=["is_active"])
-                emit(
-                    "member.joined",
-                    existing,
-                    user=self.request.user,
-                    request=self.request,
-                    details={"role": existing.role, "rejoined": True},
-                )
+                existing.role = "member"
+                existing.save(update_fields=["is_active", "role"])
+                details = {"role": "member", "rejoined": True}
+                if role_before != "member":
+                    details["role_before"] = role_before
+                emit("member.joined", existing, user=self.request.user, request=self.request, details=details)
                 messages.success(self.request, f"Welcome back to {community.name}!")
             else:
                 messages.info(self.request, "You are already a member of this community.")
@@ -128,10 +131,11 @@ class LeaveCommunityView(LoginRequiredMixin, View):
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
-        if member.is_last_active_admin:
+        try:
+            leave_community(member, request=request)
+        except LastAdminError:
             messages.error(request, "Make someone else an admin before you leave this community.")
             return redirect("community-feed", slug=slug)
-        leave_community(member, request=request)
         messages.success(
             request,
             f"You have left {community.name}. Your open asks and offers are off the board. "
@@ -673,31 +677,37 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             return redirect("community-settings", slug=self.community.slug)
 
         if action == "change_role":
-            # Least privilege: only admins change roles (coordinators manage content).
-            if not self.member.is_admin:
-                messages.error(request, "Only admins can change member roles.")
-                return redirect("community-settings", slug=self.community.slug)
-            # Same-community lookup prevents cross-community IDOR.
-            member_id = parse_uuid(request.POST.get("member_id"))  # junk is an unknown member, not a 500
-            target = self.community.members.filter(id=member_id, is_active=True).first() if member_id else None
-            new_role = request.POST.get("role")
-            if not target or new_role not in dict(Member.ROLE_CHOICES):
-                messages.error(request, "Invalid member or role.")
-                return redirect("community-settings", slug=self.community.slug)
-            if target.is_last_active_admin and new_role != "admin":
-                messages.error(request, "The community must keep at least one admin.")
-                return redirect("community-settings", slug=self.community.slug)
-            old_role = target.role
-            if new_role != old_role:
-                target.role = new_role
-                target.save(update_fields=["role"])
-                emit(
-                    "member.role_changed",
-                    target,
-                    user=request.user,
-                    request=request,
-                    details={"from": old_role, "to": new_role},
-                )
+            with transaction.atomic():
+                # Every check below is read under the community's lock, the one leaving takes too
+                # (2026-10 bug hunt, L2): two admins demoting each other at once both passed the
+                # last-admin check and left none. The actor is re-read for the same reason: an
+                # admin demoted a moment ago must not finish a role change.
+                lock_admin_seats(self.community.pk)
+                # Least privilege: only admins change roles (coordinators manage content).
+                if not self.community.members.filter(pk=self.member.pk, is_active=True, role="admin").exists():
+                    messages.error(request, "Only admins can change member roles.")
+                    return redirect("community-settings", slug=self.community.slug)
+                # Same-community lookup prevents cross-community IDOR.
+                member_id = parse_uuid(request.POST.get("member_id"))  # junk is an unknown member, not a 500
+                target = self.community.members.filter(id=member_id, is_active=True).first() if member_id else None
+                new_role = request.POST.get("role")
+                if not target or new_role not in dict(Member.ROLE_CHOICES):
+                    messages.error(request, "Invalid member or role.")
+                    return redirect("community-settings", slug=self.community.slug)
+                if target.is_last_active_admin and new_role != "admin":
+                    messages.error(request, "The community must keep at least one admin.")
+                    return redirect("community-settings", slug=self.community.slug)
+                old_role = target.role
+                if new_role != old_role:
+                    target.role = new_role
+                    target.save(update_fields=["role"])
+                    emit(
+                        "member.role_changed",
+                        target,
+                        user=request.user,
+                        request=request,
+                        details={"from": old_role, "to": new_role},
+                    )
             messages.success(request, f"{target.display_name}'s role updated.")
             return redirect("community-settings", slug=self.community.slug)
 
@@ -905,7 +915,21 @@ class VouchMemberView(LoginRequiredMixin, View):
         username = (request.POST.get("username") or "").strip()
         from django.contrib.auth import get_user_model
 
-        target = get_user_model().objects.filter(username__iexact=username, is_active=True).first()
+        # The exact username first. Ignoring case only when that finds one account: with "Maria"
+        # and "maria" both registered, a case-blind .first() vouched for whichever sorted first
+        # (2026-10 bug hunt, L31).
+        accounts = get_user_model().objects.filter(is_active=True)
+        target = accounts.filter(username=username).first()
+        if target is None:
+            near = list(accounts.filter(username__iexact=username)[:2])
+            if len(near) > 1:
+                messages.error(
+                    request,
+                    "More than one account has that name with different capital letters. "
+                    "Ask your neighbour to show you their username exactly.",
+                )
+                return redirect(back, slug=slug)
+            target = near[0] if near else None
         if target is None:
             messages.error(request, "No account with that username. Check the spelling with your neighbour.")
             return redirect(back, slug=slug)

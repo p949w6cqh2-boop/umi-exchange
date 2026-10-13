@@ -69,7 +69,10 @@ gate has a receipt.
 ### Phase 1 — the gate
 
 - **Paths:** `GEO_GATED_PATHS`, default `("/auth/register/",)`. Admin login is a **separate opt-in**
-  (`GEO_GATE_ADMIN`), because gating it can lock the founder out while travelling.
+  (`GEO_GATE_ADMIN`), because gating it can lock the founder out while travelling. *(2026-10-13: the
+  switch covers all of `/admin/` and `/staff/`, not only `/admin/login/`, which two_factor turns into a
+  redirect to `/auth/login/`; a sign-in from a refused country still reached the admin. Admin work is
+  never counted as a sign-up attempt.)*
 - **Allow list:** `GEO_ALLOWED_COUNTRIES` from the environment (ISO codes, e.g. `US`).
   🔴 **Empty means OFF — and the codebase default is empty.** UMI is meant to be self-hosted by any
   community anywhere. A parish in Kenya running its own copy must not inherit a US-only lock. **The

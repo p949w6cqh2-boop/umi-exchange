@@ -52,7 +52,8 @@ def _login(client, user):
 def _request_email(client, address):
     """The surface is ACCOUNT SETTINGS — the page people already look at for
     this — not a new route. Phone must ride along because it is the same form."""
-    return client.post(reverse("account-settings"), {"email": address, "phone": ""})
+    # A change of address takes the current password (2026-10 bug hunt, L48).
+    return client.post(reverse("account-settings"), {"email": address, "phone": "", "current_password": STRONG})
 
 
 # ── requesting ───────────────────────────────────────────────────────────────

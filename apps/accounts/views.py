@@ -56,6 +56,7 @@ from .verification import (
     read_email_token_claims,
     register_post_trips,
     send_add_email_verification,
+    send_email_changed_notice,
     send_registration_email,
     send_verification_email,
 )
@@ -307,6 +308,7 @@ class ConfirmAddEmailView(View):
             messages.error(request, "That address could not be confirmed. Try a different one.")
             return redirect("account-settings" if request.user.is_authenticated else "login")
 
+        old_address = user.deliverable_email
         user.email = email
         # The address and its proof in ONE save. User.save() clears a confirmation when
         # the address changes WITHOUT a fresh one; writing a fresh one here is what tells
@@ -324,6 +326,10 @@ class ConfirmAddEmailView(View):
         user.save(update_fields=fields)
         # Clicked in the same browser that registered: nothing is pending any more.
         request.session.pop(PENDING_EMAIL_KEY, None)
+        if old_address and old_address.lower() != email.lower():
+            # The proven address it replaces hears about it (2026-10 bug hunt, L48): a change made
+            # by someone else would otherwise finish in silence, with resets going to them.
+            mail_quietly(send_email_changed_notice, user, old_address, email)
 
         messages.success(request, "Email confirmed — you can now reset your password by email.")
         return redirect("account-settings" if request.user.is_authenticated else "login")
@@ -513,21 +519,38 @@ class RecoveryCodeRedeemView(FormView):
             form.add_error(None, self.FAILED)
             return self.form_invalid(form)
         emit(action, user, request=self.request)
-        fresh = issue_recovery_code(self.request, user)
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         reset_url = reverse("password_reset_confirm", kwargs={"uidb64": uidb64, "token": token})
+        if user.deliverable_email:
+            # A proven email is already the way back in, so no paper code (account-recovery.md §B).
+            # Redeeming a 15-minute reset or a one-hour unlock minted one, a permanent credential
+            # for whoever redeemed it (2026-10 bug hunt, L49).
+            return redirect(reset_url)
+        fresh = issue_recovery_code(self.request, user)
         return render_recovery_code(self.request, fresh, continue_url=reset_url, reset_url=reset_url)
 
 
 @method_decorator(ratelimit(key="user", rate="5/m", method="POST", block=True), name="post")
 class RecoveryCodeNewView(LoginRequiredMixin, View):
-    """Print a replacement from settings. The old code stops working immediately."""
+    """Print a replacement from settings. The old code stops working immediately.
+
+    It takes the current password (2026-10 bug hunt, L48): a signed-in browser alone, a borrowed
+    tablet or a stolen cookie, could print a fresh code and revoke the owner's paper. An account
+    with a proven email gets none, as at registration (account-recovery.md §B).
+    """
 
     http_method_names = ["post"]
 
     def post(self, request):
-        code = issue_recovery_code(request, request.user)
+        user = request.user
+        if user.deliverable_email:
+            messages.info(request, "Your account has a confirmed email, which is how you get back in.")
+            return redirect("account-settings")
+        if not user.check_password(request.POST.get("current_password") or ""):
+            messages.error(request, "Enter your current password to print a new recovery code.")
+            return redirect("account-settings")
+        code = issue_recovery_code(request, user)
         return render_recovery_code(request, code, continue_url=reverse("account-settings"))
 
 
@@ -558,6 +581,11 @@ class StaffUnlockView(LoginRequiredMixin, FormView):
             form.add_error("username", "No account has exactly that username.")
             return self.form_invalid(form)
         staff = self.request.user
+        # A staff account unlocking a superuser could then set its password: a climb from staff to
+        # superuser (2026-10 bug hunt, L50). Staff and superuser accounts are a superuser's to unlock.
+        if (target.is_staff or target.is_superuser) and not staff.is_superuser:
+            form.add_error("username", "Only a superuser can unlock a staff account.")
+            return self.form_invalid(form)
         _, code = issue_credential(
             target,
             RecoveryCredential.PURPOSE_ADMIN_UNLOCK,

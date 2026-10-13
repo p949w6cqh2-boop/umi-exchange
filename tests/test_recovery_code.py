@@ -159,7 +159,8 @@ def test_signed_in_user_without_email_can_print_a_new_code_and_the_old_one_dies(
     client = Client()
     client.force_login(user)
     assert reverse("recovery-code-new") in client.get(reverse("account-settings")).content.decode()
-    resp = client.post(reverse("recovery-code-new"))
+    # A reprint takes the current password (2026-10 bug hunt, L48); the factory's is testpass123.
+    resp = client.post(reverse("recovery-code-new"), {"current_password": "testpass123"})
     assert resp.status_code == 200
     new = [c for c in _codes(resp) if c != old]
     assert len(set(new)) == 1

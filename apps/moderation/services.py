@@ -135,14 +135,23 @@ def leave_community(member, *, request=None):
     their open asks and active offers off the board: hidden, never deleted, and stamped
     hidden_on_leave_at, so that coming back reposts nothing until they choose (LeftPostsView).
     Unlike a removal there is no removal stamp: they can rejoin with the code. Returns the
-    audited counts.
+    audited counts. Raises LastAdminError, changing nothing, for the community's last admin.
     """
+    from apps.communities.models import LastAdminError, Member, lock_admin_seats
     from apps.needs.models import Need
     from apps.notifications.adapter import NotificationAdapter
     from apps.offers.models import Offer
 
     now = timezone.now()
     with transaction.atomic():
+        # The last-admin check and the leave are one step under the community's lock (2026-10 bug
+        # hunt, L2): checked outside it, two admins leaving at once both passed and left none.
+        lock_admin_seats(member.community_id)
+        member = Member.objects.select_related("community", "user").get(pk=member.pk)
+        if not member.is_active:  # a double tap: the first one already left
+            return {"matches_cancelled": 0, "needs_hidden": 0, "offers_hidden": 0}
+        if member.is_last_active_admin:
+            raise LastAdminError
         cancelled = _cancel_in_flight_matches(member)
         needs_hidden = Need.objects.filter(requester=member, status="open", moderation_hidden=False).update(
             moderation_hidden=True, hidden_on_leave_at=now

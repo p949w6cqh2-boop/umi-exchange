@@ -79,7 +79,8 @@ def test_a_single_fresh_link_still_confirms(no_email_user):
 
 
 def _settings_post(client, email, phone=""):
-    return client.post(reverse("account-settings"), {"email": email, "phone": phone})
+    # A change of address takes the current password (2026-10 bug hunt, L48).
+    return client.post(reverse("account-settings"), {"email": email, "phone": phone, "current_password": STRONG})
 
 
 def test_email_change_requests_are_limited_per_account(settings, no_email_user):

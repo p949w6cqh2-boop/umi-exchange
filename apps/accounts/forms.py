@@ -70,6 +70,15 @@ class RegistrationForm(forms.ModelForm):
             ),
         }
 
+    def clean_username(self):
+        """Unique ignoring case (2026-10 bug hunt, L31). The column is unique only exactly, so
+        "Maria" could register beside "maria" and pass as her wherever a person types a name (a
+        vouch, a coordinator reset). Same words as the built-in unique check: no new oracle."""
+        username = self.cleaned_data.get("username")
+        if username and User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError(User._meta.get_field("username").error_messages["unique"])
+        return username
+
     def clean_email(self):
         # No uniqueness check and no "already in use" error (#171). This form writes no
         # address, so there is nothing to collide with, and answering differently for a
@@ -153,6 +162,16 @@ class ProfileForm(forms.ModelForm):
         ),
         help_text="We'll send a confirmation link before this is saved.",
     )
+    # Changing the email changes where a password reset goes, so it takes the password, not just
+    # a signed-in browser: a borrowed tablet or a stolen cookie could move the account's recovery
+    # to another inbox (2026-10 bug hunt, L48). Phone and notification saves do not ask for it.
+    current_password = forms.CharField(
+        required=False,
+        strip=False,
+        label="Current password",
+        widget=forms.PasswordInput(attrs={"class": INPUT_CLASS, "autocomplete": "current-password"}),
+        help_text="Needed only to change your email.",
+    )
 
     class Meta:
         model = User
@@ -185,6 +204,17 @@ class ProfileForm(forms.ModelForm):
         # recovery both refuse to be. The collision is handled where it actually
         # matters, at confirmation time, and it answers like success there too.
         return self.cleaned_data.get("email") or None
+
+    def clean(self):
+        data = super().clean()
+        requested = data.get("email")
+        if requested and requested != self.instance.email:
+            password = data.get("current_password") or ""
+            if not password:
+                self.add_error("current_password", "Enter your current password to change your email.")
+            elif not self.instance.check_password(password):
+                self.add_error("current_password", "That password didn't match.")
+        return data
 
 
 class OTPTokenForm(forms.Form):

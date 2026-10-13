@@ -6,11 +6,14 @@ One helper module, three jobs:
 * the register-form bot checks (honeypot field + minimum form age) — both trip paths
   return the SAME response shape as success, so a bot author gets no oracle;
 * ``VerifiedRequiredMixin`` — the soft gate. An unverified account can sign in and look
-  around; the doors it cannot pass are community join, posting a need or an offer, and
-  proposing a match. Two exits, both plain-worded on the pending page: click the email
-  link, or a coordinator vouches in person (a robot doesn't sit in a pew).
+  around; the doors it cannot pass are community join, posting a need or an offer,
+  proposing a match, and publishing a community page (2026-10 bug hunt, L11: a published
+  landing page is what anonymous visitors see). Two exits, both plain-worded on the
+  pending page: click the email link, or a coordinator vouches in person (a robot doesn't
+  sit in a pew).
 """
 
+import hashlib
 import logging
 import smtplib
 import time
@@ -18,6 +21,7 @@ import time
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core import signing
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
@@ -45,6 +49,9 @@ EMAIL_VERIFY_SALT = "accounts.email-verify"
 HONEYPOT_TS_SALT = "accounts.register-ts"
 EMAIL_TOKEN_MAX_AGE = 48 * 3600  # the spec's 48 hours
 MIN_FORM_SECONDS = 3  # a human reads the form; a script does not
+# A stamp lasts a day (a tab left open overnight still works) and works once (2026-10 bug hunt,
+# L52): it had no age limit, so one stamp, rendered once, signed up any number of accounts forever.
+HONEYPOT_TS_MAX_AGE = 24 * 3600
 
 
 # ── email verification token ─────────────────────────────────────────────
@@ -137,6 +144,13 @@ def send_add_email_verification(request, user, email):
     send_mail("Confirm your email — UMI Exchange", body, None, [email], fail_silently=False)
 
 
+def send_email_changed_notice(user, old_address, new_address):
+    """To the proven address an email change replaced (2026-10 bug hunt, L48). Without it a change
+    made by someone else finished in silence, and every later reset went to them."""
+    body = render_to_string("emails/email_changed.txt", {"username": user.username, "new_address": new_address})
+    send_mail("Your email was changed on UMI Exchange", body, None, [old_address], fail_silently=False)
+
+
 # ── registration (docs/specs/email-confirmation.md "Registration", option C; #171) ──
 #
 # Registration no longer writes the address. It used to, unproven, and User.email is
@@ -199,16 +213,30 @@ def honeypot_timestamp():
 
 
 def register_post_trips(request):
-    """True when the POST looks scripted: honeypot filled, timestamp missing/forged,
-    or the form came back faster than a human can read it. Callers must respond with
-    the same shape as success (no oracle)."""
+    """True when the POST looks scripted: honeypot filled, timestamp missing, forged,
+    older than a day or already used, or the form came back faster than a human can
+    read it. Callers must respond with the same shape as success (no oracle)."""
     if request.POST.get("website", "").strip():
         return True
+    stamp = request.POST.get("hp_ts", "")
     try:
-        rendered_at = signing.loads(request.POST.get("hp_ts", ""), salt=HONEYPOT_TS_SALT)
-    except signing.BadSignature:
+        rendered_at = signing.loads(stamp, salt=HONEYPOT_TS_SALT, max_age=HONEYPOT_TS_MAX_AGE)
+    except signing.BadSignature:  # SignatureExpired is one
         return True
-    return (time.time() - float(rendered_at)) < MIN_FORM_SECONDS
+    if (time.time() - float(rendered_at)) < MIN_FORM_SECONDS:
+        return True
+    return not _first_use_of(stamp)
+
+
+def _first_use_of(stamp):
+    """True the first time a stamp is seen. A cache failure lets the sign-up through: the bot
+    check is a speed bump, and one that fails closed shuts the door on people."""
+    key = "hp_ts:" + hashlib.sha256(stamp.encode()).hexdigest()[:32]
+    try:
+        return cache.add(key, 1, timeout=HONEYPOT_TS_MAX_AGE + 60)
+    except Exception:  # noqa: BLE001 - fail open, as the geo gate does
+        logger.warning("register stamp: the cache is unavailable; the once-only check was skipped")
+        return True
 
 
 # ── the soft gate (option A) ─────────────────────────────────────────────
@@ -217,7 +245,7 @@ def register_post_trips(request):
 class VerifiedRequiredMixin:
     """Place AFTER LoginRequiredMixin. Redirects unverified accounts to the
     pending page that names both exits. Everything read-only stays open —
-    this mixin belongs only on the four write doors the spec gates."""
+    this mixin belongs only on the write doors listed in the module docstring."""
 
     def dispatch(self, request, *args, **kwargs):
         user = request.user

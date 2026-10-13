@@ -86,8 +86,14 @@ def country_for(ip):
 def gated_paths():
     paths = tuple(getattr(settings, "GEO_GATED_PATHS", ()))
     if getattr(settings, "GEO_GATE_ADMIN", False):
-        paths += ("/admin/login/",)
+        # The whole admin and the staff tools, not only the admin's login page: two_factor turns
+        # /admin/login/ into a redirect to /auth/login/, so a staff sign-in from a refused country
+        # still reached /admin/ (2026-10 bug hunt, L47).
+        paths += ADMIN_PATHS
     return paths
+
+
+ADMIN_PATHS = ("/admin/", "/staff/")
 
 
 def count_attempt(country):
@@ -110,7 +116,12 @@ class GeoGateMiddleware:
         if not paths or not request.path.startswith(paths):
             return self.get_response(request)
         allowed = [c.upper() for c in getattr(settings, "GEO_ALLOWED_COUNTRIES", [])]
-        counting = getattr(settings, "GEO_COUNT", False) and request.method == "POST"
+        # Counting measures sign-up attempts, so admin work is never counted.
+        counting = (
+            getattr(settings, "GEO_COUNT", False)
+            and request.method == "POST"
+            and not request.path.startswith(ADMIN_PATHS)
+        )
         if not allowed and not counting:
             return self.get_response(request)
 
