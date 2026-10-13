@@ -5,7 +5,6 @@ audited (§8.3) with PII-free details. Hiding is reversible: a boolean the
 coordinator can flip back, never a delete (keyring: archive over delete).
 """
 
-
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
