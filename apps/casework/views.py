@@ -84,8 +84,12 @@ class CommunityMixin(LoginRequiredMixin):
             grant_q = Q(grants__member=m, grants__role="contributor", grants__revoked_at__isnull=True) & (
                 Q(grants__expires_at__isnull=True) | Q(grants__expires_at__gt=now)
             )
-            role_q = Q(sensitivity="standard") if access.is_coordinator(m) else Q(pk=None)
-            qs = qs.filter(Q(assigned_to=m) | Q(opened_by=m) | role_q | grant_q).distinct()
+            # Opener and assignee count only while they coordinate (L13, access.py).
+            if access.is_coordinator(m):
+                role_q = Q(sensitivity="standard") | Q(assigned_to=m) | Q(opened_by=m)
+            else:
+                role_q = Q(pk=None)
+            qs = qs.filter(role_q | grant_q).distinct()
         return (
             qs.select_related("subject_person")
             .annotate(prio=SqlCase(When(assigned_to=m, then=Value(0)), default=Value(1), output_field=IntegerField()))
@@ -105,9 +109,10 @@ class CommunityMixin(LoginRequiredMixin):
         grant_q = Q(grants__member=m, grants__role="contributor", grants__revoked_at__isnull=True) & (
             Q(grants__expires_at__isnull=True) | Q(grants__expires_at__gt=now)
         )
+        tie_q = (Q(assigned_to=m) | Q(opened_by=m)) if access.is_coordinator(m) else Q(pk=None)  # L13
         return (
             CaseFile.objects.filter(community=self.community, status__in=("open", "monitoring"))
-            .filter(Q(assigned_to=m) | Q(opened_by=m) | grant_q)
+            .filter(tie_q | grant_q)
             .select_related("subject_person")
             .distinct()
             .order_by("-updated_at")
@@ -297,7 +302,7 @@ class CaseDetailView(CommunityMixin, View):
         visible_notes = [n for n in notes if n.status == CaseNote.STATUS_FINAL or n.author_id == self.membership.id]
 
         can_contribute = level >= access.CONTRIBUTOR
-        can_assign = access.is_admin(self.membership) or case.assigned_to_id == self.membership.id
+        can_assign = access.is_admin(self.membership) or access.is_case_assignee(self.membership, case)
         can_export = (
             access.is_admin(self.membership)
             and case.consent_id
@@ -375,7 +380,7 @@ class CaseStatusView(CommunityMixin, View):
 class CaseAssignView(CommunityMixin, View):
     def post(self, request, slug, pk):
         case = self.get_case(pk)
-        if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
+        if not (access.is_admin(self.membership) or access.is_case_assignee(self.membership, case)):
             return _forbidden("Only an admin or the current assignee can hand off.")
         # Revocation freeze (§3.6). A handoff summary is new subject narrative —
         # envelope-encrypted, often the most acute detail in the case — and the
@@ -392,7 +397,7 @@ class CaseAssignView(CommunityMixin, View):
             # Locked and re-read: two handoffs at once both landed (two pending handoffs, the last
             # write winning the assignee), and a closed case took one (2026-10 bug hunt, L43).
             case = CaseFile.objects.select_for_update(of=("self",)).get(pk=case.pk)
-            if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
+            if not (access.is_admin(self.membership) or access.is_case_assignee(self.membership, case)):
                 return _forbidden("Only an admin or the current assignee can hand off.")
             if case.status == "closed":
                 return _conflict(CLOSED_CASE)
@@ -977,7 +982,7 @@ class MyFollowUpsView(CommunityMixin, View):
 class GrantCreateView(CommunityMixin, View):
     def post(self, request, slug, pk):
         case = self.get_case(pk)
-        if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
+        if not (access.is_admin(self.membership) or access.is_case_assignee(self.membership, case)):
             return _forbidden("Only an admin or the assignee can grant access.")
         # Revocation freeze (§3.6), as on handoff: a grant widens who can read the case, and the
         # subject has withdrawn. Revoking a grant (GrantRevokeView) stays open, since it narrows.
@@ -1036,7 +1041,7 @@ class GrantCreateView(CommunityMixin, View):
 class GrantRevokeView(CommunityMixin, View):
     def post(self, request, slug, pk, grant_id):
         case = self.get_case(pk)
-        if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
+        if not (access.is_admin(self.membership) or access.is_case_assignee(self.membership, case)):
             return _forbidden("Only an admin or the assignee can revoke access.")
         grant = get_object_or_404(CaseAccessGrant, pk=grant_id, case=case)
         if grant.revoked_at:

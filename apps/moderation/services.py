@@ -126,6 +126,15 @@ def _cancel_in_flight_matches(member):
     return cancelled
 
 
+def _release_case_ties(member, *, reason, user, request):
+    """A coordinator who leaves or is removed hands their open cases back, as one whose role is
+    changed does (the founder's call, 2026-10-13, bug hunt L13; apps/casework/ties.py)."""
+    from apps.casework.ties import release_case_ties, stops_coordinating
+
+    if stops_coordinating(member.role, None):
+        release_case_ties(member, reason=reason, user=user, request=request)
+
+
 def leave_community(member, *, request=None):
     """A member's own choice to leave (founder's decision 2026-10-12, bug hunt #8).
 
@@ -163,6 +172,7 @@ def leave_community(member, *, request=None):
         ).update(moderation_hidden=True, hidden_on_leave_at=now)
         member.is_active = False
         member.save(update_fields=["is_active"])
+        _release_case_ties(member, reason="left", user=member.user, request=request)
 
     counts = {"matches_cancelled": len(cancelled), "needs_hidden": needs_hidden, "offers_hidden": offers_hidden}
     emit("member.left", member, user=member.user, request=request, details={"role": member.role, **counts})
@@ -204,6 +214,7 @@ def remove_member(member, *, by, request=None):
         member.removed_at = timezone.now()
         member.removed_by = by
         member.save(update_fields=["is_active", "removed_at", "removed_by"])
+        _release_case_ties(member, reason="removed", user=by.user, request=request)
 
     emit(
         "member.removed",

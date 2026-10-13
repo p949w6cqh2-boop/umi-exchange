@@ -6,6 +6,9 @@ Levels: NONE < VIEWER < CONTRIBUTOR.
   standard   case: assigned_to, opened_by, coordinators, admins → CONTRIBUTOR
   restricted case: assigned_to, opened_by, admins              → CONTRIBUTOR
   active CaseAccessGrant adds VIEWER or CONTRIBUTOR explicitly.
+assigned_to and opened_by count only while that person still coordinates: losing the role ends
+the access they had through a case (the founder's call, 2026-10-13, bug hunt L13; ties.py hands
+their open cases back). A grant is an explicit choice about the person, so it still counts.
 The subject themself gets NONE on the record body (existence transparency
 is a separate, list-level concern — design §3.4).
 """
@@ -31,7 +34,7 @@ def case_access(member, case) -> int:
         return NONE
     if member.role == "admin":
         return CONTRIBUTOR
-    if case.assigned_to_id == member.id or case.opened_by_id == member.id:
+    if member.role in COORDINATOR_ROLES and (case.assigned_to_id == member.id or case.opened_by_id == member.id):
         return CONTRIBUTOR
     if case.sensitivity == "standard" and member.role in COORDINATOR_ROLES:
         return CONTRIBUTOR
@@ -84,6 +87,13 @@ def subject_display(case) -> dict:
 
 def is_coordinator(member) -> bool:
     return bool(member and member.role in COORDINATOR_ROLES)
+
+
+def is_case_assignee(member, case) -> bool:
+    """The assignee's own powers (hand off, grant, revoke) last only while they coordinate (L13).
+    A closed case keeps its assignee on record, and that alone must not let a former coordinator
+    grant someone access to it."""
+    return is_coordinator(member) and case.assigned_to_id == member.id
 
 
 def is_admin(member) -> bool:

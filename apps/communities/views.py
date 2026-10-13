@@ -700,6 +700,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                     messages.error(request, "The community must keep at least one admin.")
                     return redirect("community-settings", slug=self.community.slug)
                 old_role = target.role
+                released = 0
                 if new_role != old_role:
                     target.role = new_role
                     target.save(update_fields=["role"])
@@ -710,7 +711,21 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                         request=request,
                         details={"from": old_role, "to": new_role},
                     )
-            messages.success(request, f"{target.display_name}'s role updated.")
+                    # Losing the role ends their casework access; their open cases wait for an
+                    # admin to hand on (the founder's call, 2026-10-13, bug hunt L13).
+                    from apps.casework.ties import release_case_ties, stops_coordinating
+
+                    if stops_coordinating(old_role, new_role):
+                        released = release_case_ties(target, reason="role_changed", user=request.user, request=request)
+            done = f"{target.display_name}'s role updated."
+            if released == 1:
+                done += " The open case they held now has no one assigned. Hand it on from the case list."
+            elif released:
+                done += (
+                    f" The {released} open cases they held now have no one assigned."
+                    " Hand each one on from the case list."
+                )
+            messages.success(request, done)
             return redirect("community-settings", slug=self.community.slug)
 
         form = CommunitySettingsForm(request.POST, instance=self.community)
