@@ -3,7 +3,9 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased: fixes from the October check-up
+## 2026-10-13
+
+Fixes from the October check-up of the whole board.
 
 - **If a post can't go up, the page now says why.** Before, an ask or offer whose description
   used certain words was quietly refused: the page came back with no message and your choices
