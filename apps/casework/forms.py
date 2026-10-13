@@ -111,29 +111,63 @@ class CaseCreateForm(forms.Form):
         if bool(person) == bool(new_name):
             raise forms.ValidationError("Choose an existing person OR enter a new person's name (not both).")
 
-        mode = data.get("consent_mode")
-        if mode == "existing":
-            consent = data.get("existing_consent")
-            if not consent:
-                self.add_error("existing_consent", "Pick the consent record.")
-            else:
-                if not _consent_is_active(consent):
-                    self.add_error("existing_consent", "That consent is not active.")
-                elif "case_records" not in (consent.scope or []):
-                    self.add_error("existing_consent", "That consent does not cover case records.")
-                elif person and person.linked_user_id:
-                    if consent.participant_id != person.linked_user_id:
-                        self.add_error("existing_consent", "That consent belongs to a different person.")
-                elif not person or not person.linked_user_id:
-                    self.add_error(
-                        "existing_consent", "This person has no account — record verbal/paper consent instead."
-                    )
-        elif mode == "record":
-            if not data.get("record_method"):
-                self.add_error("record_method", "How was consent given?")
-        elif mode == "emergency":
+        check_consent_choice(self, data, person)
+        if data.get("consent_mode") == "emergency":
             if len((data.get("emergency_justification") or "").strip()) < 10:
                 self.add_error("emergency_justification", "A brief justification is required (audited).")
+        return data
+
+
+def check_consent_choice(form, data, person):
+    """The consent checks opening a case makes, shared with recording consent on an emergency case
+    afterwards (spec §3.7-3.8, L26): an existing digital consent must be active, cover case records
+    and belong to this person; consent written down must say how it was given."""
+    mode = data.get("consent_mode")
+    if mode == "existing":
+        consent = data.get("existing_consent")
+        if not consent:
+            form.add_error("existing_consent", "Pick the consent record.")
+        elif not _consent_is_active(consent):
+            form.add_error("existing_consent", "That consent is not active.")
+        elif "case_records" not in (consent.scope or []):
+            form.add_error("existing_consent", "That consent does not cover case records.")
+        elif person and person.linked_user_id:
+            if consent.participant_id != person.linked_user_id:
+                form.add_error("existing_consent", "That consent belongs to a different person.")
+        else:
+            form.add_error("existing_consent", "This person has no account — record verbal/paper consent instead.")
+    elif mode == "record":
+        if not data.get("record_method"):
+            form.add_error("record_method", "How was consent given?")
+
+
+class RecordConsentForm(forms.Form):
+    """Record consent on a case opened in an emergency (spec §3.7-3.8; the founder's call,
+    2026-10-13, bug hunt L26): the choices opening a case offers, without the emergency one."""
+
+    CONSENT_MODES = [
+        ("existing", "Use their own digital consent"),
+        ("record", "Write down verbal or paper consent now"),
+    ]
+    consent_mode = forms.ChoiceField(choices=CONSENT_MODES, widget=forms.RadioSelect, initial="record")
+    existing_consent = forms.ModelChoiceField(queryset=Consent.objects.none(), required=False, empty_label="— choose —")
+    record_method = forms.ChoiceField(choices=[("verbal", "Verbal"), ("written", "Paper (filed)")], required=False)
+    include_export = forms.BooleanField(required=False, label="Consent also covers data export (case_export)")
+
+    def __init__(self, person, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.person = person
+        # Only this person's own active consents: the case is about them, so nobody else's is offered.
+        linked = getattr(person, "linked_user_id", None)
+        self.fields["existing_consent"].queryset = (
+            Consent.objects.filter(status="active", revoked_at__isnull=True, participant_id=linked)
+            if linked
+            else Consent.objects.none()
+        )
+
+    def clean(self):
+        data = super().clean()
+        check_consent_choice(self, data, self.person)
         return data
 
 

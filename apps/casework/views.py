@@ -29,7 +29,16 @@ from apps.consent.models import Consent
 from apps.people.models import Person
 
 from . import access, audit
-from .forms import AssignForm, CaseCreateForm, FollowUpForm, GrantForm, NoteForm, ReauthForm, VisitForm
+from .forms import (
+    AssignForm,
+    CaseCreateForm,
+    FollowUpForm,
+    GrantForm,
+    NoteForm,
+    ReauthForm,
+    RecordConsentForm,
+    VisitForm,
+)
 from .middleware import mark_authenticated
 from .models import CaseAccessGrant, CaseFile, CaseNote, FollowUp, WarmHandoff
 from .notify import notify
@@ -125,6 +134,29 @@ class CommunityMixin(LoginRequiredMixin):
         return bool(case.consent_id) and not case.consent_is_active()
 
 
+def _record_consent(person, community, membership, method, include_export):
+    """Consent given verbally or on paper, written down for `person`: when a case is opened, and
+    when consent is recorded on an emergency case afterwards (L26).
+
+    A3: most subjects have no account (Person.linked_user is never assigned in the running app),
+    so the paper or verbal record IS the instrument. It is recorded AGAINST THEM, with the
+    coordinator named only as the witness who wrote it down — never as the grantor, which §4.1
+    forbids and which left the subject unable to see or revoke their own consent."""
+    on_behalf = not person.linked_user_id
+    scope = ["case_records"] + (["case_export"] if include_export else [])
+    return Consent.objects.create(
+        participant=None if on_behalf else person.linked_user,
+        subject_person=person if on_behalf else None,
+        recorded_by=membership if on_behalf else None,
+        granted_to=community.name[:200],
+        grantee_type="community",
+        grantee_id=community.id,
+        scope=scope,
+        purpose=f"Case records for you at {community.name}"[:500],
+        method=method,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Case list / create / detail
 # ---------------------------------------------------------------------------
@@ -206,24 +238,8 @@ class CaseCreateView(CommunityMixin, View):
             if d["consent_mode"] == "existing":
                 consent = d["existing_consent"]
             elif d["consent_mode"] == "record":
-                # A3: most subjects have no account (Person.linked_user is never
-                # assigned in the running app), so the paper or verbal record IS
-                # the instrument. It is recorded AGAINST THEM, with the coordinator
-                # named only as the witness who wrote it down — never as the
-                # grantor, which §4.1 forbids and which left the subject unable to
-                # see or revoke their own consent.
-                on_behalf = not person.linked_user_id
-                scope = ["case_records"] + (["case_export"] if d["include_export"] else [])
-                consent = Consent.objects.create(
-                    participant=None if on_behalf else person.linked_user,
-                    subject_person=person if on_behalf else None,
-                    recorded_by=self.membership if on_behalf else None,
-                    granted_to=self.community.name[:200],
-                    grantee_type="community",
-                    grantee_id=self.community.id,
-                    scope=scope,
-                    purpose=f"Case records for you at {self.community.name}"[:500],
-                    method=d["record_method"],
+                consent = _record_consent(
+                    person, self.community, self.membership, d["record_method"], d["include_export"]
                 )
             else:
                 emergency = True
@@ -335,8 +351,47 @@ class CaseDetailView(CommunityMixin, View):
                 "can_export": can_export,
                 "is_admin": access.is_admin(self.membership),
                 "consent_frozen": self._consent_frozen(case),
+                # An emergency case waiting for its consent (L26): who may record it, and the form.
+                "can_record_consent": can_assign and case.emergency_opened and not case.consent_id,
+                "consent_form": RecordConsentForm(case.subject_person),
             },
         )
+
+
+class CaseConsentView(CommunityMixin, View):
+    """Record consent on a case opened in an emergency (the founder's call, 2026-10-13, bug hunt
+    L26). The emergency path may open a case with no consent, and the spec says consent MUST then
+    be regularized (§3.7-3.8). The case page asked for it and nothing could do it, so an emergency
+    case stayed outside the §3.6 freeze for good. An admin, or the coordinator handling the case,
+    records it with the choices opening a case offers. emergency_opened stays as the record of how
+    the case began; from now on a revoked consent freezes it like any other."""
+
+    def post(self, request, slug, pk):
+        case = self.get_case(pk)
+        if not (access.is_admin(self.membership) or access.is_case_assignee(self.membership, case)):
+            return _forbidden("Only an admin or the coordinator handling this case can record its consent.")
+        form = RecordConsentForm(case.subject_person, request.POST)
+        if not form.is_valid():
+            return HttpResponse(form.errors.as_text(), status=400)
+        d = form.cleaned_data
+        with transaction.atomic():
+            # Locked and re-read, so two people recording at once attach one consent, not two.
+            case = CaseFile.objects.select_for_update(of=("self",)).get(pk=case.pk)
+            if not case.emergency_opened or case.consent_id:
+                return _conflict("This case already has its consent.")
+            if d["consent_mode"] == "existing":
+                consent = d["existing_consent"]
+            else:
+                consent = _record_consent(
+                    case.subject_person, self.community, self.membership, d["record_method"], d["include_export"]
+                )
+            case.consent = consent
+            case.save(update_fields=["consent", "updated_at"])
+            details = {"mode": d["consent_mode"]}
+            if d["consent_mode"] == "record":
+                details["method"] = d["record_method"]
+            audit.emit("case.consent_recorded", case, user=request.user, request=request, details=details)
+        return redirect("casework:detail", slug=slug, pk=case.pk)
 
 
 # ---------------------------------------------------------------------------

@@ -11,8 +11,26 @@
   {% endif %}
   {% if case.emergency_opened and not case.consent %}
   <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-    Opened under the <strong>emergency override</strong>. Regularize consent as soon as possible.
+    Opened under the <strong>emergency override</strong>. Record this person's consent as soon as you can.
     {% if case.emergency_justification %}<span class="block mt-1 text-amber-700">“{{ case.emergency_justification }}”</span>{% endif %}
+    {% if can_record_consent %}
+    {# Spec §3.7-3.8 (L26): the same choices as opening a case, without the emergency one. #}
+    <form method="post" action="{% url 'casework:consent' slug=community.slug pk=case.pk %}" class="mt-3 space-y-3">
+      {% csrf_token %}
+      {{ consent_form.consent_mode }}
+      <div class="flex flex-wrap items-end gap-3">
+        <div><label class="umi-label" for="{{ consent_form.existing_consent.id_for_label }}">Their digital consent</label>
+          {{ consent_form.existing_consent }}</div>
+        <div><label class="umi-label" for="{{ consent_form.record_method.id_for_label }}">Given how</label>
+          {{ consent_form.record_method }}</div>
+        <label class="flex items-center gap-2 pb-2">{{ consent_form.include_export }} {{ consent_form.include_export.label }}</label>
+      </div>
+      <p class="text-amber-900">Written-down consent is recorded as theirs, with you named as the person who wrote it down. Once it is recorded, if they withdraw it, no new notes can be added.</p>
+      <button type="submit" class="btn-primary text-sm">Record consent</button>
+    </form>
+    {% else %}
+    <span class="block mt-1">An admin or the coordinator handling this case can record it.</span>
+    {% endif %}
   </div>
   {% endif %}
 
