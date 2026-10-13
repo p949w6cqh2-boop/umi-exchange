@@ -3,6 +3,24 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
+## Unreleased: the founder's answers to the check-up's open questions
+
+- **Coordinators keep sight of the whole board.** If a member blocks a coordinator, the two of
+  them are still never matched and the member still doesn't see that coordinator's posts. But a
+  coordinator can now see every post in a community they look after, so a block can't take
+  someone out of their care. That coordinator doesn't get the member's contact details; another
+  coordinator still can.
+- **For coordinators doing casework.** When a coordinator becomes a plain member, or leaves, or is
+  removed, they can no longer open the cases they started or were handling. Their open cases wait
+  for an admin to hand on, and the admins get a note. Closed cases keep their name on record.
+  Nothing is deleted.
+- **Posts from people who left earlier.** People who left before leaving took posts down still have
+  open asks and offers on the board. With this update they come down the same way: nothing is
+  deleted, nobody is notified, and if they come back they choose what goes back up.
+- **Connecting with other boards.** An offer from another board now arrives with its title and
+  category, so you can see what you would be accepting. A board that has only asked to connect
+  gets no further until it is approved. It is built and still switched off.
+
 ## 2026-10-13
 
 Fixes from the October check-up of the whole board.

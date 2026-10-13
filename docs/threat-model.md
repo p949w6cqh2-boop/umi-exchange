@@ -36,7 +36,7 @@
 | Control | Holds? | Note / gap |
 |---|---|---|
 | Envelope crypto + crypto-shred + KEK in env only | ✅ | DB/backups are opaque without the env KEK; `backup.sh` excludes keys + has a key-guard. **Residual:** host-with-KEK = full PII (unavoidable for a working app — minimise host blast radius). |
-| `case_access()` authz matrix + cross-community isolation | ✅ | Single source of truth; NONE if `member.community_id != case.community_id`. Coordinators get **standard** only; restricted = admin/assigned/opened. |
+| `case_access()` authz matrix + cross-community isolation | ✅ | Single source of truth; NONE if `member.community_id != case.community_id`. Coordinators get **standard** only; restricted = admin, or the coordinator who opened it or holds it (only while they still coordinate: losing the role ends that, 2026-10-13, L13). |
 | Per-view community/queryset filters (IDOR) | ⚠️ mostly | matches/needs/offers/casework/tags/dashboard all scope `<pk>` to community + membership; consent scopes to `participant=user`. **Gap: no systematic test** asserting cross-community 404 for *every* object view (PR #9 fixed one — its siblings are guarded by convention, not a test). |
 | `SensitiveSessionMiddleware` 4-hr re-auth | ✅ | Gates the `casework` namespace; sync returns 403 JSON; reauth/sw/manifest exempt. |
 | Append-only audit (can't cover tracks) | ⚠️ | Postgres `REVOKE UPDATE/DELETE/TRUNCATE` from the app role + model-level guard. **Gap: only holds if the app's DB role is NOT a superuser/owner** (they ignore grants). Must verify the prod role. |
@@ -96,7 +96,7 @@ This is a **standalone Django app, not self-propagating** — there is no worm/l
 - **Self-reported clergy never endorsed:** a `self_reported` clergy tag renders with the self-reported style, never the verified badge, anywhere it appears (feed + detail).
 - **Clergy verification is admin-only:** a coordinator cannot verify an `admin_verified`-tier tag (queue filter + the action both reject).
 - **Audit immutability under a non-superuser role:** UPDATE/DELETE on `audit_auditlog` raises (model) and is denied (DB) — assert against a non-superuser test role.
-- **Restricted case excludes coordinators:** `case_access(coordinator, restricted_case) == NONE`; `== CONTRIBUTOR` only for admin/assigned/opened.
+- **Restricted case excludes coordinators:** `case_access(coordinator, restricted_case) == NONE`; `== CONTRIBUTOR` only for admin/assigned/opened, and assigned/opened only while that person still coordinates (L13).
 - **Contact stays gated:** `get_contact_info_for` returns None pre-acceptance; need/offer detail reveals contact to coordinators only, audited.
 - **Join-code redemption is rate-limited:** N failed codes from one IP → throttled.
 
