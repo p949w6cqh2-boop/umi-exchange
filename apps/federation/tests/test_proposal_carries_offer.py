@@ -100,7 +100,7 @@ def test_the_asker_sees_what_is_offered_as_plain_text(client, fed_settings, remo
     ("offer", "title", "category"),
     [
         ({"title": "x" * 500, "category": "y" * 300}, "x" * 200, "y" * 100),
-        ({"title": "Rides‮ to clinic\x00\x07", "category": "Trans⁦port"}, "Rides to clinic", "Transport"),
+        ({"title": "Rides\u202e to clinic\x00\x07", "category": "Trans\u2066port"}, "Rides to clinic", "Transport"),
         ({"title": 42, "category": ["Meals"]}, "", ""),
         ({"title": "Tea", "category_slug": "drinks"}, "Tea", "drinks"),
         ("not an object", "", ""),
