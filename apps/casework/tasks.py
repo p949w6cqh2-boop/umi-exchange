@@ -48,10 +48,14 @@ def followup_overdue_digest():
     sent = 0
     for member, items in by_assignee.items():
         user = member.user
-        if Notification.objects.filter(recipient=user, type="followup_overdue", created_at__date=today).exists():
-            continue  # idempotence: already digested today
         slug = items[0].case.community.slug
         link = reverse("casework:followups-mine", kwargs={"slug": slug})
+        # Idempotence per community (the link names it): per person, someone coordinating in two
+        # communities only ever heard about one of them (2026-10 bug hunt, L21).
+        if Notification.objects.filter(
+            recipient=user, type="followup_overdue", created_at__date=today, link=link
+        ).exists():
+            continue
         lines = [f"• {fu.title} — due {fu.due_date} (case {fu.case.short_code})" for fu in items[:20]]
         body = "\n".join(lines)
         notify(user, "followup_overdue", title=f"{len(items)} overdue follow-up(s)", body=body, link=link)

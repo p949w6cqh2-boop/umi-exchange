@@ -26,8 +26,10 @@ class ConsentListView(LoginRequiredMixin, ListView):
 
         from .models import Consent
 
+        own = Q(participant=self.request.user)
+        recorded = Q(recorded_by__user=self.request.user, recorded_by__is_active=True)  # still in that community
         return (
-            Consent.objects.filter(Q(participant=self.request.user) | Q(recorded_by__user=self.request.user))
+            Consent.objects.filter(own | recorded)
             .select_related("subject_person", "recorded_by")
             .order_by("-granted_at")
         )
@@ -44,9 +46,13 @@ class ConsentRevokeView(LoginRequiredMixin, View):
         from .models import Consent
 
         # Either your own consent, or one you recorded for a neighbour with no
-        # account — see ConsentListView for why the recorder holds that duty.
+        # account — see ConsentListView for why the recorder holds that duty. Only while you are
+        # still in that community: a removed or departed recorder could revoke, freezing every
+        # case resting on it (2026-10 bug hunt, L14).
+        own = Q(participant=request.user)
+        recorded = Q(recorded_by__user=request.user, recorded_by__is_active=True)
         consent = get_object_or_404(
-            Consent.objects.filter(Q(participant=request.user) | Q(recorded_by__user=request.user)),
+            Consent.objects.filter(own | recorded),
             pk=pk,
             status="active",
         )

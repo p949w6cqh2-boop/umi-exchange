@@ -62,7 +62,7 @@
 
   <section>
     <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-2">Notes</h2>
-    {% if can_contribute and not consent_frozen %}
+    {% if can_contribute and not consent_frozen and case.status != "closed" %}
     <form method="post" action="{% url 'casework:note-create' slug=community.slug pk=case.pk %}"
           hx-post="{% url 'casework:note-create' slug=community.slug pk=case.pk %}"
           hx-target="#notes-list" hx-swap="afterbegin"
@@ -108,7 +108,7 @@
       {% for fu in followups %}{% include "casework/_followup_row.html" %}{% empty %}
       <li class="text-sm text-parish-ink/70">None open.</li>{% endfor %}
     </ul>
-    {% if can_contribute %}
+    {% if can_contribute and case.status != "closed" %}
     <form method="post" action="{% url 'casework:followup-create' slug=community.slug pk=case.pk %}"
           hx-post="{% url 'casework:followup-create' slug=community.slug pk=case.pk %}"
           hx-target="#followups-list" hx-swap="beforeend"
