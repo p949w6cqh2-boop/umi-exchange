@@ -189,7 +189,8 @@ class HandshakeConfirmView(FederationGateMixin, View):
         if len(request.body) > MAX_BODY_BYTES:
             return JsonResponse({"error": "too_large"}, status=400)
         try:
-            peer, _claims = crypto.verify_signed_request(request)
+            # The one call a pending peer may make: it is how the peer becomes active (L64).
+            peer, _claims = crypto.verify_signed_request(request, allow_pending=True)
         except FederationAuthError as e:
             return JsonResponse({"error": e.code}, status=403)
         payload = _json_object(request)
