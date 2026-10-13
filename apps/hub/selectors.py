@@ -144,8 +144,12 @@ def pulse_events(community, cap=PULSE_CAP, viewer=None):
                 "url": f"/c/{community.slug}/offers/{offer.pk}/",
             }
         )
+    # need__moderation_hidden=False on both match branches, as on the need and offer branches
+    # above: a hidden ask's title must not come back as "answered" or "fulfilled" (2026-10).
     answered = (
-        Match.objects.filter(need__community=community, accepted_at__isnull=False, accepted_at__gte=since)
+        Match.objects.filter(
+            need__community=community, accepted_at__isnull=False, accepted_at__gte=since, need__moderation_hidden=False
+        )
         .exclude(need__requester_id__in=blocked)
         .select_related("need")
         .order_by("-accepted_at")[:cap]
@@ -161,7 +165,12 @@ def pulse_events(community, cap=PULSE_CAP, viewer=None):
             }
         )
     fulfilled = (
-        Match.objects.filter(need__community=community, fulfilled_at__isnull=False, fulfilled_at__gte=since)
+        Match.objects.filter(
+            need__community=community,
+            fulfilled_at__isnull=False,
+            fulfilled_at__gte=since,
+            need__moderation_hidden=False,
+        )
         .exclude(need__requester_id__in=blocked)
         .select_related("need")
         .order_by("-fulfilled_at")[:cap]

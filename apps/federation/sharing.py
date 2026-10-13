@@ -87,7 +87,18 @@ def share_record(record, link, *, actor_user):
     return share
 
 
-def revoke_share(share, *, actor_user):
+def consent_in_force():
+    """A Q over FederatedShare: its consent is still active and unexpired. Discovery and
+    proposals check it, not only share.status, so a consent revoked or lapsed by any path
+    stops the share at once (2026-10 bug hunt, L57)."""
+    from django.db.models import Q
+
+    return Q(consent__status="active", consent__revoked_at__isnull=True) & (
+        Q(consent__expires_at__isnull=True) | Q(consent__expires_at__gt=timezone.now())
+    )
+
+
+def revoke_share(share, *, actor_user, notify=True):
     """Stop advertising a share and send the peer a signed delete-request (§4.3).
     The share leaves our discovery feed immediately; the delete-request asks the
     peer to shred its shadow now rather than wait for TTL/tombstone. Best-effort:
@@ -98,7 +109,8 @@ def revoke_share(share, *, actor_user):
     share.revoked_at = timezone.now()
     share.save(update_fields=["status", "revoked_at"])
     emit("fed.share_revoked", share, user=actor_user, details={"link": str(share.link_id)})
-    _send_revocation(share)
+    if notify:
+        _send_revocation(share)
     return share
 
 
@@ -123,12 +135,14 @@ def _send_revocation(share):
         emit("fed.peer_unreachable", link, details={"peer": link.peer.instance_id, "error": str(e)[:100]})
 
 
-def revoke_shares_for_consent(consent, *, actor_user):
+def revoke_shares_for_consent(consent, *, actor_user, notify=True):
     """Revoke every active federated share gated by a consent — the 'revoke at
-    home → sharing stops + notify peer' trigger (§4.3). Returns the count."""
+    home → sharing stops + notify peer' trigger (§4.3). Returns the count.
+    notify=False stops sharing without calling out (federation switched off):
+    a consent revoked then must still end its shares (2026-10 bug hunt, L57)."""
     n = 0
     for share in FederatedShare.objects.filter(consent=consent, status="active").select_related("link__peer"):
-        revoke_share(share, actor_user=actor_user)
+        revoke_share(share, actor_user=actor_user, notify=notify)
         n += 1
     return n
 

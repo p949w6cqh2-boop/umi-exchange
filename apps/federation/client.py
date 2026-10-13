@@ -11,7 +11,7 @@ import json
 import socket
 import urllib.error
 import urllib.request
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from django.conf import settings
 
@@ -118,8 +118,13 @@ def fetch_instance_document(base_url: str) -> str:
     return document
 
 
-def post_handshake(base_url: str, payload: dict) -> dict:
-    return _request("POST", base_url.rstrip("/") + "/federation/v1/handshake", json.dumps(payload).encode())
+def handshake_url(base_url: str) -> str:
+    return base_url.rstrip("/") + "/federation/v1/handshake"
+
+
+def post_handshake(base_url: str, payload: dict, headers: dict) -> dict:
+    """Signed POST of a link request; the caller signs json.dumps(payload) for handshake_url."""
+    return _request("POST", handshake_url(base_url), json.dumps(payload).encode(), headers)
 
 
 def post_confirm(base_url: str, payload: dict, headers: dict) -> dict:
@@ -132,14 +137,20 @@ def confirm_url(base_url: str) -> str:
     return base_url.rstrip("/") + "/federation/v1/handshake/confirm"
 
 
-def discovery_url(base_url: str) -> str:
-    return base_url.rstrip("/") + "/federation/v1/discovery"
+def discovery_url(base_url: str, *, community=None, peer_community=None) -> str:
+    """The discovery feed, scoped to one link when both ends are named: `community` is the
+    serving instance's community, `peer_community` the polling one's (2026-10 bug hunt #6)."""
+    url = base_url.rstrip("/") + "/federation/v1/discovery"
+    if community and peer_community:
+        url += "?" + urlencode({"community": community, "peer_community": peer_community})
+    return url
 
 
-def get_discovery(base_url: str, headers: dict) -> dict:
+def get_discovery(base_url: str, headers: dict, *, community=None, peer_community=None) -> dict:
     """Signed GET of a peer's discovery feed. The caller builds the
-    X-UMI-Signature header (crypto.sign_request over method+url+empty body)."""
-    return _request("GET", discovery_url(base_url), None, headers)
+    X-UMI-Signature header (crypto.sign_request over method+url+empty body),
+    over the same scoped URL."""
+    return _request("GET", discovery_url(base_url, community=community, peer_community=peer_community), None, headers)
 
 
 def revocations_url(base_url: str) -> str:

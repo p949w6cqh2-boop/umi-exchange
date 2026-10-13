@@ -10,8 +10,9 @@ the offline manifest) are exempt. The offline sync endpoint returns 403 JSON
 """
 
 import time
+from urllib.parse import urlencode, urlparse
 
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 
@@ -48,8 +49,32 @@ class SensitiveSessionMiddleware:
                     if match.url_name == "sync":
                         return JsonResponse({"reauth": True}, status=403)
                     reauth = reverse("casework:reauth", kwargs={"slug": match.kwargs.get("slug")})
-                    return redirect(f"{reauth}?next={request.get_full_path()}")
+                    # Encoded: a raw next= lost everything after its first '&' (2026-10 bug hunt, L24).
+                    target = f"{reauth}?{urlencode({'next': _return_to(request, match)})}"
+                    if request.headers.get("HX-Request"):
+                        # A fragment request: send the whole page to re-auth. A 302 made htmx swap
+                        # the full re-auth page into the notes list (L65), as accounts/idle.py avoids.
+                        response = HttpResponse(status=204)
+                        response["HX-Redirect"] = target
+                        return response
+                    return redirect(target)
         return self.get_response(request)
+
+
+def _return_to(request, match):
+    """Where re-auth sends them back to. A GET comes back to itself. A form can't be re-sent, so a
+    POST comes back to its case page (its own URL is POST-only: a 405, L65), and an htmx request to
+    the page the person was on, not the fragment it asked for."""
+    if request.headers.get("HX-Request"):
+        current = urlparse(request.headers.get("HX-Current-URL", ""))
+        if current.path:
+            return current.path + (f"?{current.query}" if current.query else "")
+    elif request.method == "GET":
+        return request.get_full_path()
+    slug, pk = match.kwargs.get("slug"), match.kwargs.get("pk")
+    if pk:
+        return reverse("casework:detail", kwargs={"slug": slug, "pk": pk})
+    return reverse("casework:list", kwargs={"slug": slug})
 
 
 def mark_authenticated(request):

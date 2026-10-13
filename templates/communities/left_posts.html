@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Your posts from before · {{ community.name }}{% endblock %}
+{% block content %}
+{% comment %}
+  Coming back after leaving (the founder's decision, 2026-10-12): leaving took these off the
+  board, hidden and never deleted, and rejoining reposts nothing. Each one comes back only when
+  its author says so. Coordinators can still open a hidden post, so the copy says so.
+{% endcomment %}
+<div class="max-w-2xl mx-auto space-y-6">
+  <div>
+    <span class="umi-kicker">{{ community.name }}</span>
+    <h1 class="font-serif text-2xl font-semibold tracking-tight text-parish-ink mt-2">Your posts from before</h1>
+    <p class="text-base text-parish-ink/80 mt-2 max-w-prose">
+      When you left, your open asks and offers came off the board. They're still yours, and only
+      coordinators can see them. Put back the ones you still want, and close the rest.
+    </p>
+  </div>
+
+  {% if needs or offers %}
+  <ul class="umi-card divide-y divide-[var(--umi-border)] !p-0">
+    {% for post in needs %}
+    <li class="px-4 py-4 sm:px-5 flex flex-wrap items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs uppercase tracking-wide text-parish-ink/70">Ask &middot; {{ post.category.name }}</p>
+        <p class="font-medium text-parish-ink mt-0.5 break-words">{{ post.title }}</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {% include "communities/_left_post_actions.html" with kind="need" %}
+      </div>
+    </li>
+    {% endfor %}
+    {% for post in offers %}
+    <li class="px-4 py-4 sm:px-5 flex flex-wrap items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs uppercase tracking-wide text-parish-ink/70">Offer &middot; {{ post.category.name }}</p>
+        <p class="font-medium text-parish-ink mt-0.5 break-words">{{ post.title }}</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {% include "communities/_left_post_actions.html" with kind="offer" %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="umi-card text-center text-parish-ink/70">
+    <p>Nothing is waiting. Everything from before is back on the board or closed.</p>
+  </div>
+  {% endif %}
+
+  <p><a href="{% url 'community-feed' community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">&larr; Back to the board</a></p>
+</div>
+{% endblock %}

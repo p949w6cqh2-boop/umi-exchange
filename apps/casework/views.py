@@ -11,7 +11,8 @@ import uuid
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction
 from django.db.models import Case as SqlCase
-from django.db.models import IntegerField, Q, Value, When
+from django.db.models import CharField, IntegerField, Q, Value, When
+from django.db.models.functions import Cast, Substr, Upper
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -35,6 +36,10 @@ from .notify import notify
 from .state import TransitionConflict
 
 VIEW_AUDIT_THROTTLE_SECONDS = 15 * 60  # case.viewed at most 1/15min/session/case
+
+
+CLOSED_CASE = "This case is closed. Reopen it first."  # 2026-10 bug hunt, L44
+NOTE_BODY_MAX = 8000  # NoteForm's cap, and the offline sync's
 
 
 def _is_htmx(request) -> bool:
@@ -123,7 +128,11 @@ class CaseListView(CommunityMixin, View):
         if not access.is_coordinator(self.membership):
             return _forbidden("Case files are visible to coordinators and admins.")
         m, now = self.membership, timezone.now()
-        qs = CaseFile.objects.filter(community=self.community).select_related("subject_person", "assigned_to")
+        qs = (
+            CaseFile.objects.filter(community=self.community)
+            .select_related("subject_person", "assigned_to")
+            .prefetch_related("subject_person__consents_about")
+        )
         if not access.is_admin(m):
             grant_q = Q(grants__member=m, grants__revoked_at__isnull=True) & (
                 Q(grants__expires_at__isnull=True) | Q(grants__expires_at__gt=now)
@@ -136,13 +145,19 @@ class CaseListView(CommunityMixin, View):
         if request.GET.get("mine") == "1":
             qs = qs.filter(assigned_to=m)
 
-        cases = list(qs[:200])
         q = (request.GET.get("q") or "").strip()
         if q:  # encrypted names are unsearchable by design — code/paper ref only
-            qu = q.upper()
-            cases = [c for c in cases if qu in c.short_code or q.lower() in c.physical_ref.lower()]
+            # In SQL, before the slice: filtering the 200 most recently updated in Python made
+            # every older case unfindable, and closed cases are kept seven years (2026-10 bug hunt,
+            # L22). The code is the first 8 characters of the id, upper-cased (CaseFile.short_code).
+            qs = qs.annotate(_code=Upper(Substr(Cast("id", CharField()), 1, 8))).filter(
+                Q(_code__contains=q.upper()) | Q(physical_ref__icontains=q)
+            )
+        cases = list(qs[:200])
 
-        rows = [{"case": c, "name": c.subject_person.display_name or c.subject_person.short_code} for c in cases]
+        # subject_display, not display_name: a person who has not spoken for themselves is shown
+        # by initials everywhere, and the list was the one place that printed the full name.
+        rows = [{"case": c, "name": access.subject_display(c)["label"]} for c in cases]
         template = "casework/_case_rows.html" if _is_htmx(request) else "casework/list.html"
         return render(
             request,
@@ -262,6 +277,14 @@ class CaseDetailView(CommunityMixin, View):
         if level == access.NONE:
             return _forbidden("You don't have access to this case.")
 
+        # Read-access audit, throttled (§3.8). Before the handoff gate: that screen decrypts the
+        # handoff summary, and it wrote no read audit at all (2026-10 bug hunt, L23).
+        key, now = f"cw_viewed:{case.pk}", time.time()
+        last = request.session.get(key)
+        if not last or (now - last) > VIEW_AUDIT_THROTTLE_SECONDS:
+            audit.emit("case.viewed", case, user=request.user, request=request)
+            request.session[key] = now
+
         # Warm-handoff gate (§3.6): the incoming member's FIRST screen is the
         # summary — no case data renders until they acknowledge.
         pending = case.handoffs.filter(to_member=self.membership, status="pending").first()
@@ -269,13 +292,6 @@ class CaseDetailView(CommunityMixin, View):
             return render(
                 request, "casework/handoff_ack.html", {"community": self.community, "case": case, "handoff": pending}
             )
-
-        # Read-access audit, throttled (§3.8)
-        key, now = f"cw_viewed:{case.pk}", time.time()
-        last = request.session.get(key)
-        if not last or (now - last) > VIEW_AUDIT_THROTTLE_SECONDS:
-            audit.emit("case.viewed", case, user=request.user, request=request)
-            request.session[key] = now
 
         notes = case.notes.exclude(status=CaseNote.STATUS_DISCARDED).select_related("author", "co_visitor", "amends")
         visible_notes = [n for n in notes if n.status == CaseNote.STATUS_FINAL or n.author_id == self.membership.id]
@@ -373,6 +389,13 @@ class CaseAssignView(CommunityMixin, View):
             return HttpResponse(form.errors.as_text(), status=400)
         to_member = form.cleaned_data["to_member"]
         with transaction.atomic():
+            # Locked and re-read: two handoffs at once both landed (two pending handoffs, the last
+            # write winning the assignee), and a closed case took one (2026-10 bug hunt, L43).
+            case = CaseFile.objects.select_for_update(of=("self",)).get(pk=case.pk)
+            if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
+                return _forbidden("Only an admin or the current assignee can hand off.")
+            if case.status == "closed":
+                return _conflict(CLOSED_CASE)
             ho = WarmHandoff(case=case, from_member=self.membership, to_member=to_member)
             ho.summary = form.cleaned_data["summary"]
             ho.save()
@@ -425,6 +448,8 @@ class NoteCreateView(CommunityMixin, View):
             return _forbidden("You can't add notes to this case.")
         if self._consent_frozen(case):
             return _forbidden("Consent was revoked — new notes are frozen; close the case via status instead.")
+        if case.status == "closed":
+            return _conflict(CLOSED_CASE)
         form = NoteForm(self.community, request.POST)
         if not form.is_valid():
             return HttpResponse(form.errors.as_text(), status=400)
@@ -449,7 +474,13 @@ class NoteCreateView(CommunityMixin, View):
             # Scope to THIS case: client_uuid is globally unique, so an unscoped
             # lookup would render another case's decrypted note body to a caller
             # who only has access here. A cross-case collision surfaces nothing.
-            existing = CaseNote.objects.filter(client_uuid=d["client_uuid"], case=case).first()
+            # And to your own note that the case page would show you: another author's draft or
+            # a discarded note came back in full (2026-10 bug hunt, L18).
+            existing = (
+                CaseNote.objects.filter(client_uuid=d["client_uuid"], case=case, author=self.membership)
+                .exclude(status=CaseNote.STATUS_DISCARDED)
+                .first()
+            )
             if existing is None:
                 return HttpResponse("That note reference is already in use.", status=409)
             return self._respond(request, slug, case, existing)
@@ -529,6 +560,8 @@ class NoteAmendView(CommunityMixin, View):
         body = (request.POST.get("body") or "").strip()
         if not body:
             return HttpResponse("Amendment text is required.", status=400)
+        if len(body) > NOTE_BODY_MAX:  # a note's own cap (NoteForm); amendments had none (L69)
+            return HttpResponse(f"Amendments are limited to {NOTE_BODY_MAX} characters.", status=400)
         note = CaseNote(
             case=case,
             author=self.membership,
@@ -686,8 +719,12 @@ class SyncView(CommunityMixin, View):
             payload = json.loads(request.body.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
             return JsonResponse({"error": "invalid JSON"}, status=400)
+        # Valid JSON of another shape was a 500 (2026-10 bug hunt, L19).
+        drafts = payload.get("drafts") if isinstance(payload, dict) else None
+        if not isinstance(drafts, list):
+            return JsonResponse({"error": 'expected {"drafts": [...]}'}, status=400)
         results = []
-        for item in (payload.get("drafts") or [])[:50]:
+        for item in drafts[:50]:
             results.append(self._one(request, slug, item))
         return JsonResponse({"results": results})
 
@@ -716,6 +753,13 @@ class SyncView(CommunityMixin, View):
             cu = str(uuid.UUID(str(raw_cu)))
         except (ValueError, TypeError, AttributeError):
             return {"client_uuid": None, "status": "error", "error": "invalid client_uuid"}
+        # A queued draft names the account that wrote it (visit_offline.js). On a shared device
+        # the next person to sign in must not file someone else's notes as their own (2026-10
+        # bug hunt). A draft queued before drafts carried an author has none and is accepted;
+        # the client no longer sends those, since nobody can tell whose they are.
+        author = item.get("author")
+        if author not in (None, "") and str(author) != str(request.user.pk):
+            return {"client_uuid": cu, "status": "error", "error": "wrong_author"}
         # Same pre-validation as client_uuid above, and for the same reason: a
         # non-uuid case_id (a legacy short_code, a corrupted IndexedDB entry) makes
         # UUIDField raise django.core.exceptions.ValidationError — not ValueError or
@@ -741,6 +785,8 @@ class SyncView(CommunityMixin, View):
             return {"client_uuid": cu, "status": "duplicate", "note_id": str(existing.pk)}
         if self._consent_frozen(case):
             return {"client_uuid": cu, "status": "error", "error": "consent_revoked"}
+        if case.status == "closed":
+            return {"client_uuid": cu, "status": "error", "error": "case_closed"}
 
         body = item.get("body")
         if not isinstance(body, str) or not body.strip():
@@ -760,7 +806,8 @@ class SyncView(CommunityMixin, View):
                 return {"client_uuid": cu, "status": "error", "error": "invalid occurred_at"}
             if timezone.is_naive(occurred):
                 occurred = timezone.make_aware(occurred)
-        kind = item.get("kind") if item.get("kind") in dict(CaseNote.KIND_CHOICES) else "visit"
+        raw_kind, raw_location = item.get("kind"), item.get("location_kind")
+        kind = raw_kind if isinstance(raw_kind, str) and raw_kind in dict(CaseNote.KIND_CHOICES) else "visit"
         allowed_actions = {a for a, _ in CaseNote.ACTIONS}
         raw_actions = item.get("actions")
         actions = (
@@ -783,8 +830,8 @@ class SyncView(CommunityMixin, View):
             duration_minutes=duration,
             actions=actions,
             aid_value_cents=aid_cents,
-            location_kind=item.get("location_kind", "home")
-            if item.get("location_kind") in dict(CaseNote.LOCATION_CHOICES)
+            location_kind=raw_location
+            if isinstance(raw_location, str) and raw_location in dict(CaseNote.LOCATION_CHOICES)
             else "home",
             client_uuid=cu,
         )
@@ -824,10 +871,16 @@ class FollowUpCreateView(CommunityMixin, View):
             # (new PII), so it is frozen with notes/visits/amendments once consent
             # is revoked — the case can still be closed via status.
             return _forbidden("Consent was revoked — new follow-ups are frozen.")
+        if case.status == "closed":
+            return _conflict(CLOSED_CASE)
         form = FollowUpForm(self.community, request.POST)
         if not form.is_valid():
             return HttpResponse(form.errors.as_text(), status=400)
         d = form.cleaned_data
+        # An assignee who cannot open the case would be told its title and never be able to
+        # see, complete or bump the follow-up (2026-10 bug hunt).
+        if access.case_access(d["assigned_to"], case) == access.NONE:
+            return HttpResponse("That member has no access to this case — grant access first.", status=400)
         source = None
         if d.get("source_note"):
             source = CaseNote.objects.filter(pk=d["source_note"], case=case).first()
@@ -926,21 +979,35 @@ class GrantCreateView(CommunityMixin, View):
         case = self.get_case(pk)
         if not (access.is_admin(self.membership) or case.assigned_to_id == self.membership.id):
             return _forbidden("Only an admin or the assignee can grant access.")
+        # Revocation freeze (§3.6), as on handoff: a grant widens who can read the case, and the
+        # subject has withdrawn. Revoking a grant (GrantRevokeView) stays open, since it narrows.
+        if self._consent_frozen(case):
+            return _forbidden("Consent was revoked — the case is frozen; access cannot be widened.")
         form = GrantForm(self.community, request.POST)
         if not form.is_valid():
             return HttpResponse(form.errors.as_text(), status=400)
         target = form.cleaned_data["member"]
         if target.pk == self.membership.pk:
             return HttpResponse("You already have access.", status=400)
+        now = timezone.now()
+        # An expired grant gives no access, yet it held the one-active-grant slot, so renewing a
+        # cover arrangement was a 409 until someone revoked the dead one (2026-10 bug hunt, L20).
+        for lapsed in CaseAccessGrant.objects.filter(
+            case=case, member=target, revoked_at__isnull=True, expires_at__lte=now
+        ):
+            lapsed.revoked_at = now
+            lapsed.save(update_fields=["revoked_at"])
+            audit.emit("grant.revoked", lapsed, user=request.user, request=request, details={"reason": "expired"})
         try:
-            grant = CaseAccessGrant.objects.create(
-                case=case,
-                member=target,
-                role=form.cleaned_data["role"],
-                granted_by=self.membership,
-                reason=form.cleaned_data["reason"].strip(),
-                expires_at=form.cleaned_data["expires_at"],
-            )
+            with transaction.atomic():  # savepoint: an IntegrityError must not poison the request txn
+                grant = CaseAccessGrant.objects.create(
+                    case=case,
+                    member=target,
+                    role=form.cleaned_data["role"],
+                    granted_by=self.membership,
+                    reason=form.cleaned_data["reason"].strip(),
+                    expires_at=form.cleaned_data["expires_at"],
+                )
         except IntegrityError:
             return _conflict("That member already has an active grant.")
         audit.emit(
@@ -950,11 +1017,13 @@ class GrantCreateView(CommunityMixin, View):
             request=request,
             details={"member": str(target.pk), "role": grant.role, "case": str(case.pk)},
         )
+        # The reason stays on the grant, where a shred reaches it: a copy in the notification
+        # outlived the case (2026-10 bug hunt, L17).
         notify(
             target.user,
             "case_grant",
             f"Access granted: case {case.short_code}",
-            f"{grant.role.title()} access — {grant.reason}",
+            f"You have {grant.role} access to this case.",
             reverse("casework:detail", kwargs={"slug": slug, "pk": case.pk}),
         )
         if _is_htmx(request):
@@ -1018,7 +1087,9 @@ class CaseExportView(CommunityMixin, View):
         for n in case.notes.filter(status=CaseNote.STATUS_FINAL).order_by("occurred_at").select_related("author"):
             aid = f" · aid ${n.aid_value_cents / 100:.2f}" if n.aid_value_cents else ""
             lines += [
-                f"--- {n.occurred_at:%Y-%m-%d %H:%M} · {n.kind} · {n.author.display_name}{aid}",
+                # Local time with its zone: raw UTC moved every visit 5-6 hours and gave evening
+                # visits the next day's date, in the one copy that leaves the system (L30).
+                f"--- {timezone.localtime(n.occurred_at):%Y-%m-%d %H:%M %Z} · {n.kind} · {n.author.display_name}{aid}",
                 f"    actions: {', '.join(n.actions) or '—'}",
                 f"    {n.body or ''}",
             ]

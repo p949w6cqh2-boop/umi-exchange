@@ -62,10 +62,23 @@ class Community(models.Model):
     def __str__(self):
         return self.name
 
+    # /c/create/ is the creation page: a community slugged "create" could never be reached.
+    RESERVED_SLUGS = frozenset({"create"})
+
+    def _free_slug(self):
+        """A slug from the name that is non-empty, not reserved and not taken. A clashing,
+        empty ("!!!") or reserved name used to fail the save with a 500 (2026-10 bug hunt)."""
+        base = slugify(self.name)[:90] or "community"
+        candidate, n = base, 1
+        while candidate in self.RESERVED_SLUGS or Community.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+            n += 1
+            candidate = f"{base}-{n}"
+        return candidate
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         if not self.slug:
-            self.slug = slugify(self.name)[:100]
+            self.slug = self._free_slug()
         if not self.settings:
             self.settings = DEFAULT_SETTINGS.copy()
         super().save(*args, **kwargs)
@@ -148,6 +161,11 @@ class Member(models.Model):
         """§8.2 contact shape: display name + only the channels `pref` opts into.
         Shared by match contact-revelation and coordinator oversight on need/offer detail."""
         info = {"display_name": self.display_name, "preference": pref}
+        # Someone who left (or was removed) is no longer handed out: not to a coordinator, not to
+        # an old match partner, and never a number they changed after leaving (bug hunt #8).
+        if not self.is_active:
+            info["left"] = True
+            return info
         # A neighbour is handed this address to reach the member — so only an address
         # the member has PROVEN they read (#172). An unproven one may be someone else's.
         if pref in ("email", "any") and self.user.deliverable_email:
@@ -159,7 +177,8 @@ class Member(models.Model):
     @property
     def is_last_active_admin(self):
         """True if this is the only active admin — guards self-leave / demotion
-        that would orphan the community with no admin."""
+        that would orphan the community with no admin. Read it under
+        lock_admin_seats(), or two requests can both see another admin."""
         if self.role != "admin" or not self.is_active:
             return False
         return (
@@ -167,6 +186,21 @@ class Member(models.Model):
             .exclude(pk=self.pk)
             .exists()
         )
+
+
+class LastAdminError(Exception):
+    """Leaving or a role change would leave the community with no admin."""
+
+
+def lock_admin_seats(community_id):
+    """Take the community's row lock for the rest of the transaction.
+
+    Leaving and every role change take it before the last-admin check, so the check and the change
+    are one step: two admins leaving at once both passed the check and left none (2026-10 bug
+    hunt, L2). NO KEY, so the inserts that reference a community (a new ask, a new member) never
+    wait on it.
+    """
+    Community.objects.select_for_update(no_key=True).filter(pk=community_id).first()
 
 
 class Category(models.Model):

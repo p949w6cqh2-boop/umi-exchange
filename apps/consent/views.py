@@ -26,8 +26,10 @@ class ConsentListView(LoginRequiredMixin, ListView):
 
         from .models import Consent
 
+        own = Q(participant=self.request.user)
+        recorded = Q(recorded_by__user=self.request.user, recorded_by__is_active=True)  # still in that community
         return (
-            Consent.objects.filter(Q(participant=self.request.user) | Q(recorded_by__user=self.request.user))
+            Consent.objects.filter(own | recorded)
             .select_related("subject_person", "recorded_by")
             .order_by("-granted_at")
         )
@@ -44,9 +46,13 @@ class ConsentRevokeView(LoginRequiredMixin, View):
         from .models import Consent
 
         # Either your own consent, or one you recorded for a neighbour with no
-        # account — see ConsentListView for why the recorder holds that duty.
+        # account — see ConsentListView for why the recorder holds that duty. Only while you are
+        # still in that community: a removed or departed recorder could revoke, freezing every
+        # case resting on it (2026-10 bug hunt, L14).
+        own = Q(participant=request.user)
+        recorded = Q(recorded_by__user=request.user, recorded_by__is_active=True)
         consent = get_object_or_404(
-            Consent.objects.filter(Q(participant=request.user) | Q(recorded_by__user=request.user)),
+            Consent.objects.filter(own | recorded),
             pk=pk,
             status="active",
         )
@@ -65,15 +71,19 @@ class ConsentRevokeView(LoginRequiredMixin, View):
         )
         # §4.3: if this consent gated any federated shares, stop advertising them
         # and send each peer a signed delete-request. A federation problem must
-        # never block the user's revocation, so this is best-effort.
+        # never block the user's revocation, so this is best-effort. The shares end
+        # even with federation switched off, or they came back live with it (2026-10
+        # bug hunt, L57); only the peer call waits on the flag. Discovery and
+        # proposals also re-check the consent itself.
         from django.conf import settings
 
-        if getattr(settings, "FEDERATION_ENABLED", False):
-            try:
-                from apps.federation.sharing import revoke_shares_for_consent
+        try:
+            from apps.federation.sharing import revoke_shares_for_consent
 
-                revoke_shares_for_consent(consent, actor_user=request.user)
-            except Exception:  # nosec B110 — federation side-effects can't block a user's revoke
-                pass
+            revoke_shares_for_consent(
+                consent, actor_user=request.user, notify=getattr(settings, "FEDERATION_ENABLED", False)
+            )
+        except Exception:  # nosec B110 — federation side-effects can't block a user's revoke
+            pass
         messages.success(request, "Consent revoked.")
         return redirect("consent-list")

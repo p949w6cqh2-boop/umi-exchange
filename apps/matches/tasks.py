@@ -53,8 +53,13 @@ def expire_stale_proposals() -> int:
 
         for pk in stale_ids:
             with transaction.atomic():
-                match = Match.objects.select_for_update().select_related("need", "proposed_by__user").get(pk=pk)
-                if match.status != "proposed":
+                match = (
+                    Match.objects.select_for_update(of=("self",))
+                    .select_related("need", "proposed_by__user")
+                    .filter(pk=pk)
+                    .first()
+                )
+                if match is None or match.status != "proposed":
                     continue  # accepted/cancelled while we were sweeping
                 match.status = "expired"
                 match.save(update_fields=["status"])

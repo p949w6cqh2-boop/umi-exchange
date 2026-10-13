@@ -4,6 +4,7 @@ profile settings."""
 import time
 
 from csp.decorators import csp_update
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -45,13 +46,17 @@ from .forms import (
 )
 from .idle import SESSION_KEY as IDLE_SESSION_KEY
 from .models import RecoveryCredential
+from .ratelimit import check as rate_check
 from .verification import (
     PENDING_EMAIL_KEY,
+    email_state,
     honeypot_timestamp,
+    mail_quietly,
     read_add_email_token,
     read_email_token_claims,
     register_post_trips,
     send_add_email_verification,
+    send_email_changed_notice,
     send_registration_email,
     send_verification_email,
 )
@@ -60,6 +65,8 @@ from .verification import (
 # OTP step consumes it. Short-lived: a pending login is not a session.
 OTP_PENDING_SESSION_KEY = "otp:pending"
 OTP_PENDING_MAX_AGE_SECONDS = 300
+# Email changes per account per hour. Each one mails a link to a typed address.
+EMAIL_CHANGE_LIMIT, EMAIL_CHANGE_WINDOW = 10, 3600
 
 
 @method_decorator(ratelimit(key="ip", rate="3/m", method="POST", block=True), name="post")
@@ -99,7 +106,9 @@ class RegisterView(CreateView):
             # session) so the waiting page and the resend button can reach it. The same
             # words whether or not the address is taken: #171.
             self.request.session[PENDING_EMAIL_KEY] = email
-            send_registration_email(self.request, self.object, email)
+            # The account already exists: a mail failure must not 500 here (and the 500 would
+            # only ever fall on the "address is free" branch). The resend button is the retry.
+            mail_quietly(send_registration_email, self.request, self.object, email)
             messages.info(self.request, "We've sent a confirmation link to your email. Click it to finish setup.")
         return response
 
@@ -226,12 +235,25 @@ class SettingsView(LoginRequiredMixin, UpdateView):
             messages.success(self.request, "Profile updated.")
             return response
 
+        # Each change mails a link to whatever address was typed, so changes are limited per
+        # account (2026-10 bug hunt: there was no limit at all). Phone and notification saves
+        # above never count against it.
+        if getattr(django_settings, "RATELIMIT_ENABLED", True):
+            allowed, _, _ = rate_check(f"email-change:{user.pk}", EMAIL_CHANGE_LIMIT, EMAIL_CHANGE_WINDOW)
+            if not allowed:
+                messages.error(
+                    self.request,
+                    "Profile updated, but you've asked to change your email several times this hour. "
+                    "Try the new address again later.",
+                )
+                return response
+
         # Collision is checked here and answers EXACTLY like success: same
         # message, same redirect, and no mail to the existing owner — using
         # their inbox as the oracle would leak just as loudly as an error would.
         taken = get_user_model().objects.filter(email__iexact=requested).exclude(pk=user.pk).exists()
         if not taken:
-            send_add_email_verification(self.request, user, requested)
+            mail_quietly(send_add_email_verification, self.request, user, requested)
         # Kept for a taken address too, so the page answers exactly like success.
         self.request.session[PENDING_EMAIL_KEY] = requested
 
@@ -264,7 +286,7 @@ class ConfirmAddEmailView(View):
     required, since they may be opening it in their phone's mail app."""
 
     def get(self, request, token):
-        uid, email = read_add_email_token(token)
+        uid, email, state = read_add_email_token(token)
         if uid is None or not email:
             messages.error(request, "That confirmation link is invalid or has expired. You can request a new one.")
             return redirect("account-settings" if request.user.is_authenticated else "login")
@@ -273,6 +295,11 @@ class ConfirmAddEmailView(View):
         if user is None:
             messages.error(request, "That confirmation link is invalid or has expired. You can request a new one.")
             return redirect("login")
+        # The account's email changed since this link was sent (a newer address was confirmed,
+        # or this very link was already used): it is spent.
+        if state is not None and state != email_state(user):
+            messages.error(request, "That confirmation link is invalid or has expired. You can request a new one.")
+            return redirect("account-settings" if request.user.is_authenticated else "login")
 
         # Re-check the collision at CONFIRM time, not just at request time.
         # Someone else can register this address in the 48 hours between the two,
@@ -281,6 +308,7 @@ class ConfirmAddEmailView(View):
             messages.error(request, "That address could not be confirmed. Try a different one.")
             return redirect("account-settings" if request.user.is_authenticated else "login")
 
+        old_address = user.deliverable_email
         user.email = email
         # The address and its proof in ONE save. User.save() clears a confirmation when
         # the address changes WITHOUT a fresh one; writing a fresh one here is what tells
@@ -298,6 +326,10 @@ class ConfirmAddEmailView(View):
         user.save(update_fields=fields)
         # Clicked in the same browser that registered: nothing is pending any more.
         request.session.pop(PENDING_EMAIL_KEY, None)
+        if old_address and old_address.lower() != email.lower():
+            # The proven address it replaces hears about it (2026-10 bug hunt, L48): a change made
+            # by someone else would otherwise finish in silence, with resets going to them.
+            mail_quietly(send_email_changed_notice, user, old_address, email)
 
         messages.success(request, "Email confirmed — you can now reset your password by email.")
         return redirect("account-settings" if request.user.is_authenticated else "login")
@@ -332,7 +364,9 @@ class UsernameRecoveryView(FormView):
                 "emails/username_recovery_email.txt",
                 {"usernames": usernames},
             )
-            send_mail(
+            # Only a known address reaches this send, so a failure must not show.
+            mail_quietly(
+                send_mail,
                 "Your UMI Exchange username",
                 body,
                 None,  # DEFAULT_FROM_EMAIL
@@ -485,21 +519,38 @@ class RecoveryCodeRedeemView(FormView):
             form.add_error(None, self.FAILED)
             return self.form_invalid(form)
         emit(action, user, request=self.request)
-        fresh = issue_recovery_code(self.request, user)
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         reset_url = reverse("password_reset_confirm", kwargs={"uidb64": uidb64, "token": token})
+        if user.deliverable_email:
+            # A proven email is already the way back in, so no paper code (account-recovery.md §B).
+            # Redeeming a 15-minute reset or a one-hour unlock minted one, a permanent credential
+            # for whoever redeemed it (2026-10 bug hunt, L49).
+            return redirect(reset_url)
+        fresh = issue_recovery_code(self.request, user)
         return render_recovery_code(self.request, fresh, continue_url=reset_url, reset_url=reset_url)
 
 
 @method_decorator(ratelimit(key="user", rate="5/m", method="POST", block=True), name="post")
 class RecoveryCodeNewView(LoginRequiredMixin, View):
-    """Print a replacement from settings. The old code stops working immediately."""
+    """Print a replacement from settings. The old code stops working immediately.
+
+    It takes the current password (2026-10 bug hunt, L48): a signed-in browser alone, a borrowed
+    tablet or a stolen cookie, could print a fresh code and revoke the owner's paper. An account
+    with a proven email gets none, as at registration (account-recovery.md §B).
+    """
 
     http_method_names = ["post"]
 
     def post(self, request):
-        code = issue_recovery_code(request, request.user)
+        user = request.user
+        if user.deliverable_email:
+            messages.info(request, "Your account has a confirmed email, which is how you get back in.")
+            return redirect("account-settings")
+        if not user.check_password(request.POST.get("current_password") or ""):
+            messages.error(request, "Enter your current password to print a new recovery code.")
+            return redirect("account-settings")
+        code = issue_recovery_code(request, user)
         return render_recovery_code(request, code, continue_url=reverse("account-settings"))
 
 
@@ -530,6 +581,11 @@ class StaffUnlockView(LoginRequiredMixin, FormView):
             form.add_error("username", "No account has exactly that username.")
             return self.form_invalid(form)
         staff = self.request.user
+        # A staff account unlocking a superuser could then set its password: a climb from staff to
+        # superuser (2026-10 bug hunt, L50). Staff and superuser accounts are a superuser's to unlock.
+        if (target.is_staff or target.is_superuser) and not staff.is_superuser:
+            form.add_error("username", "Only a superuser can unlock a staff account.")
+            return self.form_invalid(form)
         _, code = issue_credential(
             target,
             RecoveryCredential.PURPOSE_ADMIN_UNLOCK,

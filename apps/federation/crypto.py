@@ -205,6 +205,40 @@ def verify_signed_request(request):
         claims = json.loads(obj.payload)
     except Exception:
         raise _reject("bad_jws") from None
+    _check_request_claims(request, claims, peer.instance_id, _reject)
+    return peer, claims
+
+
+def verify_handshake_request(request, doc):
+    """A handshake must be signed by the key its instance document names (2026-10 bug hunt).
+
+    The document is public and binds no audience or time, so on its own anyone could replay a
+    peer's and overwrite that peer's pairing material and requested community. The sender proves
+    it holds the document's private key with the same §3.2 claims every signed request carries:
+    our audience, a fresh iat, method, URL, body digest and a one-time jti. Unknown senders have
+    no peer row to audit against, so failures are not audited here.
+    """
+    token = request.headers.get("X-UMI-Signature", "")
+    if not token or len(token) > MAX_TOKEN_BYTES or token.count(".") != 2:
+        raise FederationAuthError("bad_signature")
+    try:
+        obj = jws.deserialize_compact(token, OKPKey.import_key(doc["jwk"]), algorithms=["Ed25519"])
+        claims = json.loads(obj.payload)
+    except Exception:
+        raise FederationAuthError("bad_signature") from None
+    if not isinstance(claims, dict) or claims.get("iss") != doc["instance_id"]:
+        raise FederationAuthError("bad_signature")
+
+    def _reject(reason, code="bad_signature"):
+        return FederationAuthError(code)
+
+    _check_request_claims(request, claims, doc["instance_id"], _reject)
+    return claims
+
+
+def _check_request_claims(request, claims, instance_id, _reject):
+    """The §3.2 claim checks shared by every signed request. `_reject(reason[, code])` builds the
+    exception to raise."""
     if not isinstance(claims, dict):
         raise _reject("bad_jws")  # a validly-signed scalar is still not a claim set
     if claims.get("aud") != my_instance_id():
@@ -227,9 +261,8 @@ def verify_signed_request(request):
         raise _reject("bad_digest")
     jti = str(claims.get("jti") or "")[:128]
     # Last: only otherwise-valid requests may consume a nonce slot.
-    if not jti or not cache.add(f"fed:jti:{peer.instance_id}:{jti}", 1, JTI_TTL_SECONDS):
+    if not jti or not cache.add(f"fed:jti:{instance_id}:{jti}", 1, JTI_TTL_SECONDS):
         raise _reject("replayed", code="replayed")
-    return peer, claims
 
 
 # ── Pairing codes + link pepper (§3.3, §7) ───────────

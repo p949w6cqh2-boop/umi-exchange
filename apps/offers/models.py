@@ -12,6 +12,7 @@ class Offer(models.Model):
         ("matched", "Matched"),
         ("fulfilled", "Fulfilled"),
         ("withdrawn", "Withdrawn"),
+        ("expired", "Expired"),  # past expires_at (apps.offers.tasks, spec §10.6)
     ]
     CONTACT_CHOICES = [("in_app", "In-app"), ("email", "Email"), ("phone", "Phone"), ("any", "Any")]
 
@@ -27,6 +28,11 @@ class Offer(models.Model):
     status = models.CharField(max_length=12, default="active", choices=STATUS_CHOICES)
     # Reversible coordinator action (moderation queue) — never a delete.
     moderation_hidden = models.BooleanField(default=False)
+    # Set when its author left the community and leaving took it off the board (hidden, never
+    # deleted). Coming back reposts nothing: the author puts it back or closes it
+    # (LeftPostsView). Cleared when they do, or when a coordinator hides it, so their choice can
+    # never undo a coordinator's (founder's decision 2026-10-12).
+    hidden_on_leave_at = models.DateTimeField(null=True, blank=True)
     # Federation (Stage B): per-record opt-in, default OFF. See Need.share_scope.
     SHARE_CHOICES = [("local", "This community only"), ("federated", "Discoverable by linked communities")]
     share_scope = models.CharField(max_length=10, default="local", choices=SHARE_CHOICES)

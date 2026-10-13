@@ -15,6 +15,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
+from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
 from apps.common.state import TransitionConflict
 from apps.communities.identity import scene_template, signin_blurb
@@ -135,7 +136,11 @@ class _ActionView(ManagerAccessMixin, View):
         return redirect("pages:manage", slug=slug)
 
 
-class PublishView(_ActionView):
+class PublishView(VerifiedRequiredMixin, _ActionView):
+    """Publishing is the widest write door there is: a published landing page is what anonymous
+    visitors see, under the platform's name. An account that has not passed the human check could
+    create a community and publish one (2026-10 bug hunt, L11), so it is gated like posting."""
+
     admin_only = True
     audit_action = "page.published"
     done_message = "“{title}” is live."
@@ -180,9 +185,10 @@ class ToggleLandingView(_ActionView):
         page.save()
 
 
-class UnhideView(_ActionView):
+class UnhideView(VerifiedRequiredMixin, _ActionView):
     """Reverses a moderation hide (§H) — the same reversible boolean the queue
-    flips, offered from the coordinator's hidden-banner (wireframe 05)."""
+    flips, offered from the coordinator's hidden-banner (wireframe 05). Gated like
+    publishing, since it puts a page back in front of readers."""
 
     audit_action = "content.unhidden"
     done_message = "“{title}” is back on the board."

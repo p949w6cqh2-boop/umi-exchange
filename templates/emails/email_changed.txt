@@ -1,0 +1,13 @@
+{% autoescape off %}Hello {{ username }},
+
+The email on your UMI Exchange account was changed to {{ new_address }}. Password resets and
+notices go there from now on, and no longer to this address.
+
+If you made this change, there is nothing to do.
+
+If you did not, someone else may be using your account. Sign in, change your password, and put
+your own email back in your account settings. If you cannot sign in, a coordinator in your
+community can help you get back in.
+
+UMI Exchange
+{% endautoescape %}

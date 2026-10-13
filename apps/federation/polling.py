@@ -23,10 +23,15 @@ MAX_ROWS = 500
 def poll_link(link) -> int:
     """Fetch `link`'s peer feed and upsert ShadowListings. Returns the number
     of live rows after the poll. Unreachable peer → audited, no rows changed."""
-    url = client_mod.discovery_url(link.peer.base_url)
+    # Name the link being polled, so the peer serves only what was shared on it (2026-10 bug
+    # hunt #6). From the serving side, "community" is theirs and "peer_community" ours.
+    scope = {}
+    if link.remote_community_uuid is not None:
+        scope = {"community": str(link.remote_community_uuid), "peer_community": str(link.community_id)}
+    url = client_mod.discovery_url(link.peer.base_url, **scope)
     signature = crypto.sign_request("GET", url, b"", aud=link.peer.instance_id)
     try:
-        data = client_mod.get_discovery(link.peer.base_url, {"X-UMI-Signature": signature})
+        data = client_mod.get_discovery(link.peer.base_url, {"X-UMI-Signature": signature}, **scope)
     except client_mod.FederationClientError as e:
         emit("fed.peer_unreachable", link, details={"peer": link.peer.instance_id, "error": str(e)[:100]})
         outbox.mark_link_unreachable(link)
@@ -52,9 +57,19 @@ def poll_link(link) -> int:
         # tombstone below drop any stale shadow for this uuid).
         receipt = str(row.get("receipt_jws", ""))
         try:
-            crypto.verify_consent_receipt(receipt, link.peer.jwk)
+            claims = crypto.verify_consent_receipt(receipt, link.peer.jwk)
         except crypto.FederationAuthError:
             emit("fed.receipt_invalid", link, details={"remote_uuid": str(remote_uuid)})
+            continue
+        # A valid signature is not enough: the receipt must be for THIS record, from this
+        # peer, minted for us, or it proves nothing about this listing (2026-10 bug hunt, L62).
+        if not (
+            isinstance(claims, dict)
+            and claims.get("record") == f"{row['kind']}:{remote_uuid}"
+            and claims.get("home") == link.peer.instance_id
+            and claims.get("peer") == crypto.my_instance_id()
+        ):
+            emit("fed.receipt_invalid", link, details={"remote_uuid": str(remote_uuid), "reason": "claims"})
             continue
         seen.add(remote_uuid)
         radius = row.get("radius_km")

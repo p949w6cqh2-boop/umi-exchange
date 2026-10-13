@@ -48,10 +48,14 @@ def followup_overdue_digest():
     sent = 0
     for member, items in by_assignee.items():
         user = member.user
-        if Notification.objects.filter(recipient=user, type="followup_overdue", created_at__date=today).exists():
-            continue  # idempotence: already digested today
         slug = items[0].case.community.slug
         link = reverse("casework:followups-mine", kwargs={"slug": slug})
+        # Idempotence per community (the link names it): per person, someone coordinating in two
+        # communities only ever heard about one of them (2026-10 bug hunt, L21).
+        if Notification.objects.filter(
+            recipient=user, type="followup_overdue", created_at__date=today, link=link
+        ).exists():
+            continue
         lines = [f"• {fu.title} — due {fu.due_date} (case {fu.case.short_code})" for fu in items[:20]]
         body = "\n".join(lines)
         notify(user, "followup_overdue", title=f"{len(items)} overdue follow-up(s)", body=body, link=link)
@@ -139,21 +143,88 @@ def register_schedule():
 # encrypted narrative for seven years, then it is crypto-shredded.
 CASE_RETENTION_DAYS = 7 * 365
 
+# What a shredded follow-up title reads afterwards. Titles are plain text by design (the overdue
+# digest mails them), so a shred overwrites them; there is no key to destroy.
+ERASED = "Erased"
+
+CASEWORK_NOTIFICATION_TYPES = (
+    "case_assigned",
+    "handoff_pending",
+    "followup_assigned",
+    "followup_overdue",
+    "case_grant",
+)
+
+
+def _case_notifications(case):
+    """Casework notifications about a case: those linking to it, and the follow-up ones, which
+    name it by its short code."""
+    from django.db.models import Q
+
+    from apps.notifications.models import Notification
+
+    code = case.short_code
+    return Notification.objects.filter(type__in=CASEWORK_NOTIFICATION_TYPES).filter(
+        Q(link__contains=str(case.pk)) | Q(title__contains=code) | Q(body__contains=f"(case {code})")
+    )
+
+
+def _has_content_q():
+    """Cases that still say something about their subject: an encrypted field not yet shredded, or
+    plain text not yet overwritten. A shredded case matches none of it, so sweeps are idempotent."""
+    from django.db.models import Q
+
+    from .models import CaseAccessGrant, CaseNote, FollowUp, WarmHandoff
+
+    return (
+        Q(summary_enc__isnull=False)
+        | Q(emergency_justification_enc__isnull=False)
+        | Q(pk__in=CaseNote.objects.filter(body_enc__isnull=False).values("case"))
+        | Q(pk__in=FollowUp.objects.filter(Q(detail_enc__isnull=False) | ~Q(title=ERASED)).values("case"))
+        | Q(pk__in=WarmHandoff.objects.filter(summary_enc__isnull=False).values("case"))
+        | Q(pk__in=CaseAccessGrant.objects.exclude(reason="").values("case"))
+    )
+
+
+def shred_case_content(case):
+    """Shred everything a case says about its subject; return PII-free counts for the audit row.
+    Shared by the seven-year sweep and a person's erasure (apps/people/erasure.py).
+
+    Nulls BOTH envelope columns (ciphertext + DEK) on the case summary, the emergency
+    justification, and every note/follow-up/handoff body, so reads return None and
+    `casework_envelope_status` stays clean. Bulk `.update()` is deliberate: finalized notes block
+    `save()` edits by design, and this is a policy action, not an edit.
+
+    Plain text about the subject goes in the same pass (2026-10 bug hunt, L17): follow-up titles
+    ("Call Maria about the eviction hearing"), grant reasons, and the notification bodies that
+    repeat them. Before, all of it outlived the shred.
+    """
+    from .models import CaseFile
+
+    details = {
+        "notes": case.notes.filter(body_enc__isnull=False).update(body_enc=None, body_enc_dek=None),
+        "followups": case.followups.filter(detail_enc__isnull=False).update(detail_enc=None, detail_enc_dek=None),
+        "handoffs": case.handoffs.filter(summary_enc__isnull=False).update(summary_enc=None, summary_enc_dek=None),
+        "followup_titles": case.followups.exclude(title=ERASED).update(title=ERASED),
+        "grant_reasons": case.grants.exclude(reason="").update(reason=""),
+        "notifications": _case_notifications(case).exclude(body="").update(body=""),
+    }
+    CaseFile.objects.filter(pk=case.pk).update(
+        summary_enc=None,
+        summary_enc_dek=None,
+        emergency_justification_enc=None,
+        emergency_justification_enc_dek=None,
+    )
+    return details
+
 
 def shred_aged_cases():
-    """Crypto-shred the narrative of cases closed more than seven years ago.
+    """Shred cases closed more than seven years ago, then erase the people they were about.
 
-    Nulls BOTH envelope columns (ciphertext + DEK) on the case summary, the
-    emergency justification, and every note/follow-up/handoff body, so reads
-    return None and `casework_envelope_status` stays clean. Bulk `.update()`
-    is deliberate: finalized notes block `save()` edits by design, and this
-    is a policy action, not an edit — one audit row per case (PII-free
-    counts), not per note. Idempotent: a fully shredded case no longer
-    matches the content filter.
+    One audit row per case (PII-free counts), not per note. Idempotent: a fully shredded case no
+    longer matches the content filter, and an erased person no longer matches the identity one.
     """
     from datetime import timedelta
-
-    from django.db.models import Q
 
     from apps.holds.services import everything_held, held_cases_q
 
@@ -165,29 +236,44 @@ def shred_aged_cases():
     aged = (
         CaseFile.objects.filter(status=CaseFile.STATUS_CLOSED, closed_at__lt=cutoff)
         .exclude(held_cases_q())
-        .filter(
-            Q(summary_enc__isnull=False)
-            | Q(emergency_justification_enc__isnull=False)
-            | Q(notes__body_enc__isnull=False)
-            | Q(followups__detail_enc__isnull=False)
-            | Q(handoffs__summary_enc__isnull=False)
-        )
-        .distinct()
+        .filter(_has_content_q())
     )
     count = 0
     for case in aged:
-        details = {
-            "policy": "retention_7y",
-            "notes": case.notes.filter(body_enc__isnull=False).update(body_enc=None, body_enc_dek=None),
-            "followups": case.followups.filter(detail_enc__isnull=False).update(detail_enc=None, detail_enc_dek=None),
-            "handoffs": case.handoffs.filter(summary_enc__isnull=False).update(summary_enc=None, summary_enc_dek=None),
-        }
-        CaseFile.objects.filter(pk=case.pk).update(
-            summary_enc=None,
-            summary_enc_dek=None,
-            emergency_justification_enc=None,
-            emergency_justification_enc_dek=None,
-        )
-        emit("case.retention_shredded", case, details=details)
+        emit("case.retention_shredded", case, details={"policy": "retention_7y", **shred_case_content(case)})
         count += 1
-    return f"Retention-shredded {count} aged closed cases"
+    people = _erase_aged_subjects(cutoff)
+    return f"Retention-shredded {count} aged closed cases and erased {people} person record(s)"
+
+
+def _erase_aged_subjects(cutoff):
+    """Erase a subject once every case about them has aged out (2026-10 bug hunt, L16): the sweep
+    shredded what the cases said and kept whom they were about. A person with any case still open,
+    closed within the window, or held, keeps their record; so does one with no case at all."""
+    from django.db import transaction
+    from django.db.models import Q
+
+    from apps.holds.services import held_persons_q
+    from apps.people.erasure import identity_present_q, shred_identity
+    from apps.people.models import Person
+
+    from .models import CaseFile
+
+    live = CaseFile.objects.exclude(Q(status=CaseFile.STATUS_CLOSED, closed_at__lt=cutoff)).values("subject_person")
+    due = (
+        Person.objects.filter(pk__in=CaseFile.objects.values("subject_person"))
+        .exclude(pk__in=live)
+        .exclude(held_persons_q())
+        .filter(identity_present_q())
+    )
+    count = 0
+    for pk in due.values_list("pk", flat=True):
+        with transaction.atomic():
+            # Re-checked under the row lock: a case opened for them since the query above wins.
+            person = due.select_for_update().filter(pk=pk).first()
+            if person is None:
+                continue
+            shred_identity(person)
+            emit("person.retention_shredded", person, details={"policy": "retention_7y"})
+        count += 1
+    return count

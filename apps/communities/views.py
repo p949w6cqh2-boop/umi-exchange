@@ -13,11 +13,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.mail import send_mail
 from django.core.validators import URLValidator
-from django.db import transaction
-from django.http import HttpResponse
+from django.db import IntegrityError, transaction
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
+from django.utils import timezone as dj_timezone
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
@@ -29,14 +30,15 @@ from apps.accounts.models import RecoveryCredential
 from apps.accounts.ratelimit import rate_limit
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
+from apps.common.ids import parse_uuid, uuid_or_404
 from apps.communities.identity import SCENE_LABELS, SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
-from apps.moderation.services import blocked_member_ids
+from apps.moderation.services import blocked_member_ids, flag_listed_words, leave_community, review_note
 from apps.needs.models import Need
 from apps.offers.models import Offer
 from apps.tags.badges import verified_badges_for
 
 from .forms import CommunityCreateForm, CommunitySettingsForm, JoinForm
-from .models import Community, Member, Resource, generate_join_code
+from .models import Community, LastAdminError, Member, Resource, generate_join_code, lock_admin_seats
 from .themes import THEME_DEFAULT, THEMES
 
 
@@ -84,46 +86,145 @@ class JoinCommunityView(LoginRequiredMixin, VerifiedRequiredMixin, FormView):
                 # per (user, community), so a stale is_active=False row can't be
                 # replaced — and feed access requires is_active=True, so without
                 # this the returning member is told "already a member" and then
-                # 404s on the feed). Role/display_name are preserved as archived.
+                # 404s on the feed). The display name is kept; the role is not.
+                # Coming back with the code is open to anyone who has it, so it
+                # comes back as a member: a coordinator who left got the seat, and
+                # casework on every standard case, back by re-entering the code
+                # (2026-10 bug hunt, L3). An admin can make them a coordinator again.
+                role_before = existing.role
                 existing.is_active = True
-                existing.save(update_fields=["is_active"])
-                emit(
-                    "member.joined",
-                    existing,
-                    user=self.request.user,
-                    request=self.request,
-                    details={"role": existing.role, "rejoined": True},
-                )
+                existing.role = "member"
+                existing.save(update_fields=["is_active", "role"])
+                details = {"role": "member", "rejoined": True}
+                if role_before != "member":
+                    details["role_before"] = role_before
+                emit("member.joined", existing, user=self.request.user, request=self.request, details=details)
                 messages.success(self.request, f"Welcome back to {community.name}!")
             else:
                 messages.info(self.request, "You are already a member of this community.")
             return redirect("community-feed", slug=community.slug)
 
         display_name = form.cleaned_data.get("display_name") or self.request.user.username
-        member = Member.objects.create(
-            user=self.request.user, community=community, display_name=display_name, role="member"
-        )
+        try:
+            with transaction.atomic():
+                member = Member.objects.create(
+                    user=self.request.user, community=community, display_name=display_name, role="member"
+                )
+        except IntegrityError:
+            # A double tap: the other request joined first (2026-10 bug hunt, L34).
+            messages.info(self.request, "You are already a member of this community.")
+            return redirect("community-feed", slug=community.slug)
         emit("member.joined", member, user=self.request.user, request=self.request, details={"role": member.role})
         messages.success(self.request, f"Welcome to {community.name}!")
+        if flag_listed_words(member, "member", member.display_name, author=member, request=self.request):
+            messages.info(self.request, review_note("Your display name"))
         return redirect("community-feed", slug=community.slug)
 
 
 class LeaveCommunityView(LoginRequiredMixin, View):
     """POST: the requesting member leaves a community. Soft (is_active=False) so
-    history/audit/FK references survive (keyring: archive > delete). The last
-    active admin cannot leave — they'd orphan the community."""
+    history/audit/FK references survive (keyring: archive > delete). Their open
+    asks and offers come off the board, hidden and never deleted, and their matches
+    still in progress are cancelled (leave_community). The last active admin cannot
+    leave — they'd orphan the community."""
 
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
-        if member.is_last_active_admin:
+        try:
+            leave_community(member, request=request)
+        except LastAdminError:
             messages.error(request, "Make someone else an admin before you leave this community.")
             return redirect("community-feed", slug=slug)
-        member.is_active = False
-        member.save(update_fields=["is_active"])
-        emit("member.left", member, user=request.user, request=request, details={"role": member.role})
-        messages.success(request, f"You have left {community.name}.")
+        messages.success(
+            request,
+            f"You have left {community.name}. Your open asks and offers are off the board. "
+            "If you come back, you choose which ones return.",
+        )
         return redirect("landing")
+
+
+def _left_posts(member):
+    """What leaving hid that is still theirs to put back: open asks and active offers."""
+    needs = Need.objects.filter(requester=member, status="open", hidden_on_leave_at__isnull=False)
+    offers = Offer.objects.filter(offerer=member, status="active", hidden_on_leave_at__isnull=False)
+    return needs, offers
+
+
+class LeftPostsView(LoginRequiredMixin, TemplateView):
+    """Your posts from before you left (founder's decision 2026-10-12: "a toggle for them to
+    unhide it when they join instead of it just re posting, so they can consent").
+
+    Leaving hid them; rejoining reposts nothing. Here the member puts each one back on the
+    board, or closes it (closed, never deleted). A post a coordinator hid is not offered: its
+    hidden_on_leave_at was cleared when they hid it.
+    """
+
+    template_name = "communities/left_posts.html"
+    LIVE = {"need": (Need, "requester", "open", "closed"), "offer": (Offer, "offerer", "active", "withdrawn")}
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
+        self.member = get_object_or_404(Member, user=request.user, community=self.community, is_active=True)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        needs, offers = _left_posts(self.member)
+        ctx.update(
+            {
+                "community": self.community,
+                "member": self.member,
+                "needs": needs.select_related("category"),
+                "offers": offers.select_related("category"),
+            }
+        )
+        return ctx
+
+    def post(self, request, slug):
+        action, kind = request.POST.get("action"), request.POST.get("kind")
+        if action not in ("restore", "close") or kind not in self.LIVE:
+            return HttpResponse(status=400)
+        try:
+            pk = uuid.UUID(str(request.POST.get("id")))
+        except ValueError:
+            raise Http404("malformed id")
+        model, owner, live, closed = self.LIVE[kind]
+        with transaction.atomic():
+            post = get_object_or_404(
+                model.objects.select_for_update(),
+                pk=pk,
+                community=self.community,
+                status=live,
+                hidden_on_leave_at__isnull=False,
+                **{owner: self.member},
+            )
+            post.hidden_on_leave_at = None
+            fields = ["hidden_on_leave_at", "updated_at"]
+            if action == "restore":
+                post.moderation_hidden = False
+                fields.append("moderation_hidden")
+                now = dj_timezone.now()
+                if kind == "need" and post.expires_at <= now:
+                    # Its date passed while it was off the board: a fresh window, as a reopened ask gets.
+                    post.expires_at = now + timedelta(days=self.community.auto_expire_days)
+                    fields.append("expires_at")
+            else:
+                post.status = closed
+                fields.append("status")
+            post.save(update_fields=fields)
+        if action == "restore":
+            emit(f"{kind}.restored", post, user=request.user, request=request, details={"after_leaving": True})
+            messages.success(request, f"'{post.title}' is back on the board.")
+        else:
+            emit(f"{kind}.updated", post, user=request.user, request=request, details={"status": closed})
+            messages.success(request, f"'{post.title}' is closed. It stays in your history.")
+        needs, offers = _left_posts(self.member)
+        if needs.exists() or offers.exists():
+            return redirect("left-posts", slug=slug)
+        return redirect("community-feed", slug=slug)
 
 
 class CommunityCreateView(LoginRequiredMixin, CreateView):
@@ -241,6 +342,10 @@ class ResourceListView(LoginRequiredMixin, TemplateView):
             if not title:
                 messages.error(request, "Give the link a name people will recognise.")
                 return redirect("community-resources", slug=self.community.slug)
+            if len(url) > Resource._meta.get_field("url").max_length:
+                # The column holds 500; a longer link (SharePoint, Maps) was a Postgres 500 (L66).
+                messages.error(request, "That link is too long to save. Try a shorter link to the same page.")
+                return redirect("community-resources", slug=self.community.slug)
             resource = Resource.objects.create(
                 community=self.community,
                 title=title,
@@ -255,7 +360,7 @@ class ResourceListView(LoginRequiredMixin, TemplateView):
             messages.success(request, "Added to the directory.")
         elif action == "archive":
             resource = get_object_or_404(
-                Resource, pk=request.POST.get("resource_id"), community=self.community, is_active=True
+                Resource, pk=uuid_or_404(request.POST.get("resource_id")), community=self.community, is_active=True
             )
             resource.is_active = False
             resource.save(update_fields=["is_active"])
@@ -377,6 +482,9 @@ class FeedView(LoginRequiredMixin, ListView):
             from apps.hub.selectors import week_stats
 
             ctx["week_stats"] = week_stats(self.community)
+            # Back after leaving: their old posts wait off the board until they choose.
+            needs, offers = _left_posts(self.member)
+            ctx["left_posts_count"] = needs.count() + offers.count()
         self._attach_poster_badges(ctx.get("items", []))
         # Federation (Stage C3): surface the cross-community board only when
         # the flag is on AND this community holds a live link (no query when off).
@@ -409,7 +517,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=self.kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(
             user=request.user,
             community=self.community,
@@ -569,36 +677,47 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
             return redirect("community-settings", slug=self.community.slug)
 
         if action == "change_role":
-            # Least privilege: only admins change roles (coordinators manage content).
-            if not self.member.is_admin:
-                messages.error(request, "Only admins can change member roles.")
-                return redirect("community-settings", slug=self.community.slug)
-            # Same-community lookup prevents cross-community IDOR.
-            target = self.community.members.filter(id=request.POST.get("member_id"), is_active=True).first()
-            new_role = request.POST.get("role")
-            if not target or new_role not in dict(Member.ROLE_CHOICES):
-                messages.error(request, "Invalid member or role.")
-                return redirect("community-settings", slug=self.community.slug)
-            if target.is_last_active_admin and new_role != "admin":
-                messages.error(request, "The community must keep at least one admin.")
-                return redirect("community-settings", slug=self.community.slug)
-            old_role = target.role
-            if new_role != old_role:
-                target.role = new_role
-                target.save(update_fields=["role"])
-                emit(
-                    "member.role_changed",
-                    target,
-                    user=request.user,
-                    request=request,
-                    details={"from": old_role, "to": new_role},
-                )
+            with transaction.atomic():
+                # Every check below is read under the community's lock, the one leaving takes too
+                # (2026-10 bug hunt, L2): two admins demoting each other at once both passed the
+                # last-admin check and left none. The actor is re-read for the same reason: an
+                # admin demoted a moment ago must not finish a role change.
+                lock_admin_seats(self.community.pk)
+                # Least privilege: only admins change roles (coordinators manage content).
+                if not self.community.members.filter(pk=self.member.pk, is_active=True, role="admin").exists():
+                    messages.error(request, "Only admins can change member roles.")
+                    return redirect("community-settings", slug=self.community.slug)
+                # Same-community lookup prevents cross-community IDOR.
+                member_id = parse_uuid(request.POST.get("member_id"))  # junk is an unknown member, not a 500
+                target = self.community.members.filter(id=member_id, is_active=True).first() if member_id else None
+                new_role = request.POST.get("role")
+                if not target or new_role not in dict(Member.ROLE_CHOICES):
+                    messages.error(request, "Invalid member or role.")
+                    return redirect("community-settings", slug=self.community.slug)
+                if target.is_last_active_admin and new_role != "admin":
+                    messages.error(request, "The community must keep at least one admin.")
+                    return redirect("community-settings", slug=self.community.slug)
+                old_role = target.role
+                if new_role != old_role:
+                    target.role = new_role
+                    target.save(update_fields=["role"])
+                    emit(
+                        "member.role_changed",
+                        target,
+                        user=request.user,
+                        request=request,
+                        details={"from": old_role, "to": new_role},
+                    )
             messages.success(request, f"{target.display_name}'s role updated.")
             return redirect("community-settings", slug=self.community.slug)
 
         form = CommunitySettingsForm(request.POST, instance=self.community)
         if form.is_valid():
-            form.save()
+            # Only the form's own fields: a full-row save from the row loaded at the top of this
+            # request undid a theme or identity saved meanwhile, and reverted a join-code rotation
+            # the rotating coordinator had already been shown (2026-10 bug hunt, L45).
+            community = form.save(commit=False)
+            community.save(update_fields=[*CommunitySettingsForm.Meta.fields, "updated_at"])
             emit(
                 "community.updated",
                 self.community,
@@ -769,18 +888,26 @@ class SecurityTxtView(View):
         return HttpResponse("\n".join(lines) + "\n", content_type="text/plain; charset=utf-8")
 
 
+@method_decorator(ratelimit(key="user", rate="30/h", method="POST", block=True), name="post")
 class VouchMemberView(LoginRequiredMixin, View):
     """The vouch exit of the human-verification gate (his key, option 1,
     2026-08-12): a coordinator who has met the neighbour in person marks their
     account verified — the path for members who don't use email. Coordinator-only,
-    audited (§8.3); the vouched account still needs a join code like everyone."""
+    audited (§8.3); the vouched account still needs a join code like everyone.
+
+    The voucher must be a verified person themselves (2026-10 bug hunt): creating a community
+    needs only a sign-in and makes the creator its admin, so without this an unverified account
+    could vouch for itself, or for any number of other accounts. 30/hour per voucher matches the
+    intake sign-up limit, the busiest legitimate vouching morning."""
 
     def post(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         member = Member.objects.filter(user=request.user, community=community, is_active=True).first()
         # can_vouch, not is_coordinator: an intake helper vouches too (coordinator-roles.md).
         if member is None or not member.can_vouch:
             raise PermissionDenied("Only a coordinator or intake helper can vouch for a neighbour.")
+        if not request.user.is_human_verified:
+            raise PermissionDenied("Confirm your own email, or be vouched for, before you vouch for anyone.")
         # A helper cannot load community settings, so send them back to their own vouch page.
         back = "member-vouch-page" if request.POST.get("return_to") == "vouch" or not member.is_coordinator else None
         back = back or "community-settings"
@@ -788,7 +915,21 @@ class VouchMemberView(LoginRequiredMixin, View):
         username = (request.POST.get("username") or "").strip()
         from django.contrib.auth import get_user_model
 
-        target = get_user_model().objects.filter(username__iexact=username, is_active=True).first()
+        # The exact username first. Ignoring case only when that finds one account: with "Maria"
+        # and "maria" both registered, a case-blind .first() vouched for whichever sorted first
+        # (2026-10 bug hunt, L31).
+        accounts = get_user_model().objects.filter(is_active=True)
+        target = accounts.filter(username=username).first()
+        if target is None:
+            near = list(accounts.filter(username__iexact=username)[:2])
+            if len(near) > 1:
+                messages.error(
+                    request,
+                    "More than one account has that name with different capital letters. "
+                    "Ask your neighbour to show you their username exactly.",
+                )
+                return redirect(back, slug=slug)
+            target = near[0] if near else None
         if target is None:
             messages.error(request, "No account with that username. Check the spelling with your neighbour.")
             return redirect(back, slug=slug)
@@ -826,9 +967,10 @@ class CoordinatorResetView(LoginRequiredMixin, View):
     """
 
     NOT_FOUND = "No plain member of this community has that username. Check the spelling with them."
+    REFUSED = "A coordinator can't reset this account. The board's staff can unlock it instead."
 
     def post(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         issuer = Member.objects.filter(user=request.user, community=community, is_active=True).first()
         if issuer is None or not issuer.can_reset:
             raise PermissionDenied("Only a coordinator can issue a reset code.")
@@ -842,6 +984,15 @@ class CoordinatorResetView(LoginRequiredMixin, View):
         )
         if target is None:
             messages.error(request, self.NOT_FOUND)
+            return render(request, "communities/reset_done.html", {"community": community, "code": None})
+        # The code opens the whole ACCOUNT, not this membership, so "plain member here" is not
+        # enough: a person who holds any role in any community (past seats included, since a
+        # rejoin with an unrotated code restores the role) or a staff flag is out of reach.
+        # Found 2026-10 (bug hunt): any account can create a community, become its admin, and
+        # so reach a parish admin who had joined it as a plain member.
+        user = target.user
+        if user.is_staff or user.is_superuser or Member.objects.filter(user=user).exclude(role="member").exists():
+            messages.error(request, self.REFUSED)
             return render(request, "communities/reset_done.html", {"community": community, "code": None})
 
         _, code = issue_credential(target.user, RecoveryCredential.PURPOSE_COORDINATOR_RESET, issued_by=issuer)
@@ -886,7 +1037,7 @@ class IntakeRegisterView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(user=request.user, community=self.community, is_active=True).first()
         # can_vouch: coordinators, admins and intake helpers (his B8 ruling 2026-09-30 named
         # "coordinators and helpers"). Never can_reset: a helper still cannot touch a password.
@@ -941,7 +1092,7 @@ class VouchPageView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(user=request.user, community=self.community, is_active=True).first()
         if self.member is None or not self.member.can_vouch:
             raise PermissionDenied("Only a coordinator or intake helper can vouch for a neighbour.")

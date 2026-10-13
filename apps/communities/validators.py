@@ -1,9 +1,11 @@
 """
-Shared input sanitization for all user-generated text fields.
+Shared input checks for user-generated text fields.
 
-Django's template auto-escaping prevents XSS on OUTPUT. This module provides
-defense-in-depth by stripping HTML tags on INPUT, so we never store raw HTML
-in the database. This is a belt-and-suspenders approach.
+Django's template auto-escaping prevents XSS on OUTPUT, and that is what keeps free text safe.
+Since the 2026-10 bug hunt sanitize_text_field only trims; the tag and script-pattern helpers
+below are no longer applied to free text. The word list never refuses a post: a listed word
+sends the saved post to the coordinators' review queue (apps.moderation.services
+.flag_listed_words, founder's decision 2026-10-12).
 """
 
 import re
@@ -19,8 +21,10 @@ SCRIPT_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
-# Basic content moderation blocklist
-PROHIBITED_WORDS = {
+# The review list. A post using one of these words still goes up, flagged for a coordinator:
+# help requests need them ("prescription drugs", "abuse survivors"). Which words belong here
+# is the founder's call; the list itself is unchanged from the old blocklist.
+REVIEW_WORDS = {
     "abuse",
     "harass",
     "kill",
@@ -62,24 +66,28 @@ def validate_no_script_injection(value):
         )
 
 
-def validate_clean_content(value):
-    """Raise ValidationError if value contains prohibited words."""
-    if not value:
-        return
-    text_lower = value.lower()
-    for word in PROHIBITED_WORDS:
-        if re.search(r"\b" + re.escape(word) + r"\b", text_lower):
-            raise ValidationError(
-                "This content violates community guidelines. Please revise.",
-                code="prohibited_content",
-            )
+def find_listed_word(*values):
+    """The first review-list word used in any of `values` (whole words, any case), or None."""
+    for value in values:
+        if not value:
+            continue
+        text = value.lower()
+        for word in sorted(REVIEW_WORDS):
+            if re.search(r"\b" + re.escape(word) + r"\b", text):
+                return word
+    return None
 
 
 def sanitize_text_field(value):
-    """Strip HTML tags and check for injection patterns. Returns cleaned value."""
+    """Free text, trimmed and otherwise unchanged. It refuses nothing.
+
+    Until 2026-10 this also deleted anything between '<' and '>', refused text matching
+    SCRIPT_PATTERNS, and refused any word on the list. The first two broke ordinary posts
+    ("I need <5 lbs of rice>", "Phone ran out of data: need a top-up", "Donations = welcome")
+    and protected nothing: every surface that shows this text autoescapes it, and none of it
+    reaches |safe. The third turned away help requests; a listed word now flags the saved
+    post instead (find_listed_word, apps.moderation.services.flag_listed_words).
+    """
     if not value:
         return value
-    cleaned = strip_html_tags(value)
-    validate_no_script_injection(cleaned)
-    validate_clean_content(cleaned)
-    return cleaned.strip()
+    return value.strip()

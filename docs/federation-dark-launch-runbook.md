@@ -30,6 +30,7 @@
 | Postgres 16, `ENCRYPTION_KEY(S)` set | shadows/outbox/contact payloads are envelope-encrypted |
 | NTP (chrony) running | signed requests carry `iat` ±300 s; skew = `fed.sig_rejected: bad_iat` |
 | `django-q2` qcluster running | discovery poll (15 min), outbox delivery (1 min), retention sweeps + auto-suspend (daily) |
+| **Both instances on a build from 2026-10-12 or later** | the wire changed then (bug hunt): handshakes are signed by the document's key, and discovery and proposals name their link. An older peer's handshake is `403`, and a multi-link peer's unscoped poll is `400 scope_required` (`docs/federation-design.md` §2.1, §3.3) |
 
 ## 2. Enable federation (each instance)
 

@@ -78,6 +78,9 @@ def send_proposal(shadow, offer, *, actor_user):
         item["blind_token"] = crypto.blind_token(bytes(link.pairing_pepper), email)
 
     payload = {"proposals": [item]}
+    if link.remote_community_uuid is not None:
+        # From the authority's side, "community" is theirs and "peer_community" ours (bug hunt #6).
+        payload["link"] = {"community": str(link.remote_community_uuid), "peer_community": str(link.community_id)}
     url = client_mod.proposals_url(link.peer.base_url)
     signature = crypto.sign_request("POST", url, json.dumps(payload).encode(), aud=link.peer.instance_id)
     try:
@@ -206,7 +209,11 @@ def _apply_mirror_state(fmatch, new_status, contact=None, *, include_contact=Tru
         selfmatch = offer is not None and clean and outbox.contact_matches_user(clean, offer.offerer.user)
         # Accepted applies exactly once (atomic + idempotency), so a non-active
         # offer here always means someone ELSE holds it now (§8.7).
-        unavailable = offer is None or offer.status != "active"
+        # Hidden, or its owner left or was removed: nobody is here to share contact with
+        # (2026-10 bug hunt #17), so it is unavailable, like an offer committed elsewhere.
+        unavailable = (
+            offer is None or offer.status != "active" or offer.moderation_hidden or not offer.offerer.is_active
+        )
         if selfmatch or unavailable:
             # Never exchange: the same human on both sides (§7 backstop), or
             # the offer was committed/withdrawn locally in the meantime (§8.7)

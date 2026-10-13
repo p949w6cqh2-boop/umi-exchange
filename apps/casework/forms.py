@@ -12,7 +12,8 @@ from apps.communities.models import Member
 from apps.consent.models import Consent
 from apps.people.models import Person
 
-from .models import CaseNote
+from . import access
+from .models import CaseFile, CaseNote
 
 PRIMARY_NEEDS = [
     ("food", "Food"),
@@ -79,7 +80,23 @@ class CaseCreateForm(forms.Form):
     def __init__(self, community, member, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.community, self.member = community, member
-        self.fields["person"].queryset = Person.objects.filter(created_in_community=community, merged_into__isnull=True)
+        # An erased person (apps/people/erasure.py) is not offered: a new case would hang off a record
+        # with no name. Intake names everyone it creates, so only an erasure leaves this empty.
+        persons = Person.objects.filter(
+            created_in_community=community, merged_into__isnull=True, display_name_enc__isnull=False
+        )
+        if not access.is_admin(member):
+            # Only people whose every case this member can open. Picking anyone else opens a
+            # fresh case that shows their name, which is how a coordinator locked out of a
+            # restricted case could learn who it is about (2026-10 bug hunt). The queryset is
+            # also what validates a POST, so a hand-built submit is refused the same way.
+            hidden = {
+                case.subject_person_id
+                for case in CaseFile.objects.filter(community=community)
+                if access.case_access(member, case) < access.CONTRIBUTOR
+            }
+            persons = persons.exclude(pk__in=hidden)
+        self.fields["person"].queryset = persons
         self.fields["assigned_to"].queryset = Member.objects.filter(
             community=community, is_active=True, role__in=("coordinator", "admin")
         )
@@ -201,7 +218,12 @@ class AssignForm(forms.Form):
 class GrantForm(forms.Form):
     member = forms.ModelChoiceField(queryset=Member.objects.none())
     role = forms.ChoiceField(choices=[("viewer", "Viewer (read only)"), ("contributor", "Contributor (can add notes)")])
-    reason = forms.CharField(max_length=200, help_text="Why this person needs access (audited).")
+    # Plain text, unlike the notes: it asks for no names or circumstances (2026-10 bug hunt, L17).
+    reason = forms.CharField(
+        max_length=200,
+        help_text="Why this person needs access, with no names or circumstances. It is not encrypted.",
+        widget=forms.TextInput(attrs={"placeholder": "Covering the visits this month"}),
+    )
     expires_at = forms.DateTimeField(required=False, **DATETIME_LOCAL)
 
     def __init__(self, community, *args, **kwargs):

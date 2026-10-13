@@ -17,9 +17,10 @@ from django.views.generic import DetailView
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.models import AuditLog
 from apps.audit.services import emit
+from apps.common.ids import uuid_or_404
 from apps.communities.models import Community, Member
 from apps.communities.validators import sanitize_text_field
-from apps.moderation.services import is_blocked_between
+from apps.moderation.services import flag_listed_words, is_blocked_between, review_note
 from apps.needs.models import Need
 from apps.notifications.adapter import NotificationAdapter
 from apps.offers.models import Offer
@@ -42,14 +43,14 @@ class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
     """POST: propose a match between a need and an offer."""
 
     def post(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
 
         need_id = request.POST.get("need_id")
         offer_id = request.POST.get("offer_id")
 
-        need = get_object_or_404(Need, id=need_id, community=community)
-        offer = get_object_or_404(Offer, id=offer_id, community=community) if offer_id else None
+        need = get_object_or_404(Need, id=uuid_or_404(need_id), community=community)
+        offer = get_object_or_404(Offer, id=uuid_or_404(offer_id), community=community) if offer_id else None
 
         # Moderation containment: a hidden need/offer — a coordinator-hidden post
         # or a removed member's — is not matchable by ordinary members (mirrors
@@ -72,11 +73,16 @@ class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
 
         # Block: two neighbours who've blocked each other are not matched. The
         # proposer must not be blocked-with the need's requester, nor (when an
-        # offer is supplied) with the offer's owner. Preventative, not a recall.
-        if is_blocked_between(member, need.requester) or (
-            offer is not None and is_blocked_between(member, offer.offerer)
+        # offer is supplied) with the offer's owner, and a coordinator brokering
+        # a match cannot pair the two people in it when one blocked the other
+        # (2026-10 bug hunt, L4). Preventative, not a recall. The words never say
+        # "block": "this neighbour" told a blocked person they were blocked.
+        if (
+            is_blocked_between(member, need.requester)
+            or (offer is not None and is_blocked_between(member, offer.offerer))
+            or (offer is not None and is_blocked_between(need.requester, offer.offerer))
         ):
-            return _reject(request, slug, need_id, "You can't propose a match with this neighbour.", 409)
+            return _reject(request, slug, need_id, "This match can't be made.", 409)
 
         # H-2: a member may only propose an OFFER THEY OWN — UNLESS they are a
         # coordinator/admin brokering the match on a member's behalf.
@@ -99,32 +105,45 @@ class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
             messages.error(request, "This need is not accepting matches.")
             return redirect("need-detail", slug=slug, pk=need_id)
 
-        match = Match.objects.create(need=need, offer=offer, proposed_by=member)
+        # One unit: a proposal whose notification fails must not survive as a half-made match
+        # that the member's retry then duplicates (2026-10 bug hunt: a long title did exactly that).
+        with transaction.atomic():
+            # A double tap or a retry made a second identical proposal and a second notice (2026-10
+            # bug hunt, L40). Under the need's lock, the order every match write takes, an
+            # identical live one is the answer instead.
+            Need.objects.select_for_update().get(pk=need.pk)
+            existing = Match.objects.filter(
+                need=need, offer=offer, proposed_by=member, status__in=("proposed", "accepted")
+            ).first()
+            if existing is not None:
+                messages.info(request, "You've already proposed this one.")
+                return redirect("match-detail", slug=slug, pk=existing.pk)
+            match = Match.objects.create(need=need, offer=offer, proposed_by=member)
 
-        # Audit log
-        AuditLog.log(member.user, "create", "match", match.id, request=request)
+            # Audit log
+            AuditLog.log(member.user, "create", "match", match.id, request=request)
 
-        # Notifications
-        NotificationAdapter.send(
-            need.requester.user,
-            "match_proposed",
-            f"{member.display_name} proposed a match on your need '{need.title}'",
-            "View the match to accept or decline.",
-            link=f"/c/{slug}/matches/{match.id}/",
-        )
-
-        # Coordinator-brokered match: the offerer did not propose their own offer,
-        # so signal them explicitly. This is the consent safeguard that keeps
-        # brokering subsidiarity (assist) rather than substitution — the offerer
-        # can still accept or decline the match.
-        if offer is not None and offer.offerer_id != member.id:
+            # Notifications
             NotificationAdapter.send(
-                offer.offerer.user,
+                need.requester.user,
                 "match_proposed",
-                f"{member.display_name} proposed your offer '{offer.title}' for a match",
-                "Review the match — you can accept or decline.",
+                f"{member.display_name} proposed a match on your need '{need.title}'",
+                "View the match to accept or decline.",
                 link=f"/c/{slug}/matches/{match.id}/",
             )
+
+            # Coordinator-brokered match: the offerer did not propose their own offer,
+            # so signal them explicitly. This is the consent safeguard that keeps
+            # brokering subsidiarity (assist) rather than substitution — the offerer
+            # can still accept or decline the match.
+            if offer is not None and offer.offerer_id != member.id:
+                NotificationAdapter.send(
+                    offer.offerer.user,
+                    "match_proposed",
+                    f"{member.display_name} proposed your offer '{offer.title}' for a match",
+                    "Review the match — you can accept or decline.",
+                    link=f"/c/{slug}/matches/{match.id}/",
+                )
 
         messages.success(request, "Match proposed! Both parties will be notified.")
         return redirect("match-detail", slug=slug, pk=match.id)
@@ -140,8 +159,22 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         from django.http import Http404
 
         obj = super().get_object(queryset)
-        if not Member.objects.filter(user=self.request.user, community=obj.need.community, is_active=True).exists():
+        if not obj.need.community.is_active:
+            raise Http404("This community is closed.")  # switched off in admin (2026-10 bug hunt, L7)
+        viewer = Member.objects.filter(user=self.request.user, community=obj.need.community, is_active=True).first()
+        if viewer is None:
             raise Http404("You are not a member of this community.")
+        # Someone outside the match who has a block with either person in it does not see it,
+        # as on the board. The two people in it always do (a block is not a recall), and so do
+        # coordinators, for oversight (2026-10 bug hunt).
+        participants = (obj.need.requester, obj.helper_member)
+        if viewer not in participants and not viewer.is_coordinator:
+            if any(is_blocked_between(viewer, p) for p in participants):
+                raise Http404("This match is not available.")
+            # A hidden post's title stays off this page too, as on the need page (2026-10 bug
+            # hunt, L8); the two people in it and coordinators keep it.
+            if obj.need.moderation_hidden or (obj.offer is not None and obj.offer.moderation_hidden):
+                raise Http404("This match is not available.")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -214,29 +247,27 @@ class MatchUpdateView(LoginRequiredMixin, View):
         new_status = request.POST.get("status")
         if new_status not in ("accepted", "fulfilled", "unfulfilled", "cancelled"):
             return HttpResponse(status=400)
-        # sanitize_text_field raises ValidationError on script-injection / blocked
-        # content. It ran before the try/except below, so a hostile note 500'd the
-        # request instead of a clean 400 — validate it up front and reject cleanly.
-        try:
-            notes = sanitize_text_field(request.POST.get("notes", ""))
-        except ValidationError as exc:
-            return HttpResponse("; ".join(exc.messages), status=400)
+        # Trimmed only. A listed word no longer refuses the note (it used to, with a 400);
+        # once the change is saved, it flags the match for the coordinators instead.
+        notes = sanitize_text_field(request.POST.get("notes", ""))
 
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
 
         # Race condition prevention (Protocol Section 8.7): pessimistic locking.
         # Lock the Need (the contended resource) so two concurrent accepts on the
         # same need cannot both succeed; then lock the Match row itself.
         with transaction.atomic():
+            # One lock order everywhere: Need, then Match, then Offer. The hourly need sweep
+            # (apps/needs/tasks.py) locks a Need and then writes its Matches; taking the Match
+            # first here deadlocked against it under load (2026-10 bug hunt, reproduced on
+            # Postgres). A match's need never changes, so reading need_id unlocked is safe.
+            need_id = get_object_or_404(Match.objects.values_list("need_id", flat=True), pk=pk)
+            need = Need.objects.select_for_update().get(pk=need_id)
             # Lock only the Match row (of=("self",)): select_related pulls in the
             # nullable `offer` as a LEFT OUTER JOIN, and Postgres refuses a bare
-            # FOR UPDATE on the nullable side of an outer join. We only need to
-            # lock the match itself here; the Need is locked separately below.
-            match = get_object_or_404(
-                Match.objects.select_for_update(of=("self",)).select_related("need", "offer"), pk=pk
-            )
-            need = Need.objects.select_for_update().get(pk=match.need_id)
+            # FOR UPDATE on the nullable side of an outer join.
+            match = Match.objects.select_for_update(of=("self",)).select_related("need", "offer").get(pk=pk)
             match.need = need  # operate on the freshly locked instance
             # Lock the offer too (separately, for the same nullable-outer-join
             # reason as the match): an accept commits the offer, so two matches
@@ -292,7 +323,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
             if new_status == "accepted":
                 offering_member = match.offer.offerer if match.offer is not None else match.proposed_by
                 if is_blocked_between(need.requester, offering_member):
-                    return _reject(request, slug, pk, "You can't accept a match with this neighbour.", 409)
+                    return _reject(request, slug, pk, "This match can't go ahead.", 409)
 
             # Every person says yes (the founder's call, 2026-10-06). Only the two people in
             # the match can say it, never a coordinator for them (spec §4.1), and contact opens
@@ -326,6 +357,8 @@ class MatchUpdateView(LoginRequiredMixin, View):
 
                 queue_match_event(match, new_status)
 
+                closed_proposals = _expire_competing_proposals(match) if new_status == "fulfilled" else []
+
         # A first yes: recorded and committed above; the match stays proposed and nothing is
         # revealed. Tell the other person it is their turn, after the commit like every notice.
         if first_yes_only:
@@ -357,6 +390,8 @@ class MatchUpdateView(LoginRequiredMixin, View):
         if notes:
             details["notes_provided"] = True
         AuditLog.log(member.user, "update", "match", match.id, details=details, request=request)
+        if notes and flag_listed_words(match, "match", notes, author=member, request=request):
+            messages.info(request, review_note("Your note"))
 
         # Dotted state-change audit (§8.3) for the need/offer that transition_to()
         # cascaded — only when it actually changed them, so no-op saves don't log.
@@ -388,9 +423,68 @@ class MatchUpdateView(LoginRequiredMixin, View):
                     "Contact info has been shared — open the match page to see it.",
                     link=f"/c/{slug}/matches/{match.id}/",
                 )
-        elif new_status == "fulfilled":
-            messages.success(request, "Match marked as fulfilled! Thank you.")
-        elif new_status == "cancelled":
-            messages.info(request, "Match cancelled.")
+        else:
+            # Every other ending reaches the other person too, never the one who acted (2026-10
+            # bug hunt: only an accept was ever announced, so a declined proposal or a cancelled
+            # match left the other person waiting on nothing).
+            kind, title, body = {
+                "cancelled": (
+                    "match_cancelled",
+                    "Match on '{}' was cancelled",
+                    "Open the match to see where things stand.",
+                ),
+                "unfulfilled": (
+                    "match_cancelled",
+                    "Match on '{}' was marked not done",
+                    "The ask is back on the board.",
+                ),
+                "fulfilled": (
+                    "match_fulfilled",
+                    "Match on '{}' was marked done",
+                    "Thank you for helping each other.",
+                ),
+            }[new_status]
+            for other in {need.requester, match.helper_member} - {member}:
+                NotificationAdapter.send(
+                    other.user, kind, title.format(need.title), body, link=f"/c/{slug}/matches/{match.id}/"
+                )
+            for closed in closed_proposals:
+                NotificationAdapter.send(
+                    closed.proposed_by.user,
+                    "match_cancelled",
+                    f"Your proposal on '{closed.need.title}' has closed",
+                    "Someone else helped with this one. Thank you for offering.",
+                    link=f"/c/{slug}/matches/{closed.id}/",
+                )
+            if new_status == "fulfilled":
+                messages.success(request, "Match marked as fulfilled! Thank you.")
+            elif new_status == "cancelled":
+                messages.info(request, "Match cancelled.")
 
         return redirect("match-detail", slug=slug, pk=pk)
+
+
+def _expire_competing_proposals(match):
+    """When a match is fulfilled, the other open proposals on its need, and on its offer, can never
+    happen: close them so their proposers are not left waiting (2026-10 bug hunt). Only at
+    fulfilled, not accepted, so a cancelled match still has its backups. Runs under the need lock
+    and takes each sibling's lock in pk order, keeping the Need-then-Match order."""
+    from django.db.models import Q
+
+    from apps.federation.outbox import queue_match_event
+
+    same = Q(need_id=match.need_id)
+    if match.offer_id is not None:
+        same |= Q(offer_id=match.offer_id)
+    siblings = list(
+        Match.objects.select_for_update(of=("self",))
+        .select_related("need", "proposed_by__user")
+        .filter(same, status="proposed")
+        .exclude(pk=match.pk)
+        .order_by("pk")
+    )
+    for sibling in siblings:
+        sibling.transition_to("expired")
+        emit("match.expired", sibling, details={"reason": "fulfilled_elsewhere"})
+        queue_match_event(sibling, "expired")
+    return siblings

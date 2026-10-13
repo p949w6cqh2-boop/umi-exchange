@@ -27,6 +27,7 @@
         data-sync-url="{% url 'casework:sync' slug=community.slug %}"
         data-manifest-url="{% url 'casework:visit-manifest' slug=community.slug %}"
         data-sw-url="{% url 'casework:sw' slug=community.slug %}"
+        data-user-id="{{ request.user.pk }}"
         class="bg-white border border-[var(--umi-border)] rounded-lg p-4 space-y-4">
     {% csrf_token %}
     <div>

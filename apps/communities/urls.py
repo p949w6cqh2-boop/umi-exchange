@@ -19,6 +19,7 @@ urlpatterns = [
     path("<slug:slug>/welcome/", views.CommunityWelcomeView.as_view(), name="community-welcome"),
     path("<slug:slug>/resources/", views.ResourceListView.as_view(), name="community-resources"),
     path("<slug:slug>/leave/", views.LeaveCommunityView.as_view(), name="community-leave"),
+    path("<slug:slug>/posts-from-before/", views.LeftPostsView.as_view(), name="left-posts"),
     path("<slug:slug>/settings/qr/", views.JoinCodeQRView.as_view(), name="join-code-qr"),
     path("<slug:slug>/dashboard/", DashboardView.as_view(), name="community-dashboard"),
     path("<slug:slug>/dashboard/export/", DashboardExportView.as_view(), name="dashboard-export"),

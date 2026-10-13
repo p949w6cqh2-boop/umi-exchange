@@ -62,7 +62,7 @@
 
   <section>
     <h2 class="text-sm font-semibold text-parish-ink/70 uppercase tracking-wide mb-2">Notes</h2>
-    {% if can_contribute and not consent_frozen %}
+    {% if can_contribute and not consent_frozen and case.status != "closed" %}
     <form method="post" action="{% url 'casework:note-create' slug=community.slug pk=case.pk %}"
           hx-post="{% url 'casework:note-create' slug=community.slug pk=case.pk %}"
           hx-target="#notes-list" hx-swap="afterbegin"
@@ -108,7 +108,7 @@
       {% for fu in followups %}{% include "casework/_followup_row.html" %}{% empty %}
       <li class="text-sm text-parish-ink/70">None open.</li>{% endfor %}
     </ul>
-    {% if can_contribute %}
+    {% if can_contribute and case.status != "closed" %}
     <form method="post" action="{% url 'casework:followup-create' slug=community.slug pk=case.pk %}"
           hx-post="{% url 'casework:followup-create' slug=community.slug pk=case.pk %}"
           hx-target="#followups-list" hx-swap="beforeend"
@@ -147,8 +147,9 @@
       {% csrf_token %}
       <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Member</label>{{ grant_form.member }}</div>
       <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Role</label>{{ grant_form.role }}</div>
-      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Reason (audited)</label>{{ grant_form.reason }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Reason</label>{{ grant_form.reason }}</div>
       <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Expires</label>{{ grant_form.expires_at }}</div>
+      <p class="sm:col-span-4 text-xs text-parish-ink/70">Keep the reason short, with no names or circumstances. Unlike the case notes, it is not encrypted. Your community's admins and whoever this case is assigned to can read it.</p>
       <button class="px-4 py-2 bg-parish-ink text-white rounded-lg font-semibold sm:col-span-4 sm:w-auto sm:justify-self-start">Grant access</button>
     </form>
   </section>

@@ -7,6 +7,7 @@ Register once (mirrors apps/casework, apps/matches, apps/federation):
     python manage.py shell -c "from apps.needs.tasks import register_schedule; register_schedule()"
 """
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -40,9 +41,12 @@ def expire_stale_needs():
     count = 0
     for pk in candidate_ids:
         with transaction.atomic():
-            need = Need.objects.select_for_update().get(pk=pk)
+            # .first(), not .get(): a need deleted while the sweep runs (it takes minutes) is skipped;
+            # DoesNotExist stopped every expiry after it until the next hour (2026-10 bug hunt, L38).
+            need = Need.objects.select_for_update().filter(pk=pk).first()
             if (
-                need.status != "open"
+                need is None
+                or need.status != "open"
                 or need.expires_at is None
                 or need.expires_at >= now
                 or need.matches.filter(status="accepted").exists()
@@ -54,22 +58,30 @@ def expire_stale_needs():
 
             # Expire proposed matches individually so each leaves an audit entry
             # (§8.3) — was a silent bulk .update() that bypassed the audit trail.
-            for m in need.matches.filter(status="proposed"):
-                m.status = "expired"
-                m.save(update_fields=["status"])
+            # Through the state machine, in pk order, under the need lock (Need, then Match, the
+            # order MatchUpdateView now takes too). transition_to re-reads each row under its own
+            # lock, so a match cancelled or accepted a moment ago is left as it is instead of
+            # being overwritten to 'expired' (2026-10 bug hunt).
+            for m in need.matches.filter(status="proposed").order_by("pk"):
+                try:
+                    m.transition_to("expired")
+                except ValidationError:  # TransitionConflict subclasses it: the match moved meanwhile
+                    continue
                 emit("match.expired", m, details={"reason": "need_expired"})
 
             AuditLog.log(None, "update", "need", need.id, details={"status": ["open", "expired"]})
 
         # Notify the requester outside the row lock: the send is synchronous, and
         # holding a lock across it is what made the stale-candidate window wide.
-        NotificationAdapter.send(
-            need.requester.user,
-            "need_expired",
-            f'Your need "{need.title}" has expired.',
-            "You can repost it if you still need help.",
-            link=need.get_absolute_url(),
-        )
+        # Not someone who left: the link would 404 for them (bug hunt #8).
+        if need.requester.is_active:
+            NotificationAdapter.send(
+                need.requester.user,
+                "need_expired",
+                f'Your need "{need.title}" has expired.',
+                "You can repost it if you still need help.",
+                link=need.get_absolute_url(),
+            )
         count += 1
 
     return f"Expired {count} needs"
@@ -98,6 +110,16 @@ def register_schedule():
             "repeats": -1,
         },
     )
+    # Offers expire on the same cadence (spec §10.6; 2026-10 bug hunt, L28). Registered here so the
+    # step every deployment already runs picks it up.
+    Schedule.objects.update_or_create(
+        name="offers-expire-stale",
+        defaults={
+            "func": "apps.offers.tasks.expire_stale_offers",
+            "schedule_type": Schedule.HOURLY,
+            "repeats": -1,
+        },
+    )
 
 
 # Retention policy (Jasiah Williams's yes, 2026-07-11): terminal needs keep their
@@ -111,21 +133,27 @@ def shred_aged_need_pii():
     Nulling ciphertext and DEK together (not DEK alone) keeps reads returning
     None instead of the fail-loud ciphertext-without-DEK state, and keeps
     `migrate_on_behalf_envelope --verify`'s unreadable count at zero.
-    Idempotent: a shredded row no longer matches the dek filter. Each row is
+    Idempotent: a shredded row matches neither column. Each row is
     audited (§8.3) with PII-free details.
+
+    Either column marks a name to shred: a legacy direct-KEK row has ciphertext
+    and no DEK, and a filter on the DEK alone never reached it (2026-10 bug
+    hunt, L15).
     """
     from datetime import timedelta
+
+    from django.db.models import Q
 
     from apps.holds.services import everything_held, held_needs_q
 
     if everything_held():  # legal hold on everything (docs/specs/legal-hold.md)
         return "Legal hold in force on everything: no need was shredded"
     cutoff = timezone.now() - timedelta(days=NEED_PII_RETENTION_DAYS)
-    aged = Need.objects.filter(
-        status__in=("fulfilled", "closed", "expired"),
-        updated_at__lt=cutoff,
-        on_behalf_of_dek__isnull=False,
-    ).exclude(held_needs_q())
+    aged = (
+        Need.objects.filter(status__in=("fulfilled", "closed", "expired"), updated_at__lt=cutoff)
+        .filter(Q(on_behalf_of__isnull=False) | Q(on_behalf_of_dek__isnull=False))
+        .exclude(held_needs_q())
+    )
     count = 0
     for need in aged:
         Need.objects.filter(pk=need.pk).update(on_behalf_of=None, on_behalf_of_dek=None)

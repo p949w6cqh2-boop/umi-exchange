@@ -82,8 +82,10 @@ docker compose -f docker/docker-compose.prod.yml exec db psql -U umi_app -d umi_
   "SELECT current_user, rolsuper FROM pg_roles WHERE rolname=current_user;" # rolsuper must be f
 
 # Register background-job schedules (django-q2). Without this the recurring
-# sweeps never run: need expiry (§4.1), match-proposal expiry (§10.6), the
-# follow-up digest + stale-draft cleanup (§3.11). Idempotent (update_or_create).
+# sweeps never run: need expiry (§4.1), match-proposal expiry (§10.6), offer
+# expiry (§10.6, registered with the needs sweeps since 2026-10-13), the
+# follow-up digest + stale-draft cleanup (§3.11). Idempotent (update_or_create):
+# re-run it on every deploy, so a newly added sweep is registered too.
 docker compose -f docker/docker-compose.prod.yml exec app python manage.py shell -c "\
 from apps.needs.tasks import register_schedule as _n; _n(); \
 from apps.matches.tasks import register_schedule as _m; _m(); \

@@ -43,11 +43,11 @@ class NeedForm(forms.ModelForm):
             self.fields["category"].queryset = community.categories.filter(is_active=True)
 
     def clean_title(self):
-        """Strip HTML tags from title as defense-in-depth."""
+        """Trimmed. A listed word flags the saved post for review; it never refuses it."""
         return sanitize_text_field(self.cleaned_data.get("title", ""))
 
     def clean_description(self):
-        """Strip HTML tags from description as defense-in-depth."""
+        """Trimmed. A listed word flags the saved post for review; it never refuses it."""
         return sanitize_text_field(self.cleaned_data.get("description", ""))
 
     def clean_neighborhood(self):

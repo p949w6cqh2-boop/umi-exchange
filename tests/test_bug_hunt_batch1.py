@@ -2,7 +2,10 @@
 
 - Registration enforces password strength (AUTH_PASSWORD_VALIDATORS were unset).
 - The password-reset POST is covered by the auth rate-limit middleware.
-- MatchUpdateView returns 400 (not 500) when `notes` trips the injection validator.
+- MatchUpdateView returned 500 when `notes` tripped the content validator. Notes are no longer
+  refused at all: script-looking text is kept and shown escaped (2026-10 bug hunt), and a word
+  on the review list flags the match instead (2026-10-12, tests/test_word_list_flags.py). What
+  stays pinned here is that the note's content never blocks the status change.
 - The community feed ignores a malformed ?category= instead of 500-ing.
 """
 
@@ -63,7 +66,7 @@ def test_password_reset_path_is_rate_limited():
     assert "/auth/password/reset/" in settings.RATELIMIT_AUTH_PATHS
 
 
-def test_match_update_rejects_script_notes_with_400_not_500():
+def _proposed_match():
     community = CommunityFactory()
     category = CategoryFactory(community=community)
     requester = MemberFactory(community=community, is_active=True)
@@ -71,15 +74,36 @@ def test_match_update_rejects_script_notes_with_400_not_500():
     need = NeedFactory(community=community, requester=requester, category=category, status="open")
     offer = OfferFactory(community=community, offerer=offerer, category=category)
     match = MatchFactory(need=need, offer=offer, proposed_by=offerer, status="proposed")
+    return community, requester, match
+
+
+def test_match_update_with_a_listed_word_in_the_notes_still_goes_through():
+    community, requester, match = _proposed_match()
 
     client = _login(requester.user)
     resp = client.post(
         reverse("match-update", kwargs={"slug": community.slug, "pk": match.id}),
-        {"status": "accepted", "notes": "onclick=alert(1)"},
+        {"status": "accepted", "notes": "Pick up my prescription drugs"},
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 302
     match.refresh_from_db()
-    assert match.status == "proposed"  # the status change did not slip through
+    assert match.status == "accepted"
+
+
+def test_match_update_keeps_script_looking_notes_and_shows_them_escaped():
+    community, requester, match = _proposed_match()
+    url = reverse("match-update", kwargs={"slug": community.slug, "pk": match.id})
+
+    client = _login(requester.user)
+    assert client.post(url, {"status": "accepted"}).status_code == 302
+    resp = client.post(url, {"status": "fulfilled", "notes": "<b onclick=alert(1)>see you at 5</b>"})
+    assert resp.status_code == 302
+    match.refresh_from_db()
+    assert match.status == "fulfilled"
+    assert match.notes == "<b onclick=alert(1)>see you at 5</b>"
+    html = client.get(reverse("match-detail", args=[community.slug, match.id])).content.decode()
+    assert "&lt;b onclick=alert(1)&gt;see you at 5&lt;/b&gt;" in html
+    assert "<b onclick" not in html
 
 
 def test_feed_ignores_malformed_category_param():

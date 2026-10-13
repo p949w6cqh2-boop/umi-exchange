@@ -20,7 +20,10 @@ while new writes use the new KEK. The sequence (full detail = runbook Phase 5):
 
 1. `ENCRYPTION_KEYS = [<new>, <old>]` — new primary, old retained for unwrap. **← dual-read window opens.**
 2. `python manage.py rotate_keks` — re-wraps **every** envelope DEK under the new primary (all registered
-   fields: needs, casework, Person). Batched/idempotent — safe to re-run.
+   fields: needs, casework, federation, Person). Batched/idempotent — safe to re-run. If it **ends with an
+   error listing rows** (`app.Model.field <pk>`), no configured key opens those rows' DEKs (a row restored
+   from an old dump, for instance). Every other row was re-wrapped. Keep the old KEK and find the key that
+   opens them, or erase them, before step 4.
 3. Verify all three censuses are clean (`casework_envelope_status`, `people_envelope_status`,
    `migrate_on_behalf_envelope --verify`): `legacy=0, unreadable=0`.
 4. `ENCRYPTION_KEYS = [<new>]` — drop the old key. **← window closes; old KEK retired.**
@@ -36,9 +39,15 @@ Two mechanisms, deliberately different:
 - **Append-only audit (kept).** `AuditLog` is immutable (model-level + Postgres `REVOKE` of
   `UPDATE/DELETE`) and **contains no PII** — dotted actions ≤32 chars, salted-SHA-256 IP hashes, ids
   only. It is retained as the accountability trail; there is nothing in it to erase.
-- **PII erasure = crypto-shred.** To honour an erasure request, **delete the record's per-record DEK**
-  (`*_enc_dek`). The ciphertext is then permanently opaque *even with the KEK* — no plaintext delete, no
-  KEK access required. This is how §5.8 erasure is actually delivered.
+- **PII erasure = crypto-shred.** To honour an erasure request, run **`python manage.py shred_person
+  --person <uuid>`** for a casework subject, or **`shred_on_behalf --need <uuid>`** for the name on one
+  need. Each nulls the per-record DEK *and* its ciphertext together, so the content is gone from the live
+  database and unrecoverable *even with the KEK*, and `shred_person` also clears the name's blind index
+  and shreds every case about the person. Both refuse under a legal hold, and `shred_person` refuses while a case about the
+  person is still open (close it in the app first). This is how §5.8 erasure is actually delivered.
+  **Never delete a `*_enc_dek` by hand** (corrected 2026-10-13): a ciphertext left without its DEK fails
+  loud on every read (the case page returns a 500), and the blind index left behind keeps the erased name
+  equality-testable.
 
 ### Erasure is not complete until backups age out
 
@@ -57,4 +66,4 @@ instantaneous §5.8 erasure while pre-shred backups still exist.
 | Re-wrap all DEKs | `python manage.py rotate_keks` |
 | Confirm clean | `casework_envelope_status` · `people_envelope_status` · `migrate_on_behalf_envelope --verify` |
 | Retire old KEK | `ENCRYPTION_KEYS=[<new>]` |
-| Erase one person's PII | delete the record's `*_enc_dek` (crypto-shred) + wait out pre-shred backups |
+| Erase one person's PII | `python manage.py shred_person --person <uuid>` (crypto-shred) + wait out pre-shred backups |

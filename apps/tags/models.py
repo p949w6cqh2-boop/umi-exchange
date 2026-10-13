@@ -13,7 +13,7 @@ Every state change is append-only audited (AuditLog.log).
 import uuid
 
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import models
+from django.db import models, transaction
 
 from apps.audit.models import AuditLog
 from apps.common.state import StateMachineMixin
@@ -244,8 +244,13 @@ class MemberTag(StateMachineMixin, models.Model):
         )
 
     def verify(self, verifier, *, evidence_note="", request=None):
-        """Verify a pending tag. Enforces tier-based authorization."""
+        """Verify a pending tag. Enforces tier-based authorization, and another person's eyes:
+        nobody verifies their own tag (2026-10 bug hunt, L9). A coordinator could badge themself,
+        and at admin tier an admin could make themself "Priest"."""
         self._check_verifier_role(verifier)
+        if verifier.pk == self.member_id or verifier.user_id == self.member.user_id:
+            who = "Another admin" if self.tag.tier == "admin_verified" else "Another coordinator or admin"
+            raise PermissionDenied(f"You can't verify your own tag. {who} can.")
         if self.tag.tier == "admin_verified" and not evidence_note:
             raise ValidationError("Admin-verified tags require an evidence note.")
         self.evidence_note = evidence_note or self.evidence_note
@@ -265,8 +270,15 @@ class MemberTag(StateMachineMixin, models.Model):
         """Reject a pending tag request."""
         self._check_verifier_role(verifier)
         self.rejection_reason = reason
-        self.rejection_count = (self.rejection_count or 0) + 1
-        self.transition_to("rejected", extra_update_fields=("rejection_reason", "rejection_count"))
+        with transaction.atomic():
+            # From the locked row, not this instance: a reject + re-request that landed after it was
+            # loaded passes the status re-check, and counting from memory lost that rejection
+            # (2026-10 bug hunt, L41). transition_to re-locks the same row (a no-op) and re-checks.
+            current = (
+                type(self).objects.select_for_update().filter(pk=self.pk).values_list("rejection_count", flat=True)
+            )
+            self.rejection_count = (current.first() or 0) + 1
+            self.transition_to("rejected", extra_update_fields=("rejection_reason", "rejection_count"))
         AuditLog.log(
             verifier.user,
             "tag.rejected",

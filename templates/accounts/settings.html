@@ -38,6 +38,13 @@
       </p>
       {% endif %}
     </div>
+
+    <div>
+      <label for="id_current_password" class="umi-label">{{ form.current_password.label }}</label>
+      {{ form.current_password }}
+      <p class="text-sm text-parish-ink/70 mt-1">{{ form.current_password.help_text }}</p>
+      {% if form.current_password.errors %}<p class="text-sm text-red-600 mt-1">{{ form.current_password.errors.0 }}</p>{% endif %}
+    </div>
     <div>
       <label for="id_phone" class="umi-label">Phone</label>
       {{ form.phone }}
@@ -85,8 +92,13 @@
   <div class="umi-card">
     <h2 class="font-serif text-lg font-semibold text-parish-ink">Recovery code</h2>
     <p class="text-sm text-parish-ink/70 mt-3">{% if phone_codes_enabled and user.deliverable_phone %}You can get back in with a code by phone. A recovery code on paper is your backup for when you don't have your phone.{% else %}You have no confirmed email, so a recovery code on paper is how you get back in if you forget your password.{% endif %} Lost yours? Print a new one. The old one stops working right away.</p>
-    <form method="post" action="{% url 'recovery-code-new' %}" class="mt-3">
+    <form method="post" action="{% url 'recovery-code-new' %}" class="mt-3 space-y-3">
       {% csrf_token %}
+      <div>
+        <label for="id_recovery_current_password" class="umi-label">Your current password</label>
+        <input type="password" name="current_password" id="id_recovery_current_password" required
+               autocomplete="current-password" class="w-full border border-gray-300 rounded-lg px-3 py-3 text-base min-h-[44px]">
+      </div>
       <button type="submit" class="btn-primary text-sm transition-colors">Print a new recovery code</button>
     </form>
   </div>
