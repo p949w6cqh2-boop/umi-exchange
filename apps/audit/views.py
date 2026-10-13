@@ -26,7 +26,7 @@ class CoordinatorActivityView(LoginRequiredMixin, TemplateView):
         # Anonymous first, before any lookup (same reason as DashboardView: no existence oracle).
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(
             user=request.user, community=self.community, is_active=True, role__in=["coordinator", "admin"]
         ).first()

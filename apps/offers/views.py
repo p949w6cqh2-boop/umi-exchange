@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, DetailView
 
 from apps.accounts.verification import VerifiedRequiredMixin
@@ -22,7 +23,7 @@ class OfferCreateView(LoginRequiredMixin, VerifiedRequiredMixin, CreateView):
     template_name = "offers/create.html"
 
     def get_form_kwargs(self):
-        self.community = get_object_or_404(Community, slug=self.kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
         self.member = get_object_or_404(Member, user=self.request.user, community=self.community, is_active=True)
         kwargs = super().get_form_kwargs()
         kwargs["community"] = self.community
@@ -62,6 +63,8 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         from django.http import Http404
 
         obj = super().get_object(queryset)
+        if not obj.community.is_active:
+            raise Http404("This community is closed.")  # switched off in admin (2026-10 bug hunt, L7)
         viewer = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
         if viewer is None:
             raise Http404("You are not a member of this community.")
@@ -114,6 +117,12 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
 class OfferDeleteView(LoginRequiredMixin, DeleteView):
     model = Offer
 
+    def get(self, request, *args, **kwargs):
+        # Deleting is a POST from the post's own page; there is no confirmation page. A GET (a
+        # sign-in that returns here with next=) was a 500 on the missing template (2026-10 bug
+        # hunt, L5): go back to the post instead.
+        return redirect("offer-detail", slug=kwargs["slug"], pk=kwargs["pk"])
+
     def form_valid(self, form):
         # Block deletion while a Match is live (proposed/accepted): deleting the
         # offer nulls the Match's offer (SET_NULL) and strands the counterpart
@@ -124,6 +133,20 @@ class OfferDeleteView(LoginRequiredMixin, DeleteView):
                 status=409,
                 content_type="text/plain",
             )
+        if self.object.matches.exists():
+            # Its matches are history: deleting nulled their offer (SET_NULL), and a brokered match
+            # then named the coordinator as the helper (2026-10 bug hunt, L33). Keep it and take it
+            # off the board, as a need with history is closed.
+            Offer.objects.filter(pk=self.object.pk).update(status="withdrawn", updated_at=timezone.now())
+            emit(
+                "offer.updated",
+                self.object,
+                user=self.request.user,
+                request=self.request,
+                details={"status": "withdrawn", "kept": True},
+            )
+            messages.info(self.request, "This offer was withdrawn and taken off the board.")
+            return redirect(self.get_success_url())
         emit(
             "offer.deleted",
             self.object,
@@ -141,6 +164,8 @@ class OfferDeleteView(LoginRequiredMixin, DeleteView):
         from django.http import Http404
 
         obj = super().get_object(queryset)
+        if not obj.community.is_active:
+            raise Http404("This community is closed.")  # switched off in admin (2026-10 bug hunt, L7)
         member = Member.objects.filter(user=self.request.user, community=obj.community, is_active=True).first()
         if not member:
             raise Http404("You are not a member of this community.")

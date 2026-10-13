@@ -95,6 +95,10 @@ class User(AbstractUser):
         if self.phone_confirmed_at != prev["phone_confirmed_at"]:
             return  # the caller is writing a fresh proof for the new number
         self.phone_confirmed_at = None
+        if update_fields is not None and "phone_confirmed_at" not in update_fields:
+            # As the email twin does: otherwise save(update_fields=["phone"]) kept the old number's
+            # proof on the new one (2026-10 bug hunt, L42).
+            save_kwargs["update_fields"] = [*update_fields, "phone_confirmed_at"]
 
     def _clear_confirmation_if_address_changed(self, save_kwargs):
         """A proof belongs to the address it proved. Changing the address WITHOUT a

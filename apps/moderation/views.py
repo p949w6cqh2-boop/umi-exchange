@@ -5,7 +5,6 @@ audited (§8.3) with PII-free details. Hiding is reversible: a boolean the
 coordinator can flip back, never a delete (keyring: archive over delete).
 """
 
-import uuid
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -22,6 +21,7 @@ from django.views.generic import ListView
 
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
+from apps.common.ids import uuid_or_404 as _uuid_or_404
 from apps.communities.models import Community, Member
 from apps.matches.models import Match
 from apps.needs.models import Need
@@ -35,16 +35,6 @@ from .services import reinstate_member, remove_member
 
 # What a member can report. A match is only flagged automatically, for a listed word in its notes.
 TARGET_MODELS = {"need": Need, "offer": Offer, "member": Member, "page": CommunityPage}
-
-
-def _uuid_or_404(raw):
-    """A POSTed id, parsed. A malformed string makes UUIDField raise
-    ValidationError, which get_object_or_404 does not catch (only DoesNotExist),
-    so it escaped as a 500 — a junk id is a miss, not a server error."""
-    try:
-        return uuid.UUID(str(raw))
-    except (ValueError, TypeError, AttributeError):
-        raise Http404("malformed id")
 
 
 def _resolve_target(community, target_type, target_id):

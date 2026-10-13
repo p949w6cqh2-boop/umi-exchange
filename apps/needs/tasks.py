@@ -41,9 +41,12 @@ def expire_stale_needs():
     count = 0
     for pk in candidate_ids:
         with transaction.atomic():
-            need = Need.objects.select_for_update().get(pk=pk)
+            # .first(), not .get(): a need deleted while the sweep runs (it takes minutes) is skipped;
+            # DoesNotExist stopped every expiry after it until the next hour (2026-10 bug hunt, L38).
+            need = Need.objects.select_for_update().filter(pk=pk).first()
             if (
-                need.status != "open"
+                need is None
+                or need.status != "open"
                 or need.expires_at is None
                 or need.expires_at >= now
                 or need.matches.filter(status="accepted").exists()
@@ -103,6 +106,16 @@ def register_schedule():
         name="needs-expire-stale",
         defaults={
             "func": "apps.needs.tasks.expire_stale_needs",
+            "schedule_type": Schedule.HOURLY,
+            "repeats": -1,
+        },
+    )
+    # Offers expire on the same cadence (spec §10.6; 2026-10 bug hunt, L28). Registered here so the
+    # step every deployment already runs picks it up.
+    Schedule.objects.update_or_create(
+        name="offers-expire-stale",
+        defaults={
+            "func": "apps.offers.tasks.expire_stale_offers",
             "schedule_type": Schedule.HOURLY,
             "repeats": -1,
         },

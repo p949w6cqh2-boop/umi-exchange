@@ -42,7 +42,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # oracle for signed-out probes. Same guard as every sibling gated view.
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(
             user=request.user,
             community=self.community,
@@ -144,7 +144,7 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
         # Anonymous first — same reasoning and same order as DashboardView above.
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(
             user=request.user,
             community=self.community,
@@ -156,7 +156,9 @@ class DashboardExportView(LoginRequiredMixin, TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        export_type = request.GET.get("type", "needs")
+        # Only the two known kinds: the raw value went into Content-Disposition, where a CR/LF was a
+        # 500 and a quote renamed the download (2026-10 bug hunt, L68).
+        export_type = "matches" if request.GET.get("type") == "matches" else "needs"
         c = self.community
 
         response = HttpResponse(content_type="text/csv")

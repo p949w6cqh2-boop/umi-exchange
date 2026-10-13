@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.mail import send_mail
 from django.core.validators import URLValidator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
@@ -30,6 +30,7 @@ from apps.accounts.models import RecoveryCredential
 from apps.accounts.ratelimit import rate_limit
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.services import emit
+from apps.common.ids import parse_uuid, uuid_or_404
 from apps.communities.identity import SCENE_LABELS, SCENE_SLUGS, SCENE_SURFACES, parse_identity_post
 from apps.moderation.services import blocked_member_ids, flag_listed_words, leave_community, review_note
 from apps.needs.models import Need
@@ -101,9 +102,15 @@ class JoinCommunityView(LoginRequiredMixin, VerifiedRequiredMixin, FormView):
             return redirect("community-feed", slug=community.slug)
 
         display_name = form.cleaned_data.get("display_name") or self.request.user.username
-        member = Member.objects.create(
-            user=self.request.user, community=community, display_name=display_name, role="member"
-        )
+        try:
+            with transaction.atomic():
+                member = Member.objects.create(
+                    user=self.request.user, community=community, display_name=display_name, role="member"
+                )
+        except IntegrityError:
+            # A double tap: the other request joined first (2026-10 bug hunt, L34).
+            messages.info(self.request, "You are already a member of this community.")
+            return redirect("community-feed", slug=community.slug)
         emit("member.joined", member, user=self.request.user, request=self.request, details={"role": member.role})
         messages.success(self.request, f"Welcome to {community.name}!")
         if flag_listed_words(member, "member", member.display_name, author=member, request=self.request):
@@ -331,6 +338,10 @@ class ResourceListView(LoginRequiredMixin, TemplateView):
             if not title:
                 messages.error(request, "Give the link a name people will recognise.")
                 return redirect("community-resources", slug=self.community.slug)
+            if len(url) > Resource._meta.get_field("url").max_length:
+                # The column holds 500; a longer link (SharePoint, Maps) was a Postgres 500 (L66).
+                messages.error(request, "That link is too long to save. Try a shorter link to the same page.")
+                return redirect("community-resources", slug=self.community.slug)
             resource = Resource.objects.create(
                 community=self.community,
                 title=title,
@@ -345,7 +356,7 @@ class ResourceListView(LoginRequiredMixin, TemplateView):
             messages.success(request, "Added to the directory.")
         elif action == "archive":
             resource = get_object_or_404(
-                Resource, pk=request.POST.get("resource_id"), community=self.community, is_active=True
+                Resource, pk=uuid_or_404(request.POST.get("resource_id")), community=self.community, is_active=True
             )
             resource.is_active = False
             resource.save(update_fields=["is_active"])
@@ -502,7 +513,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=self.kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=self.kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(
             user=request.user,
             community=self.community,
@@ -667,7 +678,8 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                 messages.error(request, "Only admins can change member roles.")
                 return redirect("community-settings", slug=self.community.slug)
             # Same-community lookup prevents cross-community IDOR.
-            target = self.community.members.filter(id=request.POST.get("member_id"), is_active=True).first()
+            member_id = parse_uuid(request.POST.get("member_id"))  # junk is an unknown member, not a 500
+            target = self.community.members.filter(id=member_id, is_active=True).first() if member_id else None
             new_role = request.POST.get("role")
             if not target or new_role not in dict(Member.ROLE_CHOICES):
                 messages.error(request, "Invalid member or role.")
@@ -691,7 +703,11 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
 
         form = CommunitySettingsForm(request.POST, instance=self.community)
         if form.is_valid():
-            form.save()
+            # Only the form's own fields: a full-row save from the row loaded at the top of this
+            # request undid a theme or identity saved meanwhile, and reverted a join-code rotation
+            # the rotating coordinator had already been shown (2026-10 bug hunt, L45).
+            community = form.save(commit=False)
+            community.save(update_fields=[*CommunitySettingsForm.Meta.fields, "updated_at"])
             emit(
                 "community.updated",
                 self.community,
@@ -875,7 +891,7 @@ class VouchMemberView(LoginRequiredMixin, View):
     intake sign-up limit, the busiest legitimate vouching morning."""
 
     def post(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         member = Member.objects.filter(user=request.user, community=community, is_active=True).first()
         # can_vouch, not is_coordinator: an intake helper vouches too (coordinator-roles.md).
         if member is None or not member.can_vouch:
@@ -930,7 +946,7 @@ class CoordinatorResetView(LoginRequiredMixin, View):
     REFUSED = "A coordinator can't reset this account. The board's staff can unlock it instead."
 
     def post(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         issuer = Member.objects.filter(user=request.user, community=community, is_active=True).first()
         if issuer is None or not issuer.can_reset:
             raise PermissionDenied("Only a coordinator can issue a reset code.")
@@ -997,7 +1013,7 @@ class IntakeRegisterView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(user=request.user, community=self.community, is_active=True).first()
         # can_vouch: coordinators, admins and intake helpers (his B8 ruling 2026-09-30 named
         # "coordinators and helpers"). Never can_reset: a helper still cannot touch a password.
@@ -1052,7 +1068,7 @@ class VouchPageView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        self.community = get_object_or_404(Community, slug=kwargs["slug"])
+        self.community = get_object_or_404(Community, slug=kwargs["slug"], is_active=True)
         self.member = Member.objects.filter(user=request.user, community=self.community, is_active=True).first()
         if self.member is None or not self.member.can_vouch:
             raise PermissionDenied("Only a coordinator or intake helper can vouch for a neighbour.")

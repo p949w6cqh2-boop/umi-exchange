@@ -222,6 +222,22 @@ class Command(BaseCommand):
 
         from apps.accounts.models import User
 
+        # Never adopt a real account. Seed accounts carry @demo.invalid addresses; any other account
+        # holding a seed username (after a runbook flush freed the name, or when MEMBERS grows) was
+        # made a demo admin or coordinator, marked human-verified and given a fake phone (2026-10
+        # bug hunt, L35). Refuse before writing anything.
+        taken = sorted(
+            User.objects.filter(username__in=[username for username, _, _ in MEMBERS])
+            .exclude(email__iendswith="@demo.invalid")
+            .values_list("username", flat=True)
+        )
+        if taken:
+            raise CommandError(
+                "These seed usernames belong to real accounts, so nothing was seeded: "
+                + ", ".join(taken)
+                + ". Rename the seed members or pick another database."
+            )
+
         users = {}
         for username, display, _role in MEMBERS:
             first = display.split(" ")[0]

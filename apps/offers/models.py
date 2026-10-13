@@ -12,6 +12,7 @@ class Offer(models.Model):
         ("matched", "Matched"),
         ("fulfilled", "Fulfilled"),
         ("withdrawn", "Withdrawn"),
+        ("expired", "Expired"),  # past expires_at (apps.offers.tasks, spec §10.6)
     ]
     CONTACT_CHOICES = [("in_app", "In-app"), ("email", "Email"), ("phone", "Phone"), ("any", "Any")]
 

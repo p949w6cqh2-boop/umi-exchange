@@ -27,6 +27,7 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.accounts.ratelimit import check as ratelimit_check
 from apps.accounts.ratelimit import rate_limit
 from apps.audit.services import emit
+from apps.common.ids import uuid_or_404 as _uuid_or_404
 from apps.common.state import TransitionConflict
 from apps.communities.models import Community, Member
 
@@ -78,15 +79,6 @@ def _json_object(request):
     except (ValueError, UnicodeDecodeError):
         return None
     return payload if isinstance(payload, dict) else None
-
-
-def _uuid_or_404(raw):
-    """A POSTed id, parsed. A malformed one made UUIDField raise ValidationError, which
-    get_object_or_404 does not catch, so it was a 500 (2026-10 bug hunt): a junk id is a miss."""
-    try:
-        return uuid.UUID(str(raw))
-    except (ValueError, TypeError, AttributeError):
-        raise Http404("malformed id")
 
 
 def _scoped_link(peer, scope):

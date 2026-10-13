@@ -17,6 +17,7 @@ from django.views.generic import DetailView
 from apps.accounts.verification import VerifiedRequiredMixin
 from apps.audit.models import AuditLog
 from apps.audit.services import emit
+from apps.common.ids import uuid_or_404
 from apps.communities.models import Community, Member
 from apps.communities.validators import sanitize_text_field
 from apps.moderation.services import flag_listed_words, is_blocked_between, review_note
@@ -42,14 +43,14 @@ class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
     """POST: propose a match between a need and an offer."""
 
     def post(self, request, slug):
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
 
         need_id = request.POST.get("need_id")
         offer_id = request.POST.get("offer_id")
 
-        need = get_object_or_404(Need, id=need_id, community=community)
-        offer = get_object_or_404(Offer, id=offer_id, community=community) if offer_id else None
+        need = get_object_or_404(Need, id=uuid_or_404(need_id), community=community)
+        offer = get_object_or_404(Offer, id=uuid_or_404(offer_id), community=community) if offer_id else None
 
         # Moderation containment: a hidden need/offer — a coordinator-hidden post
         # or a removed member's — is not matchable by ordinary members (mirrors
@@ -102,6 +103,16 @@ class MatchProposeView(LoginRequiredMixin, VerifiedRequiredMixin, View):
         # One unit: a proposal whose notification fails must not survive as a half-made match
         # that the member's retry then duplicates (2026-10 bug hunt: a long title did exactly that).
         with transaction.atomic():
+            # A double tap or a retry made a second identical proposal and a second notice (2026-10
+            # bug hunt, L40). Under the need's lock, the order every match write takes, an
+            # identical live one is the answer instead.
+            Need.objects.select_for_update().get(pk=need.pk)
+            existing = Match.objects.filter(
+                need=need, offer=offer, proposed_by=member, status__in=("proposed", "accepted")
+            ).first()
+            if existing is not None:
+                messages.info(request, "You've already proposed this one.")
+                return redirect("match-detail", slug=slug, pk=existing.pk)
             match = Match.objects.create(need=need, offer=offer, proposed_by=member)
 
             # Audit log
@@ -143,6 +154,8 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         from django.http import Http404
 
         obj = super().get_object(queryset)
+        if not obj.need.community.is_active:
+            raise Http404("This community is closed.")  # switched off in admin (2026-10 bug hunt, L7)
         viewer = Member.objects.filter(user=self.request.user, community=obj.need.community, is_active=True).first()
         if viewer is None:
             raise Http404("You are not a member of this community.")
@@ -152,6 +165,10 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
         participants = (obj.need.requester, obj.helper_member)
         if viewer not in participants and not viewer.is_coordinator:
             if any(is_blocked_between(viewer, p) for p in participants):
+                raise Http404("This match is not available.")
+            # A hidden post's title stays off this page too, as on the need page (2026-10 bug
+            # hunt, L8); the two people in it and coordinators keep it.
+            if obj.need.moderation_hidden or (obj.offer is not None and obj.offer.moderation_hidden):
                 raise Http404("This match is not available.")
         return obj
 
@@ -229,7 +246,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
         # once the change is saved, it flags the match for the coordinators instead.
         notes = sanitize_text_field(request.POST.get("notes", ""))
 
-        community = get_object_or_404(Community, slug=slug)
+        community = get_object_or_404(Community, slug=slug, is_active=True)
         member = get_object_or_404(Member, user=request.user, community=community, is_active=True)
 
         # Race condition prevention (Protocol Section 8.7): pessimistic locking.
