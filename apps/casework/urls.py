@@ -19,6 +19,7 @@ urlpatterns = [
     path("<uuid:pk>/", views.CaseDetailView.as_view(), name="detail"),
     path("<uuid:pk>/status/", views.CaseStatusView.as_view(), name="status"),
     path("<uuid:pk>/assign/", views.CaseAssignView.as_view(), name="assign"),
+    path("<uuid:pk>/consent/", views.CaseConsentView.as_view(), name="consent"),
     path("<uuid:pk>/handoffs/<uuid:handoff_id>/ack/", views.HandoffAckView.as_view(), name="handoff-ack"),
     path("<uuid:pk>/export/", views.CaseExportView.as_view(), name="export"),
     path("<uuid:pk>/notes/new/", views.NoteCreateView.as_view(), name="note-create"),

@@ -3,7 +3,18 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased: the founder's answers to the check-up's open questions
+## Unreleased: consent after an emergency
+
+- **For coordinators doing casework: consent after an emergency.** A case opened in an emergency,
+  with no time to ask, can now have the person's consent recorded afterwards, from the case page.
+  An admin or the coordinator handling the case records it: the person's own consent on their
+  account, or consent they gave out loud or on paper, written down as theirs. From then on, if
+  they withdraw it, no new notes can be added, as for any other case.
+
+## 2026-10-13
+
+Fixes from the October check-up of the whole board, and the founder's answers to the questions it
+left open.
 
 - **Coordinators keep sight of the whole board.** If a member blocks a coordinator, the two of
   them are still never matched and the member still doesn't see that coordinator's posts. But a
@@ -20,11 +31,6 @@
 - **Connecting with other boards.** An offer from another board now arrives with its title and
   category, so you can see what you would be accepting. A board that has only asked to connect
   gets no further until it is approved. It is built and still switched off.
-
-## 2026-10-13
-
-Fixes from the October check-up of the whole board.
-
 - **If a post can't go up, the page now says why.** Before, an ask or offer whose description
   used certain words was quietly refused: the page came back with no message and your choices
   reset. Now you see the reason and your choices stay. Ordinary writing like "data:" or
