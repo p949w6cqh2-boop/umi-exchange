@@ -60,9 +60,13 @@ def _is_requester_self_match(need, link, incoming_token) -> bool:
     return hmac.compare_digest(crypto.blind_token(bytes(link.pairing_pepper), email), str(incoming_token))
 
 
-def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None, link=None) -> dict:
+def receive_proposal(
+    peer, *, need_remote_uuid, proposal_uuid, blind_token=None, link=None, offer_title="", offer_category=""
+) -> dict:
     """Handle one inbound proposal. Idempotent on (link, proposal_uuid). With `link` (the view
-    always resolves one), the ask must have been shared on that link (2026-10 bug hunt #6)."""
+    always resolves one), the ask must have been shared on that link (2026-10 bug hunt #6).
+    `offer_title` and `offer_category` are what the proposal offers, already plain text (the view
+    cleans them); they are kept so the asker sees what they would accept (L61)."""
     from apps.needs.models import Need
 
     # link__status="active" is load-bearing: revoking/suspending a link only
@@ -109,7 +113,12 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None,
                 return {"status": "rejected", "reason": "too_many_open"}
             match = Match.objects.create(need=need, offer=None, proposed_by=get_proxy_member(link))
             fmatch = FederatedMatch.objects.create(
-                match=match, link=link, role="authority", proposal_uuid=proposal_uuid
+                match=match,
+                link=link,
+                role="authority",
+                proposal_uuid=proposal_uuid,
+                offer_title=offer_title[:200],
+                offer_category=offer_category[:100],
             )
     except IntegrityError:
         # Concurrent duplicate on (link, proposal_uuid) — return the winner.
@@ -119,6 +128,12 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None,
         raise
 
     emit("fed.proposal_received", fmatch, details={"link": str(link.pk)})
+    if offer_title:
+        # A peer's title shows on this board, so the word list applies to it as to a local post:
+        # it flags the match for the coordinators and refuses nothing (founder's decision 2026-10-12).
+        from apps.moderation.services import flag_listed_words
+
+        flag_listed_words(match, "match", offer_title, offer_category, author=match.proposed_by)
     return {"status": "created", "match_uuid": str(match.id)}
 
 

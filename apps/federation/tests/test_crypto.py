@@ -71,12 +71,21 @@ class TestInstanceDocument:
             crypto.verify_instance_document(token)
 
 
+@pytest.fixture
+def approved_peer(peer):
+    """A request that verifies needs an approved peer: a pending one passes only the handshake
+    confirm (the founder's call, 2026-10-13, bug hunt L64)."""
+    peer.status = "active"
+    peer.save(update_fields=["status"])
+    return peer
+
+
 class TestSignedRequests:
-    def test_roundtrip(self, fed_settings, remote, peer):
+    def test_roundtrip(self, fed_settings, remote, approved_peer):
         body = b'{"code": "ABC"}'
         sig = remote.sign("POST", URL, body, fed_settings.instance_id)
         got_peer, claims = crypto.verify_signed_request(_request(body, sig))
-        assert got_peer.pk == peer.pk
+        assert got_peer.pk == approved_peer.pk
         assert claims["iss"] == remote.instance_id
 
     def test_missing_header_rejected(self, fed_settings, peer):
@@ -105,7 +114,7 @@ class TestSignedRequests:
             crypto.verify_signed_request(_request(body, sig))
         assert e.value.code == "bad_signature"
 
-    def test_replayed_jti_rejected(self, fed_settings, remote, peer):
+    def test_replayed_jti_rejected(self, fed_settings, remote, approved_peer):
         body = b"{}"
         jti = str(uuid.uuid4())
         sig = remote.sign("POST", URL, body, fed_settings.instance_id, jti=jti)
@@ -120,14 +129,14 @@ class TestSignedRequests:
             crypto.verify_signed_request(_request(b'{"a":2}', sig))
         assert e.value.code == "bad_signature"
 
-    def test_signed_get_with_query_string_verifies(self, fed_settings, remote, peer):
+    def test_signed_get_with_query_string_verifies(self, fed_settings, remote, approved_peer):
         # L-2: htu binds the full path+query, so a legitimately-signed query verifies.
         path = "/federation/v1/discovery?since=2026-W27&cursor=abc"
         url = settings.SITE_URL.rstrip("/") + path
         sig = remote.sign("GET", url, b"", fed_settings.instance_id)
         req = RequestFactory().get(path, HTTP_X_UMI_SIGNATURE=sig)
         got_peer, _claims = crypto.verify_signed_request(req)
-        assert got_peer.pk == peer.pk
+        assert got_peer.pk == approved_peer.pk
 
     def test_tampered_query_string_rejected(self, fed_settings, remote, peer):
         # A signature is bound to the query it was signed for — changing it → bad_htu.

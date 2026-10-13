@@ -414,8 +414,10 @@ class FeedView(LoginRequiredMixin, ListView):
         ).select_related("category", "offerer")
 
         # Block: hide the viewer and anyone they've blocked (either direction)
-        # from each other's board. Preventative, symmetric.
-        blocked_ids = blocked_member_ids(self.member)
+        # from each other's board. Preventative, symmetric. A coordinator keeps the
+        # whole board, for oversight (the founder's call, 2026-10-13, bug hunt L1): a
+        # member could otherwise take themselves out of one coordinator's view.
+        blocked_ids = set() if self.member.is_coordinator else blocked_member_ids(self.member)
         if blocked_ids:
             needs = needs.exclude(requester_id__in=blocked_ids)
             offers = offers.exclude(offerer_id__in=blocked_ids)
@@ -698,6 +700,7 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                     messages.error(request, "The community must keep at least one admin.")
                     return redirect("community-settings", slug=self.community.slug)
                 old_role = target.role
+                released = 0
                 if new_role != old_role:
                     target.role = new_role
                     target.save(update_fields=["role"])
@@ -708,7 +711,21 @@ class CommunitySettingsView(LoginRequiredMixin, TemplateView):
                         request=request,
                         details={"from": old_role, "to": new_role},
                     )
-            messages.success(request, f"{target.display_name}'s role updated.")
+                    # Losing the role ends their casework access; their open cases wait for an
+                    # admin to hand on (the founder's call, 2026-10-13, bug hunt L13).
+                    from apps.casework.ties import release_case_ties, stops_coordinating
+
+                    if stops_coordinating(old_role, new_role):
+                        released = release_case_ties(target, reason="role_changed", user=request.user, request=request)
+            done = f"{target.display_name}'s role updated."
+            if released == 1:
+                done += " The open case they held now has no one assigned. Hand it on from the case list."
+            elif released:
+                done += (
+                    f" The {released} open cases they held now have no one assigned."
+                    " Hand each one on from the case list."
+                )
+            messages.success(request, done)
             return redirect("community-settings", slug=self.community.slug)
 
         form = CommunitySettingsForm(request.POST, instance=self.community)
@@ -898,7 +915,13 @@ class VouchMemberView(LoginRequiredMixin, View):
     The voucher must be a verified person themselves (2026-10 bug hunt): creating a community
     needs only a sign-in and makes the creator its admin, so without this an unverified account
     could vouch for itself, or for any number of other accounts. 30/hour per voucher matches the
-    intake sign-up limit, the busiest legitimate vouching morning."""
+    intake sign-up limit, the busiest legitimate vouching morning.
+
+    Kept on purpose (the founder's call, 2026-10-13, bug hunt L10): any coordinator can vouch for
+    any account on the site by username, and the reply says whether the name exists and whether it
+    is already verified. The sign-up form already tells anyone whether a username is taken, being
+    verified only unlocks joining and posting, and every vouch is audited with who and where.
+    Revisit if the audit log ever shows probing (many user.vouched rows from one voucher)."""
 
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug, is_active=True)

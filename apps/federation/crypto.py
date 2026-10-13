@@ -169,10 +169,15 @@ def sign_request(method: str, url: str, body: bytes, aud: str) -> str:
     )
 
 
-def verify_signed_request(request):
+def verify_signed_request(request, *, allow_pending=False):
     """Verify an inbound federation request. Returns (peer, claims) or raises
     FederationAuthError. Known-peer failures are audited (fed.sig_rejected);
-    unknown senders have no resource row to hang an audit on."""
+    unknown senders have no resource row to hang an audit on.
+
+    Only an approved (active) peer passes. Any anonymous handshake creates a pending peer, so a
+    pending one passes only where the caller says allow_pending: the signed confirm that finishes
+    a link we asked for (the founder's call, 2026-10-13, bug hunt L64). The status is checked
+    after the signature, so only the key's holder learns why it was refused."""
     from apps.audit.services import emit
 
     from .models import FederationPeer
@@ -206,6 +211,8 @@ def verify_signed_request(request):
     except Exception:
         raise _reject("bad_jws") from None
     _check_request_claims(request, claims, peer.instance_id, _reject)
+    if peer.status != "active" and not (allow_pending and peer.status == "pending"):
+        raise _reject("peer_pending", "not_approved")
     return peer, claims
 
 

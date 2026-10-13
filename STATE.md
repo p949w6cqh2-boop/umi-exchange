@@ -39,13 +39,19 @@
 
 ## Protocol & conformance
 - **UMI Protocol v0.1 — Core ✅ + Casework ✅ + Federation v1 ✅** (default-OFF per community;
-  dark launch rehearsed on two local instances, not yet run in production).
+  dark launch rehearsed on two local instances, not yet run in production). **Casework has one MUST
+  outstanding** (found 2026-10, bug hunt L26): a case opened on the emergency path has no way to record
+  consent afterwards (spec §3.7-3.8), so a later revocation can't freeze it. The founder's call of
+  2026-10-13 is to build it next, in its own PR.
 - **Lake 1 entities:** `umi:Need`, `umi:Offer`, `umi:Match`, `umi:Consent`.
 - **Lake 2 entities (casework):** `Person`, `CaseFile`, `CaseNote`, `FollowUp`, `WarmHandoff`, `CaseAccessGrant`.
 - **Federation entities:** `FederationLink` (pairing-code + thumbprint verification, 24h TTL),
   `FederatedShare` (member-owned, §4.1 one-action consent), signed outbox/polling delivery,
   shadow records with tombstone/TTL death, cross-instance matching + §8.2 exchange,
-  **attestations**. `manage.py federation_status` reports link/share/outbox health.
+  **attestations**. `manage.py federation_status` reports link/share/outbox health. Since the
+  founder's calls of 2026-10-13: only an approved peer passes the signature check, and a pending one
+  only on the handshake confirm (L64); an inbound proposal keeps the offer's title and category as
+  plain text on `FederatedMatch` (`federation 0009`) and the asker sees them (L61).
 - **Moderation & member safety:** `Flag` (audit-style target refs; one open flag per reporter per
   target) → coordinator queue → hide (reversible) / keep / dismiss; hidden content vanishes from
   feed/pulse/search, 404s for members; coordinators unhideable; reporter anonymous. Hidden posts are
@@ -68,6 +74,13 @@
   deleted) and cancels their matches in progress, each other person told; rejoining reposts nothing,
   and a "your old posts" page lets them put each back or close it. A rejoin comes back as a member. A
   block also stops a coordinator brokering a match between the two people, and no refusal says why.
+  **The founder's calls of 2026-10-13:** a coordinator keeps the whole board through a block (L1): the
+  feed and post pages show a coordinator every post in their community, as for moderation-hidden
+  posts, while the two are still never matched and that coordinator gets no contact reveal or offer
+  buttons on them (another coordinator keeps the reveal). `manage.py hide_left_members_posts` (dry
+  run unless `--apply`) hides the open asks and active offers of members who left before #218, the
+  same reversible way: nothing deleted or sent, matches left as they are. The founder runs it once
+  after deploying (`docs/deployment-checklist.md`). Vouching stays site-wide by username (L10, kept).
 - **Not implemented:** referrals; in-app chat (**by design** — brokered contact + §8.2
   revelation is the model; chat only ships with reporting/retention/moderation around it).
 - **Match state machine:** `proposed → accepted | cancelled | expired`; `accepted → fulfilled | unfulfilled | cancelled`. Terminal states enforced via `transition_to()`, which now opens a transaction, locks the row and re-checks committed state — a stale snapshot raises `TransitionConflict` (409); `expire_stale_needs` likewise locks + re-checks per row, so a mid-sweep accept is never overwritten (#110).
@@ -191,6 +204,11 @@
 - Sensitivity levels (standard/restricted) — **unclassified defaults to restricted** (fail-safe); single authz matrix `apps/casework/access.py::case_access()`.
 - Consent-first opening (emergency flag allows null consent via a DB `CheckConstraint`); revocation **freeze** (no new notes/export once consent revoked; FollowUp writes re-check consent; the freeze now also blocks **warm handoff** — the last narrative-write path that slipped past it — while closing the case still works, #111).
 - Overdue follow-up digest re-checks `case_access()` and `is_active` at send time and honours the email opt-out (#111), and mails only a proven address (#174): an unconfirmed one keeps the in-app notice and gets no email (`docs/ethics-and-safety.md` Part 4); `CaseFileAdmin` forbids delete — a case is **closed, never destroyed** (no admin cascade through finalized notes, #111).
+- **Losing the role ends case access** (the founder's call, 2026-10-13, L13): `case_access()` counts
+  opener and assignee only while the person is a coordinator or admin, and the visit picker and
+  offline manifest match it; hand-off, grant and revoke need a current coordinator. A role change to
+  member, leaving or removal unassigns their open cases (`case.unassigned`, `apps/casework/ties.py`)
+  and tells the admins in-app; closed cases keep their assignee on record; an explicit grant still counts.
 - 4-hour sensitive-session **re-auth** middleware on casework decrypt views.
 - Finalized notes are immutable (amendments are new rows; retention sweep uses bulk `.update()` for that reason).
 - **Offline visit capture:** scope-limited **service worker** + IndexedDB queue; draft note bodies **AES-GCM encrypted at rest** (non-extractable WebCrypto key); idempotent sync endpoint. Sync validates `case_id` **per item** (one malformed entry no longer 500s and wedges the whole batch, #112); an edited visit re-send that collides returns an explicit **409 "amend the existing note"** instead of dropping the edit under a green "Visit saved" (savepoint around the save; identical replays stay idempotent, #112).
@@ -320,12 +338,13 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   fixed or duplicates, 1 refuted. Each fix test-first; gate 1835. Merging built the image only (the
   Deploy job is skipped while `DEPLOY_ENABLED` is unset), so the hand-run deploy is owed, then the
   schedule step re-run so offers start expiring: every offer older than 90 days expires at once and
-  its owner is told. Left for the founder: six design calls (L1 a member can block a coordinator out
-  of oversight; L10 vouch and sign-up answers say whether a username exists; L13 a demoted coordinator
-  keeps their cases; L26 an emergency case's consent can't be recorded afterwards; L61 a received
-  proposal drops the offer title; L64 a pending peer can pass signature checks), and whether to hide
-  the posts of members who left before #218, which would change live data. Receipts: the PR body and
-  `CHANGELOG.md` 2026-10-13.
+  its owner is told. The founder answered its seven open questions on 2026-10-13, each with the
+  recommended option: L1 coordinators keep oversight through a block, L13 losing the role ends case
+  access, L61 proposals carry the offer's title and category, L64 pending peers are refused, and a
+  one-time command hides the posts of members who left before #218 (he runs it after the deploy, dry
+  run first). These five are built on `claude/continue-ripows` and not yet merged. L10 stays as it
+  is. L26 (record consent on an emergency case) is next, in its own PR. Receipts: the PR body and
+  `CHANGELOG.md` 2026-10-13 and its Unreleased section.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards
