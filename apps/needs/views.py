@@ -78,7 +78,9 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
             raise Http404("You are not a member of this community.")
         if obj.moderation_hidden and not viewer.is_coordinator:
             raise Http404("This post is no longer available.")
-        if is_blocked_between(viewer, obj.requester):
+        # Coordinators keep oversight through a block, as through a hidden post (the
+        # founder's call, 2026-10-13, bug hunt L1). The pair is still never matched.
+        if not viewer.is_coordinator and is_blocked_between(viewer, obj.requester):
             raise Http404("This post is no longer available.")
         return obj
 
@@ -91,10 +93,22 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
         ctx["member"] = member
         ctx["poster_badges"] = verified_badges_for([need.requester_id], member).get(need.requester_id, [])
         ctx["is_own_need"] = member and need.requester == member
+        # Only a coordinator reaches a blocked-with neighbour's page (L1, above). They see the post,
+        # but get no contact reveal and no offer buttons: the pair is never matched, and a block
+        # must not hand its blocked person a way to reach the one who blocked them. Another
+        # coordinator still has both.
+        blocked_with_poster = bool(member) and need.requester != member and is_blocked_between(member, need.requester)
+        ctx["blocked_with_poster"] = blocked_with_poster
         # §8.2: contact stays locked for ordinary members (revealed only via an
         # accepted match). Coordinators get oversight access here — audited (§8.3).
         contact_info = None
-        if member and member.is_coordinator and need.requester != member and need.requester.is_active:
+        if (
+            member
+            and member.is_coordinator
+            and need.requester != member
+            and need.requester.is_active
+            and not blocked_with_poster
+        ):
             contact_info = need.requester.contact_dict(need.contact_pref)
             emit(
                 "need.contact_disclosed",
@@ -129,6 +143,8 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
                 .exclude(offerer_id__in=blocked_member_ids(member))
                 .select_related("offerer")[:5]
             )
+        elif blocked_with_poster:
+            ctx["suggested_offers"] = Offer.objects.none()
         else:
             ctx["suggested_offers"] = Offer.objects.filter(
                 community=community,

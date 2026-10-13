@@ -66,8 +66,8 @@
   {# Contact info box (§8.2): locked for members; revealed to coordinators (audited). #}
   {% include "components/_contact_info_box.html" with show_contact=show_contact contact_info=contact_info %}
 
-  {# Suggested offers #}
-  {% if need.status == "open" %}
+  {# Suggested offers. Not shown to a coordinator who shares a block with the asker: they are never matched. #}
+  {% if need.status == "open" and not blocked_with_poster %}
   <div class="mt-10">
     <h2 class="font-serif text-lg font-semibold text-parish-ink">Neighbours already offering</h2>
     <div class="mt-4 space-y-3">

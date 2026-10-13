@@ -70,7 +70,8 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
             raise Http404("You are not a member of this community.")
         if obj.moderation_hidden and not viewer.is_coordinator:
             raise Http404("This post is no longer available.")
-        if is_blocked_between(viewer, obj.offerer):
+        # Coordinators keep oversight through a block (the founder's call, 2026-10-13, L1).
+        if not viewer.is_coordinator and is_blocked_between(viewer, obj.offerer):
             raise Http404("This post is no longer available.")
         return obj
 
@@ -82,9 +83,16 @@ class OfferDetailView(LoginRequiredMixin, DetailView):
         ctx["member"] = member
         ctx["poster_badges"] = verified_badges_for([offer.offerer_id], member).get(offer.offerer_id, [])
         ctx["is_own_offer"] = member and offer.offerer == member
-        # §8.2: contact locked for ordinary members; coordinators get audited oversight.
+        # §8.2: contact locked for ordinary members; coordinators get audited oversight, except
+        # the one who shares a block with the offerer (L1: they see the post, not the person).
         contact_info = None
-        if member and member.is_coordinator and offer.offerer != member and offer.offerer.is_active:
+        if (
+            member
+            and member.is_coordinator
+            and offer.offerer != member
+            and offer.offerer.is_active
+            and not is_blocked_between(member, offer.offerer)
+        ):
             contact_info = offer.offerer.contact_dict(offer.contact_pref)
             emit(
                 "offer.contact_disclosed",

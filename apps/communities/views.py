@@ -414,8 +414,10 @@ class FeedView(LoginRequiredMixin, ListView):
         ).select_related("category", "offerer")
 
         # Block: hide the viewer and anyone they've blocked (either direction)
-        # from each other's board. Preventative, symmetric.
-        blocked_ids = blocked_member_ids(self.member)
+        # from each other's board. Preventative, symmetric. A coordinator keeps the
+        # whole board, for oversight (the founder's call, 2026-10-13, bug hunt L1): a
+        # member could otherwise take themselves out of one coordinator's view.
+        blocked_ids = set() if self.member.is_coordinator else blocked_member_ids(self.member)
         if blocked_ids:
             needs = needs.exclude(requester_id__in=blocked_ids)
             offers = offers.exclude(offerer_id__in=blocked_ids)
