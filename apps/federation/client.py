@@ -118,8 +118,13 @@ def fetch_instance_document(base_url: str) -> str:
     return document
 
 
-def post_handshake(base_url: str, payload: dict) -> dict:
-    return _request("POST", base_url.rstrip("/") + "/federation/v1/handshake", json.dumps(payload).encode())
+def handshake_url(base_url: str) -> str:
+    return base_url.rstrip("/") + "/federation/v1/handshake"
+
+
+def post_handshake(base_url: str, payload: dict, headers: dict) -> dict:
+    """Signed POST of a link request; the caller signs json.dumps(payload) for handshake_url."""
+    return _request("POST", handshake_url(base_url), json.dumps(payload).encode(), headers)
 
 
 def post_confirm(base_url: str, payload: dict, headers: dict) -> dict:

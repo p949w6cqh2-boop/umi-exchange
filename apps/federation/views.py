@@ -147,6 +147,11 @@ class HandshakeView(FederationGateMixin, View):
             doc = crypto.verify_instance_document(str(payload.get("document", "")))
         except FederationAuthError:
             return JsonResponse({"error": "bad_document"}, status=400)
+        try:
+            # The document is public: only its key's holder may speak for it (2026-10 bug hunt).
+            crypto.verify_handshake_request(request, doc)
+        except FederationAuthError as e:
+            return JsonResponse({"error": e.code}, status=403)
 
         pairing = _object(payload.get("pairing"))
         salt = str(pairing.get("salt", ""))[:64]
@@ -585,18 +590,20 @@ class FederationSettingsView(LoginRequiredMixin, FederationGateMixin, View):
         # instead of a vanishing toast — the dark-launch rehearsal nearly
         # lost it mid-ceremony.
         request.session[f"fed_pairing_code_{link.pk}"] = code
+        payload = {
+            "document": crypto.build_instance_document(),
+            "pairing": {"salt": salt, "hash": crypto.remote_code_hash(code, salt)},
+            "community": {"uuid": str(self.community.id), "label": self.community.name},
+            # M-1: name the peer's community we're targeting (their slug),
+            # so their pending list scopes to that community's admins.
+            "target_community": str(request.POST.get("target_community", "")).strip()[:64],
+        }
+        # Signed like every other request, for the peer's audience and its advertised URL (2026-10
+        # bug hunt): a handshake carrying only our public document could be replayed by anyone.
+        url = client_mod.handshake_url(str(doc.get("base_url") or base_url))
+        signature = crypto.sign_request("POST", url, json.dumps(payload).encode(), aud=doc["instance_id"])
         try:
-            client_mod.post_handshake(
-                base_url,
-                {
-                    "document": crypto.build_instance_document(),
-                    "pairing": {"salt": salt, "hash": crypto.remote_code_hash(code, salt)},
-                    "community": {"uuid": str(self.community.id), "label": self.community.name},
-                    # M-1: name the peer's community we're targeting (their slug),
-                    # so their pending list scopes to that community's admins.
-                    "target_community": str(request.POST.get("target_community", "")).strip()[:64],
-                },
-            )
+            client_mod.post_handshake(base_url, payload, {"X-UMI-Signature": signature})
         except FederationClientError as e:
             messages.error(request, f"Handshake request failed: {e}")
             return

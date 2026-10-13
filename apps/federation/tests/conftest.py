@@ -185,3 +185,24 @@ def _encryption_key(settings):
     from cryptography.fernet import Fernet
 
     settings.ENCRYPTION_KEY = Fernet.generate_key().decode()
+
+
+HANDSHAKE_PATH = "/federation/v1/handshake"
+
+
+def signed_handshake(client, remote, fed_settings, payload, *, key_override=None, **extra):
+    """POST a handshake the way a real peer sends one since the 2026-10 bug hunt: signed by the
+    key its instance document names, for our audience and URL, so a replayed public document on
+    its own can no longer register or overwrite anything."""
+    from django.conf import settings
+
+    body = payload if isinstance(payload, bytes) else (payload if isinstance(payload, str) else json.dumps(payload))
+    raw = body.encode() if isinstance(body, str) else body
+    sig = remote.sign(
+        "POST",
+        settings.SITE_URL.rstrip("/") + HANDSHAKE_PATH,
+        raw,
+        fed_settings.instance_id,
+        key_override=key_override,
+    )
+    return client.post(HANDSHAKE_PATH, data=raw, content_type="application/json", HTTP_X_UMI_SIGNATURE=sig, **extra)

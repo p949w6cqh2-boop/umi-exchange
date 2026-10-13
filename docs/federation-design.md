@@ -186,6 +186,13 @@ Instance A (admin Alice)                        Instance B (admin Bob)
 9. Both sides: emit("fed.link_approved", link, user=<approving admin>)
 ```
 
+- **Step 5 is signed** (BUILT 2026-10-12, bug hunt lead): the handshake POST carries an
+  `X-UMI-Signature` made with the key in the instance document it encloses, with the §3.2
+  claims (B's instance id as `aud`, fresh `iat`, `htm`, `htu` = B's advertised URL, body
+  digest, one-time `jti`). The document is public and binds no audience, so unsigned, anyone
+  could replay A's and overwrite A's pending pairing material or requested community at B, an
+  active peer's included. B checks the document, then the signature, before storing anything;
+  an unsigned or wrongly signed handshake is `403`.
 - Each side's link approval is a **manual admin action** (role gate = `member.is_admin`, the
   existing pattern at `apps/communities/views.py:243-246`). No auto-federation, ever.
 - **Link state machine** (StateMachineMixin, §12.1): `pending → active → suspended ⇄ active`,
@@ -487,7 +494,7 @@ per-item `status` (`created` / `duplicate` / `applied` / `conflict` / `rejected`
 | Endpoint | Auth | Purpose / body sketch |
 |---|---|---|
 | `GET /.well-known/umi-federation` | none (public, cacheable) | instance document (§3.1) |
-| `POST /federation/v1/handshake` | self-signed doc + pairing code | link request (§3.3); 5/hr/IP |
+| `POST /federation/v1/handshake` | self-signed doc, request signed by the doc's key (§3.3 step 5) | link request (§3.3); 5/hr/IP |
 | `POST /federation/v1/handshake/confirm` | signed | complete pairing |
 | `GET /federation/v1/discovery?community=&peer_community=&since=<iso>&cursor=` | signed | `{"listings": [≤50 rows §2.2], "next": cursor|null}`; deltas since last poll incl. tombstones `{"remote_uuid":..., "gone": true}`. Scoped to one link (§2.1); `400 scope_required` when a multi-link peer omits it |
 | `POST /federation/v1/proposals` | signed | `{"link": {community, peer_community}, "proposals": [{proposal_uuid, need_remote_uuid, offer: {title≤200, category_slug, radius_km?}, blind_token?, attestation_ref?}]}` → per-item `created/duplicate/rejected(gone|self_match|not_shared)`; an ask not shared on the named link is `not_shared` |

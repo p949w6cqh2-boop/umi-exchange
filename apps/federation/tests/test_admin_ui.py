@@ -140,7 +140,7 @@ class TestActions:
         monkeypatch.setattr(
             fed_views.client_mod,
             "post_handshake",
-            lambda base_url, payload: posted.update(payload) or {"status": "pending"},
+            lambda base_url, payload, headers: posted.update(payload) or {"status": "pending"},
         )
         client.force_login(world.admin_u)
         resp = client.post(page(world), {"action": "initiate", "base_url": "https://peer.example"}, follow=True)

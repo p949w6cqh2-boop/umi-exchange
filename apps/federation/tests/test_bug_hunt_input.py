@@ -12,6 +12,7 @@ import pytest
 from django.core.cache import cache
 
 from apps.federation import crypto
+from apps.federation.tests.conftest import signed_handshake
 
 pytestmark = [pytest.mark.django_db, pytest.mark.urls("apps.federation.tests.urls_enabled")]
 
@@ -21,9 +22,11 @@ def _fresh_throttle():
     cache.clear()  # the handshake allows 5 an hour per IP
 
 
-def _post(client, payload):
+def _post(client, payload, remote=None, fed_settings=None):
     data = payload if isinstance(payload, str) else json.dumps(payload)
     ip = f"10.7.7.{uuid.uuid4().int % 250 + 1}"
+    if remote is not None:  # signed by the document's key, as every handshake must be now
+        return signed_handshake(client, remote, fed_settings, data, HTTP_X_REAL_IP=ip)
     return client.post("/federation/v1/handshake", data=data, content_type="application/json", HTTP_X_REAL_IP=ip)
 
 
@@ -40,7 +43,7 @@ def _valid(remote):
 def test_a_non_object_pairing_is_a_400(client, fed_settings, remote):
     payload = _valid(remote)
     payload["pairing"] = "x"
-    assert _post(client, payload).status_code == 400
+    assert _post(client, payload, remote, fed_settings).status_code == 400
 
 
 def test_a_non_object_community_reads_as_absent_not_as_a_500(client, fed_settings, remote):
@@ -48,7 +51,7 @@ def test_a_non_object_community_reads_as_absent_not_as_a_500(client, fed_setting
     a missing one, exactly as omitting it is."""
     payload = _valid(remote)
     payload["community"] = "x"
-    assert _post(client, payload).status_code == 200
+    assert _post(client, payload, remote, fed_settings).status_code == 200
 
 
 @pytest.mark.parametrize("body", ["[1, 2, 3]", '"just a string"', "42"])
@@ -57,4 +60,4 @@ def test_a_non_object_body_is_a_400(client, fed_settings, remote, body):
 
 
 def test_a_well_formed_handshake_still_works(client, fed_settings, remote):
-    assert _post(client, _valid(remote)).status_code == 200
+    assert _post(client, _valid(remote), remote, fed_settings).status_code == 200

@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.audit.models import AuditLog
 from apps.federation import crypto
 from apps.federation.models import FederationLink, FederationPeer
+from apps.federation.tests.conftest import signed_handshake
 
 pytestmark = [pytest.mark.django_db, pytest.mark.urls("apps.federation.tests.urls_enabled")]
 
@@ -20,6 +21,10 @@ CONFIRM_URL = settings.SITE_URL.rstrip("/") + "/federation/v1/handshake/confirm"
 def post_json(client, path, payload, **extra):
     data = payload if isinstance(payload, (str, bytes)) else json.dumps(payload)
     return client.post(path, data=data, content_type="application/json", **extra)
+
+
+# Since the 2026-10 bug hunt a handshake must be signed by its document's key (see
+# test_bug_hunt_handshake.py); the checks before that (size, JSON, document) still answer unsigned.
 
 
 class TestWellKnown:
@@ -49,7 +54,7 @@ def handshake_payload(remote, community_uuid=None):
 class TestInboundHandshake:
     def test_happy_path_creates_pending_peer(self, client, fed_settings, remote, db):
         code, payload = handshake_payload(remote)
-        resp = post_json(client, "/federation/v1/handshake", payload, HTTP_X_REAL_IP="10.1.1.1")
+        resp = signed_handshake(client, remote, fed_settings, payload, HTTP_X_REAL_IP="10.1.1.1")
         assert resp.status_code == 200
         assert resp.json() == {"status": "pending"}
         p = FederationPeer.objects.get(instance_id=remote.instance_id)
@@ -85,23 +90,23 @@ class TestInboundHandshake:
             base_url="https://peer.example", instance_id="someone-else-thumbprint", jwk={}, status="active"
         )
         _, payload = handshake_payload(remote)  # remote advertises https://peer.example too
-        resp = post_json(client, "/federation/v1/handshake", payload, HTTP_X_REAL_IP="10.1.1.7")
+        resp = signed_handshake(client, remote, fed_settings, payload, HTTP_X_REAL_IP="10.1.1.7")
         assert resp.status_code == 200
         assert FederationPeer.objects.filter(instance_id=remote.instance_id).count() == 1
 
     def test_repeat_request_updates_not_duplicates(self, client, fed_settings, remote, db):
         for ip in ("10.1.1.5", "10.1.1.6"):
             _, payload = handshake_payload(remote)
-            assert post_json(client, "/federation/v1/handshake", payload, HTTP_X_REAL_IP=ip).status_code == 200
+            assert signed_handshake(client, remote, fed_settings, payload, HTTP_X_REAL_IP=ip).status_code == 200
         assert FederationPeer.objects.filter(instance_id=remote.instance_id).count() == 1
 
     def test_throttled_after_five_per_hour_per_ip(self, client, fed_settings, remote, db):
         ip = "10.9.9.9"
         for _ in range(5):
             _, payload = handshake_payload(remote)
-            assert post_json(client, "/federation/v1/handshake", payload, HTTP_X_REAL_IP=ip).status_code in (200, 400)
+            assert signed_handshake(client, remote, fed_settings, payload, HTTP_X_REAL_IP=ip).status_code in (200, 400)
         _, payload = handshake_payload(remote)
-        assert post_json(client, "/federation/v1/handshake", payload, HTTP_X_REAL_IP=ip).status_code == 429
+        assert signed_handshake(client, remote, fed_settings, payload, HTTP_X_REAL_IP=ip).status_code == 429
 
 
 class TestConfirm:
