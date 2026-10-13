@@ -8,6 +8,7 @@ session/cookie auth, and authenticate via the signed JWS envelope (§3.2)
 """
 
 import json
+import unicodedata
 import uuid
 from datetime import timedelta
 
@@ -109,6 +110,21 @@ def _object(value):
     """A nested field that must be a JSON object; anything else reads as empty, so the existing
     field checks refuse it with their own 400."""
     return value if isinstance(value, dict) else {}
+
+
+# Direction marks, embeddings, overrides and isolates: they can make a label read differently from
+# what it says.
+_DIRECTION_CONTROLS = {0x200E, 0x200F, *range(0x202A, 0x202F), *range(0x2066, 0x206A)}
+
+
+def _plain_text(value, cap):
+    """A label from a peer as plain text: a string, on one line, without control or direction
+    characters, trimmed and capped. Anything that is not a string reads as empty (L61)."""
+    if not isinstance(value, str):
+        return ""
+    one_line = " ".join(value.split())
+    kept = "".join(ch for ch in one_line if unicodedata.category(ch) != "Cc" and ord(ch) not in _DIRECTION_CONTROLS)
+    return " ".join(kept.split())[:cap]
 
 
 class WellKnownView(FederationGateMixin, View):
@@ -363,12 +379,18 @@ class ProposalsView(FederationGateMixin, View):
             if link is None:
                 result = {"status": "rejected", "reason": "not_shared"}
             else:
+                # What is offered crosses here and only here (design §5; the founder's call,
+                # 2026-10-13, L61). The sender names the category "category"; the design's wire
+                # table said "category_slug", so either is read.
+                offer = _object(item.get("offer"))
                 result = matching.receive_proposal(
                     peer,
                     need_remote_uuid=need_remote_uuid,
                     proposal_uuid=proposal_uuid,
                     blind_token=item.get("blind_token"),
                     link=link,
+                    offer_title=_plain_text(offer.get("title"), 200),
+                    offer_category=_plain_text(offer.get("category") or offer.get("category_slug"), 100),
                 )
             result["proposal_uuid"] = str(proposal_uuid)
             results.append(result)

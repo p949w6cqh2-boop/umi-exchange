@@ -230,6 +230,11 @@ class FederatedMatch(models.Model):
     # owner proposed — real attribution without touching the Match schema.
     mirror_status = models.CharField(max_length=12, blank=True, default="")
     remote_need_uuid = models.UUIDField(null=True, blank=True)  # the peer's share alias we proposed against
+    # Authority side: what the peer's proposal offers, as the design's §5 table says it crosses (title up
+    # to 200 characters, rendered as text, and the category label). Shown to the asker so they can see
+    # what they are accepting (the founder's call, 2026-10-13, bug hunt L61). Never the description.
+    offer_title = models.CharField(max_length=200, blank=True, default="")
+    offer_category = models.CharField(max_length=100, blank=True, default="")
     offer = models.ForeignKey(
         "offers.Offer", on_delete=models.SET_NULL, null=True, blank=True, related_name="federated_matches"
     )

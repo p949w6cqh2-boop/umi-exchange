@@ -102,7 +102,10 @@
     {% for m in matches %}
     <a href="{% url 'match-detail' community.slug m.id %}" class="umi-card umi-card-hover !p-4 block mt-3">
       <div class="flex items-center justify-between gap-3">
-        <span class="text-sm font-medium text-parish-ink">{{ m.proposed_by.display_name }} &rarr; {{ need.title }}</span>
+        <span class="min-w-0">
+          <span class="text-sm font-medium text-parish-ink">{{ m.proposed_by.display_name }} &rarr; {{ need.title }}</span>
+          {% if m.federated.offer_title %}<span class="block text-xs text-parish-ink/70 mt-0.5">Offering: {{ m.federated.offer_title }}</span>{% endif %}
+        </span>
         <span class="text-xs px-2 py-0.5 rounded-full {% if m.status == 'proposed' %}bg-amber-100 text-amber-800{% elif m.status == 'accepted' %}bg-blue-100 text-blue-800{% elif m.status == 'fulfilled' %}bg-green-100 text-green-800{% else %}bg-parish-soft text-parish-ink/70{% endif %}">{{ m.get_status_display }}</span>
       </div>
     </a>

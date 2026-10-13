@@ -154,7 +154,7 @@ class NeedDetailView(LoginRequiredMixin, DetailView):
                 offerer=member,
             ).select_related("offerer")[:5]
         # Active matches on this need
-        matches = need.matches.select_related("offer", "proposed_by").order_by("-proposed_at")
+        matches = need.matches.select_related("offer", "proposed_by", "federated").order_by("-proposed_at")
         if member and need.requester != member and not member.is_coordinator:
             # On someone else's need, a neighbour this member blocked (or who blocked them) is not
             # listed, as on the board. The asker keeps every match on their own need: a block is

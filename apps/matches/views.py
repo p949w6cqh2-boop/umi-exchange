@@ -232,6 +232,16 @@ class MatchDetailView(LoginRequiredMixin, DetailView):
                 elif "parties" in ctx["contact_info"]:
                     ctx["contact_info"]["parties"].append(remote)
 
+        # A proposal from another community: what it offers, as its proposal said (L61). Plain text;
+        # the offer itself lives on the other instance, so there is nothing here to link to.
+        fed = getattr(match, "federated", None)
+        if fed is not None and fed.role == "authority" and fed.offer_title:
+            ctx["federated_offer"] = {
+                "title": fed.offer_title,
+                "category": fed.offer_category,
+                "source": fed.link.remote_community_label or "another community",
+            }
+
         # Audit every contact-info disclosure (Section 8.3): record who accessed
         # whose contact details and when, so reveals leave an immutable trail.
         if ctx["show_contact"] and member:
