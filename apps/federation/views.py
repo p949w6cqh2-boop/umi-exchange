@@ -31,7 +31,7 @@ from apps.common.state import TransitionConflict
 from apps.communities.models import Community, Member
 
 from . import client as client_mod
-from . import crypto, matching, mirror
+from . import crypto, matching, mirror, sharing
 from .client import FederationClientError
 from .crypto import FederationAuthError
 from .discovery import redact
@@ -279,6 +279,7 @@ class DiscoveryView(FederationGateMixin, View):
         shares = (
             FederatedShare.objects.filter(link=link, link__status="active", status="active")
             .filter(live_record)
+            .filter(sharing.consent_in_force())
             .select_related("link__community", "need__category", "offer__category")
         )
         listings = [redact(s) for s in shares] if link is not None else []

@@ -57,9 +57,19 @@ def poll_link(link) -> int:
         # tombstone below drop any stale shadow for this uuid).
         receipt = str(row.get("receipt_jws", ""))
         try:
-            crypto.verify_consent_receipt(receipt, link.peer.jwk)
+            claims = crypto.verify_consent_receipt(receipt, link.peer.jwk)
         except crypto.FederationAuthError:
             emit("fed.receipt_invalid", link, details={"remote_uuid": str(remote_uuid)})
+            continue
+        # A valid signature is not enough: the receipt must be for THIS record, from this
+        # peer, minted for us, or it proves nothing about this listing (2026-10 bug hunt, L62).
+        if not (
+            isinstance(claims, dict)
+            and claims.get("record") == f"{row['kind']}:{remote_uuid}"
+            and claims.get("home") == link.peer.instance_id
+            and claims.get("peer") == crypto.my_instance_id()
+        ):
+            emit("fed.receipt_invalid", link, details={"remote_uuid": str(remote_uuid), "reason": "claims"})
             continue
         seen.add(remote_uuid)
         radius = row.get("radius_km")

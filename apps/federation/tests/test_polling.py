@@ -17,19 +17,28 @@ pytestmark = pytest.mark.django_db
 
 def _receipt(remote, record="need:x"):
     """A consent receipt JWS signed by the peer's key (what redact() now sends
-    and poll_link() now verifies, M-3)."""
-    payload = {"record": record, "scope": ["federated_share"], "home": remote.instance_id}
+    and poll_link() now verifies, M-3). Since the 2026-10 bug hunt (L62) its
+    claims must name the listing's record and us as the audience, as real ones do."""
+    from apps.federation import crypto
+
+    payload = {
+        "record": record,
+        "scope": ["federated_share"],
+        "home": remote.instance_id,
+        "peer": crypto.my_instance_id(),
+    }
     return jws.serialize_compact({"alg": "Ed25519"}, json.dumps(payload).encode(), remote.key, algorithms=["Ed25519"])
 
 
 def _row(remote, kind="need", **kw):
+    remote_uuid = str(uuid.uuid4())
     r = {
         "kind": kind,
-        "remote_uuid": str(uuid.uuid4()),
+        "remote_uuid": remote_uuid,
         "category": "Food",
         "locality": "Testville",
         "freshness": "2026-W27",
-        "receipt_jws": _receipt(remote),
+        "receipt_jws": _receipt(remote, record=f"{kind}:{remote_uuid}"),
     }
     r["urgency" if kind == "need" else "radius_km"] = "high" if kind == "need" else 10
     r.update(kw)

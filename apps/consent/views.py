@@ -65,15 +65,19 @@ class ConsentRevokeView(LoginRequiredMixin, View):
         )
         # §4.3: if this consent gated any federated shares, stop advertising them
         # and send each peer a signed delete-request. A federation problem must
-        # never block the user's revocation, so this is best-effort.
+        # never block the user's revocation, so this is best-effort. The shares end
+        # even with federation switched off, or they came back live with it (2026-10
+        # bug hunt, L57); only the peer call waits on the flag. Discovery and
+        # proposals also re-check the consent itself.
         from django.conf import settings
 
-        if getattr(settings, "FEDERATION_ENABLED", False):
-            try:
-                from apps.federation.sharing import revoke_shares_for_consent
+        try:
+            from apps.federation.sharing import revoke_shares_for_consent
 
-                revoke_shares_for_consent(consent, actor_user=request.user)
-            except Exception:  # nosec B110 — federation side-effects can't block a user's revoke
-                pass
+            revoke_shares_for_consent(
+                consent, actor_user=request.user, notify=getattr(settings, "FEDERATION_ENABLED", False)
+            )
+        except Exception:  # nosec B110 — federation side-effects can't block a user's revoke
+            pass
         messages.success(request, "Consent revoked.")
         return redirect("consent-list")

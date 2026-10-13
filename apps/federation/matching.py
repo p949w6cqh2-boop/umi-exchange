@@ -70,9 +70,11 @@ def receive_proposal(peer, *, need_remote_uuid, proposal_uuid, blind_token=None,
     # revoked link's still-"active" share would keep accepting proposals — the
     # exact containment the threat model relies on ("revoke link → immediate
     # 403"). Mirrors DiscoveryView's already-correct share query.
+    from .sharing import consent_in_force
+
     shares = FederatedShare.objects.filter(
         link__peer=peer, link__status="active", remote_uuid=need_remote_uuid, status="active"
-    )
+    ).filter(consent_in_force())
     if link is not None:
         shares = shares.filter(link=link)
     share = shares.select_related("need", "link").first()
