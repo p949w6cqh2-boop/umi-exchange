@@ -32,6 +32,8 @@ covers, so a sweep stays one query and held records are simply never selected.
 | `discard_stale_drafts` | skips drafts in held cases | stops |
 | `shred_aged_need_pii` (1-year retention) | skips held needs | stops |
 | `shred_on_behalf` (manual erasure) | **refuses** a held need | refuses |
+| `shred_person` (manual erasure, 2026-10-13) | **refuses** a held person: their own hold, their community's, or a hold on any case about them | refuses |
+| the 7-year sweep's subject step (2026-10-13) | keeps a held person's identity | stops |
 | federation sweeps (shadows, contacts, event payloads) and polling, which deletes shadows a peer withdrew | not scoped in v1 | stop |
 | `purge_recovery_credentials --apply` | not scoped | refuses |
 

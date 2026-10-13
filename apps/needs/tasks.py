@@ -133,21 +133,27 @@ def shred_aged_need_pii():
     Nulling ciphertext and DEK together (not DEK alone) keeps reads returning
     None instead of the fail-loud ciphertext-without-DEK state, and keeps
     `migrate_on_behalf_envelope --verify`'s unreadable count at zero.
-    Idempotent: a shredded row no longer matches the dek filter. Each row is
+    Idempotent: a shredded row matches neither column. Each row is
     audited (§8.3) with PII-free details.
+
+    Either column marks a name to shred: a legacy direct-KEK row has ciphertext
+    and no DEK, and a filter on the DEK alone never reached it (2026-10 bug
+    hunt, L15).
     """
     from datetime import timedelta
+
+    from django.db.models import Q
 
     from apps.holds.services import everything_held, held_needs_q
 
     if everything_held():  # legal hold on everything (docs/specs/legal-hold.md)
         return "Legal hold in force on everything: no need was shredded"
     cutoff = timezone.now() - timedelta(days=NEED_PII_RETENTION_DAYS)
-    aged = Need.objects.filter(
-        status__in=("fulfilled", "closed", "expired"),
-        updated_at__lt=cutoff,
-        on_behalf_of_dek__isnull=False,
-    ).exclude(held_needs_q())
+    aged = (
+        Need.objects.filter(status__in=("fulfilled", "closed", "expired"), updated_at__lt=cutoff)
+        .filter(Q(on_behalf_of__isnull=False) | Q(on_behalf_of_dek__isnull=False))
+        .exclude(held_needs_q())
+    )
     count = 0
     for need in aged:
         Need.objects.filter(pk=need.pk).update(on_behalf_of=None, on_behalf_of_dek=None)

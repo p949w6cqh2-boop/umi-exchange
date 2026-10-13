@@ -80,7 +80,11 @@ class CaseCreateForm(forms.Form):
     def __init__(self, community, member, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.community, self.member = community, member
-        persons = Person.objects.filter(created_in_community=community, merged_into__isnull=True)
+        # An erased person (apps/people/erasure.py) is not offered: a new case would hang off a record
+        # with no name. Intake names everyone it creates, so only an erasure leaves this empty.
+        persons = Person.objects.filter(
+            created_in_community=community, merged_into__isnull=True, display_name_enc__isnull=False
+        )
         if not access.is_admin(member):
             # Only people whose every case this member can open. Picking anyone else opens a
             # fresh case that shows their name, which is how a coordinator locked out of a
@@ -214,7 +218,12 @@ class AssignForm(forms.Form):
 class GrantForm(forms.Form):
     member = forms.ModelChoiceField(queryset=Member.objects.none())
     role = forms.ChoiceField(choices=[("viewer", "Viewer (read only)"), ("contributor", "Contributor (can add notes)")])
-    reason = forms.CharField(max_length=200, help_text="Why this person needs access (audited).")
+    # Plain text, unlike the notes: it asks for no names or circumstances (2026-10 bug hunt, L17).
+    reason = forms.CharField(
+        max_length=200,
+        help_text="Why this person needs access, with no names or circumstances. It is not encrypted.",
+        widget=forms.TextInput(attrs={"placeholder": "Covering the visits this month"}),
+    )
     expires_at = forms.DateTimeField(required=False, **DATETIME_LOCAL)
 
     def __init__(self, community, *args, **kwargs):

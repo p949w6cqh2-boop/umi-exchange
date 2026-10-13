@@ -147,8 +147,9 @@
       {% csrf_token %}
       <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Member</label>{{ grant_form.member }}</div>
       <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Role</label>{{ grant_form.role }}</div>
-      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Reason (audited)</label>{{ grant_form.reason }}</div>
+      <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Reason</label>{{ grant_form.reason }}</div>
       <div><label class="block text-xs font-medium text-parish-ink/70 mb-1">Expires</label>{{ grant_form.expires_at }}</div>
+      <p class="sm:col-span-4 text-xs text-parish-ink/70">Keep the reason short, with no names or circumstances. Unlike the case notes, it is not encrypted. Your community's admins and whoever this case is assigned to can read it.</p>
       <button class="px-4 py-2 bg-parish-ink text-white rounded-lg font-semibold sm:col-span-4 sm:w-auto sm:justify-self-start">Grant access</button>
     </form>
   </section>

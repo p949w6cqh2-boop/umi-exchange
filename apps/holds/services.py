@@ -28,6 +28,25 @@ def held_cases_q():
     )
 
 
+def held_persons_q():
+    """Q matching Person rows covered by an active hold: the person themself, the community their
+    record was made in, or any held case about them (a case's evidence includes who it is about)."""
+    from apps.casework.models import CaseFile
+
+    holds = active()
+    return (
+        Q(pk__in=holds.filter(scope=LegalHold.SCOPE_PERSON).values("person"))
+        | Q(created_in_community__in=holds.filter(scope=LegalHold.SCOPE_COMMUNITY).values("community"))
+        | Q(pk__in=CaseFile.objects.filter(held_cases_q()).values("subject_person"))
+    )
+
+
+def person_is_held(person):
+    from apps.people.models import Person
+
+    return everything_held() or Person.objects.filter(held_persons_q(), pk=person.pk).exists()
+
+
 def held_needs_q():
     """Q matching Need rows covered by an active hold (by need or community)."""
     holds = active()

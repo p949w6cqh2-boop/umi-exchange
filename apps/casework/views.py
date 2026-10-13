@@ -1017,11 +1017,13 @@ class GrantCreateView(CommunityMixin, View):
             request=request,
             details={"member": str(target.pk), "role": grant.role, "case": str(case.pk)},
         )
+        # The reason stays on the grant, where a shred reaches it: a copy in the notification
+        # outlived the case (2026-10 bug hunt, L17).
         notify(
             target.user,
             "case_grant",
             f"Access granted: case {case.short_code}",
-            f"{grant.role.title()} access — {grant.reason}",
+            f"You have {grant.role} access to this case.",
             reverse("casework:detail", kwargs={"slug": slug, "pk": case.pk}),
         )
         if _is_htmx(request):

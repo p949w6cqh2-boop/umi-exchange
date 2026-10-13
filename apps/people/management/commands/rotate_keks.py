@@ -9,7 +9,7 @@ Extend ENVELOPE_DEK_FIELDS as more envelope columns arrive (casework next).
 import time
 
 from django.apps import apps as django_apps
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.people import crypto
@@ -40,6 +40,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         grand_total = 0
+        # One wrap no configured KEK opens (a row restored from an old dump, say) used to abort the
+        # run, leaving every later row under the old key and naming none of them (2026-10 bug hunt,
+        # L27). Now the run goes on, and fails at the end, naming each row, so the old KEK stays.
+        failures = []
         for app_label, model_name, dek_field in ENVELOPE_DEK_FIELDS:
             model = django_apps.get_model(app_label, model_name)
             pending = model.objects.filter(**{f"{dek_field}__isnull": False}).order_by("pk")
@@ -61,17 +65,29 @@ class Command(BaseCommand):
                     if not rows:
                         break
                     for obj in rows:
-                        wrapped = getattr(obj, dek_field)
+                        last_pk = obj.pk  # advance past a failed row too, or the loop never ends
+                        try:
+                            rewrapped = crypto.rewrap_dek(getattr(obj, dek_field))
+                        except ValueError:
+                            failures.append(f"{app_label}.{model_name}.{dek_field} {obj.pk}")
+                            continue
                         # .update() bypasses Model.save() — and with it the
                         # CaseNote A7 immutability guard, which would raise on a
                         # finalized note and abort rotation partway (leaving later
                         # models un-rotated). We touch only the wrapped-DEK token;
                         # the row is already locked by select_for_update above.
-                        model.objects.filter(pk=obj.pk).update(**{dek_field: crypto.rewrap_dek(wrapped)})
+                        model.objects.filter(pk=obj.pk).update(**{dek_field: rewrapped})
                         total += 1
-                        last_pk = obj.pk
                 if opts["sleep"]:
                     time.sleep(opts["sleep"])
             grand_total += total
             self.stdout.write(self.style.SUCCESS(f"{app_label}.{model_name}: rotated {total} DEK wrap(s)."))
         self.stdout.write(self.style.SUCCESS(f"Total: {grand_total}."))
+        if failures:
+            self.stderr.write("Could not re-wrap (no configured KEK opens them):")
+            for row in failures:
+                self.stderr.write(f"  {row}")
+            raise CommandError(
+                f"{len(failures)} DEK wrap(s) could not be rotated (listed above). Every other row was. "
+                "Keep the old KEK configured until these rows are dealt with."
+            )
