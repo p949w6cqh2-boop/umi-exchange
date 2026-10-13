@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `4e1dff6f` (merged 2026-10-13 UTC).
+> Reflects `main` @ `4f1ea527` (merged 2026-10-13 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -50,7 +50,9 @@
   **attestations**. `manage.py federation_status` reports link/share/outbox health. Since the
   founder's calls of 2026-10-13: only an approved peer passes the signature check, and a pending one
   only on the handshake confirm (L64); an inbound proposal keeps the offer's title and category as
-  plain text on `FederatedMatch` (`federation 0009`) and the asker sees them (L61).
+  plain text on `FederatedMatch` (`federation 0009`) and the asker sees them (L61), and is told of it
+  the way a local proposal tells them (`match_proposed`: in-app, email only if they opted in; his call
+  the same day).
 - **Moderation & member safety:** `Flag` (audit-style target refs; one open flag per reporter per
   target) → coordinator queue → hide (reversible) / keep / dismiss; hidden content vanishes from
   feed/pulse/search, 404s for members; coordinators unhideable; reporter anonymous. Hidden posts are
@@ -268,9 +270,10 @@
   (`tests/test_template_comments.py` caught the wrapped form, which would have rendered as visible text).
 
 ## Testing / CI / Deploy
-- **1874 passed** on **Postgres 16 + Redis** in #220's gate (2026-10-13, the founder's answers to the
-  bug hunt's open questions; count read from its file; 0 failed), and CI 3/3 green on #220's head
-  `0b83c7c3`, merged as `4e1dff6f`. *Before it:* **1835 passed** in #218's gate (2026-10-13, full suite at `6bb42520`,
+- **1882 passed** on **Postgres 16 + Redis** in #221's gate (2026-10-13, L26; count read from its file;
+  0 failed), and CI 3/3 green on #221's head `eb9672d7`, merged as `4f1ea527`. *Before it:* **1874
+  passed** in #220's gate (the founder's answers to the bug hunt's open questions; 0 failed), CI 3/3
+  green on #220's head `0b83c7c3`, merged as `4e1dff6f`. *Before that:* **1835 passed** in #218's gate (2026-10-13, full suite at `6bb42520`,
   count read from its file; 0 failed), and CI 3/3 green on #218's head and again on `main` @
   `4eca3e26`. *The 2026-10-08 sweep read:* **1597 passed** on **Postgres 16 + Redis** (full suite on
   `main` @ `557ca257` plus that branch's docs-only commits, CI's environment including `ENCRYPTION_KEY=""`; 0 failed, exit
@@ -346,9 +349,9 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   one-time command hides the posts of members who left before #218 (he runs it after the deploy, dry
   run first). These five MERGED in #220 (`4e1dff6f`, 2026-10-13; not yet deployed: the deploy also
   owes `federation 0009` and, after it, that one-time command). L10 stays as it is. L26 (record
-  consent on an emergency case) followed in its own PR. A federated proposal notifying the asker, as
-  a local one does (his call the same day), is next. Receipts: the PR bodies and `CHANGELOG.md`
-  2026-10-13.
+  consent on an emergency case) MERGED in its own PR, #221 (`4f1ea527`, 2026-10-13). A federated
+  proposal now tells the asker, as a local one does (his call the same day). Receipts: the PR bodies
+  and `CHANGELOG.md` 2026-10-13.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards

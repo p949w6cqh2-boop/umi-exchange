@@ -3,19 +3,23 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased: consent after an emergency
+## Unreleased: hearing about offers from other boards
 
-- **For coordinators doing casework: consent after an emergency.** A case opened in an emergency,
-  with no time to ask, can now have the person's consent recorded afterwards, from the case page.
-  An admin or the coordinator handling the case records it: the person's own consent on their
-  account, or consent they gave out loud or on paper, written down as theirs. From then on, if
-  they withdraw it, no new notes can be added, as for any other case.
+- **Connecting with other boards.** When someone on another board offers help with your ask, you
+  are now told, the same way as when a neighbour here offers: a note on the board, and an email if
+  you chose to get them. It says which board it comes from and what they offer. It is built and
+  still switched off.
 
 ## 2026-10-13
 
 Fixes from the October check-up of the whole board, and the founder's answers to the questions it
 left open.
 
+- **For coordinators doing casework: consent after an emergency.** A case opened in an emergency,
+  with no time to ask, can now have the person's consent recorded afterwards, from the case page.
+  An admin or the coordinator handling the case records it: the person's own consent on their
+  account, or consent they gave out loud or on paper, written down as theirs. From then on, if
+  they withdraw it, no new notes can be added, as for any other case.
 - **Coordinators keep sight of the whole board.** If a member blocks a coordinator, the two of
   them are still never matched and the member still doesn't see that coordinator's posts. But a
   coordinator can now see every post in a community they look after, so a block can't take

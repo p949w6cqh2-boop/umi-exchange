@@ -139,7 +139,17 @@ def test_check_counts_down_then_blocks():
     assert not allowed and remaining == 0
 
 
-def test_reauth_returns_429_after_five_attempts(world, auth, u):
+def test_reauth_returns_429_after_five_attempts(world, auth, u, monkeypatch):
+    # The limiter counts in fixed one-minute windows (apps/accounts/ratelimit.py). Six posts that
+    # straddled a minute boundary fell into two windows and the sixth got 200: the suite's one known
+    # flake (it failed CI on main @ 4f1ea527, 2026-10-13). Pin the limiter's clock inside a single
+    # window far from real time, and start from an empty cache, so the count is this test's alone.
+    import types
+
+    from django.core.cache import cache
+
+    monkeypatch.setattr("apps.accounts.ratelimit.time", types.SimpleNamespace(time=lambda: 1_000_000_030.0))
+    cache.clear()  # before signing in: a cache-backed session must survive the clear
     client = auth(world.coord_u)
     for _ in range(5):
         resp = client.post(u("reauth"), {"password": "wrong-password"})
