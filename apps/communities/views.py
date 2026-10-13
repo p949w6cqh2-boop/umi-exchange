@@ -915,7 +915,13 @@ class VouchMemberView(LoginRequiredMixin, View):
     The voucher must be a verified person themselves (2026-10 bug hunt): creating a community
     needs only a sign-in and makes the creator its admin, so without this an unverified account
     could vouch for itself, or for any number of other accounts. 30/hour per voucher matches the
-    intake sign-up limit, the busiest legitimate vouching morning."""
+    intake sign-up limit, the busiest legitimate vouching morning.
+
+    Kept on purpose (the founder's call, 2026-10-13, bug hunt L10): any coordinator can vouch for
+    any account on the site by username, and the reply says whether the name exists and whether it
+    is already verified. The sign-up form already tells anyone whether a username is taken, being
+    verified only unlocks joining and posting, and every vouch is audited with who and where.
+    Revisit if the audit log ever shows probing (many user.vouched rows from one voucher)."""
 
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug, is_active=True)
