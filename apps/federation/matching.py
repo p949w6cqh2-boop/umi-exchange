@@ -134,6 +134,18 @@ def receive_proposal(
         from apps.moderation.services import flag_listed_words
 
         flag_listed_words(match, "match", offer_title, offer_category, author=match.proposed_by)
+
+    # The asker hears of it as of a local proposal (the founder's call, 2026-10-13): the same note,
+    # in-app and by email only if they opted in. A duplicate or refused proposal returned above.
+    from apps.notifications.adapter import NotificationAdapter
+
+    NotificationAdapter.send(
+        need.requester.user,
+        "match_proposed",
+        f"{match.proposed_by.display_name} proposed a match on your need '{need.title}'",
+        (f"They offer: {offer_title}. " if offer_title else "") + "View the match to accept or decline.",
+        link=f"/c/{link.community.slug}/matches/{match.id}/",
+    )
     return {"status": "created", "match_uuid": str(match.id)}
 
 
