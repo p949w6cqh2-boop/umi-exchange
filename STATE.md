@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `4eca3e26` (merged 2026-10-13 UTC).
+> Reflects `main` @ `4e1dff6f` (merged 2026-10-13 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -39,10 +39,9 @@
 
 ## Protocol & conformance
 - **UMI Protocol v0.1 — Core ✅ + Casework ✅ + Federation v1 ✅** (default-OFF per community;
-  dark launch rehearsed on two local instances, not yet run in production). **Casework has one MUST
-  outstanding** (found 2026-10, bug hunt L26): a case opened on the emergency path has no way to record
-  consent afterwards (spec §3.7-3.8), so a later revocation can't freeze it. The founder's call of
-  2026-10-13 is to build it next, in its own PR.
+  dark launch rehearsed on two local instances, not yet run in production). Casework's one MUST that
+  the October bug hunt found unbuilt (L26: recording consent on a case opened in an emergency, spec
+  §3.7-3.8) is built since the founder's call of 2026-10-13; see *Casework specifics*.
 - **Lake 1 entities:** `umi:Need`, `umi:Offer`, `umi:Match`, `umi:Consent`.
 - **Lake 2 entities (casework):** `Person`, `CaseFile`, `CaseNote`, `FollowUp`, `WarmHandoff`, `CaseAccessGrant`.
 - **Federation entities:** `FederationLink` (pairing-code + thumbprint verification, 24h TTL),
@@ -203,6 +202,7 @@
 ## Casework (Lake 2) specifics
 - Sensitivity levels (standard/restricted) — **unclassified defaults to restricted** (fail-safe); single authz matrix `apps/casework/access.py::case_access()`.
 - Consent-first opening (emergency flag allows null consent via a DB `CheckConstraint`); revocation **freeze** (no new notes/export once consent revoked; FollowUp writes re-check consent; the freeze now also blocks **warm handoff** — the last narrative-write path that slipped past it — while closing the case still works, #111).
+- **Consent after an emergency** (spec §3.7-3.8, the founder's call 2026-10-13, L26): an admin or the coordinator handling the case records consent from the case page (`CaseConsentView`, POST `<case>/consent/`): the person's own digital consent, or verbal/paper consent written down against them with the recorder as witness (the same checks and helper as opening a case). Audited `case.consent_recorded`; a case that already has its consent is a 409; `emergency_opened` stays as the record. From then on a revocation freezes the case like any other.
 - Overdue follow-up digest re-checks `case_access()` and `is_active` at send time and honours the email opt-out (#111), and mails only a proven address (#174): an unconfirmed one keeps the in-app notice and gets no email (`docs/ethics-and-safety.md` Part 4); `CaseFileAdmin` forbids delete — a case is **closed, never destroyed** (no admin cascade through finalized notes, #111).
 - **Losing the role ends case access** (the founder's call, 2026-10-13, L13): `case_access()` counts
   opener and assignee only while the person is a coordinator or admin, and the visit picker and
@@ -268,7 +268,9 @@
   (`tests/test_template_comments.py` caught the wrapped form, which would have rendered as visible text).
 
 ## Testing / CI / Deploy
-- **1835 passed** on **Postgres 16 + Redis** in #218's gate (2026-10-13, full suite at `6bb42520`,
+- **1874 passed** on **Postgres 16 + Redis** in #220's gate (2026-10-13, the founder's answers to the
+  bug hunt's open questions; count read from its file; 0 failed), and CI 3/3 green on #220's head
+  `0b83c7c3`, merged as `4e1dff6f`. *Before it:* **1835 passed** in #218's gate (2026-10-13, full suite at `6bb42520`,
   count read from its file; 0 failed), and CI 3/3 green on #218's head and again on `main` @
   `4eca3e26`. *The 2026-10-08 sweep read:* **1597 passed** on **Postgres 16 + Redis** (full suite on
   `main` @ `557ca257` plus that branch's docs-only commits, CI's environment including `ENCRYPTION_KEY=""`; 0 failed, exit
@@ -342,9 +344,11 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   recommended option: L1 coordinators keep oversight through a block, L13 losing the role ends case
   access, L61 proposals carry the offer's title and category, L64 pending peers are refused, and a
   one-time command hides the posts of members who left before #218 (he runs it after the deploy, dry
-  run first). These five are built on `claude/continue-ripows` and not yet merged. L10 stays as it
-  is. L26 (record consent on an emergency case) is next, in its own PR. Receipts: the PR body and
-  `CHANGELOG.md` 2026-10-13 and its Unreleased section.
+  run first). These five MERGED in #220 (`4e1dff6f`, 2026-10-13; not yet deployed: the deploy also
+  owes `federation 0009` and, after it, that one-time command). L10 stays as it is. L26 (record
+  consent on an emergency case) followed in its own PR. A federated proposal notifying the asker, as
+  a local one does (his call the same day), is next. Receipts: the PR bodies and `CHANGELOG.md`
+  2026-10-13.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards

@@ -62,6 +62,7 @@
 | GET | `/c/<slug:slug>/cases/<uuid:pk>/` | CaseDetailView | login | `detail` |
 | POST | `/c/<slug:slug>/cases/<uuid:pk>/status/` | CaseStatusView | login | `status` |
 | POST | `/c/<slug:slug>/cases/<uuid:pk>/assign/` | CaseAssignView | login | `assign` |
+| POST | `/c/<slug:slug>/cases/<uuid:pk>/consent/` | CaseConsentView | login | `consent` |
 | POST | `/c/<slug:slug>/cases/<uuid:pk>/handoffs/<uuid:handoff_id>/ack/` | HandoffAckView | login | `handoff-ack` |
 | GET | `/c/<slug:slug>/cases/<uuid:pk>/export/` | CaseExportView | login | `export` |
 | POST | `/c/<slug:slug>/cases/<uuid:pk>/notes/new/` | NoteCreateView | login | `note-create` |
@@ -137,11 +138,11 @@
 | GET | `/terms/` | TermsView | public | `terms` |
 | GET | `/protocol/` | ProtocolView | public | `protocol` |
 | GET | `/protocol/spec.md` | ProtocolSpecRawView | public | `protocol-spec` |
-| GET,POST | `/account/two_factor/setup/` | SetupView | public | `setup` |
+| GET,POST | `/account/two_factor/setup/` | GuardedSetupView | public | `setup` |
 | GET | `/account/two_factor/qrcode/` | QRGeneratorView | public | `qr` |
 | GET | `/account/two_factor/setup/complete/` | SetupCompleteView | public | `setup_complete` |
 | GET,POST | `/account/two_factor/backup/tokens/` | BackupTokensView | public | `backup_tokens` |
 | GET | `/account/two_factor/` | ProfileView | public | `profile` |
 | GET,POST | `/account/two_factor/disable/` | DisableView | public | `disable` |
 
-_128 routes, generated from the live URLconf by `scripts/gen_routes.py`._
+_129 routes, generated from the live URLconf by `scripts/gen_routes.py`._
