@@ -12,7 +12,8 @@
 #
 # Modes:
 #   encrypt <plaintext-env-file>   age-encrypt key material -> $UMI_KEYS_AGE (armored: printable)
-#   deploy                         decrypt -> ssh -> tmpfs merge -> compose up -> shred -> migrate,
+#   deploy                         decrypt -> ssh -> tmpfs merge -> create the worker -> compose up
+#                                  the app -> shred -> migrate -> start the worker,
 #                                  then copy-ciphertext
 #   copy-ciphertext                copy the CIPHERTEXT (never plaintext) to the droplet's backup
 #                                  dir, so backup.sh carries it beside every dump
@@ -93,6 +94,14 @@ cmd_deploy() {
   # its own config, so this step never needs the tmpfs file and runs after the shred.
   # Nothing else in the stack migrates (the image runs gunicorn only), so a deploy that
   # carries a migration served new code against the old schema until this was added.
+  # The worker (2026-10-18) runs the scheduled jobs and needs the keys too, which exist
+  # here only in tmpfs, so it is CREATED before the app comes up (recreating it also stops
+  # the previous worker before the schema changes) and STARTED only after migrate
+  # succeeds: every overdue schedule fires within seconds of a cluster starting. Its id is
+  # read before the shred, because compose cannot read its env file after that.
+  # A rollback can rebuild a commit whose compose file predates the worker, so the worker
+  # steps run only when the file defines one. The service list is read into a variable:
+  # piped into `grep -q` under pipefail, an early exit can fail the pipe on a match.
   local remote_script
   remote_script=$(cat <<REMOTE
 set -euo pipefail
@@ -102,14 +111,24 @@ cat > /dev/shm/umi-keys.env
 cd $REMOTE_DIR
 grep -Eq '^($KEY_NAMES)=' .env && { echo 'REFUSING: droplet .env still carries plaintext key lines — finish the migration (docs/key-custody-design.md)'; shred -u /dev/shm/umi-keys.env; exit 1; }
 cat .env /dev/shm/umi-keys.env > /dev/shm/umi-full.env
+services=\$($COMPOSE config --services)
+if grep -qx worker <<< "\$services"; then has_worker=yes; else has_worker=no; fi
+[ "\$has_worker" = no ] || $COMPOSE create worker
 $COMPOSE up -d app
 $COMPOSE ps app
 app_id=\$($COMPOSE ps -q app || true)
+worker_id=
+[ "\$has_worker" = no ] || worker_id=\$($COMPOSE ps -a -q worker || true)
 shred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env
 echo 'tmpfs shredded'
-[ -n "\$app_id" ] || { echo 'MIGRATE FAILED: no app container after up, so nothing was migrated. Check: docker ps'; exit 3; }
-docker exec "\$app_id" python manage.py migrate --noinput || { echo 'MIGRATE FAILED: the new app is running on a schema it does not match. Read the error above, fix it, and re-run: docker exec <app container> python manage.py migrate. The backup taken before this deploy is the fallback.'; exit 3; }
-echo 'migrations applied; deploy done'
+[ -n "\$app_id" ] || { echo 'MIGRATE FAILED: no app container after up, so nothing was migrated and the worker was not started. Check: docker ps'; exit 3; }
+docker exec "\$app_id" python manage.py migrate --noinput || { echo 'MIGRATE FAILED: the new app is running on a schema it does not match. The worker was left stopped, so no scheduled job runs against it. Read the error above, fix it, re-run: docker exec <app container> python manage.py migrate, then: docker start <worker container>. The backup taken before this deploy is the fallback.'; exit 3; }
+echo 'migrations applied'
+if [ "\$has_worker" = no ]; then echo 'this compose file has no worker service (a commit from before 2026-10-18), so no worker was started; deploy done'; exit 0; fi
+[ -n "\$worker_id" ] || { echo 'WORKER NOT STARTED: no worker container exists, so no scheduled job runs. The app is deployed and migrated. Check: docker ps -a'; exit 4; }
+docker start "\$worker_id" >/dev/null || { echo 'WORKER NOT STARTED: the app is deployed and migrated, but the scheduled jobs are not running. Check: docker logs <worker container>'; exit 4; }
+docker ps -a --filter "id=\$worker_id" --format '{{.Names}}: {{.Status}}'
+echo 'worker started; deploy done'
 REMOTE
 )
 

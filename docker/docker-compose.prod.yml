@@ -1,33 +1,41 @@
-# Production deployment: docker compose -f docker/docker-compose.prod.yml up -d
+# Production. Under key custody the app and the worker are brought up by the rig from the
+# steward's laptop (scripts/deploy-with-keys.sh, docs/deploy-runbook.md step 5); a plain
+# `docker compose ... up -d` on the droplet starts them without keys, and production
+# refuses to boot.
+
+# The environment the app AND the worker get: one block, so the two cannot drift apart
+# (2026-10-18). A key that reached the app but not the worker would boot a worker with none.
+x-app-environment: &app-environment
+  - DJANGO_SETTINGS_MODULE=config.settings.production
+  # Key material, named here ON PURPOSE (2026-09-11). `env_file` reads .env from
+  # disk; the key-custody rig (scripts/deploy-with-keys.sh) deliberately keeps the
+  # keys OUT of that file and merges them into a tmpfs env-file passed as
+  # `--env-file`. But --env-file only feeds compose's ${...} substitution — it
+  # injects nothing into the container. Without these three lines the rig strips
+  # the keys from .env and the app boots with none, which is exactly how it failed
+  # its first rehearsal. See docs/key-custody-design.md §Second correction.
+  # Values still come from .env on a plain deploy, so nothing changes for anyone
+  # not using the rig.
+  - SECRET_KEY=${SECRET_KEY}
+  - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+  # The key LIST, primary first, which a rotation needs (2026-10-01: without this line
+  # the first real rotation booted the app with no key). `:-` keeps a single-key
+  # setup working: empty parses to [] and the app falls back to ENCRYPTION_KEY.
+  - ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}
+  - BLIND_INDEX_KEY=${BLIND_INDEX_KEY}
+  # Runtime role: defaults keep the single-role setup working, but the
+  # append-only audit gate (threat-model must-fix #1) needs the app on a
+  # non-owner role — see deployment-checklist.md "Database roles".
+  - DATABASE_URL=postgres://${APP_DB_USER:-umi}:${APP_DB_PASSWORD:-${DB_PASSWORD}}@db:5432/umi_exchange
+  - AUDIT_DB_APP_ROLE=${APP_DB_USER:-umi}
+  - REDIS_URL=redis://redis:6379/0
+
 services:
   app:
     image: umi-exchange:local  # built on the droplet: docker build -t umi-exchange:local -f docker/Dockerfile .
     restart: unless-stopped
     env_file: ../.env
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-      # Key material, named here ON PURPOSE (2026-09-11). `env_file` reads .env from
-      # disk; the key-custody rig (scripts/deploy-with-keys.sh) deliberately keeps the
-      # keys OUT of that file and merges them into a tmpfs env-file passed as
-      # `--env-file`. But --env-file only feeds compose's ${...} substitution — it
-      # injects nothing into the container. Without these three lines the rig strips
-      # the keys from .env and the app boots with none, which is exactly how it failed
-      # its first rehearsal. See docs/key-custody-design.md §Second correction.
-      # Values still come from .env on a plain deploy, so nothing changes for anyone
-      # not using the rig.
-      - SECRET_KEY=${SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      # The key LIST, primary first, which a rotation needs (2026-10-01: without this line
-      # the first real rotation booted the app with no key). `:-` keeps a single-key
-      # setup working: empty parses to [] and the app falls back to ENCRYPTION_KEY.
-      - ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}
-      - BLIND_INDEX_KEY=${BLIND_INDEX_KEY}
-      # Runtime role: defaults keep the single-role setup working, but the
-      # append-only audit gate (threat-model must-fix #1) needs the app on a
-      # non-owner role — see deployment-checklist.md "Database roles".
-      - DATABASE_URL=postgres://${APP_DB_USER:-umi}:${APP_DB_PASSWORD:-${DB_PASSWORD}}@db:5432/umi_exchange
-      - AUDIT_DB_APP_ROLE=${APP_DB_USER:-umi}
-      - REDIS_URL=redis://redis:6379/0
+    environment: *app-environment
     depends_on:
       db:
         condition: service_healthy
@@ -59,6 +67,34 @@ services:
       resources:
         limits:
           memory: 512M
+
+  # The django-q worker (2026-10-18). Every recurring job the app registers runs here and
+  # nowhere else: expiry of needs, offers and match proposals, the retention shreds of
+  # docs/privacy-retention.md, the casework digest. The app container runs gunicorn only,
+  # so until this service existed the schedules were registered on every deploy and nothing
+  # ran them (read on the droplet 2026-10-18: zero tasks ever run, every next_run still at
+  # the 10-13 deploy). Same image and environment as the app, keys included: the custody
+  # rig creates it while the keys are in tmpfs and starts it only after migrate succeeds.
+  worker:
+    image: umi-exchange:local
+    restart: unless-stopped
+    command: ["python", "manage.py", "qcluster"]
+    env_file: ../.env
+    environment: *app-environment
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - app_logs:/app/logs
+    # The image's HEALTHCHECK probes the app's HTTP port, which the worker never serves.
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          memory: 384M
 
   db:
     image: postgres:16-alpine
