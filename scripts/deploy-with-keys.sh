@@ -160,24 +160,35 @@ cmd_copy_ciphertext() {
 }
 
 cmd_check() {
+  # grep -o prints only the matched "NAME=", never the value after it: a found key is named
+  # on the terminal, not echoed into its scrollback.
+  local rc=0
   if [ "${1:-}" = "--local-file" ]; then
     local f="${2:-}"
     [ -f "$f" ] || die "no such file: $f"
-    if grep -E "^($KEY_NAMES)=" "$f"; then
-      die "plaintext key material present in $f"
-    fi
-    echo "clean: no plaintext key lines in $f"
+    grep -Eo "^($KEY_NAMES)=" "$f" || rc=$?
+    case "$rc" in
+      0) die "plaintext key material present in $f" ;;
+      1) echo "clean: no plaintext key lines in $f" ;;
+      *) die "could not check $f (grep exit $rc): nothing was proven" ;;
+    esac
     return 0
   fi
   need_droplet
   if [ "${DRY_RUN:-0}" = "1" ]; then
-    echo "== DRY RUN: would run on $DROPLET: grep -E '^($KEY_NAMES)=' $REMOTE_DIR/.env =="
+    echo "== DRY RUN: would run on $DROPLET: grep -Eo '^($KEY_NAMES)=' $REMOTE_DIR/.env =="
     return 0
   fi
-  if ssh "$DROPLET" "grep -E '^($KEY_NAMES)=' $REMOTE_DIR/.env"; then
-    die "droplet .env still carries plaintext key lines"
-  fi
-  echo "clean: droplet .env holds no plaintext key material"
+  # Only grep's "no match" (1) proves clean. A match (0) is key material; anything else (grep's
+  # 2 for a missing .env, ssh's 255 for a refused connection) means nothing was checked. Until
+  # 2026-10-13 every non-match printed "clean", including a check run on the droplet itself
+  # whose ssh was refused.
+  ssh "$DROPLET" "grep -Eo '^($KEY_NAMES)=' $REMOTE_DIR/.env" || rc=$?
+  case "$rc" in
+    0) die "droplet .env still carries plaintext key lines" ;;
+    1) echo "clean: droplet .env holds no plaintext key material" ;;
+    *) die "could not check $DROPLET:$REMOTE_DIR/.env (exit $rc): nothing was proven. Run this from the laptop, with ssh access to the droplet" ;;
+  esac
 }
 
 case "${1:-}" in
