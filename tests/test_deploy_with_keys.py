@@ -447,3 +447,103 @@ def test_copy_ciphertext_lands_the_file_with_owner_only_permissions(age_home, tm
     assert target.read_bytes() == out.read_bytes()
     assert (target.stat().st_mode & 0o777) == 0o600
     assert not target.with_name("keys.env.age.tmp").exists()
+
+
+# ── check over ssh must prove something or fail (2026-10-13) ─────────────────
+#
+# `check` was run on the droplet itself during the 2026-10-13 deploy: its ssh to the droplet was
+# refused ("Permission denied (publickey)"), and it still printed "clean". Every non-match fell
+# through to clean: grep's no-match (1), a missing .env (2) and ssh's own failure (255) alike.
+# A check that could not look must fail. And when it does find key lines, it names them without
+# echoing their values onto the laptop's terminal.
+
+
+def _fake_tool(tmp_path, name, body):
+    bindir = tmp_path / "fakebin"
+    bindir.mkdir(exist_ok=True)
+    tool = bindir / name
+    tool.write_text("#!/bin/sh\n" + body)
+    tool.chmod(0o755)
+    return bindir
+
+
+def _fake_ssh(tmp_path, body):
+    return _fake_tool(tmp_path, "ssh", body)
+
+
+def _check_over_ssh(bindir, remote_dir):
+    return subprocess.run(
+        ["bash", str(SCRIPT), "check"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env={
+            "PATH": f"{bindir}:/usr/bin:/bin:/usr/local/bin",
+            "UMI_DROPLET": "root@198.51.100.7",
+            "UMI_REMOTE_DIR": str(remote_dir),
+        },
+    )
+
+
+def test_check_fails_when_ssh_cannot_reach_the_droplet(tmp_path):
+    bindir = _fake_ssh(tmp_path, 'echo "root@198.51.100.7: Permission denied (publickey)." >&2\nexit 255\n')
+    r = _check_over_ssh(bindir, tmp_path)
+    assert r.returncode != 0
+    assert "clean" not in r.stdout
+    assert "could not check" in r.stderr
+
+
+def test_check_fails_when_the_droplet_has_no_env_file(tmp_path):
+    bindir = _fake_ssh(tmp_path, 'shift\nexec bash -c "$*"\n')  # run the remote command here
+    r = _check_over_ssh(bindir, tmp_path / "no-such-checkout")
+    assert r.returncode != 0
+    assert "clean" not in r.stdout
+    assert "could not check" in r.stderr
+
+
+def test_check_passes_a_clean_droplet_env_over_ssh(tmp_path):
+    remote = tmp_path / "opt-umi"
+    remote.mkdir()
+    (remote / ".env").write_text("DEBUG=False\nALLOWED_HOSTS=reciprocalaid.network\n")
+    bindir = _fake_ssh(tmp_path, 'shift\nexec bash -c "$*"\n')
+    r = _check_over_ssh(bindir, remote)
+    assert r.returncode == 0, r.stderr
+    assert "clean: droplet .env holds no plaintext key material" in r.stdout
+
+
+def test_check_names_found_keys_without_printing_their_values(tmp_path):
+    remote = tmp_path / "opt-umi"
+    remote.mkdir()
+    (remote / ".env").write_text("DEBUG=False\nSECRET_KEY=s3cr3t-value-do-not-print\n")
+    bindir = _fake_ssh(tmp_path, 'shift\nexec bash -c "$*"\n')
+    r = _check_over_ssh(bindir, remote)
+    assert r.returncode != 0
+    assert "SECRET_KEY" in r.stdout + r.stderr
+    assert "s3cr3t-value-do-not-print" not in r.stdout + r.stderr
+
+
+def test_local_check_names_found_keys_without_printing_their_values(age_home):
+    dirty = age_home["dir"] / "droplet.env"
+    dirty.write_text("DEBUG=False\nBLIND_INDEX_KEY=bidx-value-do-not-print\n")
+    r = run(["check", "--local-file", str(dirty)])
+    assert r.returncode != 0
+    assert "BLIND_INDEX_KEY" in r.stdout + r.stderr
+    assert "bidx-value-do-not-print" not in r.stdout + r.stderr
+
+
+def test_local_check_fails_when_the_file_cannot_be_read(tmp_path):
+    # The local branch had the same hole: grep's 2 (could not read the file) fell through to
+    # "clean". Root reads any file, so a stand-in grep fails the way an unreadable file makes it.
+    env_file = tmp_path / "droplet.env"
+    env_file.write_text("DEBUG=False\n")
+    bindir = _fake_tool(tmp_path, "grep", 'echo "grep: $3: Permission denied" >&2\nexit 2\n')
+    r = subprocess.run(
+        ["bash", str(SCRIPT), "check", "--local-file", str(env_file)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env={"PATH": f"{bindir}:/usr/bin:/bin:/usr/local/bin"},
+    )
+    assert r.returncode != 0
+    assert "clean" not in r.stdout
+    assert "could not check" in r.stderr

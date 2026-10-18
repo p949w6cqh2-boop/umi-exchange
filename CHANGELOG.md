@@ -3,12 +3,13 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased: hearing about offers from other boards
+## Unreleased: safer steps for putting updates live
 
-- **Connecting with other boards.** When someone on another board offers help with your ask, you
-  are now told, the same way as when a neighbour here offers: a note on the board, and an email if
-  you chose to get them. It says which board it comes from and what they offer. It is built and
-  still switched off.
+- **The steps for putting an update live are safer.** Nothing you can see changed. The check that
+  our server holds no unprotected keys used to report all clear even when it never reached the
+  server; now it says it could not check. The written steps now say which computer each one runs
+  on, and the steps for undoing a bad update were tried out and corrected: as written, they would
+  not have undone anything.
 
 ## 2026-10-13
 
@@ -33,8 +34,10 @@ left open.
   open asks and offers on the board. With this update they come down the same way: nothing is
   deleted, nobody is notified, and if they come back they choose what goes back up.
 - **Connecting with other boards.** An offer from another board now arrives with its title and
-  category, so you can see what you would be accepting. A board that has only asked to connect
-  gets no further until it is approved. It is built and still switched off.
+  category, so you can see what you would be accepting, and you are told about it the same way as
+  when a neighbour here offers: a note on the board saying which board it comes from, and an email
+  if you chose to get them. A board that has only asked to connect gets no further until it is
+  approved. It is built and still switched off.
 - **If a post can't go up, the page now says why.** Before, an ask or offer whose description
   used certain words was quietly refused: the page came back with no message and your choices
   reset. Now you see the reason and your choices stay. Ordinary writing like "data:" or

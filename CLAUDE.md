@@ -45,7 +45,7 @@ If you have **gstack** installed, use its skills when working in this repo:
   ```bash
   DATABASE_URL="postgres://user:pass@127.0.0.1:5432/umi_test" pytest -q
   ```
-- **Deploy check:** `DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=… ENCRYPTION_KEY=… BLIND_INDEX_KEY=… ALLOWED_HOSTS=… python manage.py check --deploy` → must be **0 issues** (`BLIND_INDEX_KEY` must differ from the encryption keys or production refuses to boot).
+- **Deploy check:** `DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=… ENCRYPTION_KEY=… BLIND_INDEX_KEY=… ALLOWED_HOSTS=… REDIS_URL=redis://127.0.0.1:6379/0 python manage.py check --deploy` → must be **0 issues** (`BLIND_INDEX_KEY` must differ from the encryption keys, and production refuses a per-process cache without `REDIS_URL`, or it refuses to boot).
 - **CSS:** `output.css` is compiled, committed Tailwind — regenerate with
   `npx tailwindcss@3.4.14 -i static/css/input.css -o static/css/output.css --minify`. Never hand-edit it.
 
