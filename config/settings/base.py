@@ -249,6 +249,12 @@ Q_CLUSTER = {
     "timeout": 300,
     "retry": 360,  # Must be > timeout to avoid premature task re-triggers
     "orm": "default",  # Use ORM broker (works without Redis)
+    # An overdue schedule runs once, then waits for its next slot. The default replays one
+    # run per missed interval: production's first worker (2026-10-18) found every schedule
+    # stuck at the 10-13 deploy, which meant ~140 back-to-back runs of each hourly sweep.
+    # The sweeps act on everything stale in one run, so a replay only adds load (and
+    # repeats the casework digest's email).
+    "catch_up": False,
 }
 
 # ── Templates ─────────────────────────────────────────
