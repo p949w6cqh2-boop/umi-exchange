@@ -11,7 +11,7 @@ such community can adopt it as a starting point and re-skin it per community.
 
 Stack: **Django 5.2** · PostgreSQL (prod/CI) / SQLite (local default) · Redis (optional) ·
 HTMX + Alpine.js + Tailwind (compiled `static/css/output.css`) · WhiteNoise · gunicorn ·
-django-q2 (optional background tasks) · Argon2 password hashing (PBKDF2 fallback when the `argon2`
+django-q2 (background jobs; production runs them in the `worker` service) · Argon2 password hashing (PBKDF2 fallback when the `argon2`
 lib is absent — base settings never list a hasher whose library is missing, which would hard-crash
 password verification).
 
@@ -112,6 +112,10 @@ prefix; never assume the shell is where you left it.
 - **`skip_locked`** is a no-op on SQLite. Avoid pairing it with a `pk__gt` cursor (can skip a locked
   row permanently — see `rotate_keks`).
 - **Encryption tests** fail without a key set (see Commands).
+- **Scheduled jobs run only in the `worker` service** (`manage.py qcluster`, docker-compose.prod.yml);
+  the app container runs gunicorn alone. A registered schedule with no cluster running never fires:
+  production ran none from launch until 2026-10-18. `catch_up` is off, so an overdue schedule runs
+  once. A new job needs `register_schedule`, and the deploy's schedule step re-run.
 - **WhiteNoise manifest storage** in prod requires `collectstatic`; serve over HTTPS.
 - **Django 6.0:** use `CheckConstraint(condition=…)`, not `check=`.
 - **Don't hand-edit `output.css`** (generated, minified) — recompile instead.

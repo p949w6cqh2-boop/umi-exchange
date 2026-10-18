@@ -24,6 +24,11 @@ what the gate item says must end before real parishioners onboard.
 > root (§Implementation, "Path chosen for the container residue"), so whoever roots the machine
 > still gets the key while the app exists; and the identity is held by one person until the sealed
 > envelope is in the safe.
+>
+> ⚖️ **2026-10-18: two containers hold the keys now, not one.** The worker (the django-q cluster
+> that runs the scheduled jobs) gets the app's environment, so its config on the same disk carries
+> the same keys. Same machine, same root, same residual, one more copy of it: closing the residual
+> has to cover the worker too.
 
 ## The design (v1 — smallest thing that honestly meets the words)
 
