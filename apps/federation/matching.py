@@ -136,7 +136,8 @@ def receive_proposal(
         flag_listed_words(match, "match", offer_title, offer_category, author=match.proposed_by)
 
     # The asker hears of it as of a local proposal (the founder's call, 2026-10-13): the same note,
-    # in-app and by email only if they opted in. A duplicate or refused proposal returned above.
+    # in-app, and by email to a confirmed address unless they turned emails off (on by default).
+    # A duplicate or refused proposal returned above.
     from apps.notifications.adapter import NotificationAdapter
 
     NotificationAdapter.send(

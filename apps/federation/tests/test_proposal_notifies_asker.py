@@ -2,10 +2,10 @@
 A proposal from another community tells the asker, as a local one does (the founder's call,
 2026-10-13).
 
-A local proposal sends the asker a "match proposed" note (in-app, and email if they opted in), but
-receive_proposal sent nothing, so the asker might not learn of a federated proposal until they
-opened their ask. Now it sends the same note, naming the community it comes from and what it
-offers. A duplicate or refused proposal sends nothing.
+A local proposal sends the asker a "match proposed" note (in-app, and by email to a confirmed
+address unless they turned emails off), but receive_proposal sent nothing, so the asker might not
+learn of a federated proposal until they opened their ask. Now it sends the same note, naming the
+community it comes from and what it offers. A duplicate or refused proposal sends nothing.
 """
 
 import uuid
