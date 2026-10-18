@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `7a98cf4e` (merged 2026-10-13 UTC).
+> Reflects `main` @ `fca9f8a0` (merged 2026-10-18 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -190,11 +190,13 @@
 - **Key custody rig — built #147, ARMED on production 2026-09-11 (#164, #165), box 3 still open.**
   `scripts/deploy-with-keys.sh`: the keys live age-encrypted (`keys.env.age`) with the identity on
   the steward's laptop; `deploy` decrypts there, pipes the keys into droplet tmpfs, force-recreates
-  the app, shreds tmpfs on every exit path (#182) and runs `migrate` (#178). The droplet `.env`
-  holds **no** key material (`deploy-with-keys.sh check`). Keys survive restarts, because Docker
-  replays a container's environment, but not recreates: any new image needs the laptop. The same
-  mechanism is the open residual: the keys sit in the container's config on the droplet disk
-  while it exists, readable by root (`docs/key-custody-design.md` §Implementation). Compose
+  the app, shreds tmpfs on every exit path (#182) and runs `migrate` (#178); since 2026-10-18 it
+  also creates the worker with the same keys and starts it only after migrate succeeds. The
+  droplet `.env` holds **no** key material (`deploy-with-keys.sh check`). Keys survive restarts,
+  because Docker replays a container's environment, but not recreates: any new image needs the
+  laptop. The same mechanism is the open residual: the keys sit in the app's and the worker's
+  container configs on the droplet disk while they exist, readable by root
+  (`docs/key-custody-design.md` §Implementation). Compose
   passes the key **list**, so a rotation reaches production (#197); the armored key ciphertext
   rides beside every nightly backup (#196); KEK rotation ran on production 2026-10-01 (#199), after
   a four-minute outage on the first attempt that #197 fixed. Owed before box 3 can be ticked: the
@@ -221,7 +223,7 @@
 - **Since #218 (2026-10-13):** a non-admin's person picker offers only people whose every case they can open, and the case list shows initials; a revoked consent freezes grants too; a follow-up goes only to someone who can open the case; a closed case takes no new note, follow-up or handoff until it is reopened (409); search covers every case, not only the 200 most recent; re-auth returns to the page (htmx gets `HX-Redirect`); an expired grant can be renewed, and its reason is asked for without names and kept out of the grantee's notification; the overdue digest goes per community; exports print local time; an offline draft belongs to its author; a recorder who has left can no longer withdraw a consent.
 
 ## Codebase
-- **Stack:** Django 5.2, PostgreSQL (prod/CI) / SQLite (local default), Redis (optional), HTMX, Alpine.js, Tailwind 3.4 (`static/css/output.css`), WhiteNoise, gunicorn, Argon2, django-q2 (optional).
+- **Stack:** Django 5.2, PostgreSQL (prod/CI) / SQLite (local default), Redis (optional), HTMX, Alpine.js, Tailwind 3.4 (`static/css/output.css`), WhiteNoise, gunicorn, Argon2, django-q2 (production runs it in the `worker` service, since 2026-10-18).
 - **19 Django apps** (holds joined 2026-10-01, #193): accounts, audit, casework, communities, consent, dashboard, **federation**, health, **holds**, households, **hub**, matches, **moderation**, needs, notifications, offers, **pages**, people, tags. Plus `apps/common` — shared non-registered module (`state.py` `StateMachineMixin`).
 - **Hub ("The Pulse"):** per-member community hub — pulse feed, spotlight, verified-badge surface, community switcher, data-derived **first-steps onboarding** (post → raise a hand → connect; dismissible, never nags twice). `pulse_events()` and `spotlight_need()` are viewer-aware: blocked members are excluded from all five event kinds and from the spotlight, both directions (#113).
 - **Member tags & verification:** claim → coordinator verify/reject/revoke (state machine); **verified-only** badges surface (visibility-honoured); a self-reported or revoked claim never renders as endorsed. Nobody verifies their own tag (#218).
@@ -362,17 +364,18 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   emergency case) MERGED in its own PR, #221 (`4f1ea527`, 2026-10-13). A federated proposal now
   tells the asker, as a local one does (his call the same day; #222, `7a98cf4e`). Receipts: the PR
   bodies and `CHANGELOG.md` 2026-10-13.
-- ⚠️ **The background sweeps may never run in production (found 2026-10-13; unverified on the
-  box).** The production image starts gunicorn only, the production compose has no worker service,
-  and no runbook or cron starts `manage.py qcluster`. So the schedules the deploy's schedule step
-  registers (need, offer and proposal expiry; the aged-need PII shred; casework's shred, digest and
-  draft cleanup) have nothing in this repo to run them, and `docs/privacy-retention.md`'s promises
-  rest on those shreds. Read-only check on the droplet: if every `next_run` still shows its
-  registration time and no task has ever run, nothing runs them:
-  `docker exec docker-app-1 python manage.py shell -c "from django_q.models import Schedule, Success;
-  [print(s.name, s.next_run) for s in Schedule.objects.order_by('name')]; print('tasks ever run:',
-  Success.objects.count())"`. The fix is a design call under key custody: a worker the rig brings up
-  with its keys, or a host cron that runs the sweeps inside the running app container.
+- **The background sweeps had never run in production; the worker is BUILT (2026-10-18), not yet
+  deployed.** Found 2026-10-13 and read on the droplet 2026-10-18: zero tasks ever run, every
+  schedule's `next_run` still at the 10-13 deploy, because the image starts gunicorn only and
+  nothing started `manage.py qcluster`. So need, offer and proposal expiry never ran, and neither
+  did the shreds `docs/privacy-retention.md` promises (none of which had data old enough yet). Now:
+  a `worker` service in the production compose (`qcluster`, the app's image and environment, keys
+  included); the custody rig creates it with the keys and starts it only after migrate succeeds;
+  `catch_up` is off, so an overdue schedule runs once, not once per missed hour (an hourly sweep
+  stuck since 10-13 would have run about 140 times back to back). Proven locally under production
+  settings: 0 to 7 tasks run, 0 failed, a backdated offer and need expired, nothing replayed. **When
+  it first starts, the expiry sweeps take down every active offer and open need already past its
+  date, and tell each owner.** The founder's call (2026-10-18): build the worker.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards

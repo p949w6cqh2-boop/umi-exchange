@@ -3,7 +3,16 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased: safer steps for putting updates live
+## Unreleased: old asks and offers come down on their own
+
+- **Old asks and offers come down on their own.** Every ask and offer has a date after which it
+  comes off the board, and its owner is told. The job that does this was built but never ran on
+  the live board. Now it checks every hour. When this update goes live, everything already past
+  its date comes down at once, and each owner is told. Personal details we promise to delete
+  after a set time will be deleted on schedule too; nothing on the board is old enough for that
+  yet.
+
+## 2026-10-18
 
 - **The steps for putting an update live are safer.** Nothing you can see changed. The check that
   our server holds no unprotected keys used to report all clear even when it never reached the

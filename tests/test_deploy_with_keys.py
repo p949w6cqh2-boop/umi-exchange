@@ -229,6 +229,17 @@ def test_deploy_refuses_without_a_droplet_target(age_home):
     assert "UMI_DROPLET" in r.stderr
 
 
+COMPOSE_PROD = Path(__file__).resolve().parent.parent / "docker" / "docker-compose.prod.yml"
+
+
+def _service(name):
+    """One service of the prod compose file as compose sees it: YAML anchors resolved, so a
+    shared environment block counts for every service that uses it."""
+    import yaml
+
+    return yaml.safe_load(COMPOSE_PROD.read_text())["services"][name]
+
+
 def test_compose_passes_key_material_into_the_container():
     """Defect 2, and the one that actually took the site down.
 
@@ -239,10 +250,9 @@ def test_compose_passes_key_material_into_the_container():
 
     Observed before the fix: ImproperlyConfigured: SECRET_KEY must be set.
     """
-    compose = (Path(__file__).resolve().parent.parent / "docker" / "docker-compose.prod.yml").read_text()
-    app = compose[compose.index("  app:") : compose.index("  db:")]
+    env = _service("app")["environment"]
     for name in ("SECRET_KEY", "ENCRYPTION_KEY", "BLIND_INDEX_KEY"):
-        assert f"- {name}=${{{name}}}" in app, (
+        assert f"{name}=${{{name}}}" in env, (
             f"{name} is not passed into the app container. The custody rig removes it from "
             ".env, and --env-file only does ${...} substitution — so the app will boot "
             "without it and production will refuse to start."
@@ -258,9 +268,39 @@ def test_compose_passes_the_key_list_so_rotation_can_reach_production():
     The `:-` default keeps a single-key setup working: an empty list parses to [] and
     crypto._keks() falls back to ENCRYPTION_KEY.
     """
-    compose = (Path(__file__).resolve().parent.parent / "docker" / "docker-compose.prod.yml").read_text()
-    app = compose[compose.index("  app:") : compose.index("  db:")]
-    assert "- ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}" in app
+    assert "ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}" in _service("app")["environment"]
+
+
+# ── The worker, 2026-10-18 ────────────────────────────────────────────────────
+#
+# Every recurring job the app registers (expiry of needs, offers and proposals; the
+# retention shreds; the casework digest) needs a django-q cluster to run it, and the
+# stack had none: the image runs gunicorn only. Read on the droplet 2026-10-18: zero
+# tasks had ever run, and every schedule's next_run still sat at the 10-13 deploy.
+
+
+def test_the_worker_runs_qcluster_from_the_app_image():
+    worker, app = _service("worker"), _service("app")
+    assert worker["image"] == app["image"], "the worker must run the code the app runs"
+    assert "qcluster" in str(worker["command"])
+    assert worker["restart"] == "unless-stopped", "a crashed worker must come back on its own"
+    assert worker["depends_on"]["db"]["condition"] == "service_healthy"
+    # The image's HEALTHCHECK probes the app's HTTP port, which the worker never serves:
+    # left on, it would mark a working worker "unhealthy" forever.
+    assert worker["healthcheck"] == {"disable": True}
+
+
+def test_the_worker_gets_the_apps_environment_keys_included():
+    """The sweeps decrypt and shred, and production settings refuse to load without the
+    keys, so the worker needs exactly what the app gets, through the same lines."""
+    worker, app = _service("worker"), _service("app")
+    assert worker["environment"] == app["environment"]
+    assert worker["env_file"] == app["env_file"]
+
+
+def test_the_worker_logs_where_the_app_does():
+    # production.py writes rotating log files under /app/logs; the app keeps them on a volume.
+    assert "app_logs:/app/logs" in _service("worker")["volumes"]
 
 
 # ── The migrate step, 2026-09-28 ──────────────────────────────────────────────
@@ -547,3 +587,97 @@ def test_local_check_fails_when_the_file_cannot_be_read(tmp_path):
     assert r.returncode != 0
     assert "clean" not in r.stdout
     assert "could not check" in r.stderr
+
+
+# ── The rig creates the worker with its keys and starts it after migrate (2026-10-18) ──
+#
+# The keys exist on the droplet only in tmpfs, and only while the rig runs, so the worker
+# is CREATED then, beside the app. It is STARTED only after migrate succeeds: every
+# overdue schedule fires within seconds of a cluster starting, and a sweep run against
+# the previous schema could fail or half-apply. A failed migrate leaves it stopped.
+
+
+def test_deploy_creates_the_worker_with_its_keys_and_starts_it_after_migrate(age_home):
+    plan = _dry_run_plan(age_home)
+    create = plan.index("create worker")
+    up = plan.index("up -d app")
+    worker_id = plan.index("worker_id=$(")
+    shred = plan.index("\nshred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env\n")
+    migrate = plan.index("manage.py migrate --noinput")
+    start = plan.index('docker start "$worker_id"')
+    # Created while the keys are in tmpfs, and before the new app comes up, which also
+    # stops the previous worker before it can run against the new schema. Started last.
+    assert create < up < shred < migrate < start
+    assert worker_id < shred, "the worker's id must be read while compose can still read its env file"
+    assert "ps -a -q worker" in plan, "a created worker is not running yet, so plain `ps -q` would not list it"
+
+
+def _run_remote(age_home, tmp_path, migrate_rc=0, worker_id="workerid456", services="app worker db redis caddy"):
+    """Run the real remote script against a fake droplet whose `docker` records every call."""
+    shm, repo, bindir = tmp_path / "shm", tmp_path / "repo", tmp_path / "bin"
+    for d in (shm, repo, bindir):
+        d.mkdir()
+    (repo / ".env").write_text("DEBUG=False\n")  # key-free, as the rig requires
+    calls = tmp_path / "docker-calls.log"
+    docker = bindir / "docker"
+    docker.write_text(
+        "#!/bin/sh\n"
+        f'echo "$*" >> {calls}\n'
+        'case "$*" in\n'
+        f'  *" config --services") printf "%s\\n" {services} ;;\n'
+        '  *" ps -q app") echo appid123 ;;\n'
+        f'  *" ps -a -q worker") echo "{worker_id}" ;;\n'
+        f'  "exec appid123 python manage.py migrate --noinput") exit {migrate_rc} ;;\n'
+        "esac\n"
+        "exit 0\n"
+    )
+    docker.chmod(0o755)
+    plan = _dry_run_plan(age_home).replace("/dev/shm/", f"{shm}/").replace("cd /opt/umi-exchange", f"cd {repo}")
+    r = subprocess.run(
+        ["bash", "-c", plan],
+        input=KEYS_SAMPLE,
+        capture_output=True,
+        text=True,
+        env={"PATH": f"{bindir}:/usr/bin:/bin"},
+        timeout=30,
+    )
+    log = calls.read_text().splitlines() if calls.exists() else []
+    return r, log, shm
+
+
+def test_a_deploy_starts_the_worker_only_after_migrate(age_home, tmp_path):
+    r, log, shm = _run_remote(age_home, tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+    def at(fragment):
+        return next(i for i, call in enumerate(log) if fragment in call)
+
+    assert at("create worker") < at("up -d app") < at("python manage.py migrate") < at("start workerid456")
+    assert r.stdout.rstrip().endswith("worker started; deploy done")
+    assert not (shm / "umi-keys.env").exists()
+
+
+def test_a_failed_migrate_leaves_the_worker_stopped(age_home, tmp_path):
+    r, log, shm = _run_remote(age_home, tmp_path, migrate_rc=1)
+    assert r.returncode == 3
+    assert "MIGRATE FAILED" in r.stdout
+    assert not any(call.startswith("start ") for call in log), "a worker was started on a schema it does not match"
+    assert not (shm / "umi-keys.env").exists()
+
+
+def test_a_deploy_with_no_worker_container_says_so(age_home, tmp_path):
+    r, log, _ = _run_remote(age_home, tmp_path, worker_id="")
+    assert r.returncode == 4
+    assert "WORKER NOT STARTED" in r.stdout
+
+
+def test_a_rollback_to_a_compose_file_without_a_worker_still_deploys_the_app(age_home, tmp_path):
+    """A rollback rebuilds an older commit, whose compose file may predate the worker. The rig
+    on the laptop is the current one, so `create worker` would fail under `set -e` before the
+    app came up, and the rollback would stop half-done."""
+    r, log, shm = _run_remote(age_home, tmp_path, services="app db redis caddy")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not any("worker" in call for call in log if "config --services" not in call)
+    assert "no worker service" in r.stdout
+    assert any("python manage.py migrate" in call for call in log)
+    assert not (shm / "umi-keys.env").exists()

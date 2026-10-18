@@ -83,12 +83,13 @@ exit
 
 ### On the laptop: step 5
 
-**5. Recreate the app container with the custody rig.** It decrypts the keys on the laptop, pipes
-them to droplet tmpfs, merges them with the key-free `.env`, runs `compose up -d app`, shreds tmpfs
-on every exit path, then runs `migrate` inside the new container. Never `docker compose ... up -d
-app` on the droplet itself: that container reads `.env` alone, has no keys, and production refuses
-to boot. (Pre-custody this step was: `docker compose --env-file .env -f
-docker/docker-compose.prod.yml up -d app`.)
+**5. Recreate the app and worker containers with the custody rig.** It decrypts the keys on the
+laptop, pipes them to droplet tmpfs, merges them with the key-free `.env`, creates the worker (the
+django-q cluster that runs every scheduled job) and brings up the app, shreds tmpfs on every exit
+path, runs `migrate` inside the new app container, and only then starts the worker, so no scheduled
+job runs against a schema mid-change. Never `docker compose ... up -d` on the droplet itself: those
+containers read `.env` alone, have no keys, and production refuses to boot. (Pre-custody this step
+was: `docker compose --env-file .env -f docker/docker-compose.prod.yml up -d app`.)
 
 ```bash
 cd ~/umi-exchange                # the laptop checkout; /opt/umi-exchange exists only on the droplet
@@ -98,14 +99,16 @@ UMI_DROPLET=root@157.230.185.124 scripts/deploy-with-keys.sh deploy
 UMI_DROPLET=root@157.230.185.124 scripts/deploy-with-keys.sh check
 ```
 
-- **`deploy`** ends with `migrations applied; deploy done`. On the way compose warns `The
-  "ENCRYPTION_KEY" variable is not set. Defaulting to a blank string.` That is expected: the keys
-  travel as the list `ENCRYPTION_KEYS`, which the app prefers. The same warning came with the
-  2026-10-01 outage, before compose passed the list on (`docs/key-custody-design.md`); the last
-  line tells the two apart, because production settings refuse to load without a key, so
-  `migrate` cannot run. `MIGRATE FAILED` means the new app is running on a schema it does not
-  match: read the error, fix it, re-run the migrate in step 6; the step 3 backup is the fallback.
-  `age identity not found` means you are not on the laptop.
+- **`deploy`** ends with the worker's status line (`docker-worker-1: Up ...`) and `worker started;
+  deploy done`. On the way compose warns `The "ENCRYPTION_KEY" variable is not set. Defaulting to
+  a blank string.` That is expected: the keys travel as the list `ENCRYPTION_KEYS`, which the app
+  prefers. The same warning came with the 2026-10-01 outage, before compose passed the list on
+  (`docs/key-custody-design.md`); the last line tells the two apart, because production settings
+  refuse to load without a key, so `migrate` cannot run. `MIGRATE FAILED` means the new app is
+  running on a schema it does not match, and the worker was left stopped: read the error, fix it,
+  re-run the migrate in step 6, then `docker start docker-worker-1`; the step 3 backup is the
+  fallback. `WORKER NOT STARTED` means the app is deployed and migrated but no scheduled job runs:
+  read `docker logs docker-worker-1`. `age identity not found` means you are not on the laptop.
 - **`check`** must end with `clean: droplet .env holds no plaintext key material`, which it prints
   only after reading the droplet's `.env` and finding no key line. `could not check` means it never
   read the file (no ssh to the droplet from where it ran, or no `.env` there): nothing was proven,
@@ -130,8 +133,11 @@ docker exec docker-app-1 python manage.py collectstatic --noinput
 #    stale. Health and status codes cannot tell "deployed" from "believed
 #    deployed". Always assert some string that ONLY exists in the new commit —
 #    and get its expected count by grepping the merged tree, never from memory.
-docker compose --env-file .env -f docker/docker-compose.prod.yml ps app   # want "healthy"
+docker compose --env-file .env -f docker/docker-compose.prod.yml ps app worker   # app "healthy", worker "Up"
 curl -sf https://reciprocalaid.network/about/ | grep -o "<a string you changed>"
+# The worker runs every overdue schedule within a minute of starting. Above 0 means the
+# scheduled jobs run (it read 0 on 2026-10-18, when nothing in production ran them):
+docker exec docker-app-1 python manage.py shell -c "print(Success.objects.count())"
 ```
 
 ## Rollback
@@ -152,8 +158,9 @@ row counts matched the dump, the audit table's grants survived, and the previous
 # on the droplet, in the repo
 ssh root@157.230.185.124
 cd /opt/umi-exchange
-# stop the app, so nothing writes while the database is replaced (stopping needs no keys)
-docker compose --env-file .env -f docker/docker-compose.prod.yml stop app
+# stop the app and the worker, so nothing writes while the database is replaced; the worker
+# would otherwise run scheduled jobs against a half-restored database (stopping needs no keys)
+docker compose --env-file .env -f docker/docker-compose.prod.yml stop app worker
 # empty the database: drop it and create it again, owned by umi as the postgres image made it
 docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
   psql -U umi -d postgres -v ON_ERROR_STOP=1 \
@@ -170,8 +177,9 @@ docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
 git checkout <previous-sha> && docker build -t umi-exchange:local -f docker/Dockerfile .
 exit
 
-# then on the laptop. The rig brings the app back with its keys; its migrate is a no-op,
-# because the dump's schema is the previous commit's.
+# then on the laptop. The rig brings the app and the worker back with their keys; its migrate
+# is a no-op, because the dump's schema is the previous commit's. A previous commit from before
+# the worker (2026-10-18) has no worker service: the rig says so and deploys the app alone.
 cd ~/umi-exchange
 UMI_DROPLET=root@157.230.185.124 scripts/deploy-with-keys.sh deploy
 ```

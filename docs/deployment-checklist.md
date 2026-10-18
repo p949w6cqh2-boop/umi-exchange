@@ -81,11 +81,14 @@ docker compose -f docker/docker-compose.prod.yml exec db psql -U umi -d umi_exch
 docker compose -f docker/docker-compose.prod.yml exec db psql -U umi_app -d umi_exchange -c \
   "SELECT current_user, rolsuper FROM pg_roles WHERE rolname=current_user;" # rolsuper must be f
 
-# Register background-job schedules (django-q2). Without this the recurring
-# sweeps never run: need expiry (§4.1), match-proposal expiry (§10.6), offer
-# expiry (§10.6, registered with the needs sweeps since 2026-10-13), the
-# follow-up digest + stale-draft cleanup (§3.11). Idempotent (update_or_create):
-# re-run it on every deploy, so a newly added sweep is registered too.
+# Register background-job schedules (django-q2). The `worker` service runs them
+# (`manage.py qcluster`, started by the custody rig after migrate); without this
+# registration it has nothing to run: need expiry (§4.1), match-proposal expiry
+# (§10.6), offer expiry (§10.6, registered with the needs sweeps since 2026-10-13),
+# the follow-up digest + stale-draft cleanup (§3.11), the retention shreds.
+# Until 2026-10-18 there was no worker, so registered schedules never ran at all.
+# Idempotent (update_or_create): re-run it on every deploy, so a newly added sweep
+# is registered too.
 docker compose -f docker/docker-compose.prod.yml exec app python manage.py shell -c "\
 from apps.needs.tasks import register_schedule as _n; _n(); \
 from apps.matches.tasks import register_schedule as _m; _m(); \
