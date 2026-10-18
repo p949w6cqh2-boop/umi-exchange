@@ -11,6 +11,9 @@
   its date comes down at once, and each owner is told. Personal details we promise to delete
   after a set time will be deleted on schedule too; nothing on the board is old enough for that
   yet.
+- **A correction to the notes for 2026-10-13.** They said an offer from another board brings an
+  email only if you chose to get one. In fact emails come unless you turn them off in your
+  settings (you need a confirmed address to get any), and those notes now say so.
 
 ## 2026-10-18
 
@@ -45,8 +48,8 @@ left open.
 - **Connecting with other boards.** An offer from another board now arrives with its title and
   category, so you can see what you would be accepting, and you are told about it the same way as
   when a neighbour here offers: a note on the board saying which board it comes from, and an email
-  if you chose to get them. A board that has only asked to connect gets no further until it is
-  approved. It is built and still switched off.
+  too if you have confirmed your address and not turned emails off. A board that has only asked to
+  connect gets no further until it is approved. It is built and still switched off.
 - **If a post can't go up, the page now says why.** Before, an ask or offer whose description
   used certain words was quietly refused: the page came back with no message and your choices
   reset. Now you see the reason and your choices stay. Ordinary writing like "data:" or

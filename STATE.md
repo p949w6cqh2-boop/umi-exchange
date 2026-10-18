@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `fca9f8a0` (merged 2026-10-18 UTC).
+> Reflects `main` @ `08bc57e9` (merged 2026-10-18 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -51,8 +51,8 @@
   founder's calls of 2026-10-13: only an approved peer passes the signature check, and a pending one
   only on the handshake confirm (L64); an inbound proposal keeps the offer's title and category as
   plain text on `FederatedMatch` (`federation 0009`) and the asker sees them (L61), and is told of it
-  the way a local proposal tells them (`match_proposed`: in-app, email only if they opted in; his call
-  the same day).
+  the way a local proposal tells them (`match_proposed`: in-app, and by email to a confirmed address
+  unless they turned emails off (on by default); his call the same day).
 - **Moderation & member safety:** `Flag` (audit-style target refs; one open flag per reporter per
   target) → coordinator queue → hide (reversible) / keep / dismiss; hidden content vanishes from
   feed/pulse/search, 404s for members; coordinators unhideable; reporter anonymous. Hidden posts are

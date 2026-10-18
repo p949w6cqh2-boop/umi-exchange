@@ -125,3 +125,30 @@ def test_no_page_claims_the_software_can_simply_forget_someone():
         "claim a self-deception: display names, account contact details and "
         "free-text need titles are plain columns.\n  " + "\n  ".join(hits)
     )
+
+
+def test_no_copy_says_email_is_something_you_opt_into():
+    """Email is on by default: a member with a confirmed address is emailed until they turn
+    it off, as the settings page says. "Only if they opted in" promises fewer emails than the
+    code sends. On 2026-10-18 that claim sat in STATE.md, in the CHANGELOG members read and in
+    a code comment at once, so the notes are checked here alongside the pages."""
+    phrases = ("if they opted in", "if you opted in", "if you chose to get them")
+    hits = _offenders(*phrases)
+    for path in (REPO / "CHANGELOG.md", REPO / "STATE.md"):
+        text = re.sub(r"\s+", " ", path.read_text(encoding="utf-8")).lower()
+        hits += [f"{path.name}: {phrase!r}" for phrase in phrases if phrase in text]
+
+    assert not hits, (
+        "Copy says email is opt-in, but User.email_notifications defaults to on: everyone "
+        "with a confirmed address is emailed until they turn it off.\n  " + "\n  ".join(hits)
+    )
+
+
+def test_email_notifications_are_still_on_by_default():
+    """The premise of the test above. If the default ever flips to off, the copy may say opt-in."""
+    source = (REPO / "apps" / "accounts" / "models.py").read_text(encoding="utf-8")
+
+    assert "email_notifications = models.BooleanField(default=True)" in source, (
+        "User.email_notifications no longer defaults to on. If that is deliberate, the copy may "
+        "now say members get email only if they choose it."
+    )
