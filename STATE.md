@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `4f1ea527` (merged 2026-10-13 UTC).
+> Reflects `main` @ `7a98cf4e` (merged 2026-10-13 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -199,7 +199,10 @@
   rides beside every nightly backup (#196); KEK rotation ran on production 2026-10-01 (#199), after
   a four-minute outage on the first attempt that #197 fixed. Owed before box 3 can be ticked: the
   sealed envelope in the parish safe, and closing (or accepting in writing) that container-config
-  residual. `docs/key-custody-design.md`.
+  residual. `docs/key-custody-design.md`. `check` says "clean" only when it read the droplet's
+  `.env` and found no key line; until 2026-10-13 any failure printed "clean", including a refused
+  ssh when it was run on the droplet itself. Now a failed read is "could not check", and a found key
+  is named, never printed.
 
 ## Casework (Lake 2) specifics
 - Sensitivity levels (standard/restricted) — **unclassified defaults to restricted** (fail-safe); single authz matrix `apps/casework/access.py::case_access()`.
@@ -310,6 +313,11 @@
   new commit — health checks can't distinguish "deployed" from "believed deployed" (#123, `de0c70a`).
   Rewritten 2026-10-08 for key custody, as #216 had done for the reseed runbook: it named the
   destroyed host and recreated the app with a plain `compose up`, which no longer carries keys.
+  Split by host 2026-10-13, after one deploy's lines ran on the wrong host both ways; each block now
+  starts with the `ssh`/`cd` that puts you where it runs. Its rollback was rehearsed the same day on
+  Postgres 16 and rewritten: the old restore line could not log in, and with the user fixed it
+  poured the dump over the live tables, exited 0 and rolled back nothing. It now stops the app and
+  restores into an emptied database with `ON_ERROR_STOP=1`.
 - Docs: `CLAUDE.md` (agent guide + gotchas), **`docs/protocol/spec.md`** (UMI Protocol v0.1 CANONICAL),
   **`docs/ethics-and-safety.md`** (harm analysis + onboarding gate), **`docs/incident-response.md`**
   (breach/legal-demand plan, #121), **`docs/monitoring-decision.md`**,
@@ -336,22 +344,35 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   (Caddy → gunicorn → postgres:16 + redis:7). Serves the **fictional St. Brigid's** demo
   (`seed_demo_parish`, DEBUG-only). ~~**Demo creds must rotate before any real parish onboards.**~~
   ✅ Rotated on the live board 2026-09-28 (#180), and every reseed rotates them again.
-- **The October bug hunt MERGED (#218, `4eca3e26`, 2026-10-13; not yet deployed):** six reviewers
+- **The October bug hunt MERGED (#218, `4eca3e26`, 2026-10-13; deployed the same day with #220 to
+  #222):** six reviewers
   and a verifier per finding, then batches 1 to 5 (security, core flows, mediums, lows, federation),
   the founder's two decisions of 2026-10-12 (the word list flags instead of refusing; leaving hides,
   and coming back is a choice), and the weaker leads: 46 fixed, 6 more fixed in batch 5, 11 already
   fixed or duplicates, 1 refuted. Each fix test-first; gate 1835. Merging built the image only (the
-  Deploy job is skipped while `DEPLOY_ENABLED` is unset), so the hand-run deploy is owed, then the
-  schedule step re-run so offers start expiring: every offer older than 90 days expires at once and
-  its owner is told. The founder answered its seven open questions on 2026-10-13, each with the
+  Deploy job is skipped while `DEPLOY_ENABLED` is unset); the founder deployed it by hand that night
+  through the laptop rig (six migrations applied) and re-ran the schedule step, which registers offer
+  expiry: its first run expires every offer older than 90 days at once and tells each owner, if
+  anything runs it (see the sweeps item below). The founder answered its seven open questions on 2026-10-13, each with the
   recommended option: L1 coordinators keep oversight through a block, L13 losing the role ends case
   access, L61 proposals carry the offer's title and category, L64 pending peers are refused, and a
-  one-time command hides the posts of members who left before #218 (he runs it after the deploy, dry
-  run first). These five MERGED in #220 (`4e1dff6f`, 2026-10-13; not yet deployed: the deploy also
-  owes `federation 0009` and, after it, that one-time command). L10 stays as it is. L26 (record
-  consent on an emergency case) MERGED in its own PR, #221 (`4f1ea527`, 2026-10-13). A federated
-  proposal now tells the asker, as a local one does (his call the same day). Receipts: the PR bodies
-  and `CHANGELOG.md` 2026-10-13.
+  one-time command hides the posts of members who left before #218 (run after the deploy, dry run
+  first: the live board had nothing to hide). These five MERGED in #220 (`4e1dff6f`, 2026-10-13;
+  deployed the same day, `federation 0009` applied). L10 stays as it is. L26 (record consent on an
+  emergency case) MERGED in its own PR, #221 (`4f1ea527`, 2026-10-13). A federated proposal now
+  tells the asker, as a local one does (his call the same day; #222, `7a98cf4e`). Receipts: the PR
+  bodies and `CHANGELOG.md` 2026-10-13.
+- ⚠️ **The background sweeps may never run in production (found 2026-10-13; unverified on the
+  box).** The production image starts gunicorn only, the production compose has no worker service,
+  and no runbook or cron starts `manage.py qcluster`. So the schedules the deploy's schedule step
+  registers (need, offer and proposal expiry; the aged-need PII shred; casework's shred, digest and
+  draft cleanup) have nothing in this repo to run them, and `docs/privacy-retention.md`'s promises
+  rest on those shreds. Read-only check on the droplet: if every `next_run` still shows its
+  registration time and no task has ever run, nothing runs them:
+  `docker exec docker-app-1 python manage.py shell -c "from django_q.models import Schedule, Success;
+  [print(s.name, s.next_run) for s in Schedule.objects.order_by('name')]; print('tasks ever run:',
+  Success.objects.count())"`. The fix is a design call under key custody: a worker the rig brings up
+  with its keys, or a host cron that runs the sweeps inside the running app container.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards
