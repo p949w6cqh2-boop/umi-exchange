@@ -3,20 +3,23 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased: old asks and offers come down on their own
+## Unreleased: clearer steps for reaching our server
+
+- **The written steps for putting an update live are clearer.** Nothing you can see changed.
+  Reaching our server is now a step of its own, so the commands meant for the server run there
+  and not on the computer they were typed on.
+
+## 2026-10-18
 
 - **Old asks and offers come down on their own.** Every ask and offer has a date after which it
   comes off the board, and its owner is told. The job that does this was built but never ran on
-  the live board. Now it checks every hour. When this update goes live, everything already past
-  its date comes down at once, and each owner is told. Personal details we promise to delete
+  the live board. Now it checks every hour, and when this update went live, everything already
+  past its date came down at once, with each owner told. Personal details we promise to delete
   after a set time will be deleted on schedule too; nothing on the board is old enough for that
   yet.
 - **A correction to the notes for 2026-10-13.** They said an offer from another board brings an
   email only if you chose to get one. In fact emails come unless you turn them off in your
   settings (you need a confirmed address to get any), and those notes now say so.
-
-## 2026-10-18
-
 - **The steps for putting an update live are safer.** Nothing you can see changed. The check that
   our server holds no unprotected keys used to report all clear even when it never reached the
   server; now it says it could not check. The written steps now say which computer each one runs

@@ -25,8 +25,16 @@ Order matters: deploy the new code **before** seeding — the strings live in th
 
 ## 0. Back up (2 min)
 
+Connect first, as a paste of its own: pasted together with the lines below, the `ssh` line runs
+and the rest wait, then run on the laptop once you leave the droplet (`docs/deploy-runbook.md`).
+
 ```bash
 ssh root@157.230.185.124
+```
+
+At the `root@umi-droplet` prompt:
+
+```bash
 cd /opt/umi-exchange
 bash scripts/backup.sh     # expect "Remote upload verified" and the key ciphertext beside the dump
 ls -la /var/backups/umi/   # confirm today's dump exists before going further

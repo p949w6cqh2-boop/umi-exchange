@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `08bc57e9` (merged 2026-10-18 UTC).
+> Reflects `main` @ `ecbf235a` (merged 2026-10-18 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -364,8 +364,8 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   emergency case) MERGED in its own PR, #221 (`4f1ea527`, 2026-10-13). A federated proposal now
   tells the asker, as a local one does (his call the same day; #222, `7a98cf4e`). Receipts: the PR
   bodies and `CHANGELOG.md` 2026-10-13.
-- **The background sweeps had never run in production; the worker is BUILT (2026-10-18), not yet
-  deployed.** Found 2026-10-13 and read on the droplet 2026-10-18: zero tasks ever run, every
+- **The background sweeps had never run in production; the worker is DEPLOYED (2026-10-18).**
+  Found 2026-10-13 and read on the droplet 2026-10-18: zero tasks ever run, every
   schedule's `next_run` still at the 10-13 deploy, because the image starts gunicorn only and
   nothing started `manage.py qcluster`. So need, offer and proposal expiry never ran, and neither
   did the shreds `docs/privacy-retention.md` promises (none of which had data old enough yet). Now:
@@ -375,7 +375,12 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   stuck since 10-13 would have run about 140 times back to back). Proven locally under production
   settings: 0 to 7 tasks run, 0 failed, a backdated offer and need expired, nothing replayed. **When
   it first starts, the expiry sweeps take down every active offer and open need already past its
-  date, and tell each owner.** The founder's call (2026-10-18): build the worker.
+  date, and tell each owner.** The founder's call (2026-10-18): build the worker. Deployed by his
+  hand through the laptop rig at ~09:56 UTC that day (`ecbf235a`): no migrations, the worker up,
+  `catch_up` off in the running image, the custody check clean. Just before, 5 asks were past
+  their date and none of their posters was due an email. The worker's first run is not yet read
+  on the droplet: the check ran 21 seconds after it started, before the scheduler's first pass at
+  30 seconds. Locally the cluster holds 134 MB of its 384 MB cap.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards

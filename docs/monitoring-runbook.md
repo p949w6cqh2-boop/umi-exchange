@@ -105,9 +105,13 @@ brief production outage.
    - On the droplet (`157.230.185.124` since the 2026-09-11 rebuild; this line named the destroyed
      `143.244.167.7` until 2026-10-08, an address now back in DigitalOcean's pool). `stop`/`start`
      keep the same container, so under key custody the app comes back with its keys; never swap
-     them for `up`:
+     them for `up`. Connect first, as a paste of its own (pasted with the lines after it, those
+     lines run on the laptop once you leave the droplet; `docs/deploy-runbook.md`):
      ```bash
      ssh root@157.230.185.124
+     ```
+     At the `root@umi-droplet` prompt:
+     ```bash
      cd /opt/umi-exchange
      docker compose --env-file .env -f docker/docker-compose.prod.yml stop app
      ```
