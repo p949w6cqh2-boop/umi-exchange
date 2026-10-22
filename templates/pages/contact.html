@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Start one where you are · Reciprocal Aid Network{% endblock %}
+{% block content %}
+
+{% comment %}Contact. Product voice (identity/voice.md), not the founder's posting
+   voice. Deliberately NOT a form: a form would put a real person's name and words
+   in this database, and docs/ethics-and-safety.md holds an unpassed gate before any
+   real personal data onboards. Signpost only, stores nothing. Every route listed is
+   a surface that is live and read today. No em-dashes (voice-guard).{% endcomment %}
+<article class="max-w-4xl mx-auto">
+
+  <header class="pt-6 md:pt-10 umi-rise">
+    <span class="umi-eyebrow">Contact</span>
+    <h1 class="umi-masthead mt-6">Start one where<br>you are.</h1>
+    <p class="umi-display !text-2xl md:!text-3xl text-parish-ink/75 mt-4">
+      You do not need permission, a budget, or a committee.
+    </p>
+  </header>
+
+  <section class="mt-10 umi-plate p-6 md:p-8">
+    <p class="text-lg text-parish-ink/85">
+      If you want a board like this one for your parish, your block, or the people you
+      already look after, say so and we will build it with you. It is self hostable,
+      AGPL 3.0, and any community can run its own. Nothing is charged, now or later.
+    </p>
+    <p class="text-lg text-parish-ink/85 mt-4">
+      Bring whatever you have. A question counts. So does a half formed idea about the
+      neighbours you cannot stop thinking about.
+    </p>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="font-serif text-xl text-parish-ink/90">Ways through</h2>
+    <ul class="mt-4 space-y-3">
+      {% for label, handle, href, note in contact_routes %}
+        <li class="umi-plate p-5">
+          <a href="{{ href }}" rel="noopener noreferrer" target="_blank"
+             class="font-serif text-lg text-umi-primary hover:underline">{{ label }}: {{ handle }}</a>
+          <p class="text-parish-ink/70 mt-1">{{ note }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="mt-8 umi-plate p-6">
+    <h2 class="font-serif text-lg text-parish-ink/90">What happens to what you send</h2>
+    <p class="text-parish-ink/75 mt-2">
+      This page has no form, so it does not collect or store anything about you. Whatever
+      you send arrives on the surface you chose and stays there. If we end up building
+      something together, you decide then what gets written down, and you can have it
+      deleted after.
+    </p>
+  </section>
+
+  <section class="mt-8 border-t border-parish-border pt-6">
+    <h2 class="font-serif text-base text-parish-ink/80">Found a security problem?</h2>
+    <p class="text-parish-ink/70 mt-2 text-sm">
+      That has its own route so a real report never sits behind general mail:
+      <a href="mailto:{{ security_contact }}" class="text-umi-primary hover:underline">{{ security_contact }}</a>,
+      and the policy is in
+      <a href="{{ security_policy_url }}" rel="noopener noreferrer" target="_blank"
+         class="text-umi-primary hover:underline">SECURITY.md</a>.
+      Please use it for vulnerabilities only.
+    </p>
+  </section>
+
+</article>
+{% endblock %}
