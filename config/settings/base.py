@@ -225,6 +225,12 @@ AUTHENTICATION_BACKENDS = [
 DATABASES = {"default": env.db("DATABASE_URL", default="sqlite:///db.sqlite3")}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ── Time ──────────────────────────────────────────────
+# Eastern, the founder's call (2026-10-22). Unset, Django falls back to America/Chicago, which the
+# board showed until then. Stored times stay UTC; this sets what pages, local dates and logs use.
+TIME_ZONE = "America/New_York"
+USE_TZ = True
+
 # ── Cache / Sessions ──────────────────────────────────
 REDIS_URL = env("REDIS_URL", default="")
 # Default to a per-process in-memory cache, and define CACHES unconditionally so

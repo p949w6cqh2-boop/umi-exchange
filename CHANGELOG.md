@@ -3,8 +3,10 @@
 > Plain-language patch notes for the people who use the board — kept current on every merge.
 > (Developers: the full story lives in git history; the brain's `context.md` carries the handoff.)
 
-## Unreleased: clearer steps for reaching our server
+## Unreleased
 
+- **Times on the board are in Eastern time.** Before, they showed Central time, because the board
+  had never been set to a time zone.
 - **The written steps for putting an update live are clearer.** Nothing you can see changed.
   Reaching our server is now a step of its own, so the commands meant for the server run there
   and not on the computer they were typed on.

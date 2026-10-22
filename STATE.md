@@ -380,8 +380,9 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   `catch_up` off in the running image, the custody check clean. Just before, 5 asks were past
   their date and none of their posters was due an email. Read on the droplet 2026-10-22 ~01:28 UTC:
   203 tasks run, 0 failed, and no ask past its date (the 5 came down); both hourly expiry sweeps
-  appear in the worker's log every hour. The log's times are Chicago time: the app sets no
-  `TIME_ZONE`, so Django's default applies. Locally the cluster holds 134 MB of its 384 MB cap.
+  appear in the worker's log every hour. The log printed Chicago time then (no `TIME_ZONE` was set,
+  so Django's default applied); since 2026-10-22 the app sets `TIME_ZONE = "America/New_York"`, live
+  from the next deploy. Locally the cluster holds 134 MB of its 384 MB cap.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
   (#106) · auth throttling + password policy (#107) · community-surface XSS/join-code/nav/404 guards

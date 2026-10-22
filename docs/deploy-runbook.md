@@ -155,8 +155,9 @@ curl -sf https://reciprocalaid.network/about/ | grep -o "<a string you changed>"
 # The worker's scheduler makes its first pass 30 seconds after the worker starts, so run these
 # a minute or more after step 5; earlier, the count reads 0 (it did, 21 seconds in, on
 # 2026-10-18). Above 0 ran and 0 failed means the scheduled jobs run, and the log shows each
-# schedule's task. The log's times are Chicago time, not the droplet's UTC: the app sets no
-# TIME_ZONE, so Django's default applies (on 2026-10-22 the log's 19:59 was 00:59 UTC).
+# schedule's task. The log's times are Eastern time (the app's TIME_ZONE), not the droplet's UTC.
+# Before 2026-10-22 no TIME_ZONE was set and the log printed Django's default, Chicago time: that
+# day its 19:59 was 00:59 UTC, which made a healthy worker look five hours stale.
 docker exec docker-app-1 python manage.py shell -c "from django_q.models import Success, Failure; print(Success.objects.count(), 'ran,', Failure.objects.count(), 'failed')"
 docker logs --tail 20 docker-worker-1
 ```
