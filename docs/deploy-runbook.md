@@ -44,17 +44,29 @@ Nothing reaches production until a human runs the steps below. (The droplet also
 ## The steps
 
 Steps 1–4 and 6–7 run **on the droplet**; step 5 runs **on the laptop**. Read the prompt before you
-paste: the droplet's is `root@umi-droplet`, the laptop's is your own (`umi@…`). Each block starts
-with the lines that take you to its host and directory, so paste a block whole. On 2026-10-13 lines
-landed on the wrong host both ways: the laptop's rig ran on the droplet (`deploy` refused; `check`
-printed a false "clean", since fixed), and the droplet's checks ran on the laptop, then from `/root`,
-where `ps app` found no `.env`.
+paste: the droplet's is `root@umi-droplet`, the laptop's is your own (`umi@…`). **Getting onto the
+droplet is a paste of its own:** paste `ssh root@157.230.185.124` alone, wait for the
+`root@umi-droplet` prompt, then paste the droplet block, which starts by entering the repo.
+
+Lines have landed on the wrong host more than one way. On 2026-10-13 the laptop's rig ran on the
+droplet (`deploy` refused; `check` printed a false "clean", since fixed), and the droplet's checks,
+in a block with no `ssh` line, ran on the laptop, then from `/root`, where `ps app` found no `.env`.
+The fix put `ssh` at the top of each droplet block, and on 2026-10-18 that failed too: pasted as one
+block, the laptop's shell runs the `ssh` line, holds every line after it, and runs them on the
+laptop once you leave the droplet. The checks printed laptop errors after `exit`, and a block's
+closing `exit` closed the laptop's terminal. `tests/test_runbook_paste.py` fails on any runbook
+block that puts a bare `ssh` line together with other commands.
 
 ### On the droplet: steps 1–4
 
 ```bash
-# 1. Connect and enter the repo
+# 1. Connect: on the laptop, as its own paste
 ssh root@157.230.185.124
+```
+
+At the `root@umi-droplet` prompt:
+
+```bash
 cd /opt/umi-exchange
 
 # 2. Pull the merged code (fast-forwards cleanly since the PR #89 reconcile)
@@ -117,7 +129,12 @@ UMI_DROPLET=root@157.230.185.124 scripts/deploy-with-keys.sh check
 ### Back on the droplet: steps 6–7
 
 ```bash
-ssh root@157.230.185.124
+ssh root@157.230.185.124         # on the laptop, as its own paste
+```
+
+At the `root@umi-droplet` prompt:
+
+```bash
 cd /opt/umi-exchange             # the compose lines below read ./.env; from /root they fail
 
 # 6. Migrate + collect static. The rig already ran migrate, and the image collected static
@@ -135,9 +152,13 @@ docker exec docker-app-1 python manage.py collectstatic --noinput
 #    and get its expected count by grepping the merged tree, never from memory.
 docker compose --env-file .env -f docker/docker-compose.prod.yml ps app worker   # app "healthy", worker "Up"
 curl -sf https://reciprocalaid.network/about/ | grep -o "<a string you changed>"
-# The worker runs every overdue schedule within a minute of starting. Above 0 means the
-# scheduled jobs run (it read 0 on 2026-10-18, when nothing in production ran them):
-docker exec docker-app-1 python manage.py shell -c "print(Success.objects.count())"
+# The worker's scheduler makes its first pass 30 seconds after the worker starts, so run these
+# a minute or more after step 5; earlier, the count reads 0 (it did, 21 seconds in, on
+# 2026-10-18). Above 0 ran and 0 failed means the scheduled jobs run, and the log shows each
+# schedule's task. The log's times are Chicago time, not the droplet's UTC: the app sets no
+# TIME_ZONE, so Django's default applies (on 2026-10-22 the log's 19:59 was 00:59 UTC).
+docker exec docker-app-1 python manage.py shell -c "from django_q.models import Success, Failure; print(Success.objects.count(), 'ran,', Failure.objects.count(), 'failed')"
+docker logs --tail 20 docker-worker-1
 ```
 
 ## Rollback
@@ -155,8 +176,12 @@ row counts matched the dump, the audit table's grants survived, and the previous
 `migrate --check` passed.
 
 ```bash
-# on the droplet, in the repo
-ssh root@157.230.185.124
+ssh root@157.230.185.124         # on the laptop, as its own paste
+```
+
+At the `root@umi-droplet` prompt:
+
+```bash
 cd /opt/umi-exchange
 # stop the app and the worker, so nothing writes while the database is replaced; the worker
 # would otherwise run scheduled jobs against a half-restored database (stopping needs no keys)
@@ -176,10 +201,13 @@ docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
 # build the previous commit, then leave for the laptop
 git checkout <previous-sha> && docker build -t umi-exchange:local -f docker/Dockerfile .
 exit
+```
 
-# then on the laptop. The rig brings the app and the worker back with their keys; its migrate
-# is a no-op, because the dump's schema is the previous commit's. A previous commit from before
-# the worker (2026-10-18) has no worker service: the rig says so and deploys the app alone.
+Then on the laptop. The rig brings the app and the worker back with their keys; its migrate is a
+no-op, because the dump's schema is the previous commit's. A previous commit from before the worker
+(2026-10-18) has no worker service: the rig says so and deploys the app alone.
+
+```bash
 cd ~/umi-exchange
 UMI_DROPLET=root@157.230.185.124 scripts/deploy-with-keys.sh deploy
 ```
