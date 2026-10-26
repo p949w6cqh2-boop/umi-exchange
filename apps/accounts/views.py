@@ -265,7 +265,12 @@ class SettingsView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["memberships"] = self.request.user.member_set.filter(is_active=True).select_related("community")
+        # `household` is selected because the page reads it per membership: it is a FK on
+        # Member, so it is per-community, and a single slot cannot represent it.
+        memberships = self.request.user.member_set.filter(is_active=True).select_related("community", "household")
+        ctx["memberships"] = memberships
+        # `any` evaluates and caches the queryset, so the template's loop costs no extra query.
+        ctx["has_household"] = any(m.household_id for m in memberships)
         pending = self.request.session.get(PENDING_EMAIL_KEY)
         if pending and pending.lower() == (self.request.user.email or "").lower():
             # Confirmed from another device (a phone's mail app): nothing is waiting any more.
