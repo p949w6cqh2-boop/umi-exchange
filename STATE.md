@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `ecbf235a` (merged 2026-10-18 UTC).
+> Reflects `main` @ `8aee71e3` (merged 2026-10-26 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -104,6 +104,18 @@
   - Production **refuses to boot** on an insecure `SECRET_KEY`, an empty `ENCRYPTION_KEY`, or a missing / encryption-key-colliding `BLIND_INDEX_KEY` (`config/settings/production.py`).
 
 ## Accounts, sign-up & recovery (built 2026-08-12 → 2026-10-03)
+- **The account settings page leads with the communities you are in (#229, 2026-10-26).** Every card
+  on that page carries the same weight (`umi-card` + `h2 text-lg`), so **position was the only
+  hierarchy** — and Household sat above My Communities while offering `Join household` to anyone not
+  in one. My Communities now leads and reads larger (`text-xl`; the community name `text-base
+  font-medium`), because it is the only card on the page that goes somewhere rather than changing
+  something.
+- 🔴 **Household is per-community, and this page used to deny it (#229).** `Member.household` is a
+  FK on `Member`, so a person can be in a different household in each community. The page read
+  `memberships.0.household` — one slot — so someone in two communities saw only the first one's, and
+  if that slot was empty they were told **"Not in a household"** while they were in one elsewhere. It
+  now iterates memberships and names the community per row; `has_household` is computed in the view,
+  so the create/join links still appear when they are in none anywhere.
 - **Human verification (#148, `docs/specs/human-verification.md`):** `User.verified_at` /
   `verified_via` (`email` · `coordinator` · `backfill`). `VerifiedRequiredMixin` gates the write
   doors (join, post a need, post an offer, propose, and since #218 publishing or un-hiding a
@@ -382,11 +394,15 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   203 tasks run, 0 failed, and no ask past its date (the 5 came down); both hourly expiry sweeps
   appear in the worker's log every hour. The log printed Chicago time then (no `TIME_ZONE` was set,
   so Django's default applied); since 2026-10-22 the app sets `TIME_ZONE = "America/New_York"`.
-  **ATTESTED (unverified) 2026-10-22: the founder reports that change is deployed and that the
-  worker's log now prints Eastern.** Not verified here, and the reason is worth keeping: `/health/`
-  returns only `{"status":"ok","db":"ok","cache":"ok"}` and exposes no version or commit, so nothing
-  outside the host says which commit is running, and the log itself is an SSH read. This line
-  previously said "live from the next deploy", which his report superseded.
+  ✅ **VERIFIED 2026-10-27, on the host.** The production checkout is at `8aee71e3`
+  (`git rev-parse HEAD` on the droplet) and the running image was rebuilt from that tree and
+  confirmed to carry #229's code by reading the container's own files, so **#227 — an ancestor —
+  is live.** *(Superseded, and the reason it stood: ATTESTED (unverified) 2026-10-22 on the
+  founder's report that the worker's log printed Eastern. Before that the line said "live from the
+  next deploy".)* ⚠️ **The limit that made it attestable for five days has NOT changed:** `/health/`
+  returns only `{"status":"ok","db":"ok","cache":"ok"}` and **exposes no version or commit**, so
+  nothing *outside* the host can say which commit is running. Verifying this needed an SSH read
+  into the container, which is not something a check can do from the network.
   Locally the cluster holds 134 MB of its 384 MB cap.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept
