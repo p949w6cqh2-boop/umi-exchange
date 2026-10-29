@@ -5,6 +5,12 @@
 
 ## Unreleased
 
+- **Your communities come first on your account page now, and they are easier to read.** The list
+  of boards you belong to used to sit below the household section, which offers to help you join
+  one. The list you already have comes first, and the names are bigger.
+- **The household section tells the truth when you belong to more than one community.** If your
+  household was in your second community, the page said you were not in a household at all. It now
+  shows each household you are in and says which community it belongs to.
 - **Times on the board are in Eastern time.** Before, they showed Central time, because the board
   had never been set to a time zone.
 - **The written steps for putting an update live are clearer.** Nothing you can see changed.

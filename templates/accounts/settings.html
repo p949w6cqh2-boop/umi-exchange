@@ -127,26 +127,15 @@
   </div>
   {% endif %}
 
-  {# Household #}
+  {% comment %}Communities. This is the only card on the page that goes somewhere rather than
+     changing something, so it leads and it carries more weight than its neighbours.
+     It used to sit below Household, which offers "Join household" to anyone not in one —
+     an invitation outranking the boards you already belong to (his call, 2026-10-26).{% endcomment %}
   <div class="umi-card">
-    <h2 class="font-serif text-lg font-semibold text-parish-ink">Household</h2>
-    {% if memberships.0.household %}
-    <p class="text-sm text-parish-ink/70 mt-2">{{ memberships.0.household }} (Code: {{ memberships.0.household.join_code }})</p>
-    {% else %}
-    <p class="text-sm text-parish-ink/70 mt-2">Not in a household.</p>
-    <div class="flex gap-3 mt-3">
-      <a href="{% url 'household-create' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Create household</a>
-      <a href="{% url 'household-join' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Join household</a>
-    </div>
-    {% endif %}
-  </div>
-
-  {# Communities #}
-  <div class="umi-card">
-    <h2 class="font-serif text-lg font-semibold text-parish-ink">My Communities</h2>
+    <h2 class="font-serif text-xl font-semibold text-parish-ink">My Communities</h2>
     {% for m in memberships %}
-    <div class="flex items-center justify-between py-2 border-b border-[var(--umi-border)] last:border-0">
-      <a href="{% url 'community-feed' m.community.slug %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">{{ m.community.name }}</a>
+    <div class="flex items-center justify-between gap-3 py-3 border-b border-[var(--umi-border)] last:border-0">
+      <a href="{% url 'community-feed' m.community.slug %}" class="text-base font-medium text-umi-primary hover:text-umi-primary-hover">{{ m.community.name }}</a>
       <div class="flex items-center gap-3">
         {# Gate item 5: blocking is only half a promise if you can never see or undo it. #}
         <a href="{% url 'moderation:blocks' m.community.slug %}" class="text-xs text-parish-ink/70 hover:text-parish-ink">Neighbours you've blocked</a>
@@ -156,6 +145,26 @@
     {% empty %}
     <p class="text-sm text-parish-ink/70 mt-2"><a href="{% url 'community-join' %}" class="text-umi-primary">Join a community</a></p>
     {% endfor %}
+  </div>
+
+  {% comment %}Household is a FK on Member, so it is PER COMMUNITY. This read `memberships.0.household`
+     and so showed only the first membership's — telling someone in two communities "Not in a
+     household" while they were in one in the other. `has_household` is computed in the view
+     so the create/join links still appear when they are in none anywhere.{% endcomment %}
+  <div class="umi-card">
+    <h2 class="font-serif text-lg font-semibold text-parish-ink">Household</h2>
+    {% for m in memberships %}
+      {% if m.household %}
+      <p class="text-sm text-parish-ink/70 mt-2">{{ m.household }} (Code: {{ m.household.join_code }}) — in {{ m.community.name }}</p>
+      {% endif %}
+    {% endfor %}
+    {% if not has_household %}
+    <p class="text-sm text-parish-ink/70 mt-2">Not in a household.</p>
+    <div class="flex gap-3 mt-3">
+      <a href="{% url 'household-create' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Create household</a>
+      <a href="{% url 'household-join' %}" class="text-sm text-umi-primary hover:text-umi-primary-hover">Join household</a>
+    </div>
+    {% endif %}
   </div>
 
   <div class="bg-parish-soft rounded-xl border border-[var(--umi-border)] p-6">
