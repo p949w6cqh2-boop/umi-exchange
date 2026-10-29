@@ -5,6 +5,9 @@
 
 ## Unreleased
 
+- **There is a page for starting a board where you are.** It lists the ways to reach a person, and
+  it has no form, so nothing you type there is kept. You can find it at the bottom of every page,
+  under "Start one where you are."
 - **Your communities come first on your account page now, and they are easier to read.** The list
   of boards you belong to used to sit below the household section, which offers to help you join
   one. The list you already have comes first, and the names are bigger.
