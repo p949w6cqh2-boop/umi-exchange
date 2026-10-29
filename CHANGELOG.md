@@ -5,6 +5,10 @@
 
 ## Unreleased
 
+- **When a match connects you with only a name, a coordinator now hears about it.** If the other
+  person has no email or phone to share, the match page already said a coordinator could pass a
+  message along, but no coordinator was ever told. Now they get a note, and your own notice says a
+  coordinator will help you get in touch instead of saying contact details were shared.
 - **Your communities come first on your account page now, and they are easier to read.** The list
   of boards you belong to used to sit below the household section, which offers to help you join
   one. The list you already have comes first, and the names are bigger.
