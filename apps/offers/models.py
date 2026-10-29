@@ -24,7 +24,10 @@ class Offer(models.Model):
     description = models.TextField(blank=True)
     availability = models.JSONField(default=dict, blank=True)
     radius = models.IntegerField(null=True, blank=True, help_text="km; null=unlimited")
-    contact_pref = models.CharField(max_length=10, default="in_app", choices=CONTACT_CHOICES)
+    # Default "any" (was "in_app"), matching Need since 2026-07-12: with no in-app channel,
+    # "in_app" made the connect moment a bare name. Offers were missed then (found 2026-10-29).
+    # Existing offers keep the preference they were saved with; only new ones start here.
+    contact_pref = models.CharField(max_length=10, default="any", choices=CONTACT_CHOICES)
     status = models.CharField(max_length=12, default="active", choices=STATUS_CHOICES)
     # Reversible coordinator action (moderation queue) — never a delete.
     moderation_hidden = models.BooleanField(default=False)
