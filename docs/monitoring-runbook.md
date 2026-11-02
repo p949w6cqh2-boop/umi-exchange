@@ -144,12 +144,55 @@ brief production outage.
    (separate commit, founder's merge), citing the date and where the screenshots live.
    ✅ **Done 2026-08-18** — box ticked, citing `docs/monitoring/trip-test-2026-08-18/`.
 
+## Watching the watcher — `scripts/monitor_liveness.sh` (built 2026-11-02)
+
+**The third of the three things box 1 now requires before it can be ticked again:** *"a periodic
+liveness check on the monitor itself."* `scripts/monitor.sh` watches the app; until now nothing
+watched the monitor, which is the exact gap that produced **84.416% uptime, 4 incidents, 4d 19h
+56m down and zero humans reached** while detection was working perfectly.
+
+It asserts the whole chain through the UptimeRobot API, and fails loudly — non-zero exit — on any
+break:
+
+| # | What it asserts | The failure it catches |
+|---|---|---|
+| 1 | the API answers at all | a revoked or expired key is a dead control |
+| 2 | the monitor exists and is **not paused** | a paused monitor detects nothing, silently |
+| 3 | ≥1 alert contact is **attached** | detection that tells nobody (runbook step 4 skipped) |
+| 4 | ≥1 attached contact is **enabled** | 🔴 **the actual production failure** — contacts attached, channel toggled OFF |
+| 5 | ≥1 enabled contact is **interrupting** | e-mail-only, which is why the box re-opened |
+
+**Run it from cron on the host, beside `monitor.sh`:**
+
+```
+17 * * * * /opt/umi-exchange/scripts/monitor_liveness.sh
+```
+
+**Configuration.** `UPTIMEROBOT_API_KEY` is required — **without it the script exits 2 and says
+so**, because a liveness check that is silently unconfigured is the very defect class it exists to
+catch. A read-only monitor-specific key is enough. `ALERT_WEBHOOK_URL` is shared with `monitor.sh`;
+without it failures go to stderr for cron to mail. The key is written to a `0600` temp file rather
+than passed as an argument, so it is not readable via `ps`, and it is never printed.
+
+⚠️ **Calibration owed on the first real run.** `UMI_NON_INTERRUPTING_TYPES` defaults to `2 5`
+(E-mail, Web-Hook) — **the two types this repo can cite**. UptimeRobot's numeric type for *mobile
+push* is not documented here and was not guessed, so the script **prints every contact type and
+status it saw**. Read that line on the first run against the real account and confirm the push
+contact's type is outside the non-interrupting list. 📌 Widening that list is how box 1 re-opens.
+
+🔴 **This does not tick box 1, and it is not the trip test.** It proves the alerting chain is
+*wired*; only an outage the founder does not schedule or watch for proves an alert *arrives*.
+Box 1 needs all three: an interrupting channel (step 2 of the hand-list, founder's), this check,
+and that unannounced trip.
+
 ## What this deliberately does not do
 
 - No Sentry, no hosted error aggregation — decided and documented; `SENTRY_DSN` stays empty.
 - No agent-created accounts, no agent-run outages: both steps are founder-hand by the keyring
   (external service; deliberate production downtime).
-- No new code. The endpoint already exists and already fails loudly on a dead database.
+- ~~No new code. The endpoint already exists and already fails loudly on a dead database.~~
+  ⚖️ **Amended 2026-11-02:** still true of the health endpoint, which is unchanged. It stopped
+  being true of the runbook as a whole when `scripts/monitor_liveness.sh` was added above.
 
 ## Ongoing posture (after the box is ticked)
 
