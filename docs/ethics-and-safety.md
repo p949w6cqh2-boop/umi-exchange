@@ -201,10 +201,30 @@ to make sure the choice was made knowingly, the reveal was logged, and safety wa
 **No real community with real PII onboards until ALL of the following are true.** They are unchecked
 because they are not yet true. Each item names how you know it is done.
 
-- [ ] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
+- [x] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
   silent error or outage produces a real alert to a human within minutes, proven by deliberately
   tripping it once and watching the alert arrive. The posture is already decided
   (`docs/monitoring-decision.md`); this item is about it actually being on.
+  ⚖️ **TICKED 2026-11-02 ON THE STEWARD'S WORD — `ATTESTED (unverified)`. Read this before
+  counting this box as passed.** His key: *"check gate off because the email pings my phone."*
+  - **ATTESTED:** the monitor fires and its alert e-mail reaches his phone as a notification. **His
+    reading, and it is a fair one:** this box's concern is an *interrupting* channel, and an e-mail
+    that pings the phone is one. The re-open below names *push/SMS*; he reads those as examples.
+    ⚠️ Known silent-failure modes of phone-pinged e-mail that SMS does not share: a Do Not Disturb
+    rule that holds mail but passes SMS, the spam folder, a mail app that fetches on an interval
+    instead of being pushed.
+  - ❌ **NOT MET — a trip test the founder does not schedule or watch for.** Never run on this
+    setup. The standing key for it exists (`umi-brain` keyring, 2026-09-14). Its receipt: he reports
+    the phone alert *before* being told a trip happened.
+  - ❌ **NOT MET — a periodic liveness check on the monitor itself.** `scripts/monitor_liveness.sh`
+    was built 2026-11-02 and is **not running**: no API key, not in cron. On this e-mail setup it must
+    run with `UMI_NON_INTERRUPTING_TYPES=5`, **reason: the founder's phone notifies on alert e-mail**
+    — otherwise it correctly flags e-mail-only. The script's own default stays strict, because this is
+    a reference implementation and another community's inbox may not ping anyone.
+  - 📌 **The agent recommended leaving this unticked until the two legs above landed; the steward
+    chose to tick it now.** Recorded so the trade is his and visible. This box has been ticked once
+    before ahead of its evidence (the re-open below is what that cost), so **a future reader should
+    treat the two ❌ lines as open work, not history.**
   🔴 **RE-OPENED 2026-09-11 — this box was ticked and the property it asserts then failed for eight
   days.** The production droplet was powered off on 2026-09-03 and destroyed on 2026-09-05, and no
   human was told until the outage was found by hand on 09-11 during unrelated work. Full write-up:
