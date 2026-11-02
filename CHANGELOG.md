@@ -5,6 +5,18 @@
 
 ## Unreleased
 
+- **The keys that protect sensitive information no longer sit on our server's disk.** They used to
+  be written into the server's own records of the running program, where anyone who got into the
+  machine would have found both the locked data and the key to it. They are now held in memory
+  only, handed over from the steward's own computer each time the board is updated. Nothing you can
+  see changed. One honest trade-off: if the server restarts on its own, the board stays down until
+  the steward brings it back up, and we would rather be briefly offline than quietly unlocked.
+- **We now check that our own outage alarm still works.** The board is watched by a service that
+  is supposed to tell us the moment the site goes down. Earlier this year it was watching
+  correctly for over two weeks while the setting that sends the message to a person was switched
+  off, so four outages came and went and nobody was told. A new hourly check now looks at the
+  alarm itself and complains loudly if it has been paused, if nobody is attached to it, or if the
+  only way it can reach us is an inbox we might not read for hours.
 - **Your communities come first on your account page now, and they are easier to read.** The list
   of boards you belong to used to sit below the household section, which offers to help you join
   one. The list you already have comes first, and the names are bigger.

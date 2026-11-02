@@ -57,13 +57,15 @@ Three changes, in order:
 - **Process memory.** A running app must hold the KEK in memory. Full host compromise
   while the app is running can read process memory. No single-box design removes this;
   what the design removes is the at-rest plaintext and the survives-a-reboot copy.
-- **Docker metadata.** Environment injected into a container is written by Docker into its
+- **Docker metadata.** ✅ **CLOSED IN CODE 2026-11-02 (Sixth entry), not yet verified on the
+  droplet.** ~~Environment injected into a container is written by Docker into its
   container-config JSON on disk. v1 mitigates by injecting via an env-file on a tmpfs mount
   consumed at `up` time, but a residue in container metadata is possible depending on the
-  compose path chosen at implementation. The implementation PR must state which path it
-  took and what a root attacker can still read. If the residue cannot be closed, the honest
-  fallback is a small secrets sidecar or a managed secret store — which changes the
-  cost/subsidiarity math and is the steward's call, documented here when made.
+  compose path chosen at implementation.~~ **It was possible, it happened, and it stood for
+  seven weeks.** The keys are no longer in `environment:` at all: they arrive as a file on a
+  tmpfs bind mount, so the container config records the **path**. The steward chose this over
+  the sidecar / managed-store fallback this bullet offered. **What a root attacker can still
+  read: the tmpfs file and process memory, while the app runs. Nothing after a reboot.**
 - **Availability coupling.** ~~The droplet can no longer restart the app unattended after a
   reboot; the steward's laptop (or the safe) is needed.~~ For a parish notice-board this is
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
@@ -76,6 +78,55 @@ Three changes, in order:
   which is real:** the keys sit in the container's config on disk for the container's lifetime
   (§Implementation). That residual is open, and closing it (a secrets sidecar or a managed
   store) or accepting it in writing is the steward's call.
+
+## Sixth entry, 2026-11-02: the container residue is CLOSED IN CODE — and it cost the reboot back
+
+**His key "2a", chosen over a secrets sidecar and over accepting the residue in writing.**
+
+**What was wrong.** Every key named in `docker/docker-compose.prod.yml`'s `environment:` block was
+written by Docker into `/var/lib/docker/containers/<id>/config.v2.json` **on disk**, and kept there
+for the container's lifetime. So from 2026-09-11 — the day the rig fixed the boot failure by naming
+the keys there — **rooting the host still handed over the key**, which is exactly what this box
+exists to end. 2026-10-18 doubled it: the worker took the same block.
+
+**What changed, three parts:**
+
+| part | change |
+|---|---|
+| `config/settings/base.py` | reads `UMI_SECRETS_FILE` and merges it over the environment (`overwrite=True`, so a stale `.env` key cannot win a rotation). **Set-but-missing is REFUSED** — the dangerous state is the one that looks configured and supplies nothing |
+| `docker/docker-compose.prod.yml` | **no key material in `environment:` at all**; app **and** worker carry `UMI_SECRETS_FILE=/run/umi/keys.env` and bind-mount `/dev/shm/umi-keys.env` **read-only** |
+| `scripts/deploy-with-keys.sh` | the key file **survives** a successful deploy instead of being shredded; it is chowned to the image's runtime uid, **discovered from the image** |
+
+**Why the uid is discovered and not pinned:** the image runs as `USER umi`, so a root-owned `0600`
+file is unreadable inside the container and the app would boot with no keys. Pinning a uid in the
+Dockerfile would orphan the named volumes that user already owns (`app_logs`, `geo_data`,
+`staticfiles`) — **that is an outage, not a hardening.** No `chmod 400`: the `:ro` on the mount is
+what makes the file read-only to the container, and clearing the owner's write bit only breaks the
+shred on the failure path.
+
+🔴 **THE COST, stated at full size because it is a real regression: the availability coupling the
+Third entry disproved is BACK, by design.** `/dev/shm` is cleared by a reboot, so after one the
+containers come back with **no keys** and production fails fast. The droplet takes unattended 02:00
+security-upgrade reboots, and the Third entry called those safe *precisely because* of the residue
+this entry removes. **Recovery is re-running the rig from the steward's laptop.**
+- **Why that is still the right trade, in the design's own words:** *"hours of downtime are
+  annoying; a silent key theft is a betrayal."*
+- **What makes it survivable:** the failure is a **crash loop, not silence** — and
+  `scripts/monitor_liveness.sh`, built the same night, is what proves the alert about it can still
+  reach a human (`docs/monitoring-runbook.md` §Watching the watcher).
+
+⚖️ **Honest scope — what this does NOT claim.** The keys are now in **RAM at a known
+root-readable path** for the container's lifetime, plus process memory. That is **strictly better
+than on disk** (tmpfs is never written to a block device and a reboot clears it) and it is **not
+unreachable**. A full host compromise while the app runs still reads them. No single-box design
+removes that; §Named residuals said so from the start and still does.
+
+⚠️ **NOT YET DEPLOYED, and nothing here is verified on the droplet.** This is tests-green on a
+branch: `tests/test_secrets_file.py` (10) pins the settings path, both services' mounts, and the
+rig's half; `tests/test_deploy_with_keys.py` was **rewritten, not deleted**, where it pinned the old
+contract — the 2026-09-11 and 2026-10-01 outage lessons are kept in those tests' docstrings because
+the thing they protect (*the keys must actually REACH the container*) is unchanged; only the
+mechanism moved. **The first deploy is the rehearsal, and it is the steward's hand.**
 
 ## Fifth entry, 2026-10-01: rotation rehearsed on a scratch box, and the envelope's missing half
 
@@ -397,6 +448,11 @@ laptop, and tick the rehearsal line for real.
   *2026-10-08: half done. `.env` is clean since 2026-09-11 (Third entry). The container-config
   residue (§Implementation) still holds the keys on disk for the container's lifetime; this line
   ticks when that is closed or the steward accepts it in writing.*
+  *2026-11-02: **closed in code** (Sixth entry) and **deliberately still unticked** — the words
+  here are "verified by inspection" and nothing has been deployed or inspected. It ticks after the
+  first rig deploy on the new compose, confirming `config.v2.json` carries no key and
+  `/dev/shm/umi-keys.env` is the only plaintext. 📌 The 2026-09-11 lesson applies to this very
+  line: **a merged implementation is not a live control.***
 - [x] Deploy-from-laptop rehearsed on the real droplet. (2026-09-11, Third entry; ticked here
   2026-10-08, where it had stayed open after the entry ticked it.)
 - [ ] Sealed envelope in the parish safe; two named people know it exists and what it is.

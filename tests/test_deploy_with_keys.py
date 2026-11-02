@@ -246,17 +246,35 @@ def test_compose_passes_key_material_into_the_container():
     `docker compose --env-file X` feeds compose's ${...} substitution. It injects
     NOTHING into the container. The app reads `env_file: ../.env` — so once the rig
     strips the key lines from .env (which it requires, and checks for), the app boots
-    with no keys unless the compose file names them in `environment:`.
+    with no keys unless compose gets them in by SOME route.
 
-    Observed before the fix: ImproperlyConfigured: SECRET_KEY must be set.
+    Observed before the first fix: ImproperlyConfigured: SECRET_KEY must be set.
+
+    ⚖️ REWRITTEN 2026-11-02, and the route changed. From 2026-09-11 that route was
+    `environment:`, which fixed the boot and created the residue ethics-gate box 3
+    is about: Docker writes a container's resolved environment to its own on-disk
+    config and keeps it for the container's lifetime. The keys now arrive as a FILE
+    on a tmpfs bind mount. **The lesson this test was written for is unchanged — the
+    keys must actually REACH the container — only the mechanism it pins is new.**
     """
-    env = _service("app")["environment"]
-    for name in ("SECRET_KEY", "ENCRYPTION_KEY", "BLIND_INDEX_KEY"):
-        assert f"{name}=${{{name}}}" in env, (
-            f"{name} is not passed into the app container. The custody rig removes it from "
-            ".env, and --env-file only does ${...} substitution — so the app will boot "
-            "without it and production will refuse to start."
+    for name in ("app", "worker"):
+        service = _service(name)
+        env = service["environment"]
+
+        assert any(str(item).startswith("UMI_SECRETS_FILE=") for item in env), (
+            f"the {name} container has no UMI_SECRETS_FILE, so it has no route to the keys "
+            "at all: the rig removes them from .env and nothing else supplies them."
         )
+
+        mounts = [str(v) for v in service["volumes"] if "umi-keys.env" in str(v)]
+        assert mounts, f"the {name} container does not mount the key file named by UMI_SECRETS_FILE"
+        assert mounts[0].endswith(":ro"), f"the {name} container mounts the key file writable"
+
+        for key in ("SECRET_KEY", "ENCRYPTION_KEY", "ENCRYPTION_KEYS", "BLIND_INDEX_KEY"):
+            assert not any(str(item).startswith(f"{key}=") for item in env), (
+                f"{key} is back in the {name} container's environment — Docker will write it "
+                "to the container config on disk, which is the residue box 3 exists to close."
+            )
 
 
 def test_compose_passes_the_key_list_so_rotation_can_reach_production():
@@ -265,10 +283,17 @@ def test_compose_passes_the_key_list_so_rotation_can_reach_production():
     Rotation stages ENCRYPTION_KEYS=<new>,<old> (docs/key-custody-design.md, the rotation
     line). The compose file passed only the single ENCRYPTION_KEY, so the container booted
     with no key at all and the site served 502 until the old key file was put back.
-    The `:-` default keeps a single-key setup working: an empty list parses to [] and
-    crypto._keks() falls back to ENCRYPTION_KEY.
+
+    ⚖️ REWRITTEN 2026-11-02 with the mechanism (see the test above). The key LIST now
+    reaches the container because the rig writes the whole key file verbatim and the
+    app reads every name in it — so a rotation needs no compose change at all, which
+    is the property that cost an outage to learn.
     """
-    assert "ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}" in _service("app")["environment"]
+    assert "ENCRYPTION_KEYS" in KEYS_SAMPLE, "the rig's key file must be able to carry the list"
+    env = _service("app")["environment"]
+    assert any(str(item) == "UMI_SECRETS_FILE=/run/umi/keys.env" for item in env), (
+        "the app must read its keys from the file the rig writes, or a rotation has no route into the container again"
+    )
 
 
 # ── The worker, 2026-10-18 ────────────────────────────────────────────────────
@@ -330,10 +355,12 @@ def test_deploy_migrates_after_up_and_after_the_shred(age_home):
     plan = r.stdout
     up = plan.index("up -d app")
     # The standalone shred LINE, not the trap, which carries the same words earlier.
-    shred = plan.index("\nshred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env\n")
+    # ⚖️ 2026-11-02: only the MERGE file is shredded here now. The key file is mounted
+    # into the containers, so it stays — and `docker exec` below starts a fresh process
+    # that re-reads settings, which means it needs that file present, where before it
+    # relied on the container's stored environment (the on-disk residue box 3 closes).
+    shred = plan.index("\nshred -u /dev/shm/umi-full.env\n")
     migrate = plan.index("manage.py migrate --noinput")
-    # Migrate runs against the NEW container, and only after the plaintext is gone:
-    # the container already carries its keys, so this step never needs the tmpfs file.
     assert up < shred < migrate
     # The container id is resolved on the droplet, not expanded on the laptop.
     assert "app_id=$(" in plan
@@ -387,8 +414,20 @@ def test_a_failed_up_still_shreds_the_keys(age_home, tmp_path):
         d.mkdir()
     (repo / ".env").write_text("DEBUG=False\n")  # key-free, as the rig requires
     docker = bindir / "docker"
-    docker.write_text('#!/bin/sh\ncase " $* " in *" up "*) echo "up failed" >&2; exit 1;; esac\nexit 0\n')
+    # The rig reads the image's runtime uid before `up` (2026-11-02: the key file is
+    # bind-mounted and the container is not root), so the stub must answer that too
+    # or the script refuses before it ever reaches the `up` this test is about.
+    docker.write_text(
+        "#!/bin/sh\n"
+        'case " $* " in\n'
+        '  *"--entrypoint id"*) echo 10001; exit 0;;\n'
+        '  *"config --images app"*) echo umi-exchange:local; exit 0;;\n'
+        '  *" up "*) echo "up failed" >&2; exit 1;;\n'
+        "esac\n"
+        "exit 0\n"
+    )
     docker.chmod(0o755)
+    _fake_chown(bindir)
 
     plan = _dry_run_plan(age_home).replace("/dev/shm/", f"{shm}/").replace("cd /opt/umi-exchange", f"cd {repo}")
     r = subprocess.run(
@@ -511,6 +550,20 @@ def _fake_ssh(tmp_path, body):
     return _fake_tool(tmp_path, "ssh", body)
 
 
+def _fake_chown(bindir, calls=None):
+    """A no-op chown for the fake droplet.
+
+    The rig chowns the bind-mounted key file to the image's runtime uid, which on
+    the real droplet runs as root. A test user cannot give a file away to another
+    uid, and the contract under test is that the rig ASKS for it — not that this
+    machine's kernel permits it.
+    """
+    tool = bindir / "chown"
+    tool.write_text("#!/bin/sh\n" + (f'echo "chown $*" >> {calls}\n' if calls else "") + "exit 0\n")
+    tool.chmod(0o755)
+    return bindir
+
+
 def _check_over_ssh(bindir, remote_dir):
     return subprocess.run(
         ["bash", str(SCRIPT), "check"],
@@ -602,13 +655,16 @@ def test_deploy_creates_the_worker_with_its_keys_and_starts_it_after_migrate(age
     create = plan.index("create worker")
     up = plan.index("up -d app")
     worker_id = plan.index("worker_id=$(")
-    shred = plan.index("\nshred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env\n")
+    shred = plan.index("\nshred -u /dev/shm/umi-full.env\n")
     migrate = plan.index("manage.py migrate --noinput")
     start = plan.index('docker start "$worker_id"')
     # Created while the keys are in tmpfs, and before the new app comes up, which also
     # stops the previous worker before it can run against the new schema. Started last.
     assert create < up < shred < migrate < start
     assert worker_id < shred, "the worker's id must be read while compose can still read its env file"
+    # The worker mounts the same key file as the app (2026-10-18's lesson, kept through
+    # the 2026-11-02 change): a key that reached one and not the other boots it with none.
+    assert any("umi-keys.env" in str(v) for v in _service("worker")["volumes"])
     assert "ps -a -q worker" in plan, "a created worker is not running yet, so plain `ps -q` would not list it"
 
 
@@ -625,6 +681,10 @@ def _run_remote(age_home, tmp_path, migrate_rc=0, worker_id="workerid456", servi
         f'echo "$*" >> {calls}\n'
         'case "$*" in\n'
         f'  *" config --services") printf "%s\\n" {services} ;;\n'
+        # The runtime uid of the image, read before `up` so the bind-mounted key
+        # file can be chowned to the non-root user the container runs as.
+        '  *"config --images app"*) echo umi-exchange:local ;;\n'
+        '  *"--entrypoint id"*) echo 10001 ;;\n'
         '  *" ps -q app") echo appid123 ;;\n'
         f'  *" ps -a -q worker") echo "{worker_id}" ;;\n'
         f'  "exec appid123 python manage.py migrate --noinput") exit {migrate_rc} ;;\n'
@@ -632,6 +692,7 @@ def _run_remote(age_home, tmp_path, migrate_rc=0, worker_id="workerid456", servi
         "exit 0\n"
     )
     docker.chmod(0o755)
+    _fake_chown(bindir, calls)
     plan = _dry_run_plan(age_home).replace("/dev/shm/", f"{shm}/").replace("cd /opt/umi-exchange", f"cd {repo}")
     r = subprocess.run(
         ["bash", "-c", plan],
@@ -654,7 +715,11 @@ def test_a_deploy_starts_the_worker_only_after_migrate(age_home, tmp_path):
 
     assert at("create worker") < at("up -d app") < at("python manage.py migrate") < at("start workerid456")
     assert r.stdout.rstrip().endswith("worker started; deploy done")
-    assert not (shm / "umi-keys.env").exists()
+    # ⚖️ CHANGED 2026-11-02: the key file now SURVIVES a successful deploy, because the
+    # containers bind-mount it and re-read it on every restart. Its old absence here was
+    # the thing that put the keys in the container config on disk instead.
+    assert (shm / "umi-keys.env").exists(), "the mounted key file must outlive the deploy"
+    assert not (shm / "umi-full.env").exists(), "the merged env file must still be shredded"
 
 
 def test_a_failed_migrate_leaves_the_worker_stopped(age_home, tmp_path):
@@ -662,7 +727,10 @@ def test_a_failed_migrate_leaves_the_worker_stopped(age_home, tmp_path):
     assert r.returncode == 3
     assert "MIGRATE FAILED" in r.stdout
     assert not any(call.startswith("start ") for call in log), "a worker was started on a schema it does not match"
-    assert not (shm / "umi-keys.env").exists()
+    # The app DID come up here; only migrate failed. So the keys stay — the running
+    # container is mounting them, and shredding them would break its next restart.
+    assert (shm / "umi-keys.env").exists()
+    assert not (shm / "umi-full.env").exists()
 
 
 def test_a_deploy_with_no_worker_container_says_so(age_home, tmp_path):
@@ -680,4 +748,5 @@ def test_a_rollback_to_a_compose_file_without_a_worker_still_deploys_the_app(age
     assert not any("worker" in call for call in log if "config --services" not in call)
     assert "no worker service" in r.stdout
     assert any("python manage.py migrate" in call for call in log)
-    assert not (shm / "umi-keys.env").exists()
+    assert (shm / "umi-keys.env").exists()
+    assert not (shm / "umi-full.env").exists()

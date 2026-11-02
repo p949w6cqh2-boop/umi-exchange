@@ -6,6 +6,7 @@ Shared across all environments. Environment-specific overrides in development.py
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -14,6 +15,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env_file = BASE_DIR / ".env"
 if env_file.exists():
     environ.Env.read_env(str(env_file))
+
+# Key material arrives as a FILE, never as container environment. Docker writes a
+# container's resolved environment into its own on-disk config and keeps it there
+# for the container's LIFETIME, so every key named in compose's `environment:`
+# block sat in plaintext on the droplet disk under root — exactly what
+# ethics-gate box 3 says must end. The rig writes this file onto a tmpfs mount and
+# the container config then records only the PATH.
+# Read with overwrite: the droplet's .env may still carry a superseded key, and a
+# rotation that silently kept the old one would be worse than a failure.
+# Set-but-missing is REFUSED, because it is the dangerous state — it looks
+# configured and supplies nothing.
+secrets_file = env("UMI_SECRETS_FILE", default="")
+if secrets_file:
+    if not Path(secrets_file).is_file():
+        raise ImproperlyConfigured(
+            f"UMI_SECRETS_FILE points at {secrets_file!r}, which is not a readable file. "
+            "The key file lives on tmpfs and a reboot clears it; re-run "
+            "`scripts/deploy-with-keys.sh deploy` from the steward's laptop. "
+            "(A bind mount whose source is missing makes Docker create a directory there.)"
+        )
+    environ.Env.read_env(secrets_file, overwrite=True)
 
 SECRET_KEY = env("SECRET_KEY", default="dev-only-insecure-key-change-in-production-please")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
