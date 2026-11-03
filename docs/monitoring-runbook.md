@@ -159,26 +159,57 @@ break:
 | 1 | the API answers at all | a revoked or expired key is a dead control |
 | 2 | the monitor exists and is **not paused** | a paused monitor detects nothing, silently |
 | 3 | ≥1 alert contact is **attached** | detection that tells nobody (runbook step 4 skipped) |
-| 4 | ≥1 attached contact is **enabled** | 🔴 **the actual production failure** — contacts attached, channel toggled OFF |
-| 5 | ≥1 enabled contact is **interrupting** | e-mail-only, which is why the box re-opened |
+| 4 | ≥1 attached contact is **`Active`** — that word and nothing else (`NotActivated`, `Paused`, or a contact missing from the list do not count) | 🔴 **the actual production failure** — contacts attached, channel paused |
+| 5 | ≥1 active contact is **interrupting** | e-mail-only, which is why the box re-opened |
 
-**Run it from cron on the host, beside `monitor.sh`:**
+~~**Run it from cron on the host, beside `monitor.sh`.**~~ ⚖️ **It runs from the steward's LAPTOP,
+not the droplet** (his call "a", 2026-11-03). It talks to UptimeRobot, not to the server, so
+production holds no third-party key, and the check keeps running even if the droplet is gone.
+
+🔴 **The check was wrong twice on 2026-11-03, in opposite directions, before it was right.**
+1. **False green.** The first version read the legacy v2 API, took contact status from
+   `getMonitors` (which does not return it), and counted "no answer" as on. It printed
+   `LIVENESS OK`.
+2. **Would-be false red.** Recoded to the legacy docs (`0` not activated, `1` paused, `2` active), it
+   read the e-mail and push contacts as *paused*. They were on: the dashboard showed them on, and the
+   **v3 API, which the dashboard runs on, reported both as `Active`**. The legacy API's `1` did not
+   mean what its docs say.
+
+So the check uses **v3**, where status and type are words, and its fixtures are v3 responses
+measured that night. On the live account it reads:
 
 ```
-17 * * * * /opt/umi-exchange/scripts/monitor_liveness.sh
+Reciprocal Aid Network: 3 attached — ProSms NotActivated · Voice NotActivated · Email Active
 ```
+
+Alerts for this monitor reached the steward **by e-mail only**: push was `Active` on the account but
+**not attached** to this monitor. ✅ **Later the same night he attached it**, and the check reads:
+
+```
+Reciprocal Aid Network: 4 attached — ProSms NotActivated · Voice NotActivated · Email Active · MobileAppOld Active
+Reciprocal Aid Network: OK — interrupting and active: MobileAppOld
+```
+
+That passes on the **strict default rule**, with e-mail not counted. 📌 *When two sources disagree,
+measure a third before believing either.*
 
 **Configuration.** `UPTIMEROBOT_API_KEY` is required — **without it the script exits 2 and says
 so**, because a liveness check that is silently unconfigured is the very defect class it exists to
-catch. A read-only monitor-specific key is enough. `ALERT_WEBHOOK_URL` is shared with `monitor.sh`;
-without it failures go to stderr for cron to mail. The key is written to a `0600` temp file rather
-than passed as an argument, so it is not readable via `ps`, and it is never printed.
+catch. ~~A read-only monitor-specific key is enough.~~ ⚖️ **It needs the account's Read-Only API
+key** (it starts `ur`), sent as a bearer token. It reads `GET /monitors` for what is attached and
+`GET /user/alert-contacts` for whether each one is on; a key that cannot read the contact list
+fails, and the message names the key to use. The API base is `UPTIMEROBOT_API_BASE` (default
+`https://api.uptimerobot.com/v3`). `ALERT_WEBHOOK_URL` is shared with `monitor.sh`; without it
+failures go to stderr. The key goes into a `0600` header file rather than onto the command line, so
+it is not readable via `ps`, and it is never printed.
 
-⚠️ **Calibration owed on the first real run.** `UMI_NON_INTERRUPTING_TYPES` defaults to `2 5`
-(E-mail, Web-Hook) — **the two types this repo can cite**. UptimeRobot's numeric type for *mobile
-push* is not documented here and was not guessed, so the script **prints every contact type and
-status it saw**. Read that line on the first run against the real account and confirm the push
-contact's type is outside the non-interrupting list. 📌 **Narrowing** that list — counting another
+**Types.** `UMI_NON_INTERRUPTING_TYPES` defaults to `Email Webhook`, which are v3 type names. Every
+other active type counts as interrupting, so push still counts when UptimeRobot renames it
+(`MobileAppOld`/`MobileApp` → `MobileAppIOS`/`MobileAppAndroid`, which its spec announces).
+✅ **Calibrated 2026-11-03** against the live account (v3): attached `ProSms` and `Voice` are
+`NotActivated` (UptimeRobot's docs call SMS/pro-SMS and voice-call contacts deprecated), `Email` is
+`Active`, and push `MobileAppOld` is `Active` (attached later that night, above).
+📌 **Narrowing** that list — counting another
 type as interrupting — is the direction that can quietly re-open box 1; record the reason in the box.
 
 🔴 **This does not tick box 1, and it is not the trip test.** It proves the alerting chain is

@@ -10,29 +10,38 @@
 #
 # Detection working with alerting disabled is worse than no monitoring: it
 # produces confidence without coverage. So this asserts the WHOLE chain:
-#   1. the API answers at all (a revoked key is a dead control);
+#   1. the API answers, and accepts the key;
 #   2. the monitor exists and is not paused;
-#   3. at least one alert contact is ATTACHED;
-#   4. at least one attached contact is ENABLED;
-#   5. at least one enabled contact is an INTERRUPTING channel, not e-mail alone.
+#   3. at least one alert contact is ATTACHED to it;
+#   4. at least one attached contact is "Active" — that word, nothing else;
+#   5. at least one active contact is an INTERRUPTING channel, not e-mail alone.
 #
-# Run it from cron on the host, alongside monitor.sh:
-#     17 * * * * /opt/umi-exchange/scripts/monitor_liveness.sh
+# ⚖️ 2026-11-03, in this order: the first version read UptimeRobot's legacy v2
+# API and was a FALSE GREEN (it counted a missing status as on). Recoding it to
+# the legacy docs would have made it a FALSE RED: read against the live account,
+# v2 reported status 1, documented as "paused", for the e-mail and push contacts
+# the dashboard shows ON, and v3 reported both as "Active". So this uses v3, the
+# API the dashboard runs on, where status and type are words.
 #
-# Alerts POST to $ALERT_WEBHOOK_URL (same shape as monitor.sh); without it they
-# go to stderr so cron mails them. Exit code is NON-ZERO on any failure, because
-# this script's whole purpose is to be loud.
+# KEY: the account's READ-ONLY API key, sent as a bearer token from a 0600 temp
+# file, so it is never on the command line where ps would show it.
+#
+# Run it on the steward's LAPTOP, not the droplet (his call "a", 2026-11-03): it
+# talks to UptimeRobot, not to the server, so production holds no third-party key.
+#
+# Alerts POST to $ALERT_WEBHOOK_URL (same shape as monitor.sh); without it they go
+# to stderr. Exit code is NON-ZERO on any failure, because this script's whole
+# purpose is to be loud.
 set -uo pipefail
 
-API_URL="${UPTIMEROBOT_API_URL:-https://api.uptimerobot.com/v2/getMonitors}"
+API_BASE="${UPTIMEROBOT_API_BASE:-https://api.uptimerobot.com/v3}"
 API_KEY="${UPTIMEROBOT_API_KEY:-}"
-# UptimeRobot alert-contact types that do NOT interrupt a human. 2 is E-mail —
-# the channel that was off for the 30 days above. 5 is Web-Hook: a post into a
-# room nobody is looking at has the same shape as an unread inbox.
+# v3 alert-contact types that do NOT interrupt a human. Email is the channel that
+# was off for the 30 days above; Webhook posts into a room nobody may be watching.
 # Override only with a recorded reason. NARROWING this list (counting e-mail as
 # interrupting, say, because the phone's mail app pings) is the direction that can
 # quietly re-open box 1, so the reason belongs in the box's own text when you do.
-NON_INTERRUPTING_TYPES="${UMI_NON_INTERRUPTING_TYPES:-2 5}"
+NON_INTERRUPTING_TYPES="${UMI_NON_INTERRUPTING_TYPES:-Email Webhook}"
 ALERT_WEBHOOK_URL="${ALERT_WEBHOOK_URL:-}"
 
 alert() {
@@ -51,97 +60,124 @@ if [ -z "$API_KEY" ]; then
     exit 2
 fi
 
-# The key goes in a 0600 temp file, never on the command line: an argument is
-# readable by any user via ps while curl runs.
 umask 077
-body=$(mktemp) || { alert "could not create a temp file for the request body"; exit 2; }
-response=$(mktemp) || { rm -f "$body"; alert "could not create a temp file for the response"; exit 2; }
-trap 'rm -f "$body" "$response"' EXIT
+hdr=$(mktemp) || { alert "could not create a temp file for the request headers"; exit 2; }
+monitors=$(mktemp) || { rm -f "$hdr"; alert "could not create a temp file"; exit 2; }
+contacts=$(mktemp) || { rm -f "$hdr" "$monitors"; alert "could not create a temp file"; exit 2; }
+trap 'rm -f "$hdr" "$monitors" "$contacts"' EXIT
+printf 'Authorization: Bearer %s\nAccept: application/json\n' "$API_KEY" > "$hdr"
 
-printf 'api_key=%s&format=json&alert_contacts=1&logs=0' "$API_KEY" > "$body"
+fetch() { # fetch <path> <outfile>  -> prints the HTTP status code (000 if unreachable)
+    local code
+    code=$(curl -sS -m 20 -H @"$hdr" -o "$2" -w '%{http_code}' "$API_BASE$1" 2>/dev/null)
+    echo "${code:-000}"
+}
 
-if ! curl -fsS -m 20 -X POST \
-    -H 'Content-Type: application/x-www-form-urlencoded' \
-    -H 'Cache-Control: no-cache' \
-    --data "@$body" "$API_URL" > "$response"; then
-    alert "API UNREACHABLE: no answer from the UptimeRobot API — the monitor's state is UNKNOWN"
-    exit 1
-fi
+monitors_code=$(fetch /monitors "$monitors")
+contacts_code=$(fetch /user/alert-contacts "$contacts")
 
-# Verdict in python3: the response is nested JSON and bash has no business
-# parsing it. Prints human lines; its exit code is the verdict.
-NON_INTERRUPTING_TYPES="$NON_INTERRUPTING_TYPES" python3 - "$response" <<'PY'
+# Verdict in python3: the responses are nested JSON and bash has no business
+# parsing them. Prints human lines; its exit code is the verdict.
+NON_INTERRUPTING_TYPES="$NON_INTERRUPTING_TYPES" python3 - "$monitors" "$monitors_code" "$contacts" "$contacts_code" <<'PY'
 import json
 import os
 import sys
 
-non_interrupting = {int(t) for t in os.environ["NON_INTERRUPTING_TYPES"].split()}
+monitors_file, monitors_code, contacts_file, contacts_code = sys.argv[1:5]
+non_interrupting = set(os.environ["NON_INTERRUPTING_TYPES"].split())
 
-with open(sys.argv[1]) as fh:
-    try:
-        data = json.load(fh)
-    except json.JSONDecodeError:
-        print("API MALFORMED: the response was not JSON — the monitor's state is UNKNOWN")
-        sys.exit(1)
 
-if data.get("stat") != "ok":
-    message = (data.get("error") or {}).get("message", "no message")
-    print(f"API ERROR: UptimeRobot refused the request ({message})")
+def load(path):
+    with open(path) as fh:
+        try:
+            return json.load(fh)
+        except json.JSONDecodeError:
+            return None
+
+
+if monitors_code == "000":
+    print("API UNREACHABLE: no answer from the UptimeRobot API — the monitor's state is UNKNOWN")
+    sys.exit(1)
+if monitors_code != "200":
+    print(f"API ERROR: UptimeRobot refused GET /monitors (HTTP {monitors_code}) — key invalid, revoked or expired?")
+    sys.exit(1)
+mon = load(monitors_file)
+monitors = mon.get("data") if isinstance(mon, dict) else mon
+if not isinstance(monitors, list):
+    print("API MALFORMED: GET /monitors did not return a monitor list — the monitor's state is UNKNOWN")
     sys.exit(1)
 
-monitors = data.get("monitors") or []
+con = load(contacts_file)
+if contacts_code != "200" or not isinstance(con, list):
+    print(
+        f"CANNOT READ CONTACT STATUS: GET /user/alert-contacts answered HTTP {contacts_code}. "
+        "Use the account's Read-Only API key — without the contact list, nothing can "
+        "say whether an alert would reach anyone."
+    )
+    sys.exit(1)
+by_id = {str(c.get("id")): c for c in con}
+
 if not monitors:
     print("NO MONITOR: the account has no monitors — nothing is watching the site")
     sys.exit(1)
 
 problems = 0
 for monitor in monitors:
-    name = monitor.get("friendly_name", "unnamed")
-    # UptimeRobot status: 0 paused, 1 not checked yet, 2 up, 8/9 down.
-    if monitor.get("status") == 0:
+    name = monitor.get("friendlyName", "unnamed")
+    if monitor.get("status") == "PAUSED":
         print(f"PAUSED: monitor {name!r} is paused and is detecting nothing")
         problems += 1
         continue
 
-    contacts = monitor.get("alert_contacts") or []
-    if not contacts:
+    attached = [str(a.get("alertContactId")) for a in monitor.get("assignedAlertContacts") or []]
+    if not attached:
         print(f"NO ALERT CONTACT: monitor {name!r} detects outages and tells nobody")
         problems += 1
         continue
 
-    # Contact status 0 means the channel is switched off. This is the exact
-    # production failure: contacts attached, channel toggled off, silence.
-    enabled = [c for c in contacts if str(c.get("status")) != "0"]
-    seen = " ".join(f"type={c.get('type')}/status={c.get('status')}" for c in contacts)
-    print(f"  {name}: {len(contacts)} contact(s) — {seen}")
+    active, lines, unknown = [], [], False
+    for cid in attached:
+        contact = by_id.get(cid)
+        if contact is None:
+            lines.append(f"{cid} UNKNOWN")
+            unknown = True
+            continue
+        ctype, status = contact.get("type"), contact.get("status")
+        lines.append(f"{ctype} {status}")
+        # Only the word. The legacy API's numeric status did not mean what its
+        # docs said, so a value we cannot name is not "on".
+        if status == "Active":
+            active.append(contact)
+    print(f"  {name}: {len(attached)} attached — " + " · ".join(lines))
+    if unknown:
+        print(f"  UNKNOWN status on {name!r}: an attached contact is missing from the contact list")
 
-    if not enabled:
-        print(f"NO ENABLED ALERT CONTACT: every channel on {name!r} is switched OFF")
+    if not active:
+        print(f"NO ACTIVE ALERT CONTACT: every channel on {name!r} is paused, not activated or unknown")
         problems += 1
         continue
 
-    interrupting = [c for c in enabled if int(c.get("type", -1)) not in non_interrupting]
+    interrupting = [c for c in active if c.get("type") not in non_interrupting]
     if not interrupting:
         print(
             f"NO INTERRUPTING CHANNEL: {name!r} can only reach a passive channel "
-            f"(types {sorted(non_interrupting)}). An outage will not wake anyone."
+            f"({' '.join(sorted(non_interrupting))}). An outage will not wake anyone."
         )
         problems += 1
         continue
 
-    print(f"  {name}: OK — {len(interrupting)} interrupting channel(s) enabled")
+    kinds = ", ".join(sorted({str(c.get("type")) for c in interrupting}))
+    print(f"  {name}: OK — interrupting and active: {kinds}")
 
 if problems:
     print(f"{problems} problem(s) found")
     sys.exit(1)
 
-print("LIVENESS OK — monitor active, alert contacts enabled, an interrupting channel is live")
+print("LIVENESS OK — monitor active, an interrupting alert contact is Active")
 PY
 verdict=$?
 
 if [ "$verdict" -ne 0 ]; then
-    # The python half printed the detail to stdout; the alert carries the headline
-    # so a webhook/cron mail is actionable on its own.
     alert "CHECK FAILED: the uptime monitor's alerting chain is broken — see the run output"
     exit "$verdict"
 fi
