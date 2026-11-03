@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `caec3eac` (merged 2026-11-03 UTC).
+> Reflects `main` @ `818a6ba3` (merged 2026-11-03 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -421,8 +421,10 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
 - **Ethics gate: 4 of 6 boxes CHECKED (boxes 1, 2, 4, 5; box 2 closed 2026-07-29) — box 1 ON THE
   STEWARD'S WORD, `ATTESTED (unverified)`.** *(Box 1 was ticked 2026-08-18 (#153), re-opened
   2026-09-11 (#159), and ticked again 2026-11-02 by the steward — his alert e-mail reaches his phone —
-  with two of its three legs still open and named in the box itself: the unannounced trip test and a
-  running liveness check (`scripts/monitor_liveness.sh`, built, not yet in cron). Open: 3 key
+  with ~~two of its three legs~~ **one of its three legs** still open, named in the box itself: the
+  unannounced trip test. ~~and a running liveness check (`scripts/monitor_liveness.sh`, built, not yet
+  in cron)~~ Since 2026-11-03 the liveness check runs hourly from the steward's laptop, and the push
+  channel is attached to the monitor and `Active` (read via the v3 API). Open: 3 key
   custody, 6 governance.)* **Box 5 (#120):** on-behalf-of consent honestly
   recorded — `Consent.subject_person` grantor + `recorded_by` witness (§4.1), initials + "not asked
   directly" until an active consent names them, public `/terms/` limits page, report/block reachable

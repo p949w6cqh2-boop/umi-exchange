@@ -216,15 +216,19 @@ because they are not yet true. Each item names how you know it is done.
   - ❌ **NOT MET — a trip test the founder does not schedule or watch for.** Never run on this
     setup. The standing key for it exists (`umi-brain` keyring, 2026-09-14). Its receipt: he reports
     the phone alert *before* being told a trip happened.
-  - ❌ **NOT MET — a periodic liveness check on the monitor itself.** `scripts/monitor_liveness.sh`
-    was built 2026-11-02 and is **not running** ~~: no API key, not in cron~~ on a schedule yet. ⚖️
+  - ✅ **MET 2026-11-03 — a periodic liveness check on the monitor itself.** ~~❌ NOT MET.~~ It runs
+    **hourly from the steward's laptop** (`umi-liveness.timer`, which catches up after a power cut).
+    Its first scheduled run (2026-11-03 15:00 EST) read `LIVENESS OK` on the strict rule, via push. A
+    failed or stale verdict leads the 07:00 brief, and a verdict that **flips** pushes to the
+    steward's phone (test received, his word quoting its text). History: `scripts/monitor_liveness.sh`
+    was built 2026-11-02 and was **not running** ~~: no API key, not in cron~~ on a schedule yet. ⚖️
     *2026-11-03: it runs from the steward's laptop (his call), the Read-Only key is in place there,
     and the timer is not; ✅ the v3 API reads the e-mail contact `Active`, which is consistent with
     the attestation above (a contact being active is not proof an alert arrives, so this ticks
     nothing).* ✅ *Later 2026-11-03: the steward attached **Push** to the monitor, and v3 reads it
     `Active` and attached. That is an interrupting channel in the sense the re-open asked for,
     **read off the API, not attested**, and with it the check passes on its strict default rule. The
-    first leg is therefore no longer resting on the e-mail reading alone. The trip test below is
+    first leg is therefore no longer resting on the e-mail reading alone. The trip test above is
     still the only proof an alert actually arrives.* On the e-mail-only setup it had to
     run with ~~`UMI_NON_INTERRUPTING_TYPES=5`~~ `UMI_NON_INTERRUPTING_TYPES=Webhook` (v3 type names,
     2026-11-03), **reason: the founder's phone notifies on alert e-mail**
