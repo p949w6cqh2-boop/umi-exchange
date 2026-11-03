@@ -178,7 +178,8 @@ than passed as an argument, so it is not readable via `ps`, and it is never prin
 (E-mail, Web-Hook) — **the two types this repo can cite**. UptimeRobot's numeric type for *mobile
 push* is not documented here and was not guessed, so the script **prints every contact type and
 status it saw**. Read that line on the first run against the real account and confirm the push
-contact's type is outside the non-interrupting list. 📌 Widening that list is how box 1 re-opens.
+contact's type is outside the non-interrupting list. 📌 **Narrowing** that list — counting another
+type as interrupting — is the direction that can quietly re-open box 1; record the reason in the box.
 
 🔴 **This does not tick box 1, and it is not the trip test.** It proves the alerting chain is
 *wired*; only an outage the founder does not schedule or watch for proves an alert *arrives*.

@@ -29,7 +29,9 @@ API_KEY="${UPTIMEROBOT_API_KEY:-}"
 # UptimeRobot alert-contact types that do NOT interrupt a human. 2 is E-mail —
 # the channel that was off for the 30 days above. 5 is Web-Hook: a post into a
 # room nobody is looking at has the same shape as an unread inbox.
-# Override only with a reason; widening this list is how box 1 re-opens.
+# Override only with a recorded reason. NARROWING this list (counting e-mail as
+# interrupting, say, because the phone's mail app pings) is the direction that can
+# quietly re-open box 1, so the reason belongs in the box's own text when you do.
 NON_INTERRUPTING_TYPES="${UMI_NON_INTERRUPTING_TYPES:-2 5}"
 ALERT_WEBHOOK_URL="${ALERT_WEBHOOK_URL:-}"
 
