@@ -4,8 +4,12 @@
 # The contract this script keeps:
 #   * key material at rest is ciphertext only (age), on the laptop AND the droplet;
 #   * decryption happens here, on the steward's laptop, and the plaintext travels
-#     only through an ssh pipe into droplet tmpfs (/dev/shm), which is shredded
-#     the moment the container is up;
+#     only through an ssh pipe into droplet tmpfs — a ROOT-OWNED 0700 directory,
+#     /run/umi-keys, never the world-writable /dev/shm;
+#   * the merged env file is shredded the moment the container is up. The key file
+#     itself is NOT: the containers bind-mount it and re-read it on every restart
+#     (2026-11-02, docs/key-custody-design.md Sixth entry). A deploy that never
+#     reaches `up` still shreds it;
 #   * the repository never holds keys in any form — secrets/ is gitignored, and
 #     the default ciphertext path lives OUTSIDE the repo;
 #   * refuse loudly when half-armed (no identity, no recipients, no ciphertext).
@@ -43,7 +47,7 @@ REMOTE_DIR="${UMI_REMOTE_DIR:-/opt/umi-exchange}"
 # Outside the repo on purpose: the image is built with `COPY . .`, and .dockerignore does
 # not exclude secrets/, so a copy inside the checkout would be baked into every image.
 REMOTE_KEYS_COPY="${UMI_REMOTE_KEYS_COPY:-/var/backups/umi/keys.env.age}"
-COMPOSE="docker compose --env-file /dev/shm/umi-full.env -f docker/docker-compose.prod.yml"
+COMPOSE="docker compose --env-file /run/umi-keys/full.env -f docker/docker-compose.prod.yml"
 
 # The names that must never sit in plaintext on the droplet (key-custody design).
 KEY_NAMES='ENCRYPTION_KEYS?|BLIND_INDEX_KEY|SECRET_KEY'
@@ -85,13 +89,21 @@ cmd_deploy() {
   need_age
 
   # Everything the droplet runs, in one heredoc: read plaintext from stdin straight
-  # into tmpfs, merge with the (key-free) .env, bring the app up, shred both tmpfs
-  # files. Plaintext never touches droplet disk; nothing is scp'd.
+  # into tmpfs, merge with the (key-free) .env, bring the app up, shred the merge file.
+  # Plaintext never touches droplet disk; nothing is scp'd.
   # The shred is also TRAPPED on exit, set before any plaintext lands: under `set -e` a
   # failed `up` used to exit before the shred line and leave the keys in tmpfs until
   # the next reboot.
-  # Then migrate, through the container that is already running: it holds its keys in
-  # its own config, so this step never needs the tmpfs file and runs after the shred.
+  # ⚠️ CHANGED 2026-11-02: /run/umi-keys/keys.env now SURVIVES a successful deploy,
+  # because the containers bind-mount it (the keys left compose's `environment:` so
+  # they would stop being written to the droplet's disk in the container config).
+  # Consequence, named and accepted: a REBOOT clears /run, so the containers come
+  # back with no keys and production fails fast — loudly, in a crash loop the uptime
+  # monitor sees. Recovery is re-running this rig. The availability coupling the
+  # 2026-09-11 Third entry disproved is therefore BACK BY DESIGN.
+  # Then migrate, through the container that is already running. `docker exec` starts a
+  # fresh process that re-reads settings, so it needs the mounted key file present —
+  # which it now is, where before it relied on the container's stored environment.
   # Nothing else in the stack migrates (the image runs gunicorn only), so a deploy that
   # carries a migration served new code against the old schema until this was added.
   # The worker (2026-10-18) runs the scheduled jobs and needs the keys too, which exist
@@ -106,21 +118,50 @@ cmd_deploy() {
   remote_script=$(cat <<REMOTE
 set -euo pipefail
 umask 077
-trap 'shred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env 2>/dev/null || true' EXIT
-cat > /dev/shm/umi-keys.env
+keep_keys=no
+# umi-full.env is ALWAYS shredded. umi-keys.env is shredded too UNLESS the app came
+# up, because since 2026-11-02 the app and worker bind-mount it read-only and
+# re-read it on every restart (docs/key-custody-design.md: the keys left the
+# container's environment so they would stop being written to the droplet's disk).
+# So a FAILED deploy still leaves nothing behind, which is what the 2026-09-28 trap
+# was added for.
+# 🔴 The key file lives in a ROOT-OWNED 0700 DIRECTORY ON tmpfs, not in /dev/shm
+# (changed on security review, 2026-11-02). /dev/shm is mode 1777, so any local user
+# could pre-create this path — or plant a symlink at it — and root's write would land
+# in a file THEY own, or wherever the symlink pointed. /run is root-owned 0755, so a
+# non-root user cannot create anything in it at all.
+mkdir -p /run/umi-keys
+chown root:root /run/umi-keys
+chmod 700 /run/umi-keys
+trap 'shred -u /run/umi-keys/full.env 2>/dev/null || true; [ "\$keep_keys" = yes ] || shred -u /run/umi-keys/keys.env 2>/dev/null || true' EXIT
+# Never write THROUGH an existing path: remove first, then create fresh.
+rm -f /run/umi-keys/keys.env /run/umi-keys/full.env
+cat > /run/umi-keys/keys.env
 cd $REMOTE_DIR
-grep -Eq '^($KEY_NAMES)=' .env && { echo 'REFUSING: droplet .env still carries plaintext key lines — finish the migration (docs/key-custody-design.md)'; shred -u /dev/shm/umi-keys.env; exit 1; }
-cat .env /dev/shm/umi-keys.env > /dev/shm/umi-full.env
+grep -Eq '^($KEY_NAMES)=' .env && { echo 'REFUSING: droplet .env still carries plaintext key lines — finish the migration (docs/key-custody-design.md)'; exit 1; }
+cat .env /run/umi-keys/keys.env > /run/umi-keys/full.env
+# The image runs as a NON-ROOT user (docker/Dockerfile: USER umi), so the root-owned
+# 0600 file written above is unreadable inside the container and the app would boot
+# with no keys. The uid is DISCOVERED from the image, not pinned in the Dockerfile:
+# changing the image's uid would orphan the named volumes it already owns
+# (app_logs, geo_data, staticfiles) and that is an outage, not a hardening.
+app_uid=\$(docker run --rm --entrypoint id "\$($COMPOSE config --images app)" -u)
+case "\$app_uid" in ''|*[!0-9]*) echo "REFUSING: could not read a numeric runtime uid from the app image (got '\$app_uid')"; exit 1;; esac
+chown "\$app_uid" /run/umi-keys/keys.env
+# Mode stays 0600 from the umask above. No chmod 400: the ':ro' on the bind mount is
+# what stops the container writing its own key file, and dropping the owner's write
+# bit only breaks the shred on the failure path.
 services=\$($COMPOSE config --services)
 if grep -qx worker <<< "\$services"; then has_worker=yes; else has_worker=no; fi
 [ "\$has_worker" = no ] || $COMPOSE create worker
 $COMPOSE up -d app
+keep_keys=yes
 $COMPOSE ps app
 app_id=\$($COMPOSE ps -q app || true)
 worker_id=
 [ "\$has_worker" = no ] || worker_id=\$($COMPOSE ps -a -q worker || true)
-shred -u /dev/shm/umi-keys.env /dev/shm/umi-full.env
-echo 'tmpfs shredded'
+shred -u /run/umi-keys/full.env
+echo 'tmpfs merge file shredded; the mounted key file stays while the containers live'
 [ -n "\$app_id" ] || { echo 'MIGRATE FAILED: no app container after up, so nothing was migrated and the worker was not started. Check: docker ps'; exit 3; }
 docker exec "\$app_id" python manage.py migrate --noinput || { echo 'MIGRATE FAILED: the new app is running on a schema it does not match. The worker was left stopped, so no scheduled job runs against it. Read the error above, fix it, re-run: docker exec <app container> python manage.py migrate, then: docker start <worker container>. The backup taken before this deploy is the fallback.'; exit 3; }
 echo 'migrations applied'

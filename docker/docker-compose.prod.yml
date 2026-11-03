@@ -7,22 +7,19 @@
 # (2026-10-18). A key that reached the app but not the worker would boot a worker with none.
 x-app-environment: &app-environment
   - DJANGO_SETTINGS_MODULE=config.settings.production
-  # Key material, named here ON PURPOSE (2026-09-11). `env_file` reads .env from
-  # disk; the key-custody rig (scripts/deploy-with-keys.sh) deliberately keeps the
-  # keys OUT of that file and merges them into a tmpfs env-file passed as
-  # `--env-file`. But --env-file only feeds compose's ${...} substitution — it
-  # injects nothing into the container. Without these three lines the rig strips
-  # the keys from .env and the app boots with none, which is exactly how it failed
-  # its first rehearsal. See docs/key-custody-design.md §Second correction.
-  # Values still come from .env on a plain deploy, so nothing changes for anyone
-  # not using the rig.
-  - SECRET_KEY=${SECRET_KEY}
-  - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-  # The key LIST, primary first, which a rotation needs (2026-10-01: without this line
-  # the first real rotation booted the app with no key). `:-` keeps a single-key
-  # setup working: empty parses to [] and the app falls back to ENCRYPTION_KEY.
-  - ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}
-  - BLIND_INDEX_KEY=${BLIND_INDEX_KEY}
+  # 🔑 NO KEY MATERIAL IN THIS BLOCK (changed 2026-11-02, ethics-gate box 3).
+  # Docker writes a container's resolved environment into its own config on disk
+  # (/var/lib/docker/containers/<id>/config.v2.json) and keeps it there for the
+  # container's LIFETIME. So SECRET_KEY / ENCRYPTION_KEY / ENCRYPTION_KEYS /
+  # BLIND_INDEX_KEY, named here from 2026-09-11 to 2026-11-02, were plaintext on
+  # the droplet disk under root the whole time — the residue
+  # docs/key-custody-design.md §Named residuals carried as open, doubled on
+  # 2026-10-18 when the worker took this same block.
+  # They now arrive as a FILE on a tmpfs bind mount (see each service's volumes).
+  # The config records this PATH; the secret is never in it.
+  # ⚠️ Pinned by tests/test_secrets_file.py — re-adding a key line here reverts the
+  # fix. The 2026-09-11 and 2026-10-01 boot failures are the reason it is tempting.
+  - UMI_SECRETS_FILE=/run/umi/keys.env
   # Runtime role: defaults keep the single-role setup working, but the
   # append-only audit gate (threat-model must-fix #1) needs the app on a
   # non-owner role — see deployment-checklist.md "Database roles".
@@ -47,6 +44,17 @@ services:
       # e.g. GEO_DB_PATH=/app/geo/dbip-country-lite.mmdb. A volume, so the monthly
       # `manage.py refresh_geoip` survives the container being recreated by a deploy.
       - geo_data:/app/geo
+      # Key material, read-only, from HOST tmpfs. /run is RAM: never written to a
+      # block device, cleared by a reboot. The rig writes it and no longer shreds
+      # it, because the container re-reads it on every restart.
+      # 🔴 NOT /dev/shm, and that is the point (changed on review, 2026-11-02):
+      # /dev/shm is mode 1777, so any local user could pre-create this path — or a
+      # symlink at it — and root's write would land in a file THEY own. /run is
+      # root-owned 0755, so non-root cannot create anything there at all, and the
+      # rig makes /run/umi-keys itself root-owned 0700.
+      # ⚠️ If this source file is missing, Docker creates a DIRECTORY here and the
+      # app refuses to boot naming UMI_SECRETS_FILE (config/settings/base.py).
+      - /run/umi-keys/keys.env:/run/umi/keys.env:ro
     # Health monitoring: the app had no healthcheck (db does). Uses python (always
     # in the image) so we don't depend on curl. Sends X-Forwarded-Proto: https so
     # SECURE_SSL_REDIRECT doesn't 301 the probe to TLS (prod trusts that header),
@@ -88,6 +96,9 @@ services:
         condition: service_started
     volumes:
       - app_logs:/app/logs
+      # Same key file as the app, same reasoning. 2026-10-18's lesson: a key that
+      # reached the app but not the worker boots a worker with none.
+      - /run/umi-keys/keys.env:/run/umi/keys.env:ro
     # The image's HEALTHCHECK probes the app's HTTP port, which the worker never serves.
     healthcheck:
       disable: true
