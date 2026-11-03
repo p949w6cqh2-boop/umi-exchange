@@ -221,7 +221,11 @@ because they are not yet true. Each item names how you know it is done.
     *2026-11-03: it runs from the steward's laptop (his call), the Read-Only key is in place there,
     and the timer is not; ✅ the v3 API reads the e-mail contact `Active`, which is consistent with
     the attestation above (a contact being active is not proof an alert arrives, so this ticks
-    nothing).* On this e-mail setup it must
+    nothing).* ✅ *Later 2026-11-03: the steward attached **Push** to the monitor, and v3 reads it
+    `Active` and attached. That is an interrupting channel in the sense the re-open asked for,
+    **read off the API, not attested**, and with it the check passes on its strict default rule. The
+    first leg is therefore no longer resting on the e-mail reading alone. The trip test below is
+    still the only proof an alert actually arrives.* On the e-mail-only setup it had to
     run with ~~`UMI_NON_INTERRUPTING_TYPES=5`~~ `UMI_NON_INTERRUPTING_TYPES=Webhook` (v3 type names,
     2026-11-03), **reason: the founder's phone notifies on alert e-mail**
     — otherwise it correctly flags e-mail-only. The script's own default stays strict, because this is

@@ -182,9 +182,16 @@ measured that night. On the live account it reads:
 Reciprocal Aid Network: 3 attached — ProSms NotActivated · Voice NotActivated · Email Active
 ```
 
-Alerts for this monitor reach the steward **by e-mail only**. Push is `Active` on the account but is
-**not attached** to this monitor. 📌 *When two sources disagree, measure a third before believing
-either.*
+Alerts for this monitor reached the steward **by e-mail only**: push was `Active` on the account but
+**not attached** to this monitor. ✅ **Later the same night he attached it**, and the check reads:
+
+```
+Reciprocal Aid Network: 4 attached — ProSms NotActivated · Voice NotActivated · Email Active · MobileAppOld Active
+Reciprocal Aid Network: OK — interrupting and active: MobileAppOld
+```
+
+That passes on the **strict default rule**, with e-mail not counted. 📌 *When two sources disagree,
+measure a third before believing either.*
 
 **Configuration.** `UPTIMEROBOT_API_KEY` is required — **without it the script exits 2 and says
 so**, because a liveness check that is silently unconfigured is the very defect class it exists to
@@ -201,7 +208,7 @@ other active type counts as interrupting, so push still counts when UptimeRobot 
 (`MobileAppOld`/`MobileApp` → `MobileAppIOS`/`MobileAppAndroid`, which its spec announces).
 ✅ **Calibrated 2026-11-03** against the live account (v3): attached `ProSms` and `Voice` are
 `NotActivated` (UptimeRobot's docs call SMS/pro-SMS and voice-call contacts deprecated), `Email` is
-`Active`, and push `MobileAppOld` is `Active` but **not attached** to this monitor.
+`Active`, and push `MobileAppOld` is `Active` (attached later that night, above).
 📌 **Narrowing** that list — counting another
 type as interrupting — is the direction that can quietly re-open box 1; record the reason in the box.
 
