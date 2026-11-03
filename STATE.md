@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `3a64e47e` (merged 2026-10-26 UTC).
+> Reflects `main` @ `caec3eac` (merged 2026-11-03 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -204,16 +204,20 @@
   the steward's laptop; `deploy` decrypts there, pipes the keys into droplet tmpfs, force-recreates
   the app, shreds tmpfs on every exit path (#182) and runs `migrate` (#178); since 2026-10-18 it
   also creates the worker with the same keys and starts it only after migrate succeeds. The
-  droplet `.env` holds **no** key material (`deploy-with-keys.sh check`). Keys survive restarts,
+  droplet `.env` holds **no** key material (`deploy-with-keys.sh check`). ~~Keys survive restarts,
   because Docker replays a container's environment, but not recreates: any new image needs the
   laptop. The same mechanism is the open residual: the keys sit in the app's and the worker's
   container configs on the droplet disk while they exist, readable by root
-  (`docs/key-custody-design.md` §Implementation). Compose
+  (`docs/key-custody-design.md` §Implementation).~~ **Since 2026-11-03 (#232, #233; deployed and
+  verified by inspection) no container's environment or on-disk config carries a key:** the keys
+  arrive as a file bind-mounted read-only from `/run/umi-keys` (tmpfs, root-owned `0700`). Restarts
+  re-read the file; **a reboot clears it, and the rig must re-run** (`docs/key-custody-design.md`
+  Sixth entry). Compose
   passes the key **list**, so a rotation reaches production (#197); the armored key ciphertext
   rides beside every nightly backup (#196); KEK rotation ran on production 2026-10-01 (#199), after
   a four-minute outage on the first attempt that #197 fixed. Owed before box 3 can be ticked: the
-  sealed envelope in the parish safe, and closing (or accepting in writing) that container-config
-  residual. `docs/key-custody-design.md`. `check` says "clean" only when it read the droplet's
+  sealed envelope in the parish safe~~, and closing (or accepting in writing) that container-config
+  residual~~ (the residual closed 2026-11-03). `docs/key-custody-design.md`. `check` says "clean" only when it read the droplet's
   `.env` and found no key line; until 2026-10-13 any failure printed "clean", including a refused
   ssh when it was run on the droplet itself. Now a failed read is "could not check", and a found key
   is named, never printed.
@@ -557,8 +561,9 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   **The `docs/ethics-and-safety.md` gate must pass before real PII.**
   **Owed by the founder's hand as of the 2026-10-08 sweep** (each is a key, an account or a person,
   so no agent can close it): **box 1** an interrupting alert channel and an unwatched trip test;
-  **box 3** the sealed envelope in the parish safe with its two keepers told, and a ruling on the
-  container-config residual (close it with a sidecar or managed store, or accept it in writing); **box 6** governance
+  **box 3** the sealed envelope in the parish safe with its two keepers told~~, and a ruling on the
+  container-config residual (close it with a sidecar or managed store, or accept it in writing)~~
+  (the residual closed 2026-11-03); **box 6** governance
   beyond a solo steward; the eight accounts whose addresses predate confirmation get their fresh
   links (`docs/specs/email-confirmation.md`, outbound mail to real people); read the Phase 0
   country table after 2026-10-15 before any refusal is switched on; a Firebase project before

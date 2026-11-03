@@ -33,6 +33,10 @@ what the gate item says must end before real parishioners onboard.
 > ⚖️ **2026-11-02: CLOSED IN CODE for both containers, NOT YET DEPLOYED** (Sixth entry). The keys
 > left `environment:` for a read-only bind mount from a root-owned `0700` tmpfs directory. **Until
 > the first rig deploy on the new compose, the two paragraphs above still describe production.**
+>
+> ✅ **2026-11-03: DEPLOYED AND VERIFIED BY INSPECTION.** No container's `config.v2.json` carries a
+> key — **0**, where it was **2** (app and worker) before the deploy. The two paragraphs above no
+> longer describe production (Sixth entry).
 > The price is named in the Sixth entry: a reboot now takes the app down until the rig re-runs.
 
 ## The design (v1 — smallest thing that honestly meets the words)
@@ -62,8 +66,8 @@ Three changes, in order:
 - **Process memory.** A running app must hold the KEK in memory. Full host compromise
   while the app is running can read process memory. No single-box design removes this;
   what the design removes is the at-rest plaintext and the survives-a-reboot copy.
-- **Docker metadata.** ✅ **CLOSED IN CODE 2026-11-02 (Sixth entry), not yet verified on the
-  droplet.** ~~Environment injected into a container is written by Docker into its
+- **Docker metadata.** ✅ **CLOSED IN CODE 2026-11-02 (Sixth entry), ~~not yet verified on the
+  droplet~~ VERIFIED ON THE DROPLET 2026-11-03 — 0 containers carry a key on disk.** ~~Environment injected into a container is written by Docker into its
   container-config JSON on disk. v1 mitigates by injecting via an env-file on a tmpfs mount
   consumed at `up` time, but a residue in container metadata is possible depending on the
   compose path chosen at implementation.~~ **It was possible, it happened, and it stood for
@@ -150,6 +154,24 @@ rig's half; `tests/test_deploy_with_keys.py` was **rewritten, not deleted**, whe
 contract — the 2026-09-11 and 2026-10-01 outage lessons are kept in those tests' docstrings because
 the thing they protect (*the keys must actually REACH the container*) is unchanged; only the
 mechanism moved. **The first deploy is the rehearsal, and it is the steward's hand.**
+
+✅ **DEPLOYED AND VERIFIED 2026-11-03**, run by the agent on the steward's keys, every step approved
+as it ran (record: `umi-brain/projects/deploy-handlist-2026-11-03.md`). Read off the box, not
+attested:
+- **0** containers carry a key in `/var/lib/docker/containers/*/config.v2.json` — **2** before
+  (app and worker). This is the inspection the Done-when line below asks for.
+- `/run/umi-keys` is `700 root`; the key file is `600`, owned by uid 999, the image's runtime user;
+  the app and the worker both read it as that user; nothing is left in `/dev/shm`.
+- A `docker restart` of the app came back `healthy` in ~12 s by re-reading the mounted file. That is
+  the path the old design only survived **because of** the residue now gone.
+- From outside: site `200`, `/health/` reports `status`, `db` and `cache` ok.
+
+**Two failures on the way, both caught before anything on the box changed:** the first rig run
+stopped at the image lookup (Compose v5.5.1 ignores the service name in `config --images app` and
+prints every image; fixed in #233, whose test stubs now answer the way the real tools were measured
+to), and a laptop power cut one minute after #233 merged left the rig at **0 bytes** on disk, which
+was found and repaired before the rig ran again. The paragraph above is kept as the record of what
+was true until then.
 
 ## Fifth entry, 2026-10-01: rotation rehearsed on a scratch box, and the envelope's missing half
 
@@ -470,7 +492,11 @@ laptop, and tick the rehearsal line for real.
 
 ## Done-when checklist (tick the gate box only when ALL are true)
 
-- [ ] No plaintext key material at rest on the droplet (verified by inspection).
+- [x] No plaintext key material at rest on the droplet (verified by inspection).
+  *2026-11-03: ✅ **TICKED, verified by inspection on the droplet** — `config.v2.json` carries a key
+  in **0** containers (2 before), and the only plaintext is `/run/umi-keys/keys.env` on tmpfs, in a
+  root-owned `0700` directory (Sixth entry). **This ticks the LINE, not box 3:** the sealed envelope
+  below is still open.*
   *2026-10-08: half done. `.env` is clean since 2026-09-11 (Third entry). The container-config
   residue (§Implementation) still holds the keys on disk for the container's lifetime; this line
   ticks when that is closed or the steward accepts it in writing.*
