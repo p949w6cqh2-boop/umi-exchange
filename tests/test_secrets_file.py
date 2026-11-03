@@ -181,7 +181,16 @@ def test_a_failed_deploy_still_shreds_the_keys():
 def test_the_rig_makes_the_key_file_readable_by_the_image_user():
     """The image runs as USER umi, not root. A root-owned 0600 mount is
     unreadable inside the container and the app boots with no keys."""
-    assert "config --images app" in RIG, "the runtime uid must come from the app image"
+    # From the JSON config, never `config --images <service>`: Compose v5.5.1 ignores the
+    # service name there and prints every image, which failed the first real deploy.
+    assert "config --format json" in RIG and '["services"]["app"]["image"]' in RIG, (
+        "the runtime uid must come from the APP's image, named unambiguously"
+    )
+    # Commands only: the rig's own comment names the call in order to explain avoiding it.
+    commands = [ln for ln in RIG.splitlines() if ln.strip() and not ln.strip().startswith("#")]
+    assert not [ln for ln in commands if "config --images" in ln], (
+        "a command still uses config --images, which cannot filter by service on Compose v5"
+    )
     assert 'chown "\\$app_uid" /run/umi-keys/keys.env' in RIG, "the key file must be chowned to it"
     # Deliberately NOT chmod 400: ':ro' on the mount is what makes it read-only to
     # the container, and clearing the owner write bit only breaks the failure-path shred.
