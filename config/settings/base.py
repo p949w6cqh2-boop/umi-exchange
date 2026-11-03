@@ -3,6 +3,8 @@ UMI Exchange — Base Settings
 Shared across all environments. Environment-specific overrides in development.py / production.py.
 """
 
+import os
+import stat
 from pathlib import Path
 
 import environ
@@ -22,20 +24,75 @@ if env_file.exists():
 # block sat in plaintext on the droplet disk under root — exactly what
 # ethics-gate box 3 says must end. The rig writes this file onto a tmpfs mount and
 # the container config then records only the PATH.
-# Read with overwrite: the droplet's .env may still carry a superseded key, and a
-# rotation that silently kept the old one would be worse than a failure.
-# Set-but-missing is REFUSED, because it is the dangerous state — it looks
-# configured and supplies nothing.
+#
+# Only these names are honoured. The file is NOT a general env file: read_env()
+# would let anything that could write it set DATABASE_URL or
+# DJANGO_SETTINGS_MODULE too, which turns key disclosure into config injection.
+# An allowlist keeps the blast radius exactly the keys.
+SECRET_FILE_NAMES = frozenset({"SECRET_KEY", "ENCRYPTION_KEY", "ENCRYPTION_KEYS", "BLIND_INDEX_KEY"})
+
+
+def _load_secrets_file(path_str):
+    """Merge an allowlisted key file over the environment, or refuse loudly.
+
+    Set-but-unusable is REFUSED rather than skipped, because that is the
+    dangerous state: it looks configured and supplies nothing.
+
+    The file wins over an existing variable on purpose — the droplet's .env may
+    still carry a superseded key, and a rotation that silently kept the old one
+    would be worse than a failure.
+    """
+    path = Path(path_str)
+
+    # Checked before opening, and with lstat, so a symlink planted at the path is
+    # refused rather than followed. A bind mount whose source is missing also makes
+    # Docker create a DIRECTORY there, which lands here as "not a regular file".
+    try:
+        info = path.lstat()
+    except OSError as exc:
+        raise ImproperlyConfigured(
+            f"UMI_SECRETS_FILE points at {path_str!r}, which cannot be read ({exc.strerror}). "
+            "The key file lives on tmpfs and a reboot clears it — re-run "
+            "`scripts/deploy-with-keys.sh deploy` from the steward's laptop."
+        ) from exc
+
+    if stat.S_ISLNK(info.st_mode):
+        raise ImproperlyConfigured(
+            f"UMI_SECRETS_FILE points at {path_str!r}, which is a SYMLINK. Refusing to "
+            "follow it: the key file is written by the deploy rig and nothing else."
+        )
+    if not stat.S_ISREG(info.st_mode):
+        raise ImproperlyConfigured(f"UMI_SECRETS_FILE points at {path_str!r}, which is not a regular file.")
+    if stat.S_IMODE(info.st_mode) & 0o077:
+        raise ImproperlyConfigured(
+            f"UMI_SECRETS_FILE {path_str!r} is mode {stat.S_IMODE(info.st_mode):04o}: readable "
+            "beyond its owner. A key file must be 0600 or stricter. Refusing to start."
+        )
+
+    loaded = []
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, _, value = line.partition("=")
+        name = name.strip().removeprefix("export ").strip()
+        if name not in SECRET_FILE_NAMES:
+            # Silently ignored, never honoured. Named in the error below if nothing
+            # at all was usable, so a typo is diagnosable without echoing values.
+            continue
+        os.environ[name] = value.strip().strip("'\"")
+        loaded.append(name)
+
+    if not loaded:
+        raise ImproperlyConfigured(
+            f"UMI_SECRETS_FILE {path_str!r} set none of {sorted(SECRET_FILE_NAMES)}. "
+            "An empty or malformed key file is a failed deploy, not a default."
+        )
+
+
 secrets_file = env("UMI_SECRETS_FILE", default="")
 if secrets_file:
-    if not Path(secrets_file).is_file():
-        raise ImproperlyConfigured(
-            f"UMI_SECRETS_FILE points at {secrets_file!r}, which is not a readable file. "
-            "The key file lives on tmpfs and a reboot clears it; re-run "
-            "`scripts/deploy-with-keys.sh deploy` from the steward's laptop. "
-            "(A bind mount whose source is missing makes Docker create a directory there.)"
-        )
-    environ.Env.read_env(secrets_file, overwrite=True)
+    _load_secrets_file(secrets_file)
 
 SECRET_KEY = env("SECRET_KEY", default="dev-only-insecure-key-change-in-production-please")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
