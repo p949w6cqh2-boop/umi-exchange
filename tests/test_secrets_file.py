@@ -21,6 +21,7 @@ block device — and it is NOT the same as unreachable.
 """
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -61,7 +62,7 @@ def _check_deploy(env):
     itself the proof that the file was read.
     """
     return subprocess.run(  # noqa: S603
-        [str(REPO / ".venv" / "bin" / "python"), "manage.py", "check", "--deploy"],
+        [sys.executable, "manage.py", "check", "--deploy"],
         capture_output=True,
         text=True,
         timeout=120,
@@ -205,7 +206,7 @@ def test_the_rig_refuses_a_non_numeric_uid():
 def _settings_probe(env, code):
     """Load production settings with `env`, then run `code` in the shell."""
     return subprocess.run(  # noqa: S603
-        [str(REPO / ".venv" / "bin" / "python"), "manage.py", "shell", "-c", code],
+        [sys.executable, "manage.py", "shell", "-c", code],
         capture_output=True,
         text=True,
         timeout=120,
