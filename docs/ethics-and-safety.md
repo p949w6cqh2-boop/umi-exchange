@@ -303,10 +303,12 @@ because they are not yet true. Each item names how you know it is done.
   **Progress, recorded 2026-10-08 (`docs/key-custody-design.md`):** the custody rig has been armed
   on production since 2026-09-11 (#164, #165). The droplet `.env` holds no keys, deploys decrypt on
   the steward's laptop, the key ciphertext rides beside every backup (#196), and a rotation ran on
-  production on 2026-10-01 (#199). **Two things keep this box open.** Docker still holds the keys in
+  production on 2026-10-01 (#199). ~~**Two things keep this box open.** Docker still holds the keys in
   the app container's config on the droplet disk for as long as the container exists, so
-  compromising the host still hands over the key; and the second role, the sealed envelope in the
-  parish safe with its two keepers, is not in place yet.
+  compromising the host still hands over the key; and~~ ⚖️ **2026-11-03: ONE thing keeps this box
+  open.** The Docker residue is closed and **verified by inspection on the droplet**: no container's
+  on-disk config carries a key any more (`docs/key-custody-design.md` Sixth entry). What remains is
+  the second role: the sealed envelope in the parish safe with its two keepers is not in place yet.
 
 - [x] **There is a written incident, breach, and legal-request response plan.** Done when a document
   exists that names who is notified and within what timebox when data is exposed, who decides to refuse
