@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `8aee71e3` (merged 2026-10-26 UTC).
+> Reflects `main` @ `3a64e47e` (merged 2026-10-26 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -414,9 +414,12 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   · federation crypto robustness (#119, "closes the 35-bug adversarial hunt", `674991d`). Gate grew
   **1039 (batch 1) → 1155 (batch 13)**; every batch commit records its own gate count, red-first tests,
   and semgrep/bandit-clean. All federation fixes are default-OFF fix-before-enabling.
-- **Ethics gate: 3 of 6 boxes CHECKED (boxes 2, 4, 5; box 2 closed 2026-07-29).** *(True again since
-  2026-09-11: box 1 was ticked 2026-08-18 (#153) and re-opened 2026-09-11 (#159), see the Monitoring
-  bullet. Open: 1 monitoring, 3 key custody, 6 governance.)* **Box 5 (#120):** on-behalf-of consent honestly
+- **Ethics gate: 4 of 6 boxes CHECKED (boxes 1, 2, 4, 5; box 2 closed 2026-07-29) — box 1 ON THE
+  STEWARD'S WORD, `ATTESTED (unverified)`.** *(Box 1 was ticked 2026-08-18 (#153), re-opened
+  2026-09-11 (#159), and ticked again 2026-11-02 by the steward — his alert e-mail reaches his phone —
+  with two of its three legs still open and named in the box itself: the unannounced trip test and a
+  running liveness check (`scripts/monitor_liveness.sh`, built, not yet in cron). Open: 3 key
+  custody, 6 governance.)* **Box 5 (#120):** on-behalf-of consent honestly
   recorded — `Consent.subject_person` grantor + `recorded_by` witness (§4.1), initials + "not asked
   directly" until an active consent names them, public `/terms/` limits page, report/block reachable
   from any post; follow-up #128 fixed the intake `record_method` enum (`consent/0005`, gate 1201).
