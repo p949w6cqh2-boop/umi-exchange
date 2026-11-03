@@ -5,6 +5,10 @@
 
 ## Unreleased
 
+- **The check that watches our outage alarm now reads whether each alert is actually switched on.**
+  Its first version read the alarm's settings from the wrong place, so it could not tell an alert
+  that was paused from one that worked, and it reported all clear when it should not have. It now
+  asks the right question, and it refuses to report all clear when it cannot get an answer.
 - **The keys that protect sensitive information no longer sit on our server's disk.** They used to
   be written into the server's own records of the running program, where anyone who got into the
   machine would have found both the locked data and the key to it. They are now held in memory
