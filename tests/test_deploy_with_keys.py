@@ -421,9 +421,10 @@ def test_a_failed_up_still_shreds_the_keys(age_home, tmp_path):
     docker.write_text(
         "#!/bin/sh\n"
         'case " $* " in\n'
-        '  *"--entrypoint id"*) echo 10001; exit 0;;\n'
-        '  *"config --images app"*) echo umi-exchange:local; exit 0;;\n'
-        '  *" up "*) echo "up failed" >&2; exit 1;;\n'
+        + REAL_DOCKER_RUN_ID
+        + REAL_COMPOSE_IMAGES
+        + REAL_COMPOSE_JSON
+        + '  *" up "*) echo "up failed" >&2; exit 1;;\n'
         "esac\n"
         "exit 0\n"
     )
@@ -565,6 +566,23 @@ def _fake_chown(bindir, calls=None):
     return bindir
 
 
+# How Docker and Compose v5.5.1 ACTUALLY answer the calls the rig makes before `up`,
+# MEASURED on the droplet 2026-11-03. The first version of these stubs answered with what
+# was EXPECTED, and the real deploy then failed with `docker: invalid reference format`:
+#   * `compose config --images app` IGNORES the service name and prints every image;
+#   * `docker run ... <ref>` refuses any reference that is not exactly one image name.
+# A stub that echoes the expectation proves nothing about the tool. These echo the tool.
+REAL_COMPOSE_IMAGES = '  *"config --images"*) printf "%s\\n" postgres:16-alpine redis:7-alpine umi-exchange:local ;;\n'
+REAL_COMPOSE_JSON = (
+    '  *"config --format json"*) echo \'{"services": {"app": {"image": "umi-exchange:local"},'
+    ' "worker": {"image": "umi-exchange:local"}}}\' ;;\n'
+)
+REAL_DOCKER_RUN_ID = (
+    '  *"--entrypoint id"*) [ "$5" = umi-exchange:local ] '
+    '|| { echo "docker: invalid reference format" >&2; exit 125; }; echo 10001 ;;\n'
+)
+
+
 def _check_over_ssh(bindir, remote_dir):
     return subprocess.run(
         ["bash", str(SCRIPT), "check"],
@@ -684,9 +702,10 @@ def _run_remote(age_home, tmp_path, migrate_rc=0, worker_id="workerid456", servi
         f'  *" config --services") printf "%s\\n" {services} ;;\n'
         # The runtime uid of the image, read before `up` so the bind-mounted key
         # file can be chowned to the non-root user the container runs as.
-        '  *"config --images app"*) echo umi-exchange:local ;;\n'
-        '  *"--entrypoint id"*) echo 10001 ;;\n'
-        '  *" ps -q app") echo appid123 ;;\n'
+        + REAL_COMPOSE_IMAGES
+        + REAL_COMPOSE_JSON
+        + REAL_DOCKER_RUN_ID
+        + '  *" ps -q app") echo appid123 ;;\n'
         f'  *" ps -a -q worker") echo "{worker_id}" ;;\n'
         f'  "exec appid123 python manage.py migrate --noinput") exit {migrate_rc} ;;\n'
         "esac\n"

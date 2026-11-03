@@ -145,7 +145,12 @@ cat .env /run/umi-keys/keys.env > /run/umi-keys/full.env
 # with no keys. The uid is DISCOVERED from the image, not pinned in the Dockerfile:
 # changing the image's uid would orphan the named volumes it already owns
 # (app_logs, geo_data, staticfiles) and that is an outage, not a hardening.
-app_uid=\$(docker run --rm --entrypoint id "\$($COMPOSE config --images app)" -u)
+# The app's image is read from the JSON form of the compose config. NOT from
+# "config --images app": Compose v5.5.1 IGNORES the service name there and prints every
+# image in the file, one per line (measured on the droplet 2026-11-03, when the first real
+# deploy on this rig failed on this exact line with "docker: invalid reference format").
+app_image=\$($COMPOSE config --format json | python3 -c 'import json, sys; print(json.load(sys.stdin)["services"]["app"]["image"])')
+app_uid=\$(docker run --rm --entrypoint id "\$app_image" -u)
 case "\$app_uid" in ''|*[!0-9]*) echo "REFUSING: could not read a numeric runtime uid from the app image (got '\$app_uid')"; exit 1;; esac
 chown "\$app_uid" /run/umi-keys/keys.env
 # Mode stays 0600 from the umask above. No chmod 400: the ':ro' on the bind mount is
