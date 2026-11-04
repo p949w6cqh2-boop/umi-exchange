@@ -29,8 +29,45 @@ while new writes use the new KEK. The sequence (full detail = runbook Phase 5):
 4. `ENCRYPTION_KEYS = [<new>]` — drop the old key. **← window closes; old KEK retired.**
 
 **Do not drop the old key until step 3 is clean** — a DEK still wrapped under the old KEK becomes
-permanently unreadable. The KEK is read from the environment only (`ENCRYPTION_KEYS` / legacy
-`ENCRYPTION_KEY`); it is **never** written to the database, logs, or git.
+permanently unreadable. The KEK reaches the app from a read-only file on tmpfs (`UMI_SECRETS_FILE`,
+since 2026-11-02); it is **never** written to the database, logs, or git.
+
+## On this deployment: through the key rig
+
+Each `ENCRYPTION_KEYS = ...` line above is one `encrypt` and one `deploy` of
+`scripts/deploy-with-keys.sh`, from the steward's laptop. Every `deploy` recreates the app and the
+worker, a few seconds of downtime, and leaves the database and Redis alone.
+
+What each key costs to change:
+
+| Key | What changing it does |
+|---|---|
+| `SECRET_KEY` | Signs everyone out (sessions last 24 hours anyway, `SESSION_COOKIE_AGE`). Kills reset and email-confirm links in flight (48 hours, `EMAIL_TOKEN_MAX_AGE`). Makes every browser unknown to the login throttle until its next sign-in. Drops any background job queued at that moment, because django-q signs its payloads with it. Audit IP hashes before and after can no longer be compared; nothing reads them across time. |
+| `BLIND_INDEX_KEY` | Free only while `people.Person` is empty: `name_bidx` is keyed by it and it is not rotatable without re-indexing (`docs/deployment-checklist.md`). With real rows, leave it alone. |
+| `ENCRYPTION_KEYS` | The dual-read sequence above. Nothing is signed out. |
+
+The sequence:
+
+1. **Look first, on the droplet.** `bright_line`, `rotate_keks --dry-run`, the three censuses, and
+   how many jobs are queued. Take a fresh backup (`scripts/backup.sh`), which keeps the
+   pre-rotation key file beside the dump.
+2. **Stage on the laptop's tmpfs** (`/run/user/$(id -u)`), never in the repo and never printed:
+   `ENCRYPTION_KEYS=<new>,<old>`, plus any other key being replaced.
+3. **`encrypt`, then `deploy`.** `encrypt` proves the new file opens and keeps the previous one as
+   `keys.env.age.<stamp>`.
+4. **Confirm the app loaded the list, then re-wrap.** `rotate_keks --dry-run`, `rotate_keks`, the
+   three censuses.
+5. **Stage `<new>` alone, `encrypt`, `deploy`.** Confirm the app loaded one key and `/health/` is 200.
+6. **Shred the staging file.**
+7. **Keep the archived `keys.env.age.<stamp>` files** until the last backup taken before the rotation
+   has aged out (`RETENTION_DAYS`, 30).
+8. **Replace the key file in the sealed envelope** (`docs/envelope-instructions.md`). The identity
+   has not changed, but the key file has, and a stale envelope is only discovered on the night it
+   is needed.
+
+A power cut on the laptop at any point is recoverable. The ciphertext is replaced atomically, so
+after a reboot `deploy` runs again from whichever step the ciphertext has reached, and the staging
+file can be rebuilt from it.
 
 ## Retention model — the real one
 

@@ -76,8 +76,29 @@ cmd_encrypt() {
     *) : ;;
   esac
   mkdir -p "$(dirname "$KEYS_AGE")"
+  # Never overwrite in place. This ciphertext can be the only copy on a laptop that loses
+  # power without warning, and a cut mid-write leaves a zero-byte file (measured 2026-11-03).
+  local tmp archived
+  tmp=$(mktemp "$KEYS_AGE.new.XXXXXX")
   # Armored (-a): plain ASCII, so the envelope can carry it on paper as well as a USB drive.
-  age -e -a -R "$RECIPIENTS" -o "$KEYS_AGE" < "$plain"
+  age -e -a -R "$RECIPIENTS" < "$plain" > "$tmp" || { rm -f "$tmp"; die "age could not encrypt $plain: nothing was replaced"; }
+  sync "$tmp"
+  if [ -f "$KEYS_AGE" ]; then
+    # Prove the new file opens BEFORE it replaces a working one: a wrong recipients file
+    # would otherwise swap the keys for a file nobody can read. A first encrypt has nothing
+    # to lose, so it needs no identity.
+    [ -f "$IDENTITY" ] || { rm -f "$tmp"; die "cannot check the new ciphertext without $IDENTITY: nothing was replaced"; }
+    age -d -i "$IDENTITY" "$tmp" 2>/dev/null | cmp -s - "$plain" \
+      || { rm -f "$tmp"; die "the new ciphertext does not open back to $plain with $IDENTITY: nothing was replaced. Check $RECIPIENTS"; }
+    # Archive, never delete: old backups were taken under the old keys, so its copy has to
+    # outlive them (docs/runbooks/key-rotation.md).
+    archived="$KEYS_AGE.$(date +%Y%m%d-%H%M%S)"
+    cp -p "$KEYS_AGE" "$archived"
+    sync "$archived"
+    echo "previous ciphertext kept -> $archived"
+  fi
+  mv -f "$tmp" "$KEYS_AGE"
+  sync "$(dirname "$KEYS_AGE")"
   echo "encrypted -> $KEYS_AGE"
   echo "NOW SHRED THE PLAINTEXT: shred -u '$plain'  (ciphertext is the only copy that should remain)"
 }
@@ -119,12 +140,13 @@ cmd_deploy() {
 set -euo pipefail
 umask 077
 keep_keys=no
-# umi-full.env is ALWAYS shredded. umi-keys.env is shredded too UNLESS the app came
-# up, because since 2026-11-02 the app and worker bind-mount it read-only and
-# re-read it on every restart (docs/key-custody-design.md: the keys left the
-# container's environment so they would stop being written to the droplet's disk).
-# So a FAILED deploy still leaves nothing behind, which is what the 2026-09-28 trap
-# was added for.
+# The merge file and the staged keys are ALWAYS shredded. The live keys.env is shredded
+# only if this run replaced it and the app then failed to come up, because since
+# 2026-11-02 the app and worker bind-mount it read-only and re-read it on every restart
+# (docs/key-custody-design.md: the keys left the container's environment so they would
+# stop being written to the droplet's disk). So a run that fails after the swap still
+# leaves nothing behind, which is what the 2026-09-28 trap was added for, and a run
+# refused before the swap leaves the running app able to restart.
 # 🔴 The key file lives in a ROOT-OWNED 0700 DIRECTORY ON tmpfs, not in /dev/shm
 # (changed on security review, 2026-11-02). /dev/shm is mode 1777, so any local user
 # could pre-create this path — or plant a symlink at it — and root's write would land
@@ -133,13 +155,23 @@ keep_keys=no
 mkdir -p /run/umi-keys
 chown root:root /run/umi-keys
 chmod 700 /run/umi-keys
-trap 'shred -u /run/umi-keys/full.env 2>/dev/null || true; [ "\$keep_keys" = yes ] || shred -u /run/umi-keys/keys.env 2>/dev/null || true' EXIT
+swapped=no
+# The live key file is only ever touched at the swap below. The containers mount it, so a
+# run that refuses or fails BEFORE the swap must leave it alone, or the app keeps serving
+# from memory and its next restart fails (found 2026-11-03, before a rotation relied on it).
+trap 'shred -u /run/umi-keys/full.env /run/umi-keys/keys.env.new 2>/dev/null || true; [ "\$swapped" = no ] || [ "\$keep_keys" = yes ] || shred -u /run/umi-keys/keys.env 2>/dev/null || true' EXIT
 # Never write THROUGH an existing path: remove first, then create fresh.
-rm -f /run/umi-keys/keys.env /run/umi-keys/full.env
-cat > /run/umi-keys/keys.env
+rm -rf /run/umi-keys/keys.env.new /run/umi-keys/full.env
+cat > /run/umi-keys/keys.env.new
+# Check the keys that arrived before anything changes. A failed decrypt on the laptop reaches
+# here as an EMPTY stream and cat succeeds on it, and every run below recreates the app, so
+# without this a bad decrypt would replace a healthy app with one that cannot boot. Names only.
+for want in SECRET_KEY BLIND_INDEX_KEY 'ENCRYPTION_KEYS?'; do
+  grep -Eq "^\$want=[\"']?[^\"'[:space:]]" /run/umi-keys/keys.env.new || { echo "REFUSING: the keys that arrived have no value for \$want, so the decrypt failed or the key file is incomplete. Nothing was changed."; exit 1; }
+done
 cd $REMOTE_DIR
 grep -Eq '^($KEY_NAMES)=' .env && { echo 'REFUSING: droplet .env still carries plaintext key lines — finish the migration (docs/key-custody-design.md)'; exit 1; }
-cat .env /run/umi-keys/keys.env > /run/umi-keys/full.env
+cat .env /run/umi-keys/keys.env.new > /run/umi-keys/full.env
 # The image runs as a NON-ROOT user (docker/Dockerfile: USER umi), so the root-owned
 # 0600 file written above is unreadable inside the container and the app would boot
 # with no keys. The uid is DISCOVERED from the image, not pinned in the Dockerfile:
@@ -152,14 +184,24 @@ cat .env /run/umi-keys/keys.env > /run/umi-keys/full.env
 app_image=\$($COMPOSE config --format json | python3 -c 'import json, sys; print(json.load(sys.stdin)["services"]["app"]["image"])')
 app_uid=\$(docker run --rm --entrypoint id "\$app_image" -u)
 case "\$app_uid" in ''|*[!0-9]*) echo "REFUSING: could not read a numeric runtime uid from the app image (got '\$app_uid')"; exit 1;; esac
-chown "\$app_uid" /run/umi-keys/keys.env
+chown "\$app_uid" /run/umi-keys/keys.env.new
 # Mode stays 0600 from the umask above. No chmod 400: the ':ro' on the bind mount is
 # what stops the container writing its own key file, and dropping the owner's write
 # bit only breaks the shred on the failure path.
 services=\$($COMPOSE config --services)
 if grep -qx worker <<< "\$services"; then has_worker=yes; else has_worker=no; fi
-[ "\$has_worker" = no ] || $COMPOSE create worker
-$COMPOSE up -d app
+# THE SWAP. After a reboot Docker has left a DIRECTORY at this path (it creates a missing
+# bind source when a container tries to start, measured 2026-11-03), and mv would move the
+# file INTO it, so that goes first; rm -f alone cannot remove one, which aborted this rig.
+[ ! -d /run/umi-keys/keys.env ] || rm -rf /run/umi-keys/keys.env
+mv -f /run/umi-keys/keys.env.new /run/umi-keys/keys.env
+swapped=yes
+# --force-recreate, because compose cannot see a keys-only change: the keys left its
+# environment block, so plain up -d reports the app Running and recreates nothing, leaving
+# old keys in memory and the old inode in the mount while this rig reports success. Measured
+# 2026-11-03 with compose --dry-run. The same dry run shows db and redis are not recreated.
+[ "\$has_worker" = no ] || $COMPOSE create --force-recreate worker
+$COMPOSE up -d --force-recreate app
 keep_keys=yes
 $COMPOSE ps app
 app_id=\$($COMPOSE ps -q app || true)
