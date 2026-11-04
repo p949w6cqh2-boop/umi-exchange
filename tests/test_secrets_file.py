@@ -20,6 +20,8 @@ strictly better than on disk — tmpfs is cleared on reboot and never written to
 block device — and it is NOT the same as unreachable.
 """
 
+import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -339,3 +341,81 @@ def test_encrypt_never_overwrites_the_ciphertext_in_place():
     assert '-o "$KEYS_AGE"' not in encrypt
     assert 'cmp -s - "$plain"' in encrypt, "the new ciphertext must be proven to open first"
     assert 'mv -f "$tmp" "$KEYS_AGE"' in encrypt
+
+
+# ── The off-site backup credential ────────────────────────────────────────────
+#
+# `env_file: ../.env` hands every line of .env to the app and the worker, and Docker writes
+# them into config.v2.json. The backup credential is in .env for scripts/backup.sh, on the
+# host. Nothing in apps/ or config/ reads it, so a compromised app held the key to the
+# off-site backups for no reason. Found 2026-11-03 while checking the rotated keys were gone.
+
+BACKUP_CREDENTIAL = ["BACKUP_ACCESS_KEY", "BACKUP_SECRET_KEY"]
+
+
+def _compose_available():
+    if shutil.which("docker") is None:
+        return False
+    return subprocess.run(["docker", "compose", "version"], capture_output=True).returncode == 0
+
+
+def test_compose_blanks_the_backup_credential_in_the_block_both_services_share():
+    anchor = COMPOSE[COMPOSE.index("x-app-environment:") : COMPOSE.index("services:")]
+    for name in BACKUP_CREDENTIAL:
+        assert f"  - {name}=\n" in anchor, f"{name} must be blank here, or env_file hands it to the app"
+    assert COMPOSE.count("environment: *app-environment") == 2, "the app and the worker must both take the block"
+
+
+@pytest.mark.skipif(not _compose_available(), reason="needs docker compose")
+def test_real_compose_resolves_the_credential_to_blank_in_both_containers(tmp_path):
+    """`environment:` beating `env_file:` is compose's behaviour, so ask compose. A text
+    search would pass on a spelling where the blank does not win."""
+    (tmp_path / "docker").mkdir()
+    (tmp_path / "docker" / "docker-compose.prod.yml").write_text(COMPOSE)
+    env = tmp_path / ".env"
+    env.write_text("BACKUP_ACCESS_KEY=fake-access\nBACKUP_SECRET_KEY=fake-secret\nBACKUP_BUCKET=fake-bucket\n")
+
+    r = subprocess.run(
+        [
+            "docker",
+            "compose",
+            "--env-file",
+            str(env),
+            "-f",
+            "docker/docker-compose.prod.yml",
+            "config",
+            "--format",
+            "json",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert r.returncode == 0, r.stderr
+    services = json.loads(r.stdout)["services"]
+    for service in ("app", "worker"):
+        environment = services[service]["environment"]
+        assert environment["BACKUP_BUCKET"] == "fake-bucket", "control: env_file must still reach this service"
+        for name in BACKUP_CREDENTIAL:
+            assert environment[name] == "", f"{service} still receives {name}"
+
+
+def test_nothing_in_the_app_reads_the_backup_credential():
+    """What makes blanking it safe. If this ever fails, the new reader needs a route of its
+    own, not the credential back in the container."""
+    readers = [
+        str(path.relative_to(REPO))
+        for root in ("apps", "config")
+        for path in (REPO / root).rglob("*.py")
+        if "tests" not in path.parts and any(name in path.read_text() for name in BACKUP_CREDENTIAL)
+    ]
+    assert readers == []
+
+
+def test_the_backup_script_reads_the_credential_from_the_host_env_file():
+    """The other half. The job that does need it runs on the host, and gets it from .env."""
+    script = (REPO / "scripts" / "backup.sh").read_text()
+    for name in BACKUP_CREDENTIAL:
+        assert f"$(env_file_val {name})" in script, f"backup.sh no longer loads {name} from .env itself"

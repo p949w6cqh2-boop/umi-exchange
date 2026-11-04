@@ -5,6 +5,8 @@
 
 ## Unreleased
 
+- **The board no longer holds the password to our off-site backups.** It never used it. Only the
+  nightly backup job on the server needs it, so now only that job has it. Nothing you see changes.
 - **Changing our keys can no longer knock the board over by accident.** The tool that puts the keys
   on our server now checks what arrived before it touches anything, keeps the old copy when it makes
   a new one, and can bring the board back after the server restarts, which it could not do before.
