@@ -88,6 +88,30 @@ Three changes, in order:
   (§Implementation). That residual is open, and closing it (a secrets sidecar or a managed
   store) or accepting it in writing is the steward's call.
 
+## Seventh entry, 2026-11-03: reading the rig before a rotation found it could not safely run one
+
+**His key "32": rotate the keys before real data lands.** Nothing was deployed for this entry. A
+read-only look before touching production found five defects. Four come from the Sixth entry's
+move of the keys into a mounted file, and none had a failing test, because the stubs only ever
+saw a first deploy.
+
+| Found | What it would have done | Fix |
+|---|---|---|
+| Compose cannot see a keys-only change. `compose --dry-run` on the droplet read `Container docker-app-1 Running` | A rotation reports success while the app keeps its old keys in memory and the old inode in its mount, and `rotate_keks` through `docker exec` sees the old keys too | `--force-recreate` on the app and the worker. The same dry run shows the database and Redis are not recreated |
+| After a reboot Docker creates a **directory** at the missing bind source, and `rm -f` cannot remove one (measured on a local daemon, 29.1.3; the droplet runs 29.8.0 and has not been rebooted to see it) | The rig aborts under `set -e`, so the one documented way back from a server reboot does not work | The directory is cleared right before the swap |
+| The rig removed the live key file first, and its trap shredded whatever was there | A run refused over a dirty `.env` leaves running containers whose next restart fails | Keys are staged at `keys.env.new`. The live file is touched only at an atomic `mv`, after every check has passed |
+| Nothing checks what arrived. A failed decrypt on the laptop reaches the droplet as an empty stream, and `cat` succeeds on it | With `--force-recreate`, a bad decrypt replaces a healthy app with one that cannot boot | Refused unless all three names carry a value. The message names keys, never values |
+| `encrypt` wrote over the ciphertext in place (`age` 1.2.0's `-o` overwrites, measured) and proved nothing about the result | A power cut mid-write leaves zero bytes where the only working copy was; a wrong recipients file swaps it for a file nobody can open | Temp file, `sync`, round-trip proof against the plaintext, the previous copy archived, then rename |
+
+**A census that lied, kept because it nearly mattered.** Counting Fernet tokens in `pg_dump` first
+read `0` from an **empty dump** (`dump lines: 0`), because sourcing `.env` had failed. Redone, a
+loose `gAAAAA` search read `5`, which looked like data `rotate_keks` does not cover. It was not: all
+five are `django_q_task.result`, pickled (header `80 05 95`), 57 bytes decoded, and a Fernet token
+is at least 73. A strict search reads `0` across all 5161 lines. **Print the size of what a count
+was taken over, or a zero means nothing.**
+
+What a rotation costs, and the procedure, are in `docs/runbooks/key-rotation.md`.
+
 ## Sixth entry, 2026-11-02: the container residue is CLOSED IN CODE — and it cost the reboot back
 
 **His key "2a", chosen over a secrets sidecar and over accepting the residue in writing.**

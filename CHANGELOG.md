@@ -5,6 +5,11 @@
 
 ## Unreleased
 
+- **Changing our keys can no longer knock the board over by accident.** The tool that puts the keys
+  on our server now checks what arrived before it touches anything, keeps the old copy when it makes
+  a new one, and can bring the board back after the server restarts, which it could not do before.
+  Nothing you see changes. This is what lets us change the keys safely before real information
+  lands.
 - **The check that watches our outage alarm now reads whether each alert is actually switched on.**
   Its first version read the alarm's settings from the wrong place, so it could not tell an alert
   that was paused from one that worked, and it reported all clear when it should not have. It now

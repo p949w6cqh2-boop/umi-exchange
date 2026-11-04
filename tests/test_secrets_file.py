@@ -173,7 +173,7 @@ def test_a_failed_deploy_still_shreds_the_keys():
     ), "the EXIT trap must shred the key file unless the deploy reached `up`"
 
     # And the flag must be set AFTER the up, never before it.
-    assert RIG.index("keep_keys=yes") > RIG.index("up -d app"), (
+    assert RIG.index("keep_keys=yes") > RIG.index("up -d --force-recreate app"), (
         "keep_keys is set before `up -d app`, so a failed up would leave the keys behind"
     )
 
@@ -191,7 +191,7 @@ def test_the_rig_makes_the_key_file_readable_by_the_image_user():
     assert not [ln for ln in commands if "config --images" in ln], (
         "a command still uses config --images, which cannot filter by service on Compose v5"
     )
-    assert 'chown "\\$app_uid" /run/umi-keys/keys.env' in RIG, "the key file must be chowned to it"
+    assert 'chown "\\$app_uid" /run/umi-keys/keys.env.new' in RIG, "the key file must be chowned to it"
     # Deliberately NOT chmod 400: ':ro' on the mount is what makes it read-only to
     # the container, and clearing the owner write bit only breaks the failure-path shred.
     assert "chmod 400 /run/umi-keys/keys.env" not in RIG
@@ -294,8 +294,8 @@ def test_the_rig_writes_keys_into_a_root_owned_0700_dir_not_dev_shm():
 def test_the_rig_never_writes_through_an_existing_key_file():
     """`cat >` into a path that already exists writes into whatever is there.
     Remove first, so the write always creates a fresh file root owns."""
-    assert "rm -f /run/umi-keys/keys.env" in RIG
-    assert RIG.index("rm -f /run/umi-keys/keys.env") < RIG.index("cat > /run/umi-keys/keys.env")
+    assert "rm -rf /run/umi-keys/keys.env.new" in RIG
+    assert RIG.index("rm -rf /run/umi-keys/keys.env.new") < RIG.index("cat > /run/umi-keys/keys.env.new")
 
 
 def test_compose_mounts_the_key_file_from_the_locked_directory():
@@ -304,3 +304,38 @@ def test_compose_mounts_the_key_file_from_the_locked_directory():
         body = COMPOSE[start : start + 2400]
         assert "- /run/umi-keys/keys.env:/run/umi/keys.env:ro" in body, f"{service} mounts the wrong source"
         assert "- /dev/shm/" not in body, f"{service} still mounts from world-writable /dev/shm"
+
+
+# Source assertions on purpose: the rig's own module is skipped wherever `age` is absent,
+# which includes CI, and these two are what a rotation and a reboot recovery depend on.
+
+
+def test_a_rig_rerun_recreates_both_containers_when_only_the_keys_changed():
+    """A keys-only change is invisible to compose now, so `up -d` alone leaves the app on
+    its old keys while reporting success. Found 2026-11-03 before a rotation relied on it."""
+    assert "up -d --force-recreate app" in RIG
+    assert "create --force-recreate worker" in RIG
+
+
+def test_the_rig_clears_the_directory_docker_leaves_after_a_reboot():
+    """After a reboot Docker creates a directory at the missing bind source, and `rm -f`
+    cannot remove one. This line is the difference between a recovery and an abort. The
+    newline matters: without it `rm -rf .../keys.env.new` would satisfy this too."""
+    clear = "[ ! -d /run/umi-keys/keys.env ] || rm -rf /run/umi-keys/keys.env\n"
+    assert clear in RIG
+    assert RIG.index(clear) < RIG.index("mv -f /run/umi-keys/keys.env.new /run/umi-keys/keys.env")
+
+
+def test_the_rig_checks_the_keys_that_arrived_before_it_replaces_the_live_file():
+    """A failed decrypt on the laptop arrives as an empty stream, and every run recreates."""
+    guard = RIG.index("the keys that arrived")
+    assert RIG.index("cat > /run/umi-keys/keys.env.new") < guard
+    assert guard < RIG.index("mv -f /run/umi-keys/keys.env.new /run/umi-keys/keys.env")
+
+
+def test_encrypt_never_overwrites_the_ciphertext_in_place():
+    """The ciphertext can be the only copy on a laptop that loses power without warning."""
+    encrypt = RIG[RIG.index("cmd_encrypt() {") : RIG.index("cmd_deploy() {")]
+    assert '-o "$KEYS_AGE"' not in encrypt
+    assert 'cmp -s - "$plain"' in encrypt, "the new ciphertext must be proven to open first"
+    assert 'mv -f "$tmp" "$KEYS_AGE"' in encrypt

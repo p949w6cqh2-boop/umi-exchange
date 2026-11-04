@@ -19,11 +19,15 @@ the spare. It lets the parish get back in if the steward cannot: illness, an acc
 - [ ] The succession note from `docs/governance.md` (§Succession and removal).
 - Sealed on ____________ by ____________ and ____________ (both sign across the seal).
 
+It does not hold the logins to the hosting company, the domain or the code. Those are in a second
+envelope, if one exists, or with the steward's own arrangements.
+
 ## Who may open it, and when
 
 - **Two people together: the pastor and the named trustee. Never one person alone.**
-- Open it only when the steward cannot be reached and the board has to be stopped, handed over or
-  rebuilt, or when the pastor names a new steward.
+- Open it only when the steward cannot be reached and the board has to be stopped, brought back
+  after its server restarts, handed over or rebuilt, or when the pastor names a new steward. A
+  restart wipes the keys from the server, and only this envelope or the steward can put them back.
 - **A demand for information is never a reason to open it.** A subpoena, a government agency, or
   anyone else asking for data goes to the steward and the pastor together, and to a lawyer, before
   anything moves (`docs/incident-response.md`).
