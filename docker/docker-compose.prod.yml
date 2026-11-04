@@ -20,6 +20,13 @@ x-app-environment: &app-environment
   # ⚠️ Pinned by tests/test_secrets_file.py — re-adding a key line here reverts the
   # fix. The 2026-09-11 and 2026-10-01 boot failures are the reason it is tempting.
   - UMI_SECRETS_FILE=/run/umi/keys.env
+  # 🔑 The off-site backup credential stays out of the containers (2026-11-03). It is in
+  # .env for scripts/backup.sh, on the host. Each service's `env_file: ../.env` would also
+  # hand it to the app and the worker, and into their on-disk config, though neither reads
+  # it. An entry here beats env_file, so these blanks mean a compromised app does not hold
+  # the key to the backups. Pinned by tests/test_secrets_file.py.
+  - BACKUP_ACCESS_KEY=
+  - BACKUP_SECRET_KEY=
   # Runtime role: defaults keep the single-role setup working, but the
   # append-only audit gate (threat-model must-fix #1) needs the app on a
   # non-owner role — see deployment-checklist.md "Database roles".
