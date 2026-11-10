@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `818a6ba3` (merged 2026-11-03 UTC).
+> Reflects `main` @ `1a087a65` (merged 2026-11-04 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -212,7 +212,8 @@
   verified by inspection) no container's environment or on-disk config carries a key:** the keys
   arrive as a file bind-mounted read-only from `/run/umi-keys` (tmpfs, root-owned `0700`). Restarts
   re-read the file; **a reboot clears it, and the rig must re-run** (`docs/key-custody-design.md`
-  Sixth entry). Compose
+  Sixth entry). That happened for real on 2026-11-09: the app sat stopped, not looping, until the
+  rig ran 3 minutes 23 seconds after the server booted (Eighth entry). Compose
   passes the key **list**, so a rotation reaches production (#197); the armored key ciphertext
   rides beside every nightly backup (#196); KEK rotation ran on production 2026-10-01 (#199), after
   a four-minute outage on the first attempt that #197 fixed. Owed before box 3 can be ticked: the
@@ -316,7 +317,10 @@
   stack. Deploys are still hand-run, now **from the steward's laptop through the custody rig**: the
   droplet `.env` holds no keys, so a plain `compose up` there starts the app without them and
   production refuses to boot. Which commit is live is read off the box (deploy runbook step 2),
-  not from this file. *As written 2026-07-18:*
+  not from this file.
+  🔴 **2026-11-08: a second billing outage, 34 hours 46 minutes.** This time the provider kept the
+  disk, so nothing was rebuilt and nothing on it was lost; one nightly backup (11-09) is missing
+  (`docs/incidents/2026-11-08-server-off-34-hours.md`). *As written 2026-07-18:*
 - **DEPLOYED (2026-07-18):** DigitalOcean droplet `143.244.167.7` (~960 MB + 2 GB swap), docker compose
   **Caddy → gunicorn → postgres:16 + redis:7**, TLS via Let's Encrypt, repo at `/opt/umi-exchange`.
   Deploy is **hand-run** (image built on the box, no ghcr push); secrets in a git-ignored `.env`.
@@ -522,6 +526,9 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   ✅ **Backup heartbeat (#168) LIVE since 2026-09-28:** each good nightly backup pings an outside
   watcher (`BACKUP_HEARTBEAT_URL`, preflighted before any work), so a backup that silently stops
   raises an alert instead of looking like one that worked.
+  ✅ **Root lingers on the server since 2026-11-10** (`loginctl enable-linger root`): before that,
+  an ssh logout during the nightly run could kill the upload, and on 2026-11-10 one did
+  (`docs/deploy/vps-runbook.md` §9 step 4).
   ⚠️ **Read `Checked URL` on any alert before trusting it.** A first attempt pointed the monitor at
   `/health/ERROR`, a path that never existed; it produced a real alert with root cause `HTTP 404`,
   which proves the notification channel and nothing else — and while it was configured that way

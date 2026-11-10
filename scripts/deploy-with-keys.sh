@@ -118,10 +118,12 @@ cmd_deploy() {
   # ⚠️ CHANGED 2026-11-02: /run/umi-keys/keys.env now SURVIVES a successful deploy,
   # because the containers bind-mount it (the keys left compose's `environment:` so
   # they would stop being written to the droplet's disk in the container config).
-  # Consequence, named and accepted: a REBOOT clears /run, so the containers come
-  # back with no keys and production fails fast — loudly, in a crash loop the uptime
-  # monitor sees. Recovery is re-running this rig. The availability coupling the
-  # 2026-09-11 Third entry disproved is therefore BACK BY DESIGN.
+  # Consequence, named and accepted: a REBOOT clears /run, so the containers cannot
+  # start. Docker tries each ONCE, leaves it at Exited (127) and does not retry, so
+  # there is NO crash loop (this comment said there was until the first real reboot,
+  # 2026-11-09: docs/key-custody-design.md Eighth entry). The server stays quiet and
+  # the uptime monitor is what makes it loud. Recovery is re-running this rig. The
+  # availability coupling the 2026-09-11 Third entry disproved is therefore BACK BY DESIGN.
   # Then migrate, through the container that is already running. `docker exec` starts a
   # fresh process that re-reads settings, so it needs the mounted key file present —
   # which it now is, where before it relied on the container's stored environment.
