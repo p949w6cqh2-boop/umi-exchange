@@ -5,6 +5,16 @@
 
 ## Unreleased
 
+- **The board was down from the morning of November 8 to the afternoon of November 9.** Our server
+  was switched off over a late hosting bill. Nothing on it was lost. When it came back, the board
+  stayed down for three more minutes until the steward put its keys back from his own computer,
+  which is the trade-off described further down this list doing what it is meant to do. One
+  night's backup, November 9, was never taken, because there was no server to take it. The full
+  account is in `docs/incidents/2026-11-08-server-off-34-hours.md`.
+- **A backup can no longer be cut short by someone logging out of the server.** That happened once,
+  on November 10. The copy of the data had already reached our off-site storage, but the run was
+  stopped before it finished its checks and before it could report in. The server now keeps a
+  backup running whoever comes and goes.
 - **The board no longer holds the password to our off-site backups.** It never used it. Only the
   nightly backup job on the server needs it, so now only that job has it. Nothing you see changes.
 - **Changing our keys can no longer knock the board over by accident.** The tool that puts the keys

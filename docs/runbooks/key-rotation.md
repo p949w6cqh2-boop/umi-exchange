@@ -36,7 +36,12 @@ since 2026-11-02); it is **never** written to the database, logs, or git.
 
 Each `ENCRYPTION_KEYS = ...` line above is one `encrypt` and one `deploy` of
 `scripts/deploy-with-keys.sh`, from the steward's laptop. Every `deploy` recreates the app and the
-worker, a few seconds of downtime, and leaves the database and Redis alone.
+worker, **about 20 seconds of downtime each time**, and leaves the database and Redis alone. A
+rotation is two deploys, so it takes the board down twice.
+
+> ⚖️ *Corrected 2026-11-10. This said "a few seconds of downtime" until the procedure was run on
+> production on 2026-11-03, where Docker's own events measured about 20 seconds from the app
+> stopping to the app healthy, both times (`docs/key-custody-design.md`, Seventh entry).*
 
 What each key costs to change:
 

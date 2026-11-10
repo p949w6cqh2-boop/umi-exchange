@@ -216,6 +216,10 @@ because they are not yet true. Each item names how you know it is done.
   - ❌ **NOT MET — a trip test the founder does not schedule or watch for.** Never run on this
     setup. The standing key for it exists (`umi-brain` keyring, 2026-09-14). Its receipt: he reports
     the phone alert *before* being told a trip happened.
+    ⚖️ *2026-11-10: a real outage on 2026-11-08 was the nearest thing to this test so far, and **it
+    is not the receipt.** The monitor read DOWN within minutes, read from its API. But the outage
+    entered the record ten hours in, raised by an agent, and when the alert reached the steward was
+    never asked (`docs/incidents/2026-11-08-server-off-34-hours.md`, Finding 1). Still NOT MET.*
   - ✅ **MET 2026-11-03 — a periodic liveness check on the monitor itself.** ~~❌ NOT MET.~~ It runs
     **hourly from the steward's laptop** (`umi-liveness.timer`, which catches up after a power cut).
     Its first scheduled run (2026-11-03 15:00 EST) read `LIVENESS OK` on the strict rule, via push. A
@@ -322,6 +326,13 @@ because they are not yet true. Each item names how you know it is done.
   open.** The Docker residue is closed and **verified by inspection on the droplet**: no container's
   on-disk config carries a key any more (`docs/key-custody-design.md` Sixth entry). What remains is
   the second role: the sealed envelope in the parish safe with its two keepers is not in place yet.
+  ⚖️ **2026-11-10, three things since, and the box is still open on the envelope alone.** All three
+  keys were rotated on production on 2026-11-03, through the rig (Seventh entry). The server's first
+  real restart under this design came on 2026-11-09, and the rig brought the board back (Eighth
+  entry). And one correction to the line above: "no container's on-disk config carries a key" was
+  true, but two forgotten copies of `.env` in `/root` still held live keys in plaintext until that
+  same night's rotation, and were only removed on 2026-11-09. The design's done-when list carries
+  the correction.
 
 - [x] **There is a written incident, breach, and legal-request response plan.** Done when a document
   exists that names who is notified and within what timebox when data is exposed, who decides to refuse

@@ -38,6 +38,11 @@ what the gate item says must end before real parishioners onboard.
 > key — **0**, where it was **2** (app and worker) before the deploy. The two paragraphs above no
 > longer describe production (Sixth entry).
 > The price is named in the Sixth entry: a reboot now takes the app down until the rig re-runs.
+>
+> ✅ **2026-11-09: that price was paid for real for the first time.** The server was off for a day
+> and a half over a billing failure. When it came back the app stayed stopped until the rig ran from
+> the laptop, 3 minutes 23 seconds later (Eighth entry;
+> `docs/incidents/2026-11-08-server-off-34-hours.md`).
 
 ## The design (v1 — smallest thing that honestly meets the words)
 
@@ -87,6 +92,38 @@ Three changes, in order:
   which is real:** the keys sit in the container's config on disk for the container's lifetime
   (§Implementation). That residual is open, and closing it (a secrets sidecar or a managed
   store) or accepting it in writing is the steward's call.
+  ⚖️ **2026-11-10, because this bullet stopped at 10-08:** the Sixth entry (2026-11-02) closed
+  that residual and brought the coupling back by design, so **a restart of the server needs the
+  laptop again.** It happened for real on 2026-11-09 (Eighth entry): the app sat stopped, not
+  looping, until the rig ran.
+
+## Eighth entry, 2026-11-09: the first real restart, and what the Sixth entry got wrong about it
+
+**Nothing was changed for this entry. It records what the design did the first time the thing it
+was built around actually happened.** The server was powered off for 34 hours 46 minutes over a
+billing failure, and came back on its own once the bill was paid (the steward's report). Full
+record: `docs/incidents/2026-11-08-server-off-34-hours.md`.
+
+| What the design said | What happened |
+|---|---|
+| A restart clears `/run`, so the containers come back with no keys (Sixth entry) | ✅ They did. `/run/umi-keys` held nothing but a directory Docker had made at `keys.env` |
+| "the failure is a crash loop, not silence" (Sixth entry) | ❌ **It is not a loop.** One start attempt each for the app and the worker, both refused at the mount, both left at `Exited (127)`, and no second attempt in the 2 minutes 54 seconds before the rig ran. Docker applies a restart policy only to a container that has started successfully |
+| Docker leaves a directory at the missing bind source, and the rig clears it (Seventh entry: measured on a laptop, never seen here) | ✅ Seen on the droplet, Docker 29.8.0. The rig cleared it and swapped the key file in |
+| "Recovery is re-running the rig from the steward's laptop" (Sixth entry) | ✅ 24 seconds, exit 0, no migrations pending. The app started 3 minutes 23 seconds after the server booted |
+
+**Checked after, read off the box:** the key file equals the laptop's decrypt by hash, mode `600`,
+owned by the image's runtime uid, in a `700` root directory; no key name among the 40 environment
+names of the app or of the worker, with `UMI_SECRETS_FILE` present as the control; `.env` holds no
+key line; site, `/health/` and login `200`, with a `404` control.
+
+**What "quiet" changes.** `docker ps` shows `Exited`, not `Restarting`, and nothing on the server
+will ever bring the app back. The uptime monitor is the only thing that makes this failure loud.
+The Sixth entry's sentence is corrected in place below, and so is the comment in
+`scripts/deploy-with-keys.sh` that repeated it.
+
+**What 3 minutes 23 seconds does not show.** It was that short because someone was at the laptop
+when the server came back. The honest size of the coupling is "as long as nobody is at the laptop",
+and the sealed envelope is what bounds that when the steward cannot be.
 
 ## Seventh entry, 2026-11-03: reading the rig before a rotation found it could not safely run one
 
@@ -98,7 +135,7 @@ saw a first deploy.
 | Found | What it would have done | Fix |
 |---|---|---|
 | Compose cannot see a keys-only change. `compose --dry-run` on the droplet read `Container docker-app-1 Running` | A rotation reports success while the app keeps its old keys in memory and the old inode in its mount, and `rotate_keks` through `docker exec` sees the old keys too | `--force-recreate` on the app and the worker. The same dry run shows the database and Redis are not recreated |
-| After a reboot Docker creates a **directory** at the missing bind source, and `rm -f` cannot remove one (measured on a local daemon, 29.1.3; the droplet runs 29.8.0 and has not been rebooted to see it) | The rig aborts under `set -e`, so the one documented way back from a server reboot does not work | The directory is cleared right before the swap |
+| After a reboot Docker creates a **directory** at the missing bind source, and `rm -f` cannot remove one (measured on a local daemon, 29.1.3; the droplet runs 29.8.0 and has not been rebooted to see it). ⚖️ *Seen on the droplet 2026-11-09, and the fix held: Eighth entry* | The rig aborts under `set -e`, so the one documented way back from a server reboot does not work | The directory is cleared right before the swap |
 | The rig removed the live key file first, and its trap shredded whatever was there | A run refused over a dirty `.env` leaves running containers whose next restart fails | Keys are staged at `keys.env.new`. The live file is touched only at an atomic `mv`, after every check has passed |
 | Nothing checks what arrived. A failed decrypt on the laptop reaches the droplet as an empty stream, and `cat` succeeds on it | With `--force-recreate`, a bad decrypt replaces a healthy app with one that cannot boot | Refused unless all three names carry a value. The message names keys, never values |
 | `encrypt` wrote over the ciphertext in place (`age` 1.2.0's `-o` overwrites, measured) and proved nothing about the result | A power cut mid-write leaves zero bytes where the only working copy was; a wrong recipients file swaps it for a file nobody can open | Temp file, `sync`, round-trip proof against the plaintext, the previous copy archived, then rename |
@@ -111,6 +148,21 @@ is at least 73. A strict search reads `0` across all 5161 lines. **Print the siz
 was taken over, or a zero means nothing.**
 
 What a rotation costs, and the procedure, are in `docs/runbooks/key-rotation.md`.
+
+✅ **RUN ON PRODUCTION 2026-11-03, the same night, on the steward's key "32", by the agent.** A
+backup first (`umi-20261104-010957`, off-site, its key file beside it). Then all three keys were
+replaced: `<new>,<old>` went in at 20:11 EST, `rotate_keks` re-wrapped 0 keys because no envelope
+row exists yet, the three censuses read clean, and `<new>` alone went in at 20:14 EST.
+
+Read off the box afterwards: the key-file hash in the app, in the worker and on the host equals the
+staged file; one key loaded; an envelope round trip works; site, `/health/`, login and static `200`;
+none of the 5 container configs carries a rotated key, by exact name or by value, with a positive
+control that found 2; `bright_line` HOLDING. Nobody was signed out, because 0 accounts had signed in
+within 24 hours, and 0 jobs were queued.
+
+**Each deploy took the app down for about 20 seconds, stop to healthy (Docker's events), not the
+"few seconds" the runbook promised.** Corrected there. The pre-rotation ciphertexts stay archived on
+the laptop until 2026-12-04, when the last backup taken under the old keys ages out.
 
 ## Sixth entry, 2026-11-02: the container residue is CLOSED IN CODE — and it cost the reboot back
 
@@ -162,9 +214,12 @@ security-upgrade reboots, and the Third entry called those safe *precisely becau
 this entry removes. **Recovery is re-running the rig from the steward's laptop.**
 - **Why that is still the right trade, in the design's own words:** *"hours of downtime are
   annoying; a silent key theft is a betrayal."*
-- **What makes it survivable:** the failure is a **crash loop, not silence** — and
+- **What makes it survivable:** the failure is ~~a **crash loop, not silence**~~ **loud to the
+  uptime monitor and silent on the server** — and
   `scripts/monitor_liveness.sh`, built the same night, is what proves the alert about it can still
   reach a human (`docs/monitoring-runbook.md` §Watching the watcher).
+  ⚖️ *Corrected 2026-11-10 from the first real restart (Eighth entry): there is no loop. Docker
+  tries each container once, leaves it at `Exited (127)`, and does not try again.*
 
 ⚖️ **Honest scope — what this does NOT claim.** The keys are now in **RAM at a known
 root-readable path** for the container's lifetime, plus process memory. That is **strictly better
@@ -517,6 +572,14 @@ laptop, and tick the rehearsal line for real.
 ## Done-when checklist (tick the gate box only when ALL are true)
 
 - [x] No plaintext key material at rest on the droplet (verified by inspection).
+  *2026-11-10: ⚖️ **CORRECTION: this tick was wrong when it was made, and it is true now.** The
+  2026-11-03 inspection below opened Docker's `config.v2.json` and `.env`. It never opened `/root`,
+  where `.env.pre-custody.bak` and `.env.pre-custody2.bak` still held the then-live `SECRET_KEY` and
+  `BLIND_INDEX_KEY` in plaintext. The rotation run later that same night replaced both values, and
+  that is what made the line true. The two files, and two more stale copies of `.env` beside the
+  live one, were shredded on 2026-11-09; a sweep of the whole disk then found the live `.env` (no
+  key lines), `.env.example`, and two empty mount stubs. 📌 **An inspection covers what it opened,
+  not what its sentence claims.***
   *2026-11-03: ✅ **TICKED, verified by inspection on the droplet** — `config.v2.json` carries a key
   in **0** containers (2 before), and the only plaintext is `/run/umi-keys/keys.env` on tmpfs, in a
   root-owned `0700` directory (Sixth entry). **This ticks the LINE, not box 3:** the sealed envelope
