@@ -19,7 +19,7 @@ All times UTC. Eastern is five hours behind.
 | 11-08 ~10:23 | uptime monitor reads DOWN | UptimeRobot API, read 11-09 05:19: "DOWN, 18 h 56 min" |
 | 11-08 20:33 | the outage **first enters the record**, raised by the agent about ten hours in, at the start of unrelated work | session log |
 | 11-09 03:00 | the nightly backup **does not run** | no log line and no file for that night |
-| 11-09 05:22 | steward: the hosting bill is overdue, and his health check and the backup alert had told him | ATTESTED, his words. When they told him was not asked |
+| 11-09 05:22 | steward: the hosting bill is overdue, and his health check and the backup alert had told him | ATTESTED, his words. When they told him was not asked then. It was asked on 11-12: see the last row |
 | 11-09 20:59 | steward: the bill is paid | ATTESTED. No agent saw the provider's console |
 | 11-09 21:01:19 | server **boots**, with nothing done from this side | `last -x`, `uptime -s` |
 | 11-09 21:01:43 | Docker tries the app and the worker **once each**. Both fail on the key mount | Docker's journal: 2 `failed to start container`, none after |
@@ -29,6 +29,7 @@ All times UTC. Eastern is five hours behind.
 | 11-10 03:00 | first nightly backup after: dump uploaded and verified, then **killed** at the key-file check. No heartbeat | backup log: `Terminated` |
 | 11-10 03:33 → 03:44 | backups re-run by hand. Three complete, each with a heartbeat | backup log |
 | 11-10 03:37 | `loginctl enable-linger root` | the linger file's timestamp |
+| 11-12 ~01:16 | steward, asked for the first time: the alert reached his phone "at 5 am" (Eastern) on 11-08 and he was asleep. It was a Sunday, and he judged it could not be fixed until Monday | ATTESTED, his words, three days after. The monitor's own record puts DOWN at about 05:23 Eastern |
 
 **Down: 34 h 46 min**, from the shutdown to the app starting. The monitor's own figure is two
 minutes longer, because it checks every five minutes.
@@ -74,6 +75,20 @@ not recorded as one.** It is entered here as a gap measured, not as a pass.
 
 From 11-08 20:33 the outage was known. The remaining 24 and a half hours were the bill, not the
 alarm.
+
+> ⚖️ **Added 2026-11-12, because he was asked and he answered. The paragraphs above are kept as
+> they were written.** His words: *"i got an alert that works now but it was at 5 am and i was
+> asleep"*, and *"It was on a sunday so i knew i couldnt fix it until that monday I wasnt worried at
+> all."* ATTESTED (unverified): said three days after the outage, with nothing behind it except
+> that it fits the monitor's own record of DOWN at about 05:23 Eastern.
+>
+> **What this changes.** The ten hours were not an alarm that failed to arrive. By his account an
+> alert reached his phone that morning, and what followed was his decision to wait for Monday. So
+> this finding's heading says too much: on his word, the record now holds that an alert arrived.
+>
+> **What it does not change.** It is still not box 1's receipt. That line asks for his report of
+> the alert *before* anyone tells him, and the agent raised this outage first. When he first saw
+> the alert after waking was not said. Box 1's line stays as it was.
 
 ## Finding 2: "a crash loop" was wrong
 
@@ -155,7 +170,7 @@ earlier backup: 44 dumps off-site on 2026-11-10, each with its key file, the old
 | 5 | Record the first real restart under the tmpfs design (custody design, Eighth entry) | this PR |
 | 6 | Remove the stale `.env` copies, and have the runbook set the mode and warn about them | ✅ server · runbook in this PR |
 | 7 | Replace the backup credential those copies held | ✅ 11-09 and 11-10 |
-| 8 | Next time, record when an alert reaches the steward and what he did (box 1) | ⬜ |
+| 8 | Next time, record when an alert reaches the steward and what he did (box 1) | ⬜ for next time. For this outage he was asked on 11-12: Finding 1's note |
 | 9 | Decide what stops a third billing outage | ⬜ steward's call |
 
 On 9: nothing in this repository can make a bill get paid. Both outages so far began there, and the

@@ -220,6 +220,10 @@ because they are not yet true. Each item names how you know it is done.
     is not the receipt.** The monitor read DOWN within minutes, read from its API. But the outage
     entered the record ten hours in, raised by an agent, and when the alert reached the steward was
     never asked (`docs/incidents/2026-11-08-server-off-34-hours.md`, Finding 1). Still NOT MET.*
+    ⚖️ *2026-11-12: asked since. `ATTESTED (unverified)`, his words: an alert reached his phone at
+    about 5 am that morning and he was asleep; it was a Sunday and he judged it could wait until
+    Monday. So an alert did arrive. It is still not this line's receipt, which is his report of the
+    alert before anyone tells him, and the agent raised that outage first. Still NOT MET.*
   - ✅ **MET 2026-11-03 — a periodic liveness check on the monitor itself.** ~~❌ NOT MET.~~ It runs
     **hourly from the steward's laptop** (`umi-liveness.timer`, which catches up after a power cut).
     Its first scheduled run (2026-11-03 15:00 EST) read `LIVENESS OK` on the strict rule, via push. A

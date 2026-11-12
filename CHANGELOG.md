@@ -6,7 +6,8 @@
 ## Unreleased
 
 - **The board was down from the morning of November 8 to the afternoon of November 9.** Our server
-  was switched off over a late hosting bill. Nothing on it was lost. When it came back, the board
+  was switched off over a late hosting bill. Nothing on it was lost. By the steward's account the
+  outage alarm reached his phone at about five that morning. When it came back, the board
   stayed down for three more minutes until the steward put its keys back from his own computer,
   which is the trade-off described further down this list doing what it is meant to do. One
   night's backup, November 9, was never taken, because there was no server to take it. The full
