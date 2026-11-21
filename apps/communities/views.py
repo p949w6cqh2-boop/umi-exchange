@@ -848,6 +848,55 @@ class TechnologyView(TemplateView):
         return ctx
 
 
+# The ways a visitor can reach a human: each one is a surface that is live today.
+# Whether its messages are read is the founder's to say, so no note here claims it
+# (2026-11-21: "reaches a person, not a queue" and "every issue is written by hand"
+# were removed on his key, being unchecked and untrue respectively). The site had no
+# contact destination at all until 2026-10-22, the day the videos started asking
+# people to reach out.
+CONTACT_ROUTES = [
+    (
+        "Message me",
+        "@Jasiahbuilds",
+        "https://x.com/Jasiahbuilds",
+        "On X.",
+    ),
+    (
+        "Message me",
+        "@jasiahbuilds",
+        "https://www.instagram.com/jasiahbuilds/",
+        "On Instagram, where most of the videos live.",
+    ),
+    (
+        "Reply to the newsletter",
+        "jasiahbuilds.substack.com",
+        "https://jasiahbuilds.substack.com",
+        "Replies come straight back to me.",
+    ),
+]
+
+
+class ContactView(TemplateView):
+    """Public: how to reach a human, and deliberately not a form.
+
+    A contact form would put a real person's name, address and words into this
+    database. docs/ethics-and-safety.md holds an unpassed gate before any real
+    personal data onboards, so this page is a signpost: it stores nothing,
+    accepts nothing, and names routes that already exist. tests/
+    test_contact_page.py holds it to that, including a POST returning 405.
+    """
+
+    template_name = "pages/contact.html"
+    http_method_names = ["get", "head", "options"]
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["contact_routes"] = CONTACT_ROUTES
+        ctx["security_contact"] = SECURITY_CONTACT
+        ctx["security_policy_url"] = SECURITY_POLICY_URL
+        return ctx
+
+
 # --- Layer P: the platform floor (pipeline §B) --------------------------------
 # The protocol lives ON the instance so the footer's promise holds on an offline
 # laptop. No runtime markdown: the fragment is pre-rendered by

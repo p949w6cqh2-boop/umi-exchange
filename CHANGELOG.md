@@ -13,6 +13,9 @@
   someone accepts your offer, they see the email you have confirmed, and your phone number if you
   added one, so they can reach you. If you would rather a coordinator passed messages along,
   choose "In-app" when you post. Offers you have already posted keep the setting they have.
+- **There is a page for starting a board where you are.** It lists the ways to reach a person, and
+  it has no form, so nothing you type there is kept. You can find it at the bottom of every page,
+  under "Start one where you are."
 - **The board was down from the morning of November 8 to the afternoon of November 9.** Our server
   was switched off over a late hosting bill. Nothing on it was lost. By the steward's account the
   outage alarm reached his phone at about five that morning. When it came back, the board
