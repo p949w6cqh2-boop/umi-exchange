@@ -51,3 +51,14 @@ class TestContactPage:
     def test_says_plainly_that_nothing_is_collected(self):
         body = Client().get(reverse("contact")).content.decode().lower()
         assert "collect" in body or "store" in body
+
+    def test_makes_no_claim_the_founder_has_not_stood_behind(self):
+        """Every sentence here is said in the founder's name. Three were not true or not
+        checked when the page was built, and were removed on his key (2026-11-21): that X
+        messages reach a person (no one could read X to know), that every newsletter issue
+        is written by hand (digest #3 carried agent-written joinery), and that a parish board
+        needs no one's permission (St. Patrick's began with the pastor's blessing)."""
+        body = Client().get(reverse("contact")).content.decode()
+        assert "not a queue" not in body
+        assert "written by hand" not in body
+        assert "do not need permission" not in body

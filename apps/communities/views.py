@@ -848,16 +848,18 @@ class TechnologyView(TemplateView):
         return ctx
 
 
-# The ways a visitor can actually reach a human, and nothing here is aspirational:
-# each one is a surface that is live and read today. The site had no contact
-# destination at all until 2026-10-22, which is the day the videos started asking
+# The ways a visitor can reach a human: each one is a surface that is live today.
+# Whether its messages are read is the founder's to say, so no note here claims it
+# (2026-11-21: "reaches a person, not a queue" and "every issue is written by hand"
+# were removed on his key, being unchecked and untrue respectively). The site had no
+# contact destination at all until 2026-10-22, the day the videos started asking
 # people to reach out.
 CONTACT_ROUTES = [
     (
         "Message me",
         "@Jasiahbuilds",
         "https://x.com/Jasiahbuilds",
-        "On X. Shortest route, and it reaches a person, not a queue.",
+        "On X.",
     ),
     (
         "Message me",
@@ -869,7 +871,7 @@ CONTACT_ROUTES = [
         "Reply to the newsletter",
         "jasiahbuilds.substack.com",
         "https://jasiahbuilds.substack.com",
-        "Every issue is written by hand, and replies come straight back to me.",
+        "Replies come straight back to me.",
     ),
 ]
 
