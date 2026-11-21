@@ -374,6 +374,7 @@ secrets and write them with `printf` (safe for any special characters):
 ```bash
 cd /opt/umi-exchange
 cp .env.example .env
+chmod 600 .env          # cp gives it the example's mode, which anyone on the box can read
 
 # --- generate the FOUR secrets (pure python3 stdlib; no extra libs needed) ---
 SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')"
@@ -428,6 +429,20 @@ Sanity-check that the three secrets are non-empty in `.env`:
 ```bash
 grep -E '^(SECRET_KEY|ENCRYPTION_KEY|DB_PASSWORD)=' .env | sed 's/=.*/=<set>/'
 ```
+
+🔴 **`.env` must be mode `600`, and there must be only one of it.** It holds the database and email
+passwords and the off-site backup credential. This section had no `chmod` until 2026-11-10, and the
+production server ran with `.env` readable by every user on the box until 2026-11-03.
+
+```bash
+stat -c %a .env                                        # must print 600
+ls -a /opt/umi-exchange /root | grep -i '\.env'        # must print .env and .env.example, nothing else
+```
+
+Editors and hand-made backups leave copies behind (`.env.save`, `.env.bak-…`). On 2026-11-09 the
+production server had four, each carrying most of the live file, and two of them still carried app
+keys from before the custody rig (`docs/incidents/2026-11-08-server-off-34-hours.md`, Finding 4).
+A copy is as sensitive as the file. When you need one, make it, use it, and `shred -u` it.
 
 ---
 
@@ -624,6 +639,21 @@ is what makes the nightly B2 upload actually happen.
 
 3. **Verify it is installed**: `crontab -l` must show the line. A backup script that was never
    scheduled looks exactly like one that works — until the day you need a dump.
+
+4. **Keep root's session manager running**, or someone logging out can kill the nightly upload:
+
+   ```bash
+   loginctl enable-linger root
+   loginctl show-user root -p Linger        # must print Linger=yes
+   ```
+
+   The aws CLI on this server is a snap, and a snap started while root has a session manager runs
+   under it, even from cron. Without linger, `logind` stops that manager 10 seconds after root's
+   last ssh session closes, and the upload goes with it. That is what happened to the 2026-11-10
+   backup: the dump had reached B2, the log then reads `Terminated`, and no heartbeat was sent
+   (`docs/incidents/2026-11-08-server-off-34-hours.md`, Finding 3). Counted on the server
+   afterwards: 14 logins closed and the manager stopped 11 times before linger; 39 closed and it
+   stopped 0 times after.
 
 Off-site copies: fill `BACKUP_BUCKET` / `BACKUP_ACCESS_KEY` / `BACKUP_SECRET_KEY` /
 `BACKUP_ENDPOINT` in `.env` (Backblaze B2) — `backup.sh` uploads when all three credentials are

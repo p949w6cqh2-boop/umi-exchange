@@ -8,6 +8,40 @@
 - **There is a page for starting a board where you are.** It lists the ways to reach a person, and
   it has no form, so nothing you type there is kept. You can find it at the bottom of every page,
   under "Start one where you are."
+- **The board was down from the morning of November 8 to the afternoon of November 9.** Our server
+  was switched off over a late hosting bill. Nothing on it was lost. By the steward's account the
+  outage alarm reached his phone at about five that morning. When it came back, the board
+  stayed down for three more minutes until the steward put its keys back from his own computer,
+  which is the trade-off described further down this list doing what it is meant to do. One
+  night's backup, November 9, was never taken, because there was no server to take it. The full
+  account is in `docs/incidents/2026-11-08-server-off-34-hours.md`.
+- **A backup can no longer be cut short by someone logging out of the server.** That happened once,
+  on November 10. The copy of the data had already reached our off-site storage, but the run was
+  stopped before it finished its checks and before it could report in. The server now keeps a
+  backup running whoever comes and goes.
+- **The board no longer holds the password to our off-site backups.** It never used it. Only the
+  nightly backup job on the server needs it, so now only that job has it. Nothing you see changes.
+- **Changing our keys can no longer knock the board over by accident.** The tool that puts the keys
+  on our server now checks what arrived before it touches anything, keeps the old copy when it makes
+  a new one, and can bring the board back after the server restarts, which it could not do before.
+  Nothing you see changes. This is what lets us change the keys safely before real information
+  lands.
+- **The check that watches our outage alarm now reads whether each alert is actually switched on.**
+  Its first version read the alarm's settings from the wrong place, so it could not tell an alert
+  that was paused from one that worked, and it reported all clear when it should not have. It now
+  asks the right question, and it refuses to report all clear when it cannot get an answer.
+- **The keys that protect sensitive information no longer sit on our server's disk.** They used to
+  be written into the server's own records of the running program, where anyone who got into the
+  machine would have found both the locked data and the key to it. They are now held in memory
+  only, handed over from the steward's own computer each time the board is updated. Nothing you can
+  see changed. One honest trade-off: if the server restarts on its own, the board stays down until
+  the steward brings it back up, and we would rather be briefly offline than quietly unlocked.
+- **We now check that our own outage alarm still works.** The board is watched by a service that
+  is supposed to tell us the moment the site goes down. Earlier this year it was watching
+  correctly for over two weeks while the setting that sends the message to a person was switched
+  off, so four outages came and went and nobody was told. A new hourly check now looks at the
+  alarm itself and complains loudly if it has been paused, if nobody is attached to it, or if the
+  only way it can reach us is an inbox we might not read for hours.
 - **Your communities come first on your account page now, and they are easier to read.** The list
   of boards you belong to used to sit below the household section, which offers to help you join
   one. The list you already have comes first, and the names are bigger.
