@@ -201,10 +201,51 @@ to make sure the choice was made knowingly, the reveal was logged, and safety wa
 **No real community with real PII onboards until ALL of the following are true.** They are unchecked
 because they are not yet true. Each item names how you know it is done.
 
-- [ ] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
+- [x] **Monitoring and alerts are wired.** Done when the uptime pinger is live against `/health/` and a
   silent error or outage produces a real alert to a human within minutes, proven by deliberately
   tripping it once and watching the alert arrive. The posture is already decided
   (`docs/monitoring-decision.md`); this item is about it actually being on.
+  ⚖️ **TICKED 2026-11-02 ON THE STEWARD'S WORD — `ATTESTED (unverified)`. Read this before
+  counting this box as passed.** His key: *"check gate off because the email pings my phone."*
+  - **ATTESTED:** the monitor fires and its alert e-mail reaches his phone as a notification. **His
+    reading, and it is a fair one:** this box's concern is an *interrupting* channel, and an e-mail
+    that pings the phone is one. The re-open below names *push/SMS*; he reads those as examples.
+    ⚠️ Known silent-failure modes of phone-pinged e-mail that SMS does not share: a Do Not Disturb
+    rule that holds mail but passes SMS, the spam folder, a mail app that fetches on an interval
+    instead of being pushed.
+  - ❌ **NOT MET — a trip test the founder does not schedule or watch for.** Never run on this
+    setup. The standing key for it exists (`umi-brain` keyring, 2026-09-14). Its receipt: he reports
+    the phone alert *before* being told a trip happened.
+    ⚖️ *2026-11-10: a real outage on 2026-11-08 was the nearest thing to this test so far, and **it
+    is not the receipt.** The monitor read DOWN within minutes, read from its API. But the outage
+    entered the record ten hours in, raised by an agent, and when the alert reached the steward was
+    never asked (`docs/incidents/2026-11-08-server-off-34-hours.md`, Finding 1). Still NOT MET.*
+    ⚖️ *2026-11-12: asked since. `ATTESTED (unverified)`, his words: an alert reached his phone at
+    about 5 am that morning and he was asleep; it was a Sunday and he judged it could wait until
+    Monday. So an alert did arrive. It is still not this line's receipt, which is his report of the
+    alert before anyone tells him, and the agent raised that outage first. Still NOT MET.*
+  - ✅ **MET 2026-11-03 — a periodic liveness check on the monitor itself.** ~~❌ NOT MET.~~ It runs
+    **hourly from the steward's laptop** (`umi-liveness.timer`, which catches up after a power cut).
+    Its first scheduled run (2026-11-03 15:00 EST) read `LIVENESS OK` on the strict rule, via push. A
+    failed or stale verdict leads the 07:00 brief, and a verdict that **flips** pushes to the
+    steward's phone (test received, his word quoting its text). History: `scripts/monitor_liveness.sh`
+    was built 2026-11-02 and was **not running** ~~: no API key, not in cron~~ on a schedule yet. ⚖️
+    *2026-11-03: it runs from the steward's laptop (his call), the Read-Only key is in place there,
+    and the timer is not; ✅ the v3 API reads the e-mail contact `Active`, which is consistent with
+    the attestation above (a contact being active is not proof an alert arrives, so this ticks
+    nothing).* ✅ *Later 2026-11-03: the steward attached **Push** to the monitor, and v3 reads it
+    `Active` and attached. That is an interrupting channel in the sense the re-open asked for,
+    **read off the API, not attested**, and with it the check passes on its strict default rule. The
+    first leg is therefore no longer resting on the e-mail reading alone. The trip test above is
+    still the only proof an alert actually arrives.* On the e-mail-only setup it had to
+    run with ~~`UMI_NON_INTERRUPTING_TYPES=5`~~ `UMI_NON_INTERRUPTING_TYPES=Webhook` (v3 type names,
+    2026-11-03), **reason: the founder's phone notifies on alert e-mail**
+    — otherwise it correctly flags e-mail-only. The script's own default stays strict, because this is
+    a reference implementation and another community's inbox may not ping anyone.
+  - 📌 **The agent recommended leaving this unticked until the two legs above landed; the steward
+    chose to tick it now.** Recorded so the trade is his and visible. This box has been ticked once
+    before ahead of its evidence (the re-open below is what that cost), so **a future reader should
+    treat the two ❌ lines as open work, not history.**
   🔴 **RE-OPENED 2026-09-11 — this box was ticked and the property it asserts then failed for eight
   days.** The production droplet was powered off on 2026-09-03 and destroyed on 2026-09-05, and no
   human was told until the outage was found by hand on 09-11 during unrelated work. Full write-up:
@@ -283,10 +324,19 @@ because they are not yet true. Each item names how you know it is done.
   **Progress, recorded 2026-10-08 (`docs/key-custody-design.md`):** the custody rig has been armed
   on production since 2026-09-11 (#164, #165). The droplet `.env` holds no keys, deploys decrypt on
   the steward's laptop, the key ciphertext rides beside every backup (#196), and a rotation ran on
-  production on 2026-10-01 (#199). **Two things keep this box open.** Docker still holds the keys in
+  production on 2026-10-01 (#199). ~~**Two things keep this box open.** Docker still holds the keys in
   the app container's config on the droplet disk for as long as the container exists, so
-  compromising the host still hands over the key; and the second role, the sealed envelope in the
-  parish safe with its two keepers, is not in place yet.
+  compromising the host still hands over the key; and~~ ⚖️ **2026-11-03: ONE thing keeps this box
+  open.** The Docker residue is closed and **verified by inspection on the droplet**: no container's
+  on-disk config carries a key any more (`docs/key-custody-design.md` Sixth entry). What remains is
+  the second role: the sealed envelope in the parish safe with its two keepers is not in place yet.
+  ⚖️ **2026-11-10, three things since, and the box is still open on the envelope alone.** All three
+  keys were rotated on production on 2026-11-03, through the rig (Seventh entry). The server's first
+  real restart under this design came on 2026-11-09, and the rig brought the board back (Eighth
+  entry). And one correction to the line above: "no container's on-disk config carries a key" was
+  true, but two forgotten copies of `.env` in `/root` still held live keys in plaintext until that
+  same night's rotation, and were only removed on 2026-11-09. The design's done-when list carries
+  the correction.
 
 - [x] **There is a written incident, breach, and legal-request response plan.** Done when a document
   exists that names who is notified and within what timebox when data is exposed, who decides to refuse

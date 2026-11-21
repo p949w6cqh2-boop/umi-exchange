@@ -29,6 +29,20 @@ what the gate item says must end before real parishioners onboard.
 > that runs the scheduled jobs) gets the app's environment, so its config on the same disk carries
 > the same keys. Same machine, same root, same residual, one more copy of it: closing the residual
 > has to cover the worker too.
+>
+> ⚖️ **2026-11-02: CLOSED IN CODE for both containers, NOT YET DEPLOYED** (Sixth entry). The keys
+> left `environment:` for a read-only bind mount from a root-owned `0700` tmpfs directory. **Until
+> the first rig deploy on the new compose, the two paragraphs above still describe production.**
+>
+> ✅ **2026-11-03: DEPLOYED AND VERIFIED BY INSPECTION.** No container's `config.v2.json` carries a
+> key — **0**, where it was **2** (app and worker) before the deploy. The two paragraphs above no
+> longer describe production (Sixth entry).
+> The price is named in the Sixth entry: a reboot now takes the app down until the rig re-runs.
+>
+> ✅ **2026-11-09: that price was paid for real for the first time.** The server was off for a day
+> and a half over a billing failure. When it came back the app stayed stopped until the rig ran from
+> the laptop, 3 minutes 23 seconds later (Eighth entry;
+> `docs/incidents/2026-11-08-server-off-34-hours.md`).
 
 ## The design (v1 — smallest thing that honestly meets the words)
 
@@ -57,13 +71,15 @@ Three changes, in order:
 - **Process memory.** A running app must hold the KEK in memory. Full host compromise
   while the app is running can read process memory. No single-box design removes this;
   what the design removes is the at-rest plaintext and the survives-a-reboot copy.
-- **Docker metadata.** Environment injected into a container is written by Docker into its
+- **Docker metadata.** ✅ **CLOSED IN CODE 2026-11-02 (Sixth entry), ~~not yet verified on the
+  droplet~~ VERIFIED ON THE DROPLET 2026-11-03 — 0 containers carry a key on disk.** ~~Environment injected into a container is written by Docker into its
   container-config JSON on disk. v1 mitigates by injecting via an env-file on a tmpfs mount
   consumed at `up` time, but a residue in container metadata is possible depending on the
-  compose path chosen at implementation. The implementation PR must state which path it
-  took and what a root attacker can still read. If the residue cannot be closed, the honest
-  fallback is a small secrets sidecar or a managed secret store — which changes the
-  cost/subsidiarity math and is the steward's call, documented here when made.
+  compose path chosen at implementation.~~ **It was possible, it happened, and it stood for
+  seven weeks.** The keys are no longer in `environment:` at all: they arrive as a file on a
+  tmpfs bind mount, so the container config records the **path**. The steward chose this over
+  the sidecar / managed-store fallback this bullet offered. **What a root attacker can still
+  read: the tmpfs file and process memory, while the app runs. Nothing after a reboot.**
 - **Availability coupling.** ~~The droplet can no longer restart the app unattended after a
   reboot; the steward's laptop (or the safe) is needed.~~ For a parish notice-board this is
   an acceptable trade: hours of downtime are annoying; a silent key theft is a betrayal.
@@ -76,6 +92,165 @@ Three changes, in order:
   which is real:** the keys sit in the container's config on disk for the container's lifetime
   (§Implementation). That residual is open, and closing it (a secrets sidecar or a managed
   store) or accepting it in writing is the steward's call.
+  ⚖️ **2026-11-10, because this bullet stopped at 10-08:** the Sixth entry (2026-11-02) closed
+  that residual and brought the coupling back by design, so **a restart of the server needs the
+  laptop again.** It happened for real on 2026-11-09 (Eighth entry): the app sat stopped, not
+  looping, until the rig ran.
+
+## Eighth entry, 2026-11-09: the first real restart, and what the Sixth entry got wrong about it
+
+**Nothing was changed for this entry. It records what the design did the first time the thing it
+was built around actually happened.** The server was powered off for 34 hours 46 minutes over a
+billing failure, and came back on its own once the bill was paid (the steward's report). Full
+record: `docs/incidents/2026-11-08-server-off-34-hours.md`.
+
+| What the design said | What happened |
+|---|---|
+| A restart clears `/run`, so the containers come back with no keys (Sixth entry) | ✅ They did. `/run/umi-keys` held nothing but a directory Docker had made at `keys.env` |
+| "the failure is a crash loop, not silence" (Sixth entry) | ❌ **It is not a loop.** One start attempt each for the app and the worker, both refused at the mount, both left at `Exited (127)`, and no second attempt in the 2 minutes 54 seconds before the rig ran. Docker applies a restart policy only to a container that has started successfully |
+| Docker leaves a directory at the missing bind source, and the rig clears it (Seventh entry: measured on a laptop, never seen here) | ✅ Seen on the droplet, Docker 29.8.0. The rig cleared it and swapped the key file in |
+| "Recovery is re-running the rig from the steward's laptop" (Sixth entry) | ✅ 24 seconds, exit 0, no migrations pending. The app started 3 minutes 23 seconds after the server booted |
+
+**Checked after, read off the box:** the key file equals the laptop's decrypt by hash, mode `600`,
+owned by the image's runtime uid, in a `700` root directory; no key name among the 40 environment
+names of the app or of the worker, with `UMI_SECRETS_FILE` present as the control; `.env` holds no
+key line; site, `/health/` and login `200`, with a `404` control.
+
+**What "quiet" changes.** `docker ps` shows `Exited`, not `Restarting`, and nothing on the server
+will ever bring the app back. The uptime monitor is the only thing that makes this failure loud.
+The Sixth entry's sentence is corrected in place below, and so is the comment in
+`scripts/deploy-with-keys.sh` that repeated it.
+
+**What 3 minutes 23 seconds does not show.** It was that short because someone was at the laptop
+when the server came back. The honest size of the coupling is "as long as nobody is at the laptop",
+and the sealed envelope is what bounds that when the steward cannot be.
+
+## Seventh entry, 2026-11-03: reading the rig before a rotation found it could not safely run one
+
+**His key "32": rotate the keys before real data lands.** Nothing was deployed for this entry. A
+read-only look before touching production found five defects. Four come from the Sixth entry's
+move of the keys into a mounted file, and none had a failing test, because the stubs only ever
+saw a first deploy.
+
+| Found | What it would have done | Fix |
+|---|---|---|
+| Compose cannot see a keys-only change. `compose --dry-run` on the droplet read `Container docker-app-1 Running` | A rotation reports success while the app keeps its old keys in memory and the old inode in its mount, and `rotate_keks` through `docker exec` sees the old keys too | `--force-recreate` on the app and the worker. The same dry run shows the database and Redis are not recreated |
+| After a reboot Docker creates a **directory** at the missing bind source, and `rm -f` cannot remove one (measured on a local daemon, 29.1.3; the droplet runs 29.8.0 and has not been rebooted to see it). ⚖️ *Seen on the droplet 2026-11-09, and the fix held: Eighth entry* | The rig aborts under `set -e`, so the one documented way back from a server reboot does not work | The directory is cleared right before the swap |
+| The rig removed the live key file first, and its trap shredded whatever was there | A run refused over a dirty `.env` leaves running containers whose next restart fails | Keys are staged at `keys.env.new`. The live file is touched only at an atomic `mv`, after every check has passed |
+| Nothing checks what arrived. A failed decrypt on the laptop reaches the droplet as an empty stream, and `cat` succeeds on it | With `--force-recreate`, a bad decrypt replaces a healthy app with one that cannot boot | Refused unless all three names carry a value. The message names keys, never values |
+| `encrypt` wrote over the ciphertext in place (`age` 1.2.0's `-o` overwrites, measured) and proved nothing about the result | A power cut mid-write leaves zero bytes where the only working copy was; a wrong recipients file swaps it for a file nobody can open | Temp file, `sync`, round-trip proof against the plaintext, the previous copy archived, then rename |
+
+**A census that lied, kept because it nearly mattered.** Counting Fernet tokens in `pg_dump` first
+read `0` from an **empty dump** (`dump lines: 0`), because sourcing `.env` had failed. Redone, a
+loose `gAAAAA` search read `5`, which looked like data `rotate_keks` does not cover. It was not: all
+five are `django_q_task.result`, pickled (header `80 05 95`), 57 bytes decoded, and a Fernet token
+is at least 73. A strict search reads `0` across all 5161 lines. **Print the size of what a count
+was taken over, or a zero means nothing.**
+
+What a rotation costs, and the procedure, are in `docs/runbooks/key-rotation.md`.
+
+✅ **RUN ON PRODUCTION 2026-11-03, the same night, on the steward's key "32", by the agent.** A
+backup first (`umi-20261104-010957`, off-site, its key file beside it). Then all three keys were
+replaced: `<new>,<old>` went in at 20:11 EST, `rotate_keks` re-wrapped 0 keys because no envelope
+row exists yet, the three censuses read clean, and `<new>` alone went in at 20:14 EST.
+
+Read off the box afterwards: the key-file hash in the app, in the worker and on the host equals the
+staged file; one key loaded; an envelope round trip works; site, `/health/`, login and static `200`;
+none of the 5 container configs carries a rotated key, by exact name or by value, with a positive
+control that found 2; `bright_line` HOLDING. Nobody was signed out, because 0 accounts had signed in
+within 24 hours, and 0 jobs were queued.
+
+**Each deploy took the app down for about 20 seconds, stop to healthy (Docker's events), not the
+"few seconds" the runbook promised.** Corrected there. The pre-rotation ciphertexts stay archived on
+the laptop until 2026-12-04, when the last backup taken under the old keys ages out.
+
+## Sixth entry, 2026-11-02: the container residue is CLOSED IN CODE — and it cost the reboot back
+
+**His key "2a", chosen over a secrets sidecar and over accepting the residue in writing.**
+
+**What was wrong.** Every key named in `docker/docker-compose.prod.yml`'s `environment:` block was
+written by Docker into `/var/lib/docker/containers/<id>/config.v2.json` **on disk**, and kept there
+for the container's lifetime. So from 2026-09-11 — the day the rig fixed the boot failure by naming
+the keys there — **rooting the host still handed over the key**, which is exactly what this box
+exists to end. 2026-10-18 doubled it: the worker took the same block.
+
+**What changed, three parts:**
+
+| part | change |
+|---|---|
+| `config/settings/base.py` | reads `UMI_SECRETS_FILE` and lets it win over the environment, so a stale `.env` key cannot win a rotation. **Only the four key names are honoured** (allowlist). Refused outright: set-but-missing, a **symlink**, anything not a regular file, a file **readable beyond its owner**, and a file carrying **no** key — the dangerous state is always the one that looks configured |
+| `docker/docker-compose.prod.yml` | **no key material in `environment:` at all**; app **and** worker carry `UMI_SECRETS_FILE=/run/umi/keys.env` and bind-mount `/run/umi-keys/keys.env` **read-only** |
+| `scripts/deploy-with-keys.sh` | writes into **`/run/umi-keys`, made root-owned `0700` before any plaintext lands**; removes any existing file before writing; the key file **survives** a successful deploy; chowned to the image's runtime uid, **discovered from the image** |
+
+🔴 **Corrected the same night, on an automated security review of the first commit, and both
+findings were real.** The first version wrote to **`/dev/shm`** and read with
+`read_env(overwrite=True)`:
+- **`/dev/shm` is mode `1777`.** Any local user could pre-create the key path — or plant a
+  symlink at it — and root's `cat >` would write the keys into a file **they** owned, or wherever
+  the link pointed. *That weakened the exact property this entry exists to strengthen.* `/run` is
+  root-owned `0755`, so a non-root user cannot create anything there at all.
+- **`read_env` honours any name.** A writable key file was therefore **config injection**
+  (`DATABASE_URL`, `DJANGO_SETTINGS_MODULE`), not merely key disclosure. The allowlist bounds the
+  blast radius to exactly the keys.
+- **The uid-collision finding mostly dissolves under the first fix.** `useradd -r` allocates a low
+  *system* uid and the host's own system accounts live in that same range, so a collision is
+  likely rather than theoretical — **but no host user can traverse a root-owned `0700` directory
+  to reach the file, whoever owns it.**
+- 📌 **The lesson is the 2026-09-11 one again, in a new place: a path being tmpfs says where the
+  bytes live, not who can reach them.** RAM-only was the property I was checking; the directory
+  mode was the one that mattered.
+
+**Why the uid is discovered and not pinned:** the image runs as `USER umi`, so a root-owned `0600`
+file is unreadable inside the container and the app would boot with no keys. Pinning a uid in the
+Dockerfile would orphan the named volumes that user already owns (`app_logs`, `geo_data`,
+`staticfiles`) — **that is an outage, not a hardening.** No `chmod 400`: the `:ro` on the mount is
+what makes the file read-only to the container, and clearing the owner's write bit only breaks the
+shred on the failure path.
+
+🔴 **THE COST, stated at full size because it is a real regression: the availability coupling the
+Third entry disproved is BACK, by design.** `/run` is tmpfs and is cleared by a reboot, so after one the
+containers come back with **no keys** and production fails fast. The droplet takes unattended 02:00
+security-upgrade reboots, and the Third entry called those safe *precisely because* of the residue
+this entry removes. **Recovery is re-running the rig from the steward's laptop.**
+- **Why that is still the right trade, in the design's own words:** *"hours of downtime are
+  annoying; a silent key theft is a betrayal."*
+- **What makes it survivable:** the failure is ~~a **crash loop, not silence**~~ **loud to the
+  uptime monitor and silent on the server** — and
+  `scripts/monitor_liveness.sh`, built the same night, is what proves the alert about it can still
+  reach a human (`docs/monitoring-runbook.md` §Watching the watcher).
+  ⚖️ *Corrected 2026-11-10 from the first real restart (Eighth entry): there is no loop. Docker
+  tries each container once, leaves it at `Exited (127)`, and does not try again.*
+
+⚖️ **Honest scope — what this does NOT claim.** The keys are now in **RAM at a known
+root-readable path** for the container's lifetime, plus process memory. That is **strictly better
+than on disk** (tmpfs is never written to a block device and a reboot clears it) and it is **not
+unreachable**. A full host compromise while the app runs still reads them. No single-box design
+removes that; §Named residuals said so from the start and still does.
+
+⚠️ **NOT YET DEPLOYED, and nothing here is verified on the droplet.** This is tests-green on a
+branch: `tests/test_secrets_file.py` (10) pins the settings path, both services' mounts, and the
+rig's half; `tests/test_deploy_with_keys.py` was **rewritten, not deleted**, where it pinned the old
+contract — the 2026-09-11 and 2026-10-01 outage lessons are kept in those tests' docstrings because
+the thing they protect (*the keys must actually REACH the container*) is unchanged; only the
+mechanism moved. **The first deploy is the rehearsal, and it is the steward's hand.**
+
+✅ **DEPLOYED AND VERIFIED 2026-11-03**, run by the agent on the steward's keys, every step approved
+as it ran (record: `umi-brain/projects/deploy-handlist-2026-11-03.md`). Read off the box, not
+attested:
+- **0** containers carry a key in `/var/lib/docker/containers/*/config.v2.json` — **2** before
+  (app and worker). This is the inspection the Done-when line below asks for.
+- `/run/umi-keys` is `700 root`; the key file is `600`, owned by uid 999, the image's runtime user;
+  the app and the worker both read it as that user; nothing is left in `/dev/shm`.
+- A `docker restart` of the app came back `healthy` in ~12 s by re-reading the mounted file. That is
+  the path the old design only survived **because of** the residue now gone.
+- From outside: site `200`, `/health/` reports `status`, `db` and `cache` ok.
+
+**Two failures on the way, both caught before anything on the box changed:** the first rig run
+stopped at the image lookup (Compose v5.5.1 ignores the service name in `config --images app` and
+prints every image; fixed in #233, whose test stubs now answer the way the real tools were measured
+to), and a laptop power cut one minute after #233 merged left the rig at **0 bytes** on disk, which
+was found and repaired before the rig ran again. The paragraph above is kept as the record of what
+was true until then.
 
 ## Fifth entry, 2026-10-01: rotation rehearsed on a scratch box, and the envelope's missing half
 
@@ -370,6 +545,9 @@ laptop, and tick the rehearsal line for real.
     `.env` still carries plaintext key lines, merges tmpfs keys + key-free `.env` into
     `/dev/shm/umi-full.env`, runs the runbook's exact compose invocation from it, then
     shreds both tmpfs files. `DRY_RUN=1` prints the full remote plan without connecting.
+    ⚖️ **Superseded 2026-11-02 (Sixth entry):** tmpfs is now **`/run/umi-keys`**, made
+    root-owned `0700` first (never the world-writable `/dev/shm`), and only the merge file
+    is shredded; the key file stays, bind-mounted read-only into app and worker.
   - `check` → proves the droplet `.env` (or `--local-file <f>`) holds no
     `ENCRYPTION_KEYS` / `BLIND_INDEX_KEY` / `SECRET_KEY` lines.
 - **Path chosen for the container residue (the design's named question):** env-file merge
@@ -393,10 +571,27 @@ laptop, and tick the rehearsal line for real.
 
 ## Done-when checklist (tick the gate box only when ALL are true)
 
-- [ ] No plaintext key material at rest on the droplet (verified by inspection).
+- [x] No plaintext key material at rest on the droplet (verified by inspection).
+  *2026-11-10: ⚖️ **CORRECTION: this tick was wrong when it was made, and it is true now.** The
+  2026-11-03 inspection below opened Docker's `config.v2.json` and `.env`. It never opened `/root`,
+  where `.env.pre-custody.bak` and `.env.pre-custody2.bak` still held the then-live `SECRET_KEY` and
+  `BLIND_INDEX_KEY` in plaintext. The rotation run later that same night replaced both values, and
+  that is what made the line true. The two files, and two more stale copies of `.env` beside the
+  live one, were shredded on 2026-11-09; a sweep of the whole disk then found the live `.env` (no
+  key lines), `.env.example`, and two empty mount stubs. 📌 **An inspection covers what it opened,
+  not what its sentence claims.***
+  *2026-11-03: ✅ **TICKED, verified by inspection on the droplet** — `config.v2.json` carries a key
+  in **0** containers (2 before), and the only plaintext is `/run/umi-keys/keys.env` on tmpfs, in a
+  root-owned `0700` directory (Sixth entry). **This ticks the LINE, not box 3:** the sealed envelope
+  below is still open.*
   *2026-10-08: half done. `.env` is clean since 2026-09-11 (Third entry). The container-config
   residue (§Implementation) still holds the keys on disk for the container's lifetime; this line
   ticks when that is closed or the steward accepts it in writing.*
+  *2026-11-02: **closed in code** (Sixth entry) and **deliberately still unticked** — the words
+  here are "verified by inspection" and nothing has been deployed or inspected. It ticks after the
+  first rig deploy on the new compose, confirming `config.v2.json` carries no key and
+  `/run/umi-keys/keys.env` (root-owned `0700` dir) is the only plaintext. 📌 The 2026-09-11 lesson applies to this very
+  line: **a merged implementation is not a live control.***
 - [x] Deploy-from-laptop rehearsed on the real droplet. (2026-09-11, Third entry; ticked here
   2026-10-08, where it had stayed open after the entry ticked it.)
 - [ ] Sealed envelope in the parish safe; two named people know it exists and what it is.

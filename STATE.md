@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `8aee71e3` (merged 2026-10-26 UTC).
+> Reflects `main` @ `1a087a65` (merged 2026-11-04 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -204,16 +204,21 @@
   the steward's laptop; `deploy` decrypts there, pipes the keys into droplet tmpfs, force-recreates
   the app, shreds tmpfs on every exit path (#182) and runs `migrate` (#178); since 2026-10-18 it
   also creates the worker with the same keys and starts it only after migrate succeeds. The
-  droplet `.env` holds **no** key material (`deploy-with-keys.sh check`). Keys survive restarts,
+  droplet `.env` holds **no** key material (`deploy-with-keys.sh check`). ~~Keys survive restarts,
   because Docker replays a container's environment, but not recreates: any new image needs the
   laptop. The same mechanism is the open residual: the keys sit in the app's and the worker's
   container configs on the droplet disk while they exist, readable by root
-  (`docs/key-custody-design.md` §Implementation). Compose
+  (`docs/key-custody-design.md` §Implementation).~~ **Since 2026-11-03 (#232, #233; deployed and
+  verified by inspection) no container's environment or on-disk config carries a key:** the keys
+  arrive as a file bind-mounted read-only from `/run/umi-keys` (tmpfs, root-owned `0700`). Restarts
+  re-read the file; **a reboot clears it, and the rig must re-run** (`docs/key-custody-design.md`
+  Sixth entry). That happened for real on 2026-11-09: the app sat stopped, not looping, until the
+  rig ran 3 minutes 23 seconds after the server booted (Eighth entry). Compose
   passes the key **list**, so a rotation reaches production (#197); the armored key ciphertext
   rides beside every nightly backup (#196); KEK rotation ran on production 2026-10-01 (#199), after
   a four-minute outage on the first attempt that #197 fixed. Owed before box 3 can be ticked: the
-  sealed envelope in the parish safe, and closing (or accepting in writing) that container-config
-  residual. `docs/key-custody-design.md`. `check` says "clean" only when it read the droplet's
+  sealed envelope in the parish safe~~, and closing (or accepting in writing) that container-config
+  residual~~ (the residual closed 2026-11-03). `docs/key-custody-design.md`. `check` says "clean" only when it read the droplet's
   `.env` and found no key line; until 2026-10-13 any failure printed "clean", including a refused
   ssh when it was run on the droplet itself. Now a failed read is "could not check", and a found key
   is named, never printed.
@@ -312,7 +317,10 @@
   stack. Deploys are still hand-run, now **from the steward's laptop through the custody rig**: the
   droplet `.env` holds no keys, so a plain `compose up` there starts the app without them and
   production refuses to boot. Which commit is live is read off the box (deploy runbook step 2),
-  not from this file. *As written 2026-07-18:*
+  not from this file.
+  🔴 **2026-11-08: a second billing outage, 34 hours 46 minutes.** This time the provider kept the
+  disk, so nothing was rebuilt and nothing on it was lost; one nightly backup (11-09) is missing
+  (`docs/incidents/2026-11-08-server-off-34-hours.md`). *As written 2026-07-18:*
 - **DEPLOYED (2026-07-18):** DigitalOcean droplet `143.244.167.7` (~960 MB + 2 GB swap), docker compose
   **Caddy → gunicorn → postgres:16 + redis:7**, TLS via Let's Encrypt, repo at `/opt/umi-exchange`.
   Deploy is **hand-run** (image built on the box, no ghcr push); secrets in a git-ignored `.env`.
@@ -414,9 +422,14 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   · federation crypto robustness (#119, "closes the 35-bug adversarial hunt", `674991d`). Gate grew
   **1039 (batch 1) → 1155 (batch 13)**; every batch commit records its own gate count, red-first tests,
   and semgrep/bandit-clean. All federation fixes are default-OFF fix-before-enabling.
-- **Ethics gate: 3 of 6 boxes CHECKED (boxes 2, 4, 5; box 2 closed 2026-07-29).** *(True again since
-  2026-09-11: box 1 was ticked 2026-08-18 (#153) and re-opened 2026-09-11 (#159), see the Monitoring
-  bullet. Open: 1 monitoring, 3 key custody, 6 governance.)* **Box 5 (#120):** on-behalf-of consent honestly
+- **Ethics gate: 4 of 6 boxes CHECKED (boxes 1, 2, 4, 5; box 2 closed 2026-07-29) — box 1 ON THE
+  STEWARD'S WORD, `ATTESTED (unverified)`.** *(Box 1 was ticked 2026-08-18 (#153), re-opened
+  2026-09-11 (#159), and ticked again 2026-11-02 by the steward — his alert e-mail reaches his phone —
+  with ~~two of its three legs~~ **one of its three legs** still open, named in the box itself: the
+  unannounced trip test. ~~and a running liveness check (`scripts/monitor_liveness.sh`, built, not yet
+  in cron)~~ Since 2026-11-03 the liveness check runs hourly from the steward's laptop, and the push
+  channel is attached to the monitor and `Active` (read via the v3 API). Open: 3 key
+  custody, 6 governance.)* **Box 5 (#120):** on-behalf-of consent honestly
   recorded — `Consent.subject_person` grantor + `recorded_by` witness (§4.1), initials + "not asked
   directly" until an active consent names them, public `/terms/` limits page, report/block reachable
   from any post; follow-up #128 fixed the intake `record_method` enum (`consent/0005`, gate 1201).
@@ -513,6 +526,9 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   ✅ **Backup heartbeat (#168) LIVE since 2026-09-28:** each good nightly backup pings an outside
   watcher (`BACKUP_HEARTBEAT_URL`, preflighted before any work), so a backup that silently stops
   raises an alert instead of looking like one that worked.
+  ✅ **Root lingers on the server since 2026-11-10** (`loginctl enable-linger root`): before that,
+  an ssh logout during the nightly run could kill the upload, and on 2026-11-10 one did
+  (`docs/deploy/vps-runbook.md` §9 step 4).
   ⚠️ **Read `Checked URL` on any alert before trusting it.** A first attempt pointed the monitor at
   `/health/ERROR`, a path that never existed; it produced a real alert with root cause `HTTP 404`,
   which proves the notification channel and nothing else — and while it was configured that way
@@ -554,8 +570,9 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   **The `docs/ethics-and-safety.md` gate must pass before real PII.**
   **Owed by the founder's hand as of the 2026-10-08 sweep** (each is a key, an account or a person,
   so no agent can close it): **box 1** an interrupting alert channel and an unwatched trip test;
-  **box 3** the sealed envelope in the parish safe with its two keepers told, and a ruling on the
-  container-config residual (close it with a sidecar or managed store, or accept it in writing); **box 6** governance
+  **box 3** the sealed envelope in the parish safe with its two keepers told~~, and a ruling on the
+  container-config residual (close it with a sidecar or managed store, or accept it in writing)~~
+  (the residual closed 2026-11-03); **box 6** governance
   beyond a solo steward; the eight accounts whose addresses predate confirmation get their fresh
   links (`docs/specs/email-confirmation.md`, outbound mail to real people); read the Phase 0
   country table after 2026-10-15 before any refusal is switched on; a Firebase project before
