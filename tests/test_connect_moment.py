@@ -1,6 +1,8 @@
 """P4 — the connect moment pays off: a channel-less contact never renders as
-a bare name (the 2026-07-11 rehearsal finding), and new asks default to a
-reachable preference."""
+a bare name (the 2026-07-11 rehearsal finding), and new asks and offers default
+to a reachable preference. Offers were missed on 07-11: they kept "in_app",
+pre-selected on the form, so most offer matches showed the asker only a name
+(found 2026-10-29)."""
 
 import pytest
 from django.test import Client
@@ -8,6 +10,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.needs.models import Need
+from apps.offers.forms import OfferForm
+from apps.offers.models import Offer
 from tests.conftest import CategoryFactory, CommunityFactory, MatchFactory, MemberFactory, NeedFactory
 
 pytestmark = pytest.mark.django_db
@@ -15,6 +19,15 @@ pytestmark = pytest.mark.django_db
 
 def test_new_needs_default_to_reachable_contact():
     assert Need._meta.get_field("contact_pref").default == "any"
+
+
+def test_new_offers_default_to_reachable_contact():
+    assert Offer._meta.get_field("contact_pref").default == "any"
+
+
+def test_the_offer_form_preselects_a_reachable_contact():
+    # What a helper actually sees: the radio that is already chosen when the form opens.
+    assert OfferForm()["contact_pref"].value() == "any"
 
 
 @pytest.fixture

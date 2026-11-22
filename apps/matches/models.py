@@ -251,3 +251,19 @@ class Match(models.Model):
         primary = dict(parties[0])
         primary["parties"] = parties
         return primary
+
+    def participants_seeing_only_a_name(self):
+        """The participants whose §8.2 reveal is a bare name: no email, no phone, not left.
+
+        The match page tells such a neighbour that a coordinator can pass a message along
+        (templates/components/_contact_info_box.html), so the accept that produces one has to
+        reach the coordinators too, or that sentence promises a person nobody has told.
+        """
+        seeing = []
+        for participant in (self.need.requester, self.helper_member):
+            if participant is None or participant in seeing:
+                continue
+            info = self.get_contact_info_for(participant)
+            if info and not info.get("left") and not info.get("email") and not info.get("phone"):
+                seeing.append(participant)
+        return seeing

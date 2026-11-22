@@ -418,6 +418,9 @@ class MatchUpdateView(LoginRequiredMixin, View):
 
         # Notifications — inform the counterpart participant(s); never the actor.
         if new_status == "accepted":
+            # A participant handed only a name is told a coordinator can pass a message along,
+            # so those coordinators hear about it here; nothing else ever told them (2026-10-29).
+            only_a_name = match.participants_seeing_only_a_name()
             recipients = []
             if not is_requester:
                 recipients.append(need.requester)
@@ -426,13 +429,33 @@ class MatchUpdateView(LoginRequiredMixin, View):
             elif match.offer is None and match.proposed_by_id != member.id:
                 recipients.append(match.proposed_by)
             for other in recipients:
+                body = (
+                    "A coordinator will help you get in touch. Open the match page to see where things stand."
+                    if other in only_a_name
+                    else "Contact info has been shared — open the match page to see it."
+                )
                 NotificationAdapter.send(
                     other.user,
                     "match_accepted",
                     f"Match accepted on '{match.need.title}'!",
-                    "Contact info has been shared — open the match page to see it.",
+                    body,
                     link=f"/c/{slug}/matches/{match.id}/",
                 )
+            if only_a_name:
+                participant_ids = [p.pk for p in (need.requester, match.helper_member) if p is not None]
+                for coordinator in (
+                    Member.objects.filter(community=community, is_active=True, role__in=("coordinator", "admin"))
+                    .exclude(pk__in=participant_ids + [member.pk])
+                    .select_related("user")
+                ):
+                    NotificationAdapter.send(
+                        coordinator.user,
+                        "match_accepted",
+                        "Two neighbours need you to connect them",
+                        f"A match on '{need.title}' was accepted, but one side has no email or phone to "
+                        "share. Open the match to pass a message along.",
+                        link=f"/c/{slug}/matches/{match.id}/",
+                    )
         else:
             # Every other ending reaches the other person too, never the one who acted (2026-10
             # bug hunt: only an accept was ever announced, so a declined proposal or a cancelled

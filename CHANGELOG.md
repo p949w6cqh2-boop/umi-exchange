@@ -5,6 +5,14 @@
 
 ## Unreleased
 
+- **When a match connects you with only a name, a coordinator now hears about it.** If the other
+  person has no email or phone to share, the match page already said a coordinator could pass a
+  message along, but no coordinator was ever told. Now they get a note, and your own notice says a
+  coordinator will help you get in touch instead of saying contact details were shared.
+- **New offers share your contact details by default, the same way asks already do.** When
+  someone accepts your offer, they see the email you have confirmed, and your phone number if you
+  added one, so they can reach you. If you would rather a coordinator passed messages along,
+  choose "In-app" when you post. Offers you have already posted keep the setting they have.
 - **There is a page for starting a board where you are.** It lists the ways to reach a person, and
   it has no form, so nothing you type there is kept. You can find it at the bottom of every page,
   under "Start one where you are."
