@@ -229,8 +229,9 @@
     <div class="mt-5 pt-4 border-t border-[var(--umi-border)]">
       <h3 class="text-sm font-semibold text-parish-ink">Vouch for a neighbour</h3>
       <p class="text-xs text-parish-ink/70 mt-1 mb-3">
-        For members who don't use email: once you've met them in person, enter their
-        username and their account is verified. This is recorded.
+        Once you've met someone in person, enter their username. Someone without email can then
+        join and post, and when they volunteer on an ask here, the asker's details can reach them.
+        This is recorded.
       </p>
       <form method="post" action="{% url 'member-vouch' slug=community.slug %}" class="flex items-center gap-2">
         {% csrf_token %}

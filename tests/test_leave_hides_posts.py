@@ -141,6 +141,10 @@ def test_an_old_match_partner_no_longer_sees_a_leavers_contact():
     Need.objects.filter(pk=need.pk).update(contact_pref="phone")
     leaver.user.phone = "555-0100"
     leaver.user.save(update_fields=["phone"])
+    # Vouched here, so the number shows before the leave (docs/specs/vouch-before-volunteer-reveal.md).
+    from apps.communities.models import Vouch
+
+    Vouch.objects.create(community=community, user=neighbour.user)
     match = MatchFactory(need=need, offer=None, proposed_by=neighbour, status="proposed")
     match.transition_to("accepted")
     match.refresh_from_db()

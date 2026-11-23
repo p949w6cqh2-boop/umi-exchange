@@ -65,6 +65,11 @@ def test_contact_with_email_shows_the_email_not_the_fallback(accepted_match):
     requester.user.email_confirmed_at = timezone.now()  # an address a member uses is a proven one (#172)
     requester.user.save()
     Need.objects.filter(pk=need.pk).update(contact_pref="any")
+    # A volunteer with no standing offer sees the asker's channels once this community has vouched
+    # for them (docs/specs/vouch-before-volunteer-reveal.md).
+    from apps.communities.models import Vouch
+
+    Vouch.objects.create(community=community, user=helper.user)
     resp = _login(helper).get(reverse("match-detail", kwargs={"slug": community.slug, "pk": match.pk}))
     body = resp.content.decode()
     assert "maria@example.org" in body

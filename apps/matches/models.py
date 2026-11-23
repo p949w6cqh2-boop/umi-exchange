@@ -200,6 +200,17 @@ class Match(models.Model):
         # coordinator oversight reveal on need/offer detail); thin alias here.
         return member.contact_dict(pref)
 
+    def _vouched_here(self, member):
+        """Vouched for in person in THIS match's community, or holding a role there that vouches.
+
+        Never the site-wide User.verified_via: an email link proves an inbox, not a person, and a
+        "coordinator" mark can be minted in a community nobody else is in (communities.Vouch)."""
+        if member.can_vouch:
+            return True
+        from apps.communities.models import Vouch
+
+        return Vouch.objects.filter(community_id=self.need.community_id, user_id=member.user_id).exists()
+
     def get_contact_info_for(self, requesting_member):
         """
         Contact revelation logic (UMI Protocol Section 8.2).
@@ -242,7 +253,21 @@ class Match(models.Model):
             # Communion at home (the founder's decision 2026-10-02, phone-codes.md): the asker's
             # number stays with the coordinators who arrange the visit; the helper sees the name.
             pref = "in_app" if self.need.category.coordinators_only_contact else requester_pref
-            return self._contact_dict(requester, pref)
+            shown = self._contact_dict(requester, pref)
+            # A volunteer with no standing offer whom this community has not vouched for does not
+            # receive the asker's contact; a coordinator makes the introduction instead. Closes the gap
+            # docs/ethics-and-safety.md names under "The stranger at the door"
+            # (docs/specs/vouch-before-volunteer-reveal.md). Marked held only when it withholds
+            # something, so an asker who shares nothing, or who left, keeps the usual line.
+            if (
+                self.offer is None
+                and (shown.get("email") or shown.get("phone"))
+                and not self._vouched_here(requesting_member)
+            ):
+                held = self._contact_dict(requester, "in_app")
+                held["vouch_pending"] = True
+                return held
+            return shown
 
         # Coordinator (not a participant): reveal both parties for oversight.
         parties = [self._contact_dict(requester, requester_pref)]

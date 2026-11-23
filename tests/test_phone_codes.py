@@ -378,6 +378,11 @@ def communion_match():
     requester.user.save()
     community = requester.community
     helper = MemberFactory(community=community, role="member")
+    # Vouched here, so the communion rule is the only thing that can withhold the number
+    # (docs/specs/vouch-before-volunteer-reveal.md).
+    from apps.communities.models import Vouch
+
+    Vouch.objects.create(community=community, user=helper.user)
     coordinator = MemberFactory(community=community, role="coordinator")
     category = CategoryFactory(community=community, name="Communion at home", coordinators_only_contact=True)
     need = NeedFactory(community=community, requester=requester, category=category, contact_pref="any")

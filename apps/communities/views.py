@@ -968,9 +968,13 @@ class VouchMemberView(LoginRequiredMixin, View):
 
     Kept on purpose (the founder's call, 2026-10-13, bug hunt L10): any coordinator can vouch for
     any account on the site by username, and the reply says whether the name exists and whether it
-    is already verified. The sign-up form already tells anyone whether a username is taken, being
-    verified only unlocks joining and posting, and every vouch is audited with who and where.
-    Revisit if the audit log ever shows probing (many user.vouched rows from one voucher)."""
+    has already been vouched for here. The sign-up form already tells anyone whether a username is
+    taken, being verified only unlocks joining and posting, and every vouch is audited with who and
+    where. Revisit if the audit log ever shows probing (many user.vouched rows from one voucher).
+
+    What a vouch adds beyond that stays in the community it was made in (communities.Vouch): it lets
+    an asker HERE share their details with the vouched person when they volunteer
+    (docs/specs/vouch-before-volunteer-reveal.md), so the site-wide reach above unlocks nothing new."""
 
     def post(self, request, slug):
         community = get_object_or_404(Community, slug=slug, is_active=True)
@@ -1005,23 +1009,39 @@ class VouchMemberView(LoginRequiredMixin, View):
         if target is None:
             messages.error(request, "No account with that username. Check the spelling with your neighbour.")
             return redirect(back, slug=slug)
-        if target.is_human_verified:
-            messages.info(request, f"{target.username} is already verified.")
-            return redirect(back, slug=slug)
-
+        from django.db import transaction
         from django.utils import timezone as dj_timezone
 
-        target.verified_at = dj_timezone.now()
-        target.verified_via = "coordinator"
-        target.save(update_fields=["verified_at", "verified_via"])
-        emit(
-            "user.vouched",
-            target,
-            user=request.user,
-            request=request,
-            details={"vouched_username": target.username, "community": community.slug},
-        )
-        messages.success(request, f"Vouched for {target.username} — they can now join and post.")
+        from .models import Vouch
+
+        # Email or backfill already let someone join and post, so this used to stop at "already
+        # verified". The vouch is recorded now, in this community only, because it is also what lets
+        # an asker's details reach them when they volunteer here (vouch-before-volunteer-reveal.md).
+        # How they were first verified is kept.
+        was_verified = target.is_human_verified
+        with transaction.atomic():
+            _vouch, created = Vouch.objects.get_or_create(
+                community=community, user=target, defaults={"vouched_by": request.user}
+            )
+            if not created:
+                messages.info(request, f"{target.username} has already been vouched for here.")
+                return redirect(back, slug=slug)
+            if not was_verified:
+                target.verified_at = dj_timezone.now()
+                target.verified_via = "coordinator"
+                target.save(update_fields=["verified_at", "verified_via"])
+            details = {"vouched_username": target.username, "community": community.slug}
+            if was_verified:
+                details["previously"] = target.verified_via
+            emit("user.vouched", target, user=request.user, request=request, details=details)
+        if was_verified:
+            messages.success(
+                request,
+                f"Vouched for {target.username}. When they volunteer on an ask here, the asker's details "
+                "can now reach them.",
+            )
+        else:
+            messages.success(request, f"Vouched for {target.username} — they can now join and post.")
         return redirect(back, slug=slug)
 
 
