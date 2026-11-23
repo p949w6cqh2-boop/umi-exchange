@@ -5,6 +5,9 @@
 
 ## Unreleased
 
+- **Behind the scenes, a second made-up parish for filming.** It lives only on the computer we
+  record videos on, so the videos can show a board other than St. Brigid's. Nothing you can see
+  changed.
 - **When a match connects you with only a name, a coordinator now hears about it.** If the other
   person has no email or phone to share, the match page already said a coordinator could pass a
   message along, but no coordinator was ever told. Now they get a note, and your own notice says a
