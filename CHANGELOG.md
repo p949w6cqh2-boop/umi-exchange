@@ -5,6 +5,11 @@
 
 ## Unreleased
 
+- **The offers box on someone else's ask now says the offers are yours.** On an ask that isn't
+  yours, that box lists only your own offers, so you can put one forward. It used to be titled
+  "Neighbours already offering" and, when you had none, said "No offers in this category yet," even
+  when other neighbours were offering. It now reads "Your offers that could help" and "You have no
+  offers in this category."
 - **When a match connects you with only a name, a coordinator now hears about it.** If the other
   person has no email or phone to share, the match page already said a coordinator could pass a
   message along, but no coordinator was ever told. Now they get a note, and your own notice says a
