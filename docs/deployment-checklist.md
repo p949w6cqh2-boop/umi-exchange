@@ -141,5 +141,5 @@ from apps.casework.tasks import register_schedule as _c; _c()"
 | Review logs | Weekly | `cat /var/log/logwatch-daily.txt` |
 | Update Docker images | Monthly | `docker compose pull && docker compose up -d` |
 | Test backup restore | Quarterly | `scripts/restore.sh` on test DB |
-| Rotate secrets | Annually | `SECRET_KEY`: regenerate + restart. Encryption keys: **never simply regenerate** — that orphans every encrypted field. Prepend the new key to `ENCRYPTION_KEYS`, run `manage.py rotate_keks`, verify, then drop the old key (`docs/envelope-rollout-runbook.md`). `BLIND_INDEX_KEY` is not rotatable without re-indexing — leave it |
+| Rotate secrets | Annually | `SECRET_KEY`: regenerate + restart. Encryption keys: **never simply regenerate** — that orphans every encrypted field. Prepend the new key to `ENCRYPTION_KEYS`, run `manage.py rotate_keks`, verify, then drop the old key (`docs/envelope-rollout-runbook.md`). `BLIND_INDEX_KEY` needs a re-index after it changes (`manage.py backfill_person_bidx --reindex --apply`, `docs/runbooks/key-rotation.md`) — leave it |
 | SSL certificate | Automatic (Caddy + Let's Encrypt) | — |
