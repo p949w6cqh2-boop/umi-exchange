@@ -318,7 +318,7 @@ Build and tag it (the canonical Dockerfile is `docker/Dockerfile`; context is th
 
 ```bash
 cd /opt/umi-exchange
-docker build -t umi-exchange:local -f docker/Dockerfile .
+docker build --build-arg GIT_SHA="$(git rev-parse HEAD)" -t umi-exchange:local -f docker/Dockerfile .
 ```
 
 Point the compose file at your local tag:
@@ -855,7 +855,7 @@ instead.
 cd /opt/umi-exchange
 git pull
 bash scripts/backup.sh                                             # snapshot first
-docker build -t umi-exchange:local -f docker/Dockerfile .
+docker build --build-arg GIT_SHA="$(git rev-parse HEAD)" -t umi-exchange:local -f docker/Dockerfile .
 docker compose -f docker/docker-compose.prod.yml up -d
 docker compose -f docker/docker-compose.prod.yml exec app python manage.py migrate
 docker compose -f docker/docker-compose.prod.yml exec app python manage.py collectstatic --noinput

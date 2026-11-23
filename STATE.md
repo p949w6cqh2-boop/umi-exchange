@@ -417,10 +417,14 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   confirmed to carry #229's code by reading the container's own files, so **#227 — an ancestor —
   is live.** *(Superseded, and the reason it stood: ATTESTED (unverified) 2026-10-22 on the
   founder's report that the worker's log printed Eastern. Before that the line said "live from the
-  next deploy".)* ⚠️ **The limit that made it attestable for five days has NOT changed:** `/health/`
-  returns only `{"status":"ok","db":"ok","cache":"ok"}` and **exposes no version or commit**, so
-  nothing *outside* the host can say which commit is running. Verifying this needed an SSH read
-  into the container, which is not something a check can do from the network.
+  next deploy".)* ✅ **The limit that made it attestable for five days is fixed in code (2026-11-23),
+  live from the first deploy that builds with it:** `/health/` now also returns `commit`, the sha
+  the running image was built from (`--build-arg GIT_SHA`, declared in both Dockerfiles; CI's
+  image push had passed it since before, and Docker dropped it unseen because nothing declared
+  it). An image built without the argument says `"unknown"`, never a guess, and the deploy
+  runbook's step 7 compares it to `git rev-parse HEAD` from outside the host. *Until that deploy:*
+  `/health/` returns only `{"status":"ok","db":"ok","cache":"ok"}`, so verifying which commit
+  runs still needs an SSH read into the container.
   Locally the cluster holds 134 MB of its 384 MB cap.
 - **The 35-bug adversarial hunt CLOSED (#105–#119, 2026-07-25/26):** 35 confirmed bugs fixed TDD in 13
   batches — crypto rotation/backfill lifecycle (#105) · moderation-hide + block guards in propose/accept

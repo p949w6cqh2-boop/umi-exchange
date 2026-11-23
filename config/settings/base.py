@@ -421,3 +421,6 @@ GEO_GATE_ADMIN = env.bool("GEO_GATE_ADMIN", default=False)  # opt-in: can lock a
 
 # ── Health Check ──────────────────────────────────────
 HEALTH_CHECK_TOKEN = env("HEALTH_CHECK_TOKEN", default="")
+# The commit the image was built from (docker build --build-arg GIT_SHA=...); /health/ reports it.
+# Baked into the image, never set in .env: a value there would outlive the image it described.
+GIT_SHA = env("GIT_SHA", default="")

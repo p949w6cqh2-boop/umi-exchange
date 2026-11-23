@@ -5,6 +5,10 @@
 
 ## Unreleased
 
+- **Behind the scenes, the board now says which version of itself is running.** Its health check,
+  the page our uptime monitor watches, names the exact update it was built from. After an update
+  goes out, we can now confirm from anywhere that it is really the one running. Nothing you can
+  see changed.
 - **The offers box on someone else's ask now says the offers are yours.** On an ask that isn't
   yours, that box lists only your own offers, so you can put one forward. It used to be titled
   "Neighbours already offering" and, when you had none, said "No offers in this category yet," even
