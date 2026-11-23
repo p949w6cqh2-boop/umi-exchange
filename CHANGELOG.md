@@ -9,6 +9,10 @@
   the page our uptime monitor watches, names the exact update it was built from. After an update
   goes out, we can now confirm from anywhere that it is really the one running. Nothing you can
   see changed.
+- **Behind the scenes, finding a person by name now works for every record.** Coordinators can look
+  someone up by their exact name without the board unlocking every record to compare. Records made
+  before that lookup existed couldn't be found that way; a one-time tool now catches them up. It
+  never shows anyone's name while it works. Nothing you can see changed.
 - **The offers box on someone else's ask now says the offers are yours.** On an ask that isn't
   yours, that box lists only your own offers, so you can put one forward. It used to be titled
   "Neighbours already offering" and, when you had none, said "No offers in this category yet," even
