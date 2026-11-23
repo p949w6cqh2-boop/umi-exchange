@@ -69,7 +69,9 @@
   {# Suggested offers. Not shown to a coordinator who shares a block with the asker: they are never matched. #}
   {% if need.status == "open" and not blocked_with_poster %}
   <div class="mt-10">
-    <h2 class="font-serif text-lg font-semibold text-parish-ink">Neighbours already offering</h2>
+    {# On your own ask this lists other neighbours' offers; on someone else's it lists only YOURS, so #}
+    {# the heading and empty line say whose they are, never that nobody is offering (2026-11-22). #}
+    <h2 class="font-serif text-lg font-semibold text-parish-ink">{% if is_own_need %}Neighbours already offering{% else %}Your offers that could help{% endif %}</h2>
     <div class="mt-4 space-y-3">
       {% for offer in suggested_offers %}
       <div class="umi-card umi-offer-card !p-4 flex items-center justify-between gap-3">
@@ -89,7 +91,7 @@
         {% endif %}
       </div>
       {% empty %}
-      <p class="text-sm text-parish-ink/70">No offers in this category yet.</p>
+      <p class="text-sm text-parish-ink/70">{% if is_own_need %}No offers in this category yet.{% else %}You have no offers in this category.{% endif %}</p>
       {% endfor %}
     </div>
   </div>

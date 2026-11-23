@@ -5,6 +5,11 @@
 
 ## Unreleased
 
+- **The offers box on someone else's ask now says the offers are yours.** On an ask that isn't
+  yours, that box lists only your own offers, so you can put one forward. It used to be titled
+  "Neighbours already offering" and, when you had none, said "No offers in this category yet," even
+  when other neighbours were offering. It now reads "Your offers that could help" and "You have no
+  offers in this category."
 - **A helper your community hasn't vouched for no longer gets your contact details.** When someone
   offers or volunteers to help with your ask, your email or phone now reaches them only once your
   community has vouched for them in person. Until then they see your name, and a coordinator puts you
