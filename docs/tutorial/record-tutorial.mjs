@@ -72,7 +72,14 @@ for (const k of ["LIFT", "PROPOSED"]) {
   }
 }
 // COMMUNION_MATCH is staged by cycle.sh for the v2 set only; its scenes check for it.
-const IDS = { LIFT: process.env.LIFT, PROPOSED: process.env.PROPOSED, COMMUNION_MATCH: process.env.COMMUNION_MATCH };
+const IDS = {
+  LIFT: process.env.LIFT,
+  PROPOSED: process.env.PROPOSED,
+  COMMUNION_MATCH: process.env.COMMUNION_MATCH,
+  // The B-roll set's two (cycle.sh, SET=broll only).
+  SITWITH: process.env.SITWITH,
+  GROCERIES: process.env.GROCERIES,
+};
 
 const args = process.argv.slice(2);
 const wanted = args.find((a) => !a.startsWith("--")) || "both";
@@ -84,8 +91,8 @@ if (!runAspects.every((a) => ASPECTS[a])) {
   console.error(`Unknown aspect '${wanted}' — use 16x9, 9x16, or both. Optional: --scene=<slug>.`);
   process.exit(1);
 }
-if (!["v1", "v2"].includes(SET)) {
-  console.error(`Unknown set '${SET}' — use --set=v1 (default) or --set=v2.`);
+if (!["v1", "v2", "broll"].includes(SET)) {
+  console.error(`Unknown set '${SET}' — use --set=v1 (default), --set=v2, or --set=broll.`);
   process.exit(1);
 }
 
@@ -699,7 +706,122 @@ const V2_SCENES = [
   },
 ];
 
-const SETS = { v1: SCENES, v2: [...SCENES, ...V2_SCENES] };
+// B-roll (SET=broll, 2026-11-21): fresh footage of a second fictional parish, St. Kateri's,
+// shaped for TikTok on the founder's ask. Every scene moves within the first second (a Short's
+// fate is set early), carries 4-6 s of action so a cut of 2-4 s shots can choose, and signs in
+// OFF camera: B-roll shows the board, never a login. Nothing is submitted, so every take sees the
+// same board. cycle.sh seeds the parish and exports SITWITH and GROCERIES for SET=broll only.
+const KATERI = "st-kateris";
+const needIds = (...names) => {
+  const missing = names.filter((n) => !IDS[n]);
+  if (missing.length) throw new Error(`${missing.join(", ")} missing: run through cycle.sh with SET=broll`);
+};
+const BROLL_SCENES = [
+  {
+    slug: "b01-front-door",
+    persona: "visitor",
+    async run(page) {
+      // The parish's public front door, the one a visitor lands on (/c/<slug>/ sends them here).
+      await page.goto(`${BASE}/c/${KATERI}/p/`, { waitUntil: "load" });
+      await sleep(800);
+      await roll(page, 500);
+      await sleep(900);
+      await roll(page, 600);
+      await sleep(900);
+    },
+  },
+  {
+    slug: "b02-our-story",
+    persona: "visitor",
+    async run(page) {
+      // "No one here walks alone": the line his best TikToks keep coming back to.
+      await page.goto(`${BASE}/c/${KATERI}/p/our-story/`, { waitUntil: "load" });
+      await sleep(800);
+      await roll(page, 350);
+      await sleep(1800);
+    },
+  },
+  {
+    slug: "b03-hub",
+    persona: "bea",
+    prelogin: "bea",
+    async run(page) {
+      await page.goto(`${BASE}/hub/${KATERI}/`, { waitUntil: "load" });
+      await sleep(800);
+      await roll(page, 450);
+      await sleep(900);
+      await roll(page, 500);
+      await sleep(900);
+    },
+  },
+  {
+    slug: "b04-board",
+    persona: "bea",
+    prelogin: "bea",
+    async run(page) {
+      // The asks, one after another: short titles that read at phone size.
+      await page.goto(`${BASE}/c/${KATERI}/`, { waitUntil: "load" });
+      await sleep(700);
+      for (let i = 0; i < 3; i++) {
+        await roll(page, 380);
+        await sleep(800);
+      }
+    },
+  },
+  {
+    slug: "b05-groceries",
+    // Filmed as June, who owns the ask. To anyone else the page's "Neighbours already offering"
+    // panel lists only the VIEWER's own offers in the category (apps/needs/views.py), so a third
+    // party saw "No offers in this category yet" while Omar's grocery offer sat on the board.
+    persona: "june",
+    prelogin: "june",
+    async run(page) {
+      needIds("GROCERIES");
+      // "Groceries this week": the subject of his best cut, o4 "I lost my job". This page paints
+      // late (two blank frames past "load" on the first take), so wait for its own heading, hold on
+      // the ask, then glide to the offer that answers it instead of rolling past it into the footer.
+      await page.goto(`${BASE}/c/${KATERI}/needs/${IDS.GROCERIES}/`, { waitUntil: "load" });
+      await page.getByText("Groceries this week").first().waitFor({ timeout: 10_000 });
+      await sleep(1400);
+      await glide(page, page.getByText("Grocery runs on Fridays").first());
+      await sleep(1800);
+    },
+  },
+  {
+    slug: "b06-two-yeses",
+    persona: "bea",
+    prelogin: "bea",
+    async run(page) {
+      needIds("SITWITH");
+      // "Someone to sit with me" met by "I'll sit with you", both yeses in: his C7, "two people
+      // say yes", on screen. Bea is the asker, so she sees Isaac's number open up.
+      await page.goto(`${BASE}/c/${KATERI}/matches/${IDS.SITWITH}/`, { waitUntil: "load" });
+      await sleep(800);
+      await glide(page, page.getByText("Reach out kindly and arrange the rest together").first());
+      await sleep(2200);
+    },
+  },
+  {
+    slug: "b07-post-an-ask",
+    persona: "theo",
+    prelogin: "theo",
+    async run(page) {
+      // Typing is motion from the first frame. Never submitted: every take sees the same board.
+      await page.goto(`${BASE}/hub/${KATERI}/`, { waitUntil: "load" });
+      await sleep(500);
+      await Promise.all([
+        page.waitForLoadState("load"),
+        glideClick(page, page.getByRole("link", { name: "Post a need" }).first()),
+      ]);
+      await sleep(700);
+      await glideClick(page, page.locator('label:has(input[name="category"])', { hasText: "Transport" }).first());
+      await typeSlow(page, page.locator('input[name="title"]'), "A ride to the clinic");
+      await sleep(1500); // linger; no submit, ever
+    },
+  },
+];
+
+const SETS = { v1: SCENES, v2: [...SCENES, ...V2_SCENES], broll: BROLL_SCENES };
 
 // ── Runner ───────────────────────────────────────────────────────────────────
 
