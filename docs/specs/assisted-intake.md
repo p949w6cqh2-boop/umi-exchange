@@ -1,7 +1,7 @@
 # Spec: assisted intake — accounts made with a coordinator's help
 
 > STATUS: **SPEC**, written 2026-09-23 on the founder's key. ⛔ **GATED — NOT BUILDABLE YET.**
-> Every feature here moves real people's data and the ethics gate reads **3 of 6**
+> Every feature here moves real people's data and the ethics gate reads **5 of 6**
 > (`../ethics-and-safety.md`). **Nothing in this spec starts while that is true.**
 >
 > Companion to `account-recovery.md`, which covers the ungated half. Read that first — it carries

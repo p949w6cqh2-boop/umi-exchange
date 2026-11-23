@@ -88,7 +88,7 @@ content. The settings page, the vouch page and the CHANGELOG say so in plain wor
 
 ## Not this spec
 
-- **`can_intake`** — reserved for `assisted-intake.md` §B, gated on the ethics gate (3 of 6).
+- **`can_intake`** — reserved for `assisted-intake.md` §B, gated on the ethics gate (5 of 6).
 - **The capability refactor** (named properties replacing `is_coordinator` at each site) — do it
   when a second narrow role is needed, as its own PR with its own review pass.
 - **`templates/base.html:85`** checks `member.role in 'admin coordinator'` — a **substring** test on

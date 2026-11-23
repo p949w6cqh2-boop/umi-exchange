@@ -3,7 +3,7 @@
 The page exists because the videos now ask people to reach out, and the site had
 no contact destination at all. It is deliberately a *signpost*, not a form: a
 form would put real people's names, addresses and messages in this database, and
-the ethics gate in docs/ethics-and-safety.md is not passed (3 of 6). So the page
+the ethics gate in docs/ethics-and-safety.md is not passed (5 of 6). So the page
 stores nothing and accepts nothing, and these tests hold it to that.
 """
 

@@ -1,6 +1,7 @@
 # Vouch before a helper sees the asker's contact
 
-> STATUS: **BUILT on branch `fix/vouch-before-volunteer-reveal`, not merged.** The founder's key "17"
+> STATUS: ✅ **MERGED 2026-11-23 (#244); NOT deployed** until a deploy runs migration
+> `communities 0007`. *As written:* BUILT on branch `fix/vouch-before-volunteer-reveal`, not merged. The founder's key "17"
 > (2026-11-22), answering the question raised at the parish meeting: *"the safety risk between people
 > meeting up"* (brain: `projects/field-notes-2026-11-22-safety-question.md`). Widened the same night
 > to every helper by his **"17a"** (below).
