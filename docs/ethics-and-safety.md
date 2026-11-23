@@ -191,8 +191,11 @@ neutral or public handoff rather than a home address, especially for higher-risk
 used to be named here: accepting a match from a volunteer with no standing offer revealed the asker's
 contact to a person the board had not vouched for. That is now guarded. Such a volunteer receives the
 asker's details only once that community has vouched for them in person, and until then a
-coordinator makes the introduction (`docs/specs/vouch-before-volunteer-reveal.md`). A vouch is not
-vetting, and the sentence above still stands: it records that someone here has met them, nothing more.
+coordinator makes the introduction (`docs/specs/vouch-before-volunteer-reveal.md`). That closes the
+one-click route, not every route: a member who posts an offer of their own and proposes it is not
+held, so an unvouched stranger can still reach an asker one step later. Whether every helper needs
+a vouch is the steward's open call, named in that spec. A vouch is not vetting either, and the
+sentence above still stands: it records that someone here has met them, nothing more.
 A neighbour who chooses to open their door has real agency; the tool's duty is
 to make sure the choice was made knowingly, the reveal was logged, and safety was never oversold.
 

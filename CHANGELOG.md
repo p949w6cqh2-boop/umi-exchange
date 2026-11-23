@@ -5,7 +5,7 @@
 
 ## Unreleased
 
-- **A volunteer your community hasn't vouched for no longer gets your contact details.** When someone with no standing offer
+- **Someone who volunteers without an offer now needs your community's vouch to get your details.** When someone with no standing offer
   volunteers on your ask, your email or phone now reaches them only once your community has vouched
   for them in person. Until then they see your name, and a coordinator puts you in touch. A
   coordinator or intake helper can now vouch for anyone they have met, including people who already

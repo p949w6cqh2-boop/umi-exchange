@@ -18,6 +18,24 @@ Otherwise the volunteer sees the asker's name, marked `vouch_pending`, and the p
 can put them in touch. That is a bare-name reveal, so the coordinators are told on accept (the notice
 from #242), and a coordinator makes the introduction.
 
+## ⚠️ Named residual: the throwaway offer (his call, not closed here)
+Found by the automated security review on 2026-11-22 and confirmed by reading `MatchProposeView`: a
+member may propose any offer **they own** in this community, with no check on its category or on
+when it was posted, and a match made with an offer is not held by this rule. So an unvouched stranger
+can post an offer, propose it on an ask, and on accept receive the asker's details, one extra step
+around the gate. `test_a_standing_offer_is_unchanged` pins today's behaviour so a change to it is
+deliberate. The rule as built closes the one-click route the ethics doc named; it does not make
+"a stranger never gets your number" true. Three ways to go, numbered for his reply:
+- **17a · every helper needs this community's vouch**, offer or not. Closes it. In code this is
+  dropping the `self.offer is None` test (plus tests); in practice every helper is vouched once,
+  in person, before an asker's details reach them, and until then a coordinator introduces.
+  *Agent's recommendation*, because it is the answer to the meeting's question as asked, and a gate
+  one extra click defeats is a promise the code does not keep.
+- **17b · a "standing" offer must predate the ask.** Closes the instant route only: an offer posted
+  in advance in every category still passes, and it holds a neighbour who posts a fresh offer for a
+  real ask.
+- **17c · keep it named and decide later.**
+
 ## Why a vouch is held per community, not on the account
 The account already carries `User.verified_via`, and `"coordinator"` there means someone vouched. It
 cannot carry this rule. **Any coordinator can vouch for any account on the site** (`VouchMemberView`,
