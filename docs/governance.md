@@ -103,3 +103,6 @@ exists for cannot honestly tick.
       so the names match there too.
 - [ ] Then, and only then: tick the governance box in `docs/ethics-and-safety.md`
       (separate commit, steward's merge, pastor informed).
+      *2026-11-23: the gate box was ticked on the steward's word, `ATTESTED (unverified)`, ahead
+      of the lines above. Each line above stays unticked until its own receipt is recorded here.
+      The receipts are in the gate box itself.*

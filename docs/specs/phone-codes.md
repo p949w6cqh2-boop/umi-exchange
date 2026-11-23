@@ -7,7 +7,7 @@
 > 💸 **Texting costs money.** Opening the provider account, adding a card, and any spend are the
 > founder's hand; no agent opens an account or spends. His word on 10-02: *"if it cost money we will
 > do it."* ⛔ **Real neighbors' phone numbers wait for the ethics gate** (`../ethics-and-safety.md`,
-> 3 of 6), like every other piece of real personal data.
+> 5 of 6), like every other piece of real personal data.
 
 ## Why now
 

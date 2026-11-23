@@ -432,14 +432,15 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   · federation crypto robustness (#119, "closes the 35-bug adversarial hunt", `674991d`). Gate grew
   **1039 (batch 1) → 1155 (batch 13)**; every batch commit records its own gate count, red-first tests,
   and semgrep/bandit-clean. All federation fixes are default-OFF fix-before-enabling.
-- **Ethics gate: 4 of 6 boxes CHECKED (boxes 1, 2, 4, 5; box 2 closed 2026-07-29) — box 1 ON THE
-  STEWARD'S WORD, `ATTESTED (unverified)`.** *(Box 1 was ticked 2026-08-18 (#153), re-opened
+- **Ethics gate: 5 of 6 boxes CHECKED (boxes 1, 2, 4, 5, 6; box 2 closed 2026-07-29) — boxes 1 and 6
+  ON THE STEWARD'S WORD, `ATTESTED (unverified)`.** *(Box 6, governance, ticked 2026-11-23 on his
+  word; its appointment checklist in `docs/governance.md` is not individually attested, and its
+  key-custody leg waits on the same sealed envelope as box 3. Open: 3 key custody.)* *(Box 1 was ticked 2026-08-18 (#153), re-opened
   2026-09-11 (#159), and ticked again 2026-11-02 by the steward — his alert e-mail reaches his phone —
   with ~~two of its three legs~~ **one of its three legs** still open, named in the box itself: the
   unannounced trip test. ~~and a running liveness check (`scripts/monitor_liveness.sh`, built, not yet
   in cron)~~ Since 2026-11-03 the liveness check runs hourly from the steward's laptop, and the push
-  channel is attached to the monitor and `Active` (read via the v3 API). Open: 3 key
-  custody, 6 governance.)* **Box 5 (#120):** on-behalf-of consent honestly
+  channel is attached to the monitor and `Active` (read via the v3 API).)* **Box 5 (#120):** on-behalf-of consent honestly
   recorded — `Consent.subject_person` grantor + `recorded_by` witness (§4.1), initials + "not asked
   directly" until an active consent names them, public `/terms/` limits page, report/block reachable
   from any post; follow-up #128 fixed the intake `record_method` enum (`consent/0005`, gate 1201).
@@ -511,7 +512,9 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   offer-less volunteer match DOES reveal contact to an unvouched volunteer — not yet guarded; guarded
   for every helper by #244, merged 2026-11-23, live once deployed).
 - **Ethics & safety gate (2026-07-18):** `docs/ethics-and-safety.md` — honest harm analysis + a hard
-  precondition gate. ~~**Now 4 of 6 boxes checked**~~ **3 of 6 since 2026-09-11** (breach/legal-demand
+  precondition gate. **5 of 6 since 2026-11-23** (see the dated gate bullet above; only key custody
+  is open). *As of 2026-09-11, before boxes 1 and 6 were ticked on the steward's word:*
+  ~~**Now 4 of 6 boxes checked**~~ **3 of 6 since 2026-09-11** (breach/legal-demand
   plan #121, on-behalf consent #120, tested restore + verified retention #131; ~~**monitoring + alerts
   #153**~~ re-opened by #159 — see the dated bullets above);
   still open: **monitoring that reaches a human who is not expecting it, key custody off root,
