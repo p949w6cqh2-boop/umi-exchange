@@ -52,7 +52,7 @@ git pull
 
 # (To preview before merging instead: git fetch && git checkout localize-demo-american-english)
 
-docker build -t umi-exchange:local -f docker/Dockerfile .
+docker build --build-arg GIT_SHA="$(git rev-parse HEAD)" -t umi-exchange:local -f docker/Dockerfile .
 ```
 
 Then bring it up **from the laptop**, with the custody rig (it decrypts the keys, pipes them to
