@@ -1,9 +1,11 @@
-"""A volunteer this community has not vouched for does not receive the asker's contact.
+"""A helper this community has not vouched for does not receive the asker's contact, offer or not.
 
 docs/ethics-and-safety.md, "The stranger at the door": a volunteer who proposes on a need without a
 standing offer received the asker's contact on accept, "a person the board has not vouched for".
-Closed by docs/specs/vouch-before-volunteer-reveal.md. "Vouched" means a vouch made in the asker's
-own community (a Vouch row), or a role there trusted to vouch for others (Member.can_vouch).
+Closed by docs/specs/vouch-before-volunteer-reveal.md, and widened to every helper by the founder's
+"17a" (2026-11-22), because posting an offer first was one step around an offer-less-only rule.
+"Vouched" means a vouch made in the asker's own community (a Vouch row), or a role there trusted to
+vouch for others (Member.can_vouch).
 
 Not User.verified_via == "coordinator": any coordinator can vouch for any account on the site, and
 anyone signed in can create a community and be its admin, so that mark can be minted in a community
@@ -135,8 +137,9 @@ def test_an_asker_who_left_shows_as_left_not_held():
     assert "vouch_pending" not in info
 
 
-def test_a_standing_offer_is_unchanged():
-    """The gap is the offer-less volunteer; an offerer's reveal is not touched here."""
+def _offer_match():
+    """A match made with an offer: the route the automated security review found around an
+    offer-less-only rule (post an offer, propose it). Closed by the founder's 17a, 2026-11-22."""
     community = CommunityFactory()
     category = CategoryFactory(community=community, name="Home Repair")
     asker = MemberFactory(community=community, is_active=True, user__phone=PHONE)
@@ -144,6 +147,22 @@ def test_a_standing_offer_is_unchanged():
     need = NeedFactory(community=community, requester=asker, category=category, status="open", contact_pref="any")
     offer = OfferFactory(community=community, offerer=offerer, category=category)
     match = MatchFactory(need=need, offer=offer, proposed_by=offerer, status="accepted")
+    return community, offerer, match
+
+
+def test_an_unvouched_offerer_does_not_get_the_askers_contact():
+    """17a: every helper needs this community's vouch, offer or not."""
+    _c, offerer, match = _offer_match()
+
+    info = match.get_contact_info_for(offerer)
+
+    assert "phone" not in info and "email" not in info
+    assert info.get("vouch_pending") is True
+
+
+def test_an_offerer_vouched_for_here_gets_the_askers_contact():
+    community, offerer, match = _offer_match()
+    Vouch.objects.create(community=community, user=offerer.user)
 
     info = match.get_contact_info_for(offerer)
 

@@ -254,16 +254,14 @@ class Match(models.Model):
             # number stays with the coordinators who arrange the visit; the helper sees the name.
             pref = "in_app" if self.need.category.coordinators_only_contact else requester_pref
             shown = self._contact_dict(requester, pref)
-            # A volunteer with no standing offer whom this community has not vouched for does not
-            # receive the asker's contact; a coordinator makes the introduction instead. Closes the gap
+            # A helper whom this community has not vouched for does not receive the asker's contact,
+            # offer or not; a coordinator makes the introduction instead. Closes the gap
             # docs/ethics-and-safety.md names under "The stranger at the door"
-            # (docs/specs/vouch-before-volunteer-reveal.md). Marked held only when it withholds
-            # something, so an asker who shares nothing, or who left, keeps the usual line.
-            if (
-                self.offer is None
-                and (shown.get("email") or shown.get("phone"))
-                and not self._vouched_here(requesting_member)
-            ):
+            # (docs/specs/vouch-before-volunteer-reveal.md). Offers included on the founder's 17a
+            # (2026-11-22): held for offer-less volunteers only, a stranger could post an offer and
+            # propose it. Marked held only when it withholds something, so an asker who shares
+            # nothing, or who left, keeps the usual line.
+            if (shown.get("email") or shown.get("phone")) and not self._vouched_here(requesting_member):
                 held = self._contact_dict(requester, "in_app")
                 held["vouch_pending"] = True
                 return held

@@ -31,7 +31,7 @@ from .conftest import (
 pytestmark = pytest.mark.django_db
 
 
-def _world(requester_email="", offerer_email="", offer_pref="in_app"):
+def _world(requester_email="", offerer_email="", offer_pref="in_app", vouched=False):
     community = CommunityFactory()
     category = CategoryFactory(community=community)
     requester = MemberFactory(community=community, is_active=True, user__email=requester_email)
@@ -40,6 +40,12 @@ def _world(requester_email="", offerer_email="", offer_pref="in_app"):
     need = NeedFactory(community=community, requester=requester, category=category, status="open")
     offer = OfferFactory(community=community, offerer=offerer, category=category, contact_pref=offer_pref)
     match = MatchFactory(need=need, offer=offer, proposed_by=offerer, status="proposed")
+    if vouched:
+        # The asker's channels reach a helper only once this community has vouched for them
+        # (docs/specs/vouch-before-volunteer-reveal.md, the founder's 17a).
+        from apps.communities.models import Vouch
+
+        Vouch.objects.create(community=community, user=offerer.user)
     return community, requester, offerer, coordinator, match
 
 
@@ -67,7 +73,7 @@ def test_accept_that_reveals_only_a_name_tells_the_coordinator():
 
 def test_accept_that_shares_real_contact_leaves_the_coordinator_alone():
     community, requester, _offerer, coordinator, match = _world(
-        requester_email="asker@example.com", offerer_email="helper@example.com", offer_pref="any"
+        requester_email="asker@example.com", offerer_email="helper@example.com", offer_pref="any", vouched=True
     )
 
     _accept(community, requester, match)
@@ -88,7 +94,7 @@ def test_a_neighbour_given_only_a_name_is_not_told_contact_was_shared():
 
 def test_a_neighbour_given_real_contact_still_hears_it_was_shared():
     community, requester, offerer, _coordinator, match = _world(
-        requester_email="asker@example.com", offerer_email="helper@example.com", offer_pref="any"
+        requester_email="asker@example.com", offerer_email="helper@example.com", offer_pref="any", vouched=True
     )
 
     _accept(community, requester, match)

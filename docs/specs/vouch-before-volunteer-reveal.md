@@ -1,8 +1,9 @@
-# Vouch before a volunteer sees the asker's contact
+# Vouch before a helper sees the asker's contact
 
 > STATUS: **BUILT on branch `fix/vouch-before-volunteer-reveal`, not merged.** The founder's key "17"
 > (2026-11-22), answering the question raised at the parish meeting: *"the safety risk between people
-> meeting up"* (brain: `projects/field-notes-2026-11-22-safety-question.md`).
+> meeting up"* (brain: `projects/field-notes-2026-11-22-safety-question.md`). Widened the same night
+> to every helper by his **"17a"** (below).
 
 ## The gap, in the project's own words
 `docs/ethics-and-safety.md` §"The stranger at the door" said: *"When a volunteer proposes on a need
@@ -11,30 +12,20 @@ has not vouched for. The §8.2 rule does not yet guard this, and closing it, for
 vouch on higher-risk categories, is on the build list."*
 
 ## The rule
-On a match with **no standing offer** (a volunteer proposed it), the asker's email or phone reaches the
-volunteer **only if this community has vouched for them**: a `communities.Vouch` row for the match's
-community, or a role there that vouches for others (`Member.can_vouch`: coordinator, admin, intake).
-Otherwise the volunteer sees the asker's name, marked `vouch_pending`, and the page says a coordinator
-can put them in touch. That is a bare-name reveal, so the coordinators are told on accept (the notice
-from #242), and a coordinator makes the introduction.
+On any accepted match, **offer or not**, the asker's email or phone reaches the helper **only if this
+community has vouched for them**: a `communities.Vouch` row for the match's community, or a role there
+that vouches for others (`Member.can_vouch`: coordinator, admin, intake). Otherwise the helper sees the
+asker's name, marked `vouch_pending`, and the page says a coordinator can put them in touch. That is a
+bare-name reveal, so the coordinators are told on accept (the notice from #242), and a coordinator
+makes the introduction.
 
-## ⚠️ Named residual: the throwaway offer (his call, not closed here)
-Found by the automated security review on 2026-11-22 and confirmed by reading `MatchProposeView`: a
-member may propose any offer **they own** in this community, with no check on its category or on
-when it was posted, and a match made with an offer is not held by this rule. So an unvouched stranger
-can post an offer, propose it on an ask, and on accept receive the asker's details, one extra step
-around the gate. `test_a_standing_offer_is_unchanged` pins today's behaviour so a change to it is
-deliberate. The rule as built closes the one-click route the ethics doc named; it does not make
-"a stranger never gets your number" true. Three ways to go, numbered for his reply:
-- **17a · every helper needs this community's vouch**, offer or not. Closes it. In code this is
-  dropping the `self.offer is None` test (plus tests); in practice every helper is vouched once,
-  in person, before an asker's details reach them, and until then a coordinator introduces.
-  *Agent's recommendation*, because it is the answer to the meeting's question as asked, and a gate
-  one extra click defeats is a promise the code does not keep.
-- **17b · a "standing" offer must predate the ask.** Closes the instant route only: an offer posted
-  in advance in every category still passes, and it holds a neighbour who posts a fresh offer for a
-  real ask.
-- **17c · keep it named and decide later.**
+## Why offers too: his 17a (2026-11-22)
+The rule was first built for offer-less volunteers only, the route the ethics doc named. The automated
+security review then found the way around it, confirmed in `MatchProposeView`: a member may propose any
+offer they own in the community, with no check on its category or on when it was posted, so an
+unvouched stranger could post an offer, propose it, and receive the asker's details one step later.
+Three ways were put to him (every helper · a standing offer must predate the ask · keep it named), and
+he keyed **17a, every helper**. `test_an_unvouched_offerer_does_not_get_the_askers_contact` holds it.
 
 ## Why a vouch is held per community, not on the account
 The account already carries `User.verified_via`, and `"coordinator"` there means someone vouched. It
@@ -57,17 +48,22 @@ community has already vouched for them. The vouch page and the settings form say
 ## Calls made by the agent, for the founder to check
 1. **All categories, not "higher-risk first".** The app has no risk flag on a category (only
    `coordinators_only_contact`, which already keeps the asker's number from the helper for Communion at
-   home), and nearly every ask on the board ends in meeting: a ride, a visit, a repair at home. One
-   word narrows it later with a category flag.
+   home), and nearly every ask on the board ends in meeting: a ride, a visit, a repair at home.
 2. **Held only when it withholds something.** An asker who shares no channel, or who has left, keeps
    the box's usual line, so the page never blames a vouch for what the asker chose.
 3. **No backfill.** Vouches made before this change live only on the account and in the audit log, so
    they do not count here, and those neighbours need vouching again in their community. The
    alternative, deriving rows from the audit log in a migration, writes to live data on deploy.
-4. ⚠️ **The intended consequence:** once deployed, a volunteer with no standing offer stops receiving
-   an asker's details until their community vouches for them. Production has real accounts; how many
-   volunteer matches that touches was not read.
+
+## ⚠️ What changes for people once deployed
+- **Every helper, offerers included, stops receiving an asker's details until their community vouches
+  for them in person.** Until then a coordinator introduces. Production has real accounts; how many
+  matches that touches was not read.
+- **The live demo parish has no `Vouch` rows** (the model is new), so its helpers will see names only
+  until one of its coordinators vouches for them.
+- Not changed by this: a helper's own details still reach the asker as the helper chose them on the
+  offer. An asker needs no vouch to see them.
 
 ## Unchanged
-Matches with a standing offer · what the asker sees · the coordinators' oversight view · the audit of
-every reveal (§8.3) · who may vouch and the limits on vouching.
+What the asker sees · the coordinators' oversight view · the audit of every reveal (§8.3) · who may
+vouch and the limits on vouching.

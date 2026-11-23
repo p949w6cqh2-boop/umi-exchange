@@ -973,7 +973,7 @@ class VouchMemberView(LoginRequiredMixin, View):
     where. Revisit if the audit log ever shows probing (many user.vouched rows from one voucher).
 
     What a vouch adds beyond that stays in the community it was made in (communities.Vouch): it lets
-    an asker HERE share their details with the vouched person when they volunteer
+    an asker HERE share their details with the vouched person when they help with an ask
     (docs/specs/vouch-before-volunteer-reveal.md), so the site-wide reach above unlocks nothing new."""
 
     def post(self, request, slug):
@@ -1016,7 +1016,7 @@ class VouchMemberView(LoginRequiredMixin, View):
 
         # Email or backfill already let someone join and post, so this used to stop at "already
         # verified". The vouch is recorded now, in this community only, because it is also what lets
-        # an asker's details reach them when they volunteer here (vouch-before-volunteer-reveal.md).
+        # an asker's details reach them when they help with an ask here (vouch-before-volunteer-reveal.md).
         # How they were first verified is kept.
         was_verified = target.is_human_verified
         with transaction.atomic():
@@ -1037,7 +1037,7 @@ class VouchMemberView(LoginRequiredMixin, View):
         if was_verified:
             messages.success(
                 request,
-                f"Vouched for {target.username}. When they volunteer on an ask here, the asker's details "
+                f"Vouched for {target.username}. When they help with an ask here, the asker's details "
                 "can now reach them.",
             )
         else:

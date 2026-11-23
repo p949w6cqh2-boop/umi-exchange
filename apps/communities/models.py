@@ -265,7 +265,7 @@ class Vouch(models.Model):
     can vouch for any account on the site, and anyone signed in can create a community and be its
     admin, so the site-wide User.verified_via == "coordinator" can be minted in a community nobody
     else is in. Only a vouch made in the asker's own community lets that asker's details reach a
-    volunteer who has no standing offer (Match.get_contact_info_for)."""
+    helper, offer or not (Match.get_contact_info_for; the founder's 17a)."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="vouches")

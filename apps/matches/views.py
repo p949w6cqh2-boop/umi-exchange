@@ -453,7 +453,7 @@ class MatchUpdateView(LoginRequiredMixin, View):
                         "match_accepted",
                         "Two neighbours need you to connect them",
                         # True for both reasons a reveal is a bare name: nothing to share, or a
-                        # volunteer not yet vouched for in person (vouch-before-volunteer-reveal.md).
+                        # helper not yet vouched for in person (vouch-before-volunteer-reveal.md).
                         f"A match on '{need.title}' was accepted, but contact details were not shared on "
                         "one side. Open the match to pass a message along.",
                         link=f"/c/{slug}/matches/{match.id}/",
