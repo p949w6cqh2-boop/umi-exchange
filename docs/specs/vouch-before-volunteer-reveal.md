@@ -60,7 +60,10 @@ community has already vouched for them. The vouch page and the settings form say
   for them in person.** Until then a coordinator introduces. Production has real accounts; how many
   matches that touches was not read.
 - **The live demo parish has no `Vouch` rows** (the model is new), so its helpers will see names only
-  until one of its coordinators vouches for them.
+  until one of its coordinators vouches for them, or until the runbook's reseed runs
+  (`docs/demo-reseed-runbook.md` §3, his hands), because `seed_demo_parish` now vouches every demo
+  member in their own parish (`test_each_parish_vouches_for_its_own_members_only`). The recording
+  rig's scratch databases get the same, so filmed connect moments still open on a phone number.
 - Not changed by this: a helper's own details still reach the asker as the helper chose them on the
   offer. An asker needs no vouch to see them.
 

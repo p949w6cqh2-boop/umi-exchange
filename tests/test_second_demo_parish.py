@@ -76,6 +76,22 @@ class TestSecondDemoParish:
         assert accepted.exists()
         assert all(m.asker_yes_at and m.helper_yes_at for m in accepted)
 
+    def test_each_parish_vouches_for_its_own_members_only(self, settings):
+        """A helper sees an asker's details only once that community has vouched for them (the
+        founder's 17a), so each seeded parish vouches for its members, and a vouch made in one
+        parish counts in no other (docs/specs/vouch-before-volunteer-reveal.md)."""
+        from apps.communities.models import Vouch
+
+        settings.DEBUG = True
+        call_command("seed_demo_parish")
+        call_command("seed_demo_parish", parish=SECOND)
+        call_command("seed_demo_parish", parish=SECOND)  # a reseed adds none
+        for slug in ("st-brigids", SECOND):
+            community = Community.objects.get(slug=slug)
+            members = set(Member.objects.filter(community=community).values_list("user_id", flat=True))
+            vouched = list(Vouch.objects.filter(community=community).values_list("user_id", flat=True))
+            assert sorted(vouched) == sorted(members)
+
 
 class TestSecondParishData:
     """Contracts on the data itself, no database needed."""
