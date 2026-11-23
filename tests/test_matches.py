@@ -63,6 +63,11 @@ class TestContactRevelation:
         match.need.save()
         match.transition_to("accepted")
         offerer = match.offer.offerer
+        # A helper sees the asker's channels once this community has vouched for them
+        # (docs/specs/vouch-before-volunteer-reveal.md, the founder's 17a).
+        from apps.communities.models import Vouch
+
+        Vouch.objects.create(community=match.need.community, user=offerer.user)
         info = match.get_contact_info_for(offerer)
         assert info is not None
         assert info["email"] == "test@example.com"

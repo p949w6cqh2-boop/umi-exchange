@@ -256,3 +256,32 @@ class Resource(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_category_display()})"
+
+
+class Vouch(models.Model):
+    """Someone trusted to vouch in THIS community met this person and vouched for them.
+
+    Held per community on purpose (docs/specs/vouch-before-volunteer-reveal.md). Any coordinator
+    can vouch for any account on the site, and anyone signed in can create a community and be its
+    admin, so the site-wide User.verified_via == "coordinator" can be minted in a community nobody
+    else is in. Only a vouch made in the asker's own community lets that asker's details reach a
+    helper, offer or not (Match.get_contact_info_for; the founder's 17a)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="vouches")
+    user = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vouches")
+    vouched_by = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="vouches_given",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "communities_vouch"
+        constraints = [models.UniqueConstraint(fields=["community", "user"], name="one_vouch_per_person_per_community")]
+
+    def __str__(self):
+        return f"Vouch for {self.user_id} in {self.community_id}"
