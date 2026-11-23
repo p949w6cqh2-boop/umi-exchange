@@ -378,11 +378,24 @@ because they are not yet true. Each item names how you know it is done.
   `apps/casework/tests/test_onbehalf_consent.py` (16) and `tests/test_board_states_its_limits.py` (10).
   What this does **not** fix: a verbal yes is still only as good as the volunteer who heard it.
 
-- [ ] **Governance extends beyond a solo steward.** Done when more than one person holds real authority
+- [x] **Governance extends beyond a solo steward.** Done when more than one person holds real authority
   over the live instance, meaning access to the data, custody of the keys, and the power to refuse a
   demand, with a written path for succession and for removing someone who abuses the trust. One person
   as the entire trust boundary is not governance, it is a single point of failure with good
   intentions.
+  ⚖️ **TICKED 2026-11-23 ON THE STEWARD'S WORD — `ATTESTED (unverified)`. Read this before
+  counting this box as passed.** His key: the gate is at five, and the fifth is this box.
+  - **ATTESTED:** the governance in `docs/governance.md` is in place: more than one person holds
+    real authority over the live instance. The written path for succession and removal has been on
+    that page since 2026-08-11.
+  - ⚠️ **Not individually attested:** the four lines of that page's appointment checklist (the
+    pastor accepting halt and refusal in those words; the envelope sealed and its keepers named in
+    writing; the coordinator's naming in writing; the page and the incident plan cross-checked).
+    Each stays unticked there until its own receipt is recorded.
+  - ⚠️ **One leg is shared with key custody, which is still open.** "Custody of the keys" is part
+    of this box's done-when, and the box above still waits on the sealed envelope. Until the
+    envelope is in the safe, this box's own definition is not fully met. Its receipt is the key
+    custody box closing.
 
 ---
 
