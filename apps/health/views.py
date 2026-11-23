@@ -2,7 +2,13 @@
 Health check endpoint — returns 200 when app + database are reachable.
 Used by load balancers, uptime monitors (UptimeRobot), and deployment scripts.
 Optional token protection via HEALTH_CHECK_TOKEN env var.
+
+It also names the commit the running image was built from (`commit`), so a deploy can be
+verified from outside the host: health and status codes alone cannot tell "deployed" from
+"believed deployed" (the 2026-07-27 deploy served the old tree with every probe green).
 """
+
+import re
 
 from django.conf import settings
 from django.db import connection
@@ -10,10 +16,19 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.utils.crypto import constant_time_compare
 from django.views import View
 
+_COMMIT = re.compile(r"[0-9a-f]{7,40}")
+
+
+def running_commit():
+    """The image's build commit, or "unknown". Only a commit hash is ever echoed: an image built
+    without --build-arg GIT_SHA, or handed something else, says "unknown" rather than guessing."""
+    sha = (getattr(settings, "GIT_SHA", "") or "").strip().lower()
+    return sha if _COMMIT.fullmatch(sha) else "unknown"
+
 
 class HealthCheckView(View):
     """
-    GET /health/ — returns {"status": "ok", "db": "ok"} or 503 on failure.
+    GET /health/ — returns {"status": "ok", "db": "ok", "cache": "ok", "commit": "<sha>"} or 503 on failure.
     If HEALTH_CHECK_TOKEN is set, requires ?token=<value> parameter.
     """
 
@@ -24,7 +39,7 @@ class HealthCheckView(View):
         if token and not constant_time_compare(request.GET.get("token", ""), token):
             return HttpResponseForbidden("Forbidden")
 
-        checks = {"status": "ok", "db": "unknown", "cache": "unknown"}
+        checks = {"status": "ok", "db": "unknown", "cache": "unknown", "commit": running_commit()}
         status_code = 200
 
         # Database check

@@ -43,4 +43,9 @@ EXPOSE 8000
 # container reported healthy while every request 500'd. The token suffix keeps the
 # probe honest the other way: /health/ 403s without ?token= once one is configured.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -sf -H 'X-Forwarded-Proto: https' "http://localhost:8000/health/${HEALTH_CHECK_TOKEN:+?token=$HEALTH_CHECK_TOKEN}" || exit 1
+# The commit this image was built from, reported on /health/ so a deploy can be checked from
+# outside the host. Declared last so a new commit invalidates no cached layer above. Without the
+# build argument /health/ says "unknown"; an undeclared --build-arg is dropped without a word.
+ARG GIT_SHA=""
+ENV GIT_SHA=${GIT_SHA}
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]

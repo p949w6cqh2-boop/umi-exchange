@@ -87,7 +87,10 @@ bash scripts/backup.sh          # -> /var/backups/umi/umi-<timestamp>.sql.gz
 #    the GHCR push build, so this is the image CI has actually proved. The root
 #    Dockerfile is a convenience alias kept identical to it — a bare `docker build .`
 #    is fine, but name the canonical one here so the two can never quietly diverge.
-docker build -t umi-exchange:local -f docker/Dockerfile .
+#    --build-arg GIT_SHA stamps the image with the commit it was built from; /health/
+#    reports it, and step 7 reads it back from outside. Leave it off and /health/ says
+#    "unknown", which step 7 treats as a failed deploy.
+docker build --build-arg GIT_SHA="$(git rev-parse HEAD)" -t umi-exchange:local -f docker/Dockerfile .
 
 # Leave the droplet: step 5 runs on the laptop
 exit
@@ -151,6 +154,11 @@ docker exec docker-app-1 python manage.py collectstatic --noinput
 #    deployed". Always assert some string that ONLY exists in the new commit —
 #    and get its expected count by grepping the merged tree, never from memory.
 docker compose --env-file .env -f docker/docker-compose.prod.yml ps app worker   # app "healthy", worker "Up"
+# The commit the live app was built from, read from outside the host. It must equal step 2's
+# `git rev-parse HEAD`; "unknown" means the image was built without step 4's --build-arg.
+# (Add ?token=... if HEALTH_CHECK_TOKEN is set.) It proves which image is running, not that the
+# image holds what you merged, so the string check below stays.
+curl -sf https://reciprocalaid.network/health/ ; echo ; git rev-parse HEAD
 curl -sf https://reciprocalaid.network/about/ | grep -o "<a string you changed>"
 # The worker's scheduler makes its first pass 30 seconds after the worker starts, so run these
 # a minute or more after step 5; earlier, the count reads 0 (it did, 21 seconds in, on
@@ -200,7 +208,7 @@ docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T db \
   psql -U umi -d umi_exchange -c "select (select count(*) from communities_community) communities,
   (select count(*) from accounts_user) users;"
 # build the previous commit, then leave for the laptop
-git checkout <previous-sha> && docker build -t umi-exchange:local -f docker/Dockerfile .
+git checkout <previous-sha> && docker build --build-arg GIT_SHA="$(git rev-parse HEAD)" -t umi-exchange:local -f docker/Dockerfile .
 exit
 ```
 
