@@ -298,7 +298,11 @@
   (`tests/test_template_comments.py` caught the wrapped form, which would have rendered as visible text).
 
 ## Testing / CI / Deploy
-- **1882 passed** on **Postgres 16 + Redis** in #221's gate (2026-10-13, L26; count read from its file;
+- **2018 passed** on **Postgres 16 + Redis** in #245's gate (2026-11-23; count read from its file;
+  0 failed, 0 errors), and CI 3/3 green on #245's head `b48601ea`, merged as `6f6e1ec2`, whose tree
+  is the tested tree (merge-tree checked). *Before it:* **2015 passed** in #244's gate (`5e435056`,
+  merged as `eacde77c`) and **1998 passed** in #243's (`a9a0036d`, merged as `ea453c8b`).
+  *Before those:* **1882 passed** in #221's gate (2026-10-13, L26; count read from its file;
   0 failed), and CI 3/3 green on #221's head `eb9672d7`, merged as `4f1ea527`. *Before it:* **1874
   passed** in #220's gate (the founder's answers to the bug hunt's open questions; 0 failed), CI 3/3
   green on #220's head `0b83c7c3`, merged as `4e1dff6f`. *Before that:* **1835 passed** in #218's gate (2026-10-13, full suite at `6bb42520`,
