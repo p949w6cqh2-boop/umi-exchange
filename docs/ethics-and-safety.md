@@ -187,11 +187,15 @@ plain statement, made in the terms and at the moment of connection: UMI brokers 
 neighbours, and it does not vet people, run background checks, supervise meetings, or guarantee
 anyone's safety. That sentence is honest and it is protective, because it is the difference between
 introducing two neighbours and vouching for a stranger. One design default supports it: lean toward a
-neutral or public handoff rather than a home address, especially for higher-risk categories. And one
-gap has to be named honestly. When a volunteer proposes on a need without a standing offer, accepting
-that match still reveals the asker's contact to a person the board has not vouched for. The §8.2 rule
-does not yet guard this, and closing it, for example by requiring a vouch on higher-risk categories,
-is on the build list. A neighbour who chooses to open their door has real agency; the tool's duty is
+neutral or public handoff rather than a home address, especially for higher-risk categories. One gap
+used to be named here: accepting a match from a volunteer with no standing offer revealed the asker's
+contact to a person the board had not vouched for. That is now guarded, for every helper and not
+only that one: a helper, with an offer or without, receives the asker's details only once that
+community has vouched for them in person, and until then a coordinator makes the introduction
+(`docs/specs/vouch-before-volunteer-reveal.md`; offers included on the steward's call, because posting
+an offer first was one step around a narrower rule). A vouch is not vetting either, and the sentence
+above still stands: it records that someone here has met them, nothing more.
+A neighbour who chooses to open their door has real agency; the tool's duty is
 to make sure the choice was made knowingly, the reveal was logged, and safety was never oversold.
 
 ---

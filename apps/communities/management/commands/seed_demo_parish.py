@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
-from apps.communities.models import Category, Community, Member
+from apps.communities.models import Category, Community, Member, Vouch
 from apps.matches.models import Match
 from apps.needs.models import Need
 from apps.offers.models import Offer
@@ -509,6 +509,12 @@ class Command(BaseCommand):
                 community=community,
                 defaults={"display_name": display, "role": role},
             )
+            # A helper receives an asker's details only once this community has vouched for them
+            # (docs/specs/vouch-before-volunteer-reveal.md, the founder's 17a). These people are
+            # known to the parish in person, the provenance the verified_via line above already
+            # records, so the parish vouches for each one; without it every filmed connect moment
+            # opens on a held name. Outside any `if created`, so a reseed repairs an older parish.
+            Vouch.objects.get_or_create(community=community, user=users[username])
             members[username] = member
 
         categories = {}

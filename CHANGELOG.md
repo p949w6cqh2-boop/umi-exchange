@@ -10,6 +10,11 @@
   "Neighbours already offering" and, when you had none, said "No offers in this category yet," even
   when other neighbours were offering. It now reads "Your offers that could help" and "You have no
   offers in this category."
+- **A helper your community hasn't vouched for no longer gets your contact details.** When someone
+  offers or volunteers to help with your ask, your email or phone now reaches them only once your
+  community has vouched for them in person. Until then they see your name, and a coordinator puts you
+  in touch. A coordinator or intake helper can now vouch for anyone they have met, including people
+  who already confirmed an email address, and a vouch counts only in the community where it was made.
 - **Behind the scenes, a second made-up parish for filming.** It lives only on the computer we
   record videos on, so the videos can show a board other than St. Brigid's. Nothing you can see
   changed.

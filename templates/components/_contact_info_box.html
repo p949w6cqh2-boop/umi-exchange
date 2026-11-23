@@ -22,6 +22,8 @@
       {% if contact_info.phone %}<p class="text-sm text-parish-ink/70 mt-1">Phone: {{ contact_info.phone }}</p>{% endif %}
       {% if contact_info.left %}
       <p class="text-sm text-parish-ink/70 mt-1">They've left this community, so their contact details aren't shared any more.</p>
+      {% elif contact_info.vouch_pending %}
+      <p class="text-sm text-parish-ink/70 mt-1">A coordinator can put you in touch. A neighbour's details reach a helper once this community has vouched for them in person.</p>
       {% elif not contact_info.email and not contact_info.phone %}
       <p class="text-sm text-parish-ink/70 mt-1">They prefer to arrange things through the community. A coordinator can pass a message along.</p>
       {% endif %}
