@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `1a087a65` (merged 2026-11-04 UTC).
+> Reflects `main` @ `6f6e1ec2` (merged 2026-11-23 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
@@ -88,6 +88,8 @@
 - **Needs and offers expire (spec §10.6):** needs by `expire_stale_needs`; offers 90 days after posting by `expire_stale_offers` (#218, `offers 0005`), registered with the needs schedule, so the deploy checklist's schedule step must be re-run before it starts. An expiring offer's waiting proposals expire with it, and its owner is told.
 - **Security / consent rules enforced in code:**
   - Contact info revealed only after acceptance (§8.2), to participants/coordinators; every disclosure is audited. A volunteer who proposed without an offer counts as participant.
+  - **A helper needs their community's vouch before an asker's details reach them (#244, merged 2026-11-23; NOT deployed until a deploy runs migration `communities 0007`).** Offer or not, the asker's email or phone reaches the helper only once THAT community has vouched for them (`communities.Vouch`, one per person per community) or they hold a vouching role there (`Member.can_vouch`); otherwise the helper sees the name, `vouch_pending`, and a coordinator introduces. Per community because a site-wide mark could be minted in a community nobody else is in. Held only when it withholds something (an asker who shares nothing, or left, keeps the usual line). Spec: `docs/specs/vouch-before-volunteer-reveal.md`.
+  - **Coordinators hear about a bare-name connect (#242, deployed 2026-11-21):** an accept that leaves either side seeing only a name notifies the community's active coordinators ("Two neighbours need you to connect them"), and that neighbour's own notice says a coordinator will help instead of saying contact was shared. New offers share contact by default, as asks do (`contact_pref` default `any`, `offers 0006`).
   - **Acceptance takes both people's yes (#215, 2026-10-07).** `Match.record_yes()` stamps `asker_yes_at` / `helper_yes_at`; only when both have said yes does the match move to `accepted` and contact open. A helper who proposed (their own offer, or volunteering directly) said yes by proposing; a coordinator-brokered match waits for both, in either order; **a coordinator can never say yes for anyone** (§4.1). Before #215 one yes (the asker, the helper, or a coordinator alone) accepted the match and opened both people's details, while the front page already promised both.
   - **Communion at home (#202, #205):** a category flagged `coordinators_only_contact` shows the helper the asker's name and never their number; a coordinator calls to arrange the visit. The board never asks for a home address.
   - Self-match prevention (§8.6): proposer ≠ requester **and** offer-owner ≠ requester.
@@ -123,6 +125,9 @@
   the emailed link, or be **vouched** in person (`Member.VOUCH_ROLES`: coordinator, admin, intake
   helper; audited `user.vouched`; since #218 only a verified person vouches, 30 an hour, to the exact
   username typed, and sign-up refuses a username that differs from another only in capitals).
+  Since #244 a vouch is also recorded **for the community it was made in** (`communities.Vouch`),
+  including for an account already verified by email or backfill (audited with `previously`); that
+  record, not the site-wide `verified_via`, is what lets an asker's details reach the vouched helper.
   Register bot checks: a hidden honeypot plus a signed minimum form age; a trip returns the success
   redirect and creates nothing (no oracle); the signed stamp lasts a day and works once (#218). The
   property is
@@ -246,7 +251,8 @@
 - **Member tags & verification:** claim → coordinator verify/reject/revoke (state machine); **verified-only** badges surface (visibility-honoured); a self-reported or revoked claim never renders as endorsed. Nobody verifies their own tag (#218).
 - **Search & feed:** model-aware keyword + **area** matching with relevance ordering (`order_by_relevance`); rank-aware feed merge when searching; honest empty states with one-tap clear.
 - **Communities:** per-community theming (presets + hex overrides → CSS custom properties), admin-gated **setup wizard** (join code + printable QR, colours, coordinators, first ask), coordinator-curated **resources directory** (archive-not-delete), two-doors welcome. Since the first coordinator's sit-down (#200): own colours apply only when "Use my own colours instead" is ticked, with a preview; long names and titles wrap on a phone; each request shows the day it was posted and the day it was done. The join code's QR loads for coordinators too, not only admins, and never for someone who has left (#214). Since #218 a closed community stays closed (its pages, asks, offers and settings no longer open from an old link), and leaving or a role change takes the community's lock, so two admins leaving at once leave one.
-- **Demo parish (`seed_demo_parish`):** twelve made-up members who can all use the board (#158); invented 555-01xx numbers, shared, so a demo connect opens onto a real-looking number (#214); off its public password since 2026-09-28, and every reseed rotates it (`manage.py rotate_demo_password`, password on stdin from the steward's private file, #180). Since #218 the seeder refuses to adopt a real account by username.
+- **Public `/contact/` page (#241, deployed 2026-11-21):** a signpost to the steward's routes (`CONTACT_ROUTES`, `ContactView` in `apps/communities/views.py`), read-only, no form, stores nothing; linked in every footer as "Start one where you are" (`templates/base.html`).
+- **Demo parish (`seed_demo_parish`):** twelve made-up members who can all use the board (#158); invented 555-01xx numbers, shared, so a demo connect opens onto a real-looking number (#214); off its public password since 2026-09-28, and every reseed rotates it (`manage.py rotate_demo_password`, password on stdin from the steward's private file, #180). Since #218 the seeder refuses to adopt a real account by username. Since #243 (2026-11-22) a second made-up parish, **St. Kateri's** (`--parish st-kateris`, ten members, 555-0161..0170), seeds beside it on the recording machine only (same `DEBUG` refusal; `rotate_demo_password` does not cover it), with a `broll` set of seven 9:16 recorder scenes. Since #244 each seeded parish vouches for its own members, so a demo connect still opens onto a number.
 - **Notifications:** in-app always; **consented email delivery** — SMTP auto-enables in production when creds exist, per-user `email_notifications` opt-out honored everywhere, console backend is the safe-fail default. Production mail is **live since 2026-09-11** through Resend on port 2587 (`docs/email-delivery-runbook.md` §3), and every sender reads `deliverable_email`, so mail goes only to an address its owner has proven (#174).
 - **Rate limiting:** fixed-window limiter (`apps/accounts/ratelimit.py`); auth POSTs per trusted IP + per account (buckets scoped per path, `/admin/login/` covered, #107); the OTP login step carries its own 5/m IP throttle (#117); flag POSTs 10/hr per user. Since #218 a known-device cookie passes the per-account sign-in bucket, and IPv6 is counted by its /64.
 - **Migrations:** all model apps; backfills batched, idempotent, resumable (`atomic=False`), reversible.
@@ -292,7 +298,11 @@
   (`tests/test_template_comments.py` caught the wrapped form, which would have rendered as visible text).
 
 ## Testing / CI / Deploy
-- **1882 passed** on **Postgres 16 + Redis** in #221's gate (2026-10-13, L26; count read from its file;
+- **2018 passed** on **Postgres 16 + Redis** in #245's gate (2026-11-23; count read from its file;
+  0 failed, 0 errors), and CI 3/3 green on #245's head `b48601ea`, merged as `6f6e1ec2`, whose tree
+  is the tested tree (merge-tree checked). *Before it:* **2015 passed** in #244's gate (`5e435056`,
+  merged as `eacde77c`) and **1998 passed** in #243's (`a9a0036d`, merged as `ea453c8b`).
+  *Before those:* **1882 passed** in #221's gate (2026-10-13, L26; count read from its file;
   0 failed), and CI 3/3 green on #221's head `eb9672d7`, merged as `4f1ea527`. *Before it:* **1874
   passed** in #220's gate (the founder's answers to the bug hunt's open questions; 0 failed), CI 3/3
   green on #220's head `0b83c7c3`, merged as `4e1dff6f`. *Before that:* **1835 passed** in #218's gate (2026-10-13, full suite at `6bb42520`,
@@ -498,7 +508,8 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
 - **Moderation report/block/removal (#90, 2026-07-18):** member reporting UI on the match page,
   member↔member `Block`, and durable coordinator removal + reinstate — details in the *Moderation &
   member safety* bullet above. ~29 TDD tests. Also corrected an ethics-doc §8.2 overclaim (an accepted
-  offer-less volunteer match DOES reveal contact to an unvouched volunteer — not yet guarded).
+  offer-less volunteer match DOES reveal contact to an unvouched volunteer — not yet guarded; guarded
+  for every helper by #244, merged 2026-11-23, live once deployed).
 - **Ethics & safety gate (2026-07-18):** `docs/ethics-and-safety.md` — honest harm analysis + a hard
   precondition gate. ~~**Now 4 of 6 boxes checked**~~ **3 of 6 since 2026-09-11** (breach/legal-demand
   plan #121, on-behalf consent #120, tested restore + verified retention #131; ~~**monitoring + alerts
