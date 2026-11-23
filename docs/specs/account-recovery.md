@@ -264,7 +264,7 @@ Honest limit, unchanged: Django `/admin/` still exists and still bypasses all of
 
 - **Coordinator-created accounts, claim links, and posting on someone's behalf** →
   `assisted-intake.md`, unwritten. Gated on the ethics gate
-  (`ethics-and-safety.md`, currently 3 of 6) and on `spec.md §4.1`.
+  (`ethics-and-safety.md`, currently 5 of 6) and on `spec.md §4.1`.
 - **Splitting `is_coordinator`.** Named here as a precondition of option C; it is a
   communities-app change and deserves its own spec.
 - **Closing Django `/admin/`.** An admin unlock path is designed above; it adds a better door

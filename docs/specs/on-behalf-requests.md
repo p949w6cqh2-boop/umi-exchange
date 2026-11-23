@@ -1,7 +1,7 @@
 # Spec: requests posted for a neighbor who is not on the board (option D)
 
 > STATUS: **SPEC (DESIGNED), unbuilt**, written 2026-10-01 on the founder's key "7". ⛔ **GATED like
-> `assisted-intake.md`:** it moves real people's information, and the ethics gate reads 3 of 6
+> `assisted-intake.md`:** it moves real people's information, and the ethics gate reads 5 of 6
 > (`../ethics-and-safety.md`). Nothing here is switched on for a real neighbor before that reads 6 of 6.
 > This is option D of `assisted-intake.md` §Options weighed, which that spec deferred, "not refused".
 
