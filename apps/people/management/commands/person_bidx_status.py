@@ -5,7 +5,7 @@ Read-only census of the §12.3 name blind index.
 
 Counts Person rows by name/bidx state. `missing` = a name ciphertext exists
 but the bidx is NULL (rows written before the index shipped) — those need the
-gated Stage C backfill before name search is complete. `stray` = a bidx with
+Stage C backfill (`backfill_person_bidx --apply`) before name search is complete. `stray` = a bidx with
 no name ciphertext (should always be 0; the shred/clear path nulls both).
 """
 
@@ -36,7 +36,8 @@ class Command(BaseCommand):
         elif missing:
             self.stderr.write(
                 self.style.WARNING(
-                    f"{missing} named row(s) lack a bidx — name search is incomplete until the (gated) backfill runs."
+                    f"{missing} named row(s) lack a bidx — name search is incomplete until "
+                    "`backfill_person_bidx --apply` runs."
                 )
             )
         else:

@@ -48,7 +48,7 @@ What each key costs to change:
 | Key | What changing it does |
 |---|---|
 | `SECRET_KEY` | Signs everyone out (sessions last 24 hours anyway, `SESSION_COOKIE_AGE`). Kills reset and email-confirm links in flight (48 hours, `EMAIL_TOKEN_MAX_AGE`). Makes every browser unknown to the login throttle until its next sign-in. Drops any background job queued at that moment, because django-q signs its payloads with it. Audit IP hashes before and after can no longer be compared; nothing reads them across time. |
-| `BLIND_INDEX_KEY` | Free only while `people.Person` is empty: `name_bidx` is keyed by it and it is not rotatable without re-indexing (`docs/deployment-checklist.md`). With real rows, leave it alone. |
+| `BLIND_INDEX_KEY` | `name_bidx` is keyed by it, so a new key means re-indexing: set the new key, restart, then run `manage.py backfill_person_bidx --reindex --apply` (dry run first, without `--apply`). Between the restart and the end of that run, name search misses the rows not yet re-indexed; it never matches a wrong person. While `people.Person` is empty the re-index has nothing to do. |
 | `ENCRYPTION_KEYS` | The dual-read sequence above. Nothing is signed out. |
 
 The sequence:

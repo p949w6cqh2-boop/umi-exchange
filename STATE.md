@@ -198,7 +198,7 @@
   hold or while a case about them is open.
 - **Ops:** `rotate_keks` re-wraps every DEK under the new primary KEK (registry covers all fields incl. federation). Census commands `casework_envelope_status` + `people_envelope_status`. Old-KEK retirement unblocked. Full sequence: `docs/envelope-rollout-runbook.md`. Since #218 a DEK that no configured key opens no longer aborts the run: every other row is re-wrapped, and the command fails at the end naming each row it could not.
 - **Rotation/backfill lifecycle repaired (#105):** `rotate_keks` re-wraps via queryset `.update()`, so a finalized (A7-immutable) CaseNote no longer aborts it mid-corpus; `CaseFile.emergency_justification` is registered in `ENVELOPE_DEK_FIELDS` and a guard test enumerates every `*_enc_dek` column so a new envelope field can't escape rotation; all three envelope backfills exclude failed pks and **terminate** on an unreadable row instead of looping forever.
-- **Person name blind index (§12.3) — Stages A/B/D BUILT (PR #71, merged `623faa1`, 2026-07-22):** `Person.name_bidx` = HMAC-SHA256(`BLIND_INDEX_KEY`, normalized name) for equality lookup without decrypting; `by_name()` **requires** a `community=` scope; census `person_bidx_status`; prod boots only with the key present **and** distinct from every encryption key. Stage C backfill NOT included — gated, not yet run.
+- **Person name blind index (§12.3) — Stages A/B/D BUILT (PR #71, merged `623faa1`, 2026-07-22):** `Person.name_bidx` = HMAC-SHA256(`BLIND_INDEX_KEY`, normalized name) for equality lookup without decrypting; `by_name()` **requires** a `community=` scope; census `person_bidx_status`; prod boots only with the key present **and** distinct from every encryption key. **Stage C BUILT 2026-11-23:** `manage.py backfill_person_bidx` (dry run unless `--apply`) indexes every named row that lacks a bidx, writing `name_bidx` only; `--reindex --apply` recomputes all of them, which is how a `BLIND_INDEX_KEY` rotation is finished. Fails closed without the key, carries on past an unreadable row and fails at the end naming it by id, never prints a name. Production's `people_person` is empty, so running it there today indexes nothing.
 - **Federation can't strand PII (#118):** suspending/revoking a link shreds its queued event payloads (`shred_link_event_payloads`, wired into the admin transition **and** `auto_suspend_unreachable_links`), plus a daily `sweep_stale_event_payloads` retention backstop that runs even with `FEDERATION_ENABLED` off — deliberately, so switching federation off can't preserve contact PII past the give-up window.
 - **Scoped legal hold (#193, `apps/holds`, `docs/specs/legal-hold.md`):** a `LegalHold` covers one
   case, person, need, community or everything; the retention sweeps skip what a hold covers and
@@ -478,7 +478,7 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   database — **a backup verified by reasoning is not a verified backup.** The box-2 checkbox is
   unchanged (earned 2026-07-29); what closed here is the caveat hanging off it.
 - **§12.3 Person blind index MERGED (PR #71 → `623faa1`, 2026-07-22):** Stages A/B/D on main — details in
-  the Encryption section; Stage C backfill remains gated/not run (`person_bidx_status` reports the wait).
+  the Encryption section. Stage C (the backfill, `backfill_person_bidx`) built 2026-11-23.
 - **The #93–#99 span (2026-07-19/20):** **#93** search-relevance test marked postgres-only
   (SQLite FTS divergence stopped impersonating regressions) · **#95** demo-gallery walking
   resolver goes via the hub + throttle-hardened login · **#96** anonymous gated-screen GETs
@@ -606,8 +606,7 @@ overdue-follow-up digest (`apps/casework/tasks.py::register_schedule`, django-q)
   #175 real names out · #176 parish starter kit · #194 envelope page and roles · #203 CLAUDE.md trim ·
   #213 tutorial v2 recording set · #216 reseed runbook under custody. A closed span, so it does not rot
   the way the old under-the-stamp list did.
-- **Roadmap (DESIGNED, not built):** §12.3 Stage C bidx backfill (Stages A/B/D are BUILT — PR #71),
-  Lakes 3–8, mobile companion (React Native/Expo, design PR #33) + LLM need classifier. Moderation
+- **Roadmap (DESIGNED, not built):** Lakes 3–8, mobile companion (React Native/Expo, design PR #33) + LLM need classifier. Moderation
   follow-ups: graduated "freeze", report-abuse throttles, on-behalf dedupe (hidden/removed-record
   federation containment landed in #118). Gated specs: a request posted for a neighbour who is not on
   the board (option D, `docs/specs/on-behalf-requests.md`, #195) and assisted intake

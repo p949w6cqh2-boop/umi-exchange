@@ -31,7 +31,7 @@
 | §10.6–7 | Scheduled expiry via crypto-shred | expiry tasks; `apps/people/crypto.py` | retention/expiry tests |
 | §11 | Per-peer wire caps | `apps/federation/views.py:43` | `apps/federation/tests/` |
 | §12.2 | Envelope encryption; property-only access; crypto-shred nulls ciphertext+DEK | `apps/people/crypto.py` (`envelope_encrypt_str`, `encrypt_str`) | `apps/people/tests/`, `apps/casework/tests/` |
-| §12.3 | Blind index — RESERVED, non-normative v0.1 | `person_name_bidx` (DESIGNED, gated PR) | n/a |
+| §12.3 | Blind index — RESERVED, non-normative v0.1 | BUILT in `apps/people` (`Person.name_bidx`, `crypto.name_blind_index`, `by_name()`, #71; Stage C backfill `backfill_person_bidx`, 2026-11-23). Still non-normative: building it changes no requirement of v0.1. | `apps/people/tests/test_name_blind_index.py`, `apps/people/tests/test_bidx_backfill.py` |
 
 **Rows that are [derived]** (design-doc-attested, verified against code, steward confirms intent
 at key): §2.x, §4.1 boundary field list, §4.4 exact values, §5.x, §6.3, §7 token, §9.x, §11
