@@ -15,6 +15,11 @@ SCRATCH=/tmp/tutorial-work/tutorial-scratch.sqlite3
 rm -f "$SCRATCH"
 DEBUG=1 DATABASE_URL="sqlite:///$SCRATCH" .venv/bin/python manage.py migrate --verbosity 0
 DEBUG=1 DATABASE_URL="sqlite:///$SCRATCH" .venv/bin/python manage.py seed_demo_parish | tail -1
+# The B-roll set (SET=broll, 2026-11-21) films a second fictional parish, St. Kateri's, seeded
+# beside St. Brigid's on the same scratch DB, so the footage stops being the same board again.
+if [ "${SET:-}" = "broll" ]; then
+DEBUG=1 DATABASE_URL="sqlite:///$SCRATCH" .venv/bin/python manage.py seed_demo_parish --parish st-kateris | tail -1
+fi
 DEBUG=1 DATABASE_URL="sqlite:///$SCRATCH" .venv/bin/python manage.py shell <<'PY' | grep ^export > /tmp/tutorial-work/tutorial-ids.env
 from apps.needs.models import Need
 from apps.matches.models import Match
@@ -22,6 +27,15 @@ lift = Need.objects.get(title__contains="9:30 Mass")
 print(f"export LIFT={lift.id}")
 print(f"export PROPOSED={Match.objects.get(need=lift).id}")
 PY
+if [ "${SET:-}" = "broll" ]; then
+DEBUG=1 DATABASE_URL="sqlite:///$SCRATCH" .venv/bin/python manage.py shell <<'PY' | grep ^export >> /tmp/tutorial-work/tutorial-ids.env
+from apps.matches.models import Match
+from apps.needs.models import Need
+sit = Need.objects.get(community__slug="st-kateris", title="Someone to sit with me")
+print(f"export SITWITH={Match.objects.get(need=sit).id}")
+print(f"export GROCERIES={Need.objects.get(community__slug='st-kateris', title='Groceries this week').id}")
+PY
+fi
 # Version 2 (SET=v2) stages what its scenes need before the camera rolls, on the scratch DB
 # only: an invented 555-01xx number on Joe for the call-back scene. COMMUNION=1 (its own
 # cycle, the two v2-16 scenes only) adds Aggie's number and an accepted Communion at home

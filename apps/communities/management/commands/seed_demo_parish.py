@@ -6,6 +6,7 @@ deletes), and it refuses to run when DEBUG is off — demo data must never reach
 a production database.
 """
 
+from dataclasses import dataclass
 from datetime import timedelta
 
 from django.conf import settings
@@ -210,14 +211,236 @@ OFFERS = [
 ]
 
 
+@dataclass(frozen=True)
+class ParishSeed:
+    """Everything that makes one demo parish itself; the Command below is the same for all of them.
+
+    `matches` rows are (need title, offer title, transitions walked, helper said yes first).
+    `tags` rows are (slug, label, tier, member, request note, verify note, verifier).
+    """
+
+    slug: str
+    name: str
+    members: list
+    phones: dict
+    contact_pref: str
+    categories: list
+    coordinators_only_categories: tuple
+    needs: list
+    offers: list
+    matches: list
+    identity: dict
+    pages: list
+    creator: str
+    proposer: str
+    page_author: str
+    page_publisher: str
+    tags: list
+
+
+ST_BRIGIDS = ParishSeed(
+    slug=DEMO_SLUG,
+    name="St. Brigid's",
+    members=MEMBERS,
+    phones=PHONES,
+    contact_pref=DEMO_CONTACT_PREF,
+    categories=CATEGORIES,
+    coordinators_only_categories=("Communion at home",),
+    needs=NEEDS,
+    offers=OFFERS,
+    # Three matches: one proposed, one accepted, one fulfilled — the board mid-life.
+    matches=[
+        # Dan said yes to Marta's introduction; Nuala's yes completes it
+        ("A ride to the 9:30 Mass on Sunday", "I can drive Sunday mornings", (), True),
+        ("Someone to look at a leaky kitchen faucet", "Handy with faucets, hinges, and shelves", ("accepted",), False),
+        ("A crib for the new baby", "An outgrown crib, in great shape", ("accepted", "fulfilled"), False),
+    ],
+    identity=IDENTITY,
+    pages=PAGES,
+    creator="marta",
+    proposer="marta",
+    page_author="tom",
+    page_publisher="marta",
+    # Frank's verified Deacon tag: clergy tags are admin-verified, so Marta (admin) signs.
+    tags=[
+        (
+            "deacon",
+            "Deacon",
+            "coordinator_verified",
+            "frank",
+            "Ordained 2011, serves at the 11:00 Mass.",
+            "Known to the parish office.",
+            "marta",
+        )
+    ],
+)
+
+# A second parish for fresh B-roll, shaped for TikTok (the founder's ask, 2026-11-21: "a brand new
+# community to roll in the back", "Optimize it for TikTok"). Built from what wins on his TikTok:
+# person-level dignity ("You are not alone", the stigma cut) and the board shown working ("two
+# people say yes"). Every title is five words or fewer so it reads at phone size, and three members
+# both ask and offer, because giving and receiving is the point. No scripture is quoted here: a
+# quotation needs its NABRE wording checked, and none was. Local recording rig only.
+ST_KATERIS = ParishSeed(
+    slug="st-kateris",
+    name="St. Kateri's",
+    members=[
+        # (username, display name, role); none may reuse a St. Brigid's username
+        ("lena", "Lena Morales", "admin"),
+        ("isaac", "Isaac Grant", "coordinator"),
+        ("bea", "Bea Thompson", "member"),
+        ("omar", "Omar Haddad", "member"),
+        ("june", "June Park", "member"),
+        ("theo", "Theo Ruiz", "member"),
+        ("abby", "Abby Collins", "member"),
+        ("sam", "Sam Okoro", "member"),
+        ("lucy", "Lucy Nguyen", "member"),
+        ("walt", "Walt Brooks", "member"),
+    ],
+    # The same range set aside for fiction, numbers St. Brigid's does not use.
+    phones={
+        "lena": "555-0161",
+        "isaac": "555-0162",
+        "bea": "555-0163",
+        "omar": "555-0164",
+        "june": "555-0165",
+        "theo": "555-0166",
+        "abby": "555-0167",
+        "sam": "555-0168",
+        "lucy": "555-0169",
+        "walt": "555-0170",
+    },
+    contact_pref="phone",
+    categories=CATEGORIES,
+    coordinators_only_categories=("Communion at home",),
+    needs=[
+        ("walt", "Transport", "A ride to Sunday Mass", "My knees won't do the bus anymore. Any Sunday works.", "high"),
+        (
+            "bea",
+            "Company",
+            "Someone to sit with me",
+            "My husband passed in the spring. The evenings are the hardest part.",
+            "medium",
+        ),
+        (
+            "june",
+            "Groceries",
+            "Groceries this week",
+            "I'm between jobs right now. Anything helps, even a small bag.",
+            "high",
+        ),
+        (
+            "omar",
+            "Home Repair",
+            "Fix a leaking sink",
+            "It drips all night. I have the part, just not the tools.",
+            "medium",
+        ),
+        (
+            "abby",
+            "Meals",
+            "Meals after the twins",
+            "They came three weeks early. A dinner or two would mean the world.",
+            "medium",
+        ),
+        (
+            "theo",
+            "Tutoring",
+            "Reading help for my son",
+            "He's in third grade and losing heart. An hour a week would help.",
+            "medium",
+        ),
+        (
+            "lucy",
+            "Communion at home",
+            "Communion at home, please",
+            "I'm homebound after surgery for a few weeks.",
+            "high",
+        ),
+    ],
+    offers=[
+        ("sam", "Transport", "I can drive Sundays", "Room for three in the car, and I don't mind an early start."),
+        ("isaac", "Company", "I'll sit with you", "My evenings are free. Coffee, cards, or just company."),
+        ("lena", "Meals", "Extra dinners most weeks", "I always cook too much. Happy to drop a plate off."),
+        (
+            "walt",
+            "Home Repair",
+            "Handy with sinks and shelves",
+            "Thirty years as a plumber. Small jobs are no trouble.",
+        ),
+        (
+            "june",
+            "Tutoring",
+            "Reading help after school",
+            "I was a school librarian for twelve years. Patience included.",
+        ),
+        ("omar", "Groceries", "Grocery runs on Fridays", "I go every Friday anyway. Happy to carry a list."),
+    ],
+    matches=[
+        ("A ride to Sunday Mass", "I can drive Sundays", (), True),
+        ("Someone to sit with me", "I'll sit with you", ("accepted",), False),
+        ("Fix a leaking sink", "Handy with sinks and shelves", ("accepted", "fulfilled"), False),
+    ],
+    identity={
+        "patron": "St. Kateri",
+        "welcome_lines": [
+            "No one here walks alone.",
+            "Ask for what you need. Offer what you have.",
+        ],
+        "signin_blurb": "St. Kateri's neighbours asking and answering. If you have a code, you're already welcome.",
+        "scene_choices": {"hub": "carrying", "landing": "threshold"},
+    },
+    pages=[
+        (
+            "Our story",
+            "our-story",
+            "published",
+            True,
+            "St. Kateri's began with six families sharing rides to Sunday Mass. The rides turned into "
+            "dinners, and the dinners turned into this board.\n\n"
+            "Ask for what you need. Offer what you have. Nobody keeps score, and no one here walks alone.",
+        ),
+        (
+            "Mass times",
+            "mass-times",
+            "published",
+            False,
+            "Sundays at 8:30 and 10:30. Saturday vigil at 5:00.\n\nWeekday Mass at 8:00, Monday to Friday.",
+        ),
+    ],
+    creator="lena",
+    proposer="lena",
+    page_author="isaac",
+    page_publisher="lena",
+    tags=[],
+)
+
+PARISHES = {spec.slug: spec for spec in (ST_BRIGIDS, ST_KATERIS)}
+
+
 class Command(BaseCommand):
-    help = "Seed the fictional St. Brigid's demo parish (idempotent, DEBUG-only)."
+    help = (
+        "Seed a fictional demo parish (idempotent, DEBUG-only): St. Brigid's by default, "
+        "or another one named with --parish."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--parish",
+            default=DEMO_SLUG,
+            help=f"Which demo parish to seed: {', '.join(PARISHES)} (default {DEMO_SLUG}).",
+        )
 
     def handle(self, *args, **options):
         if not settings.DEBUG:
             raise CommandError(
                 "seed_demo_parish only runs with DEBUG on. It seeds fictional demo data "
                 "and must never touch a production database."
+            )
+        spec = PARISHES.get(options.get("parish") or DEMO_SLUG)
+        if spec is None:
+            raise CommandError(
+                f"No demo parish called {options.get('parish')!r}. Choose one of: {', '.join(PARISHES)}."
             )
 
         from apps.accounts.models import User
@@ -227,7 +450,7 @@ class Command(BaseCommand):
         # made a demo admin or coordinator, marked human-verified and given a fake phone (2026-10
         # bug hunt, L35). Refuse before writing anything.
         taken = sorted(
-            User.objects.filter(username__in=[username for username, _, _ in MEMBERS])
+            User.objects.filter(username__in=[username for username, _, _ in spec.members])
             .exclude(email__iendswith="@demo.invalid")
             .values_list("username", flat=True)
         )
@@ -239,7 +462,7 @@ class Command(BaseCommand):
             )
 
         users = {}
-        for username, display, _role in MEMBERS:
+        for username, display, _role in spec.members:
             first = display.split(" ")[0]
             user, created = User.objects.get_or_create(
                 username=username,
@@ -268,19 +491,19 @@ class Command(BaseCommand):
             # Same rule, same reason: outside `if created`, so a reseed gives an older
             # parish its numbers too (the live demo's path, docs/demo-reseed-runbook.md §3).
             if not user.phone:
-                user.phone = PHONES[username]
+                user.phone = spec.phones[username]
                 user.save(update_fields=["phone"])
             users[username] = user
 
         community, _ = Community.objects.get_or_create(
-            slug=DEMO_SLUG,
+            slug=spec.slug,
             # Public: the demo's front door (§I pre-auth landing) must render
             # for a signed-out visitor — that's the screen that shows it.
-            defaults={"name": "St. Brigid's", "created_by": users["marta"], "visibility": "public"},
+            defaults={"name": spec.name, "created_by": users[spec.creator], "visibility": "public"},
         )
 
         members = {}
-        for username, display, role in MEMBERS:
+        for username, display, role in spec.members:
             member, _ = Member.objects.get_or_create(
                 user=users[username],
                 community=community,
@@ -289,14 +512,16 @@ class Command(BaseCommand):
             members[username] = member
 
         categories = {}
-        for name, icon in CATEGORIES:
+        for name, icon in spec.categories:
             category, _ = Category.objects.get_or_create(community=community, name=name, defaults={"icon": icon})
             categories[name] = category
         # Migration 0006 marks existing rows; a fresh seed runs after it, so mark here too.
-        Category.objects.filter(community=community, name="Communion at home").update(coordinators_only_contact=True)
+        Category.objects.filter(community=community, name__in=spec.coordinators_only_categories).update(
+            coordinators_only_contact=True
+        )
 
         needs = {}
-        for requester, category, title, description, urgency in NEEDS:
+        for requester, category, title, description, urgency in spec.needs:
             need, _ = Need.objects.get_or_create(
                 community=community,
                 requester=members[requester],
@@ -307,16 +532,16 @@ class Command(BaseCommand):
                     "urgency": urgency,
                     "status": "open",
                     "expires_at": timezone.now() + timedelta(days=60),
-                    "contact_pref": DEMO_CONTACT_PREF,
+                    "contact_pref": spec.contact_pref,
                 },
             )
-            if need.contact_pref != DEMO_CONTACT_PREF:  # repair on reseed, as above
-                need.contact_pref = DEMO_CONTACT_PREF
+            if need.contact_pref != spec.contact_pref:  # repair on reseed, as above
+                need.contact_pref = spec.contact_pref
                 need.save(update_fields=["contact_pref"])
             needs[title] = need
 
         offers = {}
-        for offerer, category, title, description in OFFERS:
+        for offerer, category, title, description in spec.offers:
             offer, _ = Offer.objects.get_or_create(
                 community=community,
                 offerer=members[offerer],
@@ -326,38 +551,26 @@ class Command(BaseCommand):
                     "description": description,
                     "status": "active",
                     "expires_at": timezone.now() + timedelta(days=120),
-                    "contact_pref": DEMO_CONTACT_PREF,
+                    "contact_pref": spec.contact_pref,
                 },
             )
-            if offer.contact_pref != DEMO_CONTACT_PREF:  # repair on reseed, as above
-                offer.contact_pref = DEMO_CONTACT_PREF
+            if offer.contact_pref != spec.contact_pref:  # repair on reseed, as above
+                offer.contact_pref = spec.contact_pref
                 offer.save(update_fields=["contact_pref"])
             offers[title] = offer
 
-        # Three matches: one proposed, one accepted, one fulfilled — the board mid-life.
-        self._match(
-            needs["A ride to the 9:30 Mass on Sunday"],
-            offers["I can drive Sunday mornings"],
-            members["marta"],
-            through=(),
-            helper_said_yes=True,  # Dan said yes to Marta's introduction; Nuala's yes completes it
-        )
-        self._match(
-            needs["Someone to look at a leaky kitchen faucet"],
-            offers["Handy with faucets, hinges, and shelves"],
-            members["marta"],
-            through=("accepted",),
-        )
-        self._match(
-            needs["A crib for the new baby"],
-            offers["An outgrown crib, in great shape"],
-            members["marta"],
-            through=("accepted", "fulfilled"),
-        )
+        for need_title, offer_title, through, helper_said_yes in spec.matches:
+            self._match(
+                needs[need_title],
+                offers[offer_title],
+                members[spec.proposer],
+                through=through,
+                helper_said_yes=helper_said_yes,
+            )
 
         # §D/§J — the parish identity, only filling keys that are absent.
         community_settings = dict(community.settings or {})
-        missing = {k: v for k, v in IDENTITY.items() if k not in community_settings}
+        missing = {k: v for k, v in spec.identity.items() if k not in community_settings}
         if missing:
             community_settings.update(missing)
             community.settings = community_settings
@@ -367,7 +580,7 @@ class Command(BaseCommand):
         # so a re-run never republishes what a demo admin has since changed.
         from apps.pages.models import CommunityPage
 
-        for title, page_slug, status, on_landing, content in PAGES:
+        for title, page_slug, status, on_landing, content in spec.pages:
             if CommunityPage.objects.filter(community=community, slug=page_slug).exists():
                 continue
             page = CommunityPage.objects.create(
@@ -375,36 +588,43 @@ class Command(BaseCommand):
                 title=title,
                 slug=page_slug,
                 content_md=content,
-                created_by=members["tom"],
+                created_by=members[spec.page_author],
                 show_on_landing=on_landing,
             )
             if status in ("published", "archived"):
-                page.publish(by=members["marta"])
+                page.publish(by=members[spec.page_publisher])
             if status == "archived":
                 page.transition_to("archived")
 
-        # Frank's verified Deacon tag: clergy tags are admin-verified, so Marta (admin) signs.
-        tag, _ = Tag.objects.get_or_create(
-            community=community,
-            slug="deacon",
-            defaults={"label": "Deacon", "tier": "coordinator_verified"},
-        )
-        member_tag, created = MemberTag.objects.get_or_create(member=members["frank"], tag=tag)
-        if created or member_tag.status not in ("verified",):
-            if member_tag.status == "self_claimed":
-                member_tag.request_verification(evidence_note="Ordained 2011, serves at the 11:00 Mass.")
-            if member_tag.status == "pending":
-                member_tag.verify(members["marta"], evidence_note="Known to the parish office.")
+        for tag_slug, label, tier, holder, request_note, verify_note, verifier in spec.tags:
+            tag, _ = Tag.objects.get_or_create(
+                community=community,
+                slug=tag_slug,
+                defaults={"label": label, "tier": tier},
+            )
+            member_tag, created = MemberTag.objects.get_or_create(member=members[holder], tag=tag)
+            if created or member_tag.status not in ("verified",):
+                if member_tag.status == "self_claimed":
+                    member_tag.request_verification(evidence_note=request_note)
+                if member_tag.status == "pending":
+                    member_tag.verify(members[verifier], evidence_note=verify_note)
 
+        first = {role: next(u for u, _, r in spec.members if r == role) for role in ("admin", "coordinator", "member")}
+        # rotate_demo_password covers MEMBERS only, so it must not be offered for another parish.
+        closing = (
+            "On a live site, run rotate_demo_password next: that password is public."
+            if spec is ST_BRIGIDS
+            else "Local recording rig only: rotate_demo_password does not cover this parish's members."
+        )
         self.stdout.write(
             self.style.SUCCESS(
-                f"St. Brigid's demo parish is ready: {len(members)} members, "
+                f"{spec.name} demo parish is ready: {len(members)} members, "
                 f"{Need.objects.filter(community=community).count()} needs, "
                 f"{Offer.objects.filter(community=community).count()} offers, "
                 f"{Match.objects.filter(need__community=community).count()} matches. "
-                f"Sign in as marta (admin), tom (coordinator), "
-                f"or nuala (member) — password {DEMO_PASSWORD!r} for all.\n"
-                f"On a live site, run rotate_demo_password next: that password is public."
+                f"Sign in as {first['admin']} (admin), {first['coordinator']} (coordinator), "
+                f"or {first['member']} (member) — password {DEMO_PASSWORD!r} for all.\n"
+                f"{closing}"
             )
         )
 
