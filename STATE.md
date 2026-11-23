@@ -2,7 +2,7 @@
 
 > Authoritative project snapshot. Paste this into a fresh chat (or share the
 > file) so an assistant compares against ground truth instead of guessing.
-> Reflects `main` @ `3551914c` (merged 2026-11-23 UTC).
+> Reflects `main` @ `5e8c95e5` (merged 2026-11-23 UTC).
 >
 > ⚠️ **Honest scope of this stamp.** The body is kept current **merge-by-merge by the PRs that
 > touch it**, and **a full line-by-line sweep against `main` was run on 2026-10-08**, the first
