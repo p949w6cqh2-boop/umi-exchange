@@ -165,7 +165,7 @@ Expected: `Rotated the password on 12 seeded demo accounts.` Each rotation is au
 ```bash
 curl -s https://reciprocalaid.network/ | grep -c "9:30 Mass"    # expect ≥ 1
 curl -s https://reciprocalaid.network/ | grep -ci "half-nine"   # expect 0
-curl -s https://reciprocalaid.network/health/                    # {"status": "ok"}
+curl -s "https://reciprocalaid.network/health/?token=$(cat ~/.config/umi/health-check-token)"   # {"status": "ok", ...}; plain /health/ is 403 since 2026-11-23
 ```
 
 Then by eye: sign in as `tom` with the password from the steward's file; the board should read American — a ride to
