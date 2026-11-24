@@ -547,7 +547,7 @@ $C exec app python manage.py check --deploy
 $C exec app python -c "import urllib.request; print(urllib.request.urlopen(urllib.request.Request('http://localhost:8000/health/', headers={'X-Forwarded-Proto':'https'})).read())"
 
 # Public health check over HTTPS (real cert + Caddy in front)
-curl -sf "https://$DOMAIN/health/" && echo   # expect: {"status": "ok"} (or similar)
+curl -sf "https://$DOMAIN/health/?token=$(grep -m1 '^HEALTH_CHECK_TOKEN=' .env | cut -d= -f2-)" && echo   # expect: {"status": "ok"}; the token is read from .env (ignored when HEALTH_CHECK_TOKEN is unset)
 ```
 
 Then in a browser:

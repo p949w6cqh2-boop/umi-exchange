@@ -158,9 +158,11 @@ docker compose --env-file .env -f docker/docker-compose.prod.yml ps app worker  
 # `git rev-parse HEAD`; "unknown" means the image was built without step 4's --build-arg, OR the
 # droplet's .env holds a GIT_SHA line (even empty, as .env.example shipped until 2026-11-23): env_file
 # beats the image's ENV. Check with `docker exec docker-app-1 printenv GIT_SHA`; comment the line out.
-# (Add ?token=... if HEALTH_CHECK_TOKEN is set.) It proves which image is running, not that the
+# The token comes from this droplet's .env, never typed or printed: HEALTH_CHECK_TOKEN is set here
+# since 2026-11-23, and a plain /health/ answers 403, which `curl -f` turns into silence (an empty
+# ?token= is ignored when the variable is unset). It proves which image is running, not that the
 # image holds what you merged, so the string check below stays.
-curl -sf https://reciprocalaid.network/health/ ; echo ; git rev-parse HEAD
+curl -sf "https://reciprocalaid.network/health/?token=$(grep -m1 '^HEALTH_CHECK_TOKEN=' .env | cut -d= -f2-)" ; echo ; git rev-parse HEAD
 curl -sf https://reciprocalaid.network/about/ | grep -o "<a string you changed>"
 # The worker's scheduler makes its first pass 30 seconds after the worker starts, so run these
 # a minute or more after step 5; earlier, the count reads 0 (it did, 21 seconds in, on
