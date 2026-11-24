@@ -155,7 +155,9 @@ docker exec docker-app-1 python manage.py collectstatic --noinput
 #    and get its expected count by grepping the merged tree, never from memory.
 docker compose --env-file .env -f docker/docker-compose.prod.yml ps app worker   # app "healthy", worker "Up"
 # The commit the live app was built from, read from outside the host. It must equal step 2's
-# `git rev-parse HEAD`; "unknown" means the image was built without step 4's --build-arg.
+# `git rev-parse HEAD`; "unknown" means the image was built without step 4's --build-arg, OR the
+# droplet's .env holds a GIT_SHA line (even empty, as .env.example shipped until 2026-11-23): env_file
+# beats the image's ENV. Check with `docker exec docker-app-1 printenv GIT_SHA`; comment the line out.
 # (Add ?token=... if HEALTH_CHECK_TOKEN is set.) It proves which image is running, not that the
 # image holds what you merged, so the string check below stays.
 curl -sf https://reciprocalaid.network/health/ ; echo ; git rev-parse HEAD
