@@ -342,7 +342,7 @@ EMAIL_HOST_PASSWORD=
 SENTRY_DSN=
 SENTRY_ENVIRONMENT=production
 HEALTH_CHECK_TOKEN=
-GIT_SHA=
+# GIT_SHA: baked into the image at build time (--build-arg); never set in .env (see .env.example)
 DB_PASSWORD=change-me-in-production
 POSTGRES_USER=umi
 POSTGRES_PASSWORD=umi
